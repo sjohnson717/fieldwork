@@ -47,7 +47,9 @@
         }
       ]
     },
-    "read": null,
+    "read": {
+      "created_by_id": "{{user.id}}"
+    },
     "update": {
       "$or": [
         {
