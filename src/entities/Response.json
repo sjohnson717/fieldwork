@@ -1,11 +1,12 @@
 {
   "name": "Response",
+  "type": "object",
   "properties": {
     "assessment_id": { "type": "string" },
     "respondent_id": { "type": "string" },
     "activity_id": { "type": "string" },
-    "importance": { "type": "string", "enum": ["", "Not needed", "Nice to have", "Important", "Critical"] },
-    "execution": { "type": "string", "enum": ["", "Not done", "Inconsistent", "Good", "Excellent"] },
+    "importance": { "type": "string", "enum": ["Not needed", "Nice to have", "Important", "Critical"] },
+    "execution": { "type": "string", "enum": ["Not done", "Inconsistent", "Good", "Excellent"] },
     "suggested_owner": { "type": "string" }
   },
   "required": ["assessment_id", "respondent_id", "activity_id"]

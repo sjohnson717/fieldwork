@@ -1,5 +1,6 @@
 {
   "name": "Assessment",
+  "type": "object",
   "properties": {
     "title": { "type": "string" },
     "company_name": { "type": "string" },
