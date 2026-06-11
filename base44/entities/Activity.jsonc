@@ -34,5 +34,11 @@
   "required": [
     "name",
     "facet"
-  ]
+  ],
+  "rls": {
+    "create": null,
+    "read": null,
+    "update": null,
+    "delete": null
+  }
 }
