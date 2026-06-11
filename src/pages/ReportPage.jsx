@@ -154,17 +154,19 @@ function ActivityRow({ activity, stats, themeColor }) {
   );
 }
 
-function ThemeSection({ group, activities, activityStats, showAll }) {
+function ThemeSection({ group, activities, activityStats, filterLevel }) {
   const groupActivities = activities.filter(a => group.facets.includes(a.facet));
   if (groupActivities.length === 0) return null;
 
-  // Filter to problems only unless showAll
-  const visibleActivities = showAll
-    ? groupActivities
-    : groupActivities.filter(a => {
-        const gap = activityStats[a.id]?.avgGap ?? null;
-        return gap === null || gap >= 1;
-      });
+  // Filter based on selected level
+  const visibleActivities = groupActivities.filter(a => {
+    const gap = activityStats[a.id]?.avgGap ?? null;
+    if (filterLevel === "all") return true;
+    if (filterLevel === "critical") return gap !== null && gap >= 2;
+    if (filterLevel === "attention") return gap !== null && gap >= 1 && gap < 2;
+    // "problems" = default: critical + attention
+    return gap === null || gap >= 1;
+  });
 
   // If nothing to show in this theme (all on track), show a brief summary row
   if (visibleActivities.length === 0) {
@@ -304,7 +306,7 @@ export default function ReportPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [respondentCount, setRespondentCount] = useState(0);
-  const [showAll, setShowAll] = useState(false);
+  const [filterLevel, setFilterLevel] = useState("problems"); // problems | critical | attention | all
 
   useEffect(() => {
     if (token) loadReport();
@@ -549,30 +551,53 @@ export default function ReportPage() {
           <p className="text-xs text-gray-400 mt-3">Gap = importance minus execution. Higher is more urgent.</p>
         </div>
 
-        {/* ── Gap legend + filter toggle ── */}
-        <div className="flex items-center justify-between mb-8 flex-wrap gap-3">
-          <div className="flex items-center gap-6 text-xs text-gray-500">
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-[#FF3333]" />
-              <span>Critical gap (≥2)</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-[#FFCC00]" />
-              <span>Needs attention (≥1)</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-[#11CC77]" />
-              <span>On track</span>
-            </div>
-          </div>
-          <button
-            onClick={() => setShowAll(s => !s)}
-            className="text-xs font-medium text-[#3366FF] hover:text-[#003366] transition-colors"
-          >
-            {showAll
-              ? `Hide on-track activities`
-              : `Showing ${problemCount} of ${activities.length} activities · Show all`}
-          </button>
+        {/* ── Clickable filter chips ── */}
+        <div className="flex items-center gap-2 mb-8 flex-wrap">
+          {[
+            { key: "critical", color: "#FF3333", label: `Critical gap`, count: criticalGaps },
+            { key: "attention", color: "#FFCC00", label: `Needs attention`, count: attentionGaps },
+            { key: "all", color: "#11CC77", label: `On track`, count: onTrackCount },
+          ].map(({ key, color, label, count }) => {
+            const isActive = filterLevel === key ||
+              (filterLevel === "problems" && (key === "critical" || key === "attention"));
+            return (
+              <button
+                key={key}
+                onClick={() => setFilterLevel(f => f === key ? "problems" : key)}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-medium transition-all ${
+                  isActive
+                    ? "shadow-sm"
+                    : "opacity-40 hover:opacity-70"
+                }`}
+                style={{
+                  borderColor: color,
+                  backgroundColor: isActive ? color + "18" : "white",
+                  color: key === "attention" ? "#92700A" : key === "all" ? "#065F46" : "#991B1B",
+                }}
+              >
+                <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                {label}
+                <span className="font-bold" style={{ color }}>{count}</span>
+              </button>
+            );
+          })}
+          <span className="text-xs text-gray-400 ml-2">
+            {filterLevel === "all"
+              ? `Showing all ${activities.length} activities`
+              : filterLevel === "critical"
+              ? `Showing ${criticalGaps} critical gap${criticalGaps !== 1 ? "s" : ""}`
+              : filterLevel === "attention"
+              ? `Showing ${attentionGaps} needing attention`
+              : `Showing ${problemCount} of ${activities.length} activities`}
+            {filterLevel !== "all" && (
+              <button
+                onClick={() => setFilterLevel("all")}
+                className="ml-2 text-[#3366FF] hover:text-[#003366] font-medium transition-colors"
+              >
+                Show all
+              </button>
+            )}
+          </span>
         </div>
 
         {/* ── Theme sections ── */}
@@ -582,7 +607,7 @@ export default function ReportPage() {
             group={group}
             activities={activities}
             activityStats={activityStats}
-            showAll={showAll}
+            filterLevel={filterLevel}
           />
         ))}
 
