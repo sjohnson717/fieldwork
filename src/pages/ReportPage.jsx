@@ -154,15 +154,43 @@ function ActivityRow({ activity, stats, themeColor }) {
   );
 }
 
-function ThemeSection({ group, activities, activityStats }) {
+function ThemeSection({ group, activities, activityStats, showAll }) {
   const groupActivities = activities.filter(a => group.facets.includes(a.facet));
   if (groupActivities.length === 0) return null;
+
+  // Filter to problems only unless showAll
+  const visibleActivities = showAll
+    ? groupActivities
+    : groupActivities.filter(a => {
+        const gap = activityStats[a.id]?.avgGap ?? null;
+        return gap === null || gap >= 1;
+      });
+
+  // If nothing to show in this theme (all on track), show a brief summary row
+  if (visibleActivities.length === 0) {
+    return (
+      <section className="mb-10">
+        <div className="flex items-center gap-4 mb-4">
+          <div className="w-1 h-12 rounded-full shrink-0" style={{ backgroundColor: group.color }} />
+          <div>
+            <h2 className="text-lg font-bold text-gray-900">{group.label}</h2>
+            <p className="text-xs text-gray-400">{group.facets.join(" · ")}</p>
+          </div>
+        </div>
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-4">
+          <p className="text-sm text-[#11CC77] font-medium flex items-center gap-2">
+            <span>✓</span> All activities on track in this area
+          </p>
+        </div>
+      </section>
+    );
+  }
 
   // Group by facet within the theme
   const byFacet = group.facets.map(f => ({
     facet: f,
     subtitle: FACET_SUBTITLES[f],
-    items: groupActivities.filter(a => a.facet === f),
+    items: visibleActivities.filter(a => a.facet === f),
   })).filter(f => f.items.length > 0);
 
   // Theme-level gap average
@@ -276,6 +304,7 @@ export default function ReportPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [respondentCount, setRespondentCount] = useState(0);
+  const [showAll, setShowAll] = useState(false);
 
   useEffect(() => {
     if (token) loadReport();
@@ -364,12 +393,85 @@ export default function ReportPage() {
   const allGaps = Object.values(activityStats).map(s => s.avgGap).filter(v => v !== null);
   const criticalGaps = allGaps.filter(g => g >= 2).length;
   const attentionGaps = allGaps.filter(g => g >= 1 && g < 2).length;
+  const onTrackCount = allGaps.filter(g => g < 1).length;
+  const problemCount = criticalGaps + attentionGaps;
   const importantOrCritical = Object.values(activityStats).filter(s => s.avgImp !== null && s.avgImp >= 2).length;
   const underperforming = Object.values(activityStats).filter(s => s.avgImp !== null && s.avgGap !== null && s.avgImp >= 2 && s.avgGap >= 1).length;
 
   const headlineSentence = importantOrCritical > 0
     ? `Your team rated ${importantOrCritical} of ${activities.length} activities as Important or Critical — and execution is falling short on ${underperforming} of them.`
     : `Assessment data is available for ${activities.length} activities across ${respondentCount} respondents.`;
+
+  // ── Plain-English summary bullets ────────────────────────────────────────
+  const summaryBullets = [];
+
+  // 1. Biggest gap theme
+  const themeGapAvgs = THEME_GROUPS.map(group => {
+    const acts = activities.filter(a => group.facets.includes(a.facet));
+    const gaps = acts.map(a => activityStats[a.id]?.avgGap).filter(v => v !== null && v !== undefined);
+    return { group, avg: avg(gaps) };
+  }).filter(t => t.avg !== null).sort((a, b) => b.avg - a.avg);
+
+  if (themeGapAvgs.length > 0) {
+    const worst = themeGapAvgs[0];
+    const worstActs = activities
+      .filter(a => worst.group.facets.includes(a.facet))
+      .map(a => ({ ...a, gap: activityStats[a.id]?.avgGap ?? 0 }))
+      .filter(a => a.gap >= 1)
+      .sort((a, b) => b.gap - a.gap)
+      .slice(0, 2);
+    const actNames = worstActs.map(a => a.name).join(" and ");
+    summaryBullets.push({
+      icon: "🔴",
+      text: `The biggest gaps are in **${worst.group.label}**${actNames ? ` — particularly ${actNames}` : ""}.`,
+    });
+  }
+
+  // 2. Ownership pattern
+  const ownerCounts = {};
+  for (const stats of Object.values(activityStats)) {
+    if (stats.topOwner && stats.ownerAgreement >= 0.6) {
+      ownerCounts[stats.topOwner] = (ownerCounts[stats.topOwner] || 0) + 1;
+    }
+  }
+  const topOwners = Object.entries(ownerCounts).sort((a, b) => b[1] - a[1]);
+  const unclearOwnership = Object.values(activityStats).filter(s => s.topOwner && s.ownerAgreement < 0.6).length;
+
+  if (topOwners.length > 0) {
+    const [topRole, topCount] = topOwners[0];
+    if (unclearOwnership > 0) {
+      summaryBullets.push({
+        icon: "🟡",
+        text: `**${topRole}** is the most commonly suggested owner (${topCount} activities), but ownership is unclear on ${unclearOwnership} ${unclearOwnership === 1 ? "activity" : "activities"} — a potential source of confusion.`,
+      });
+    } else {
+      summaryBullets.push({
+        icon: "🟡",
+        text: `There's strong agreement that **${topRole}** should own most activities, which is a good foundation for accountability.`,
+      });
+    }
+  }
+
+  // 3. Bright spot — on-track activities with high importance
+  const brightSpots = activities
+    .filter(a => {
+      const s = activityStats[a.id];
+      return s && s.avgGap !== null && s.avgGap < 1 && s.avgImp !== null && s.avgImp >= 2;
+    })
+    .map(a => a.name)
+    .slice(0, 2);
+
+  if (brightSpots.length > 0) {
+    summaryBullets.push({
+      icon: "🟢",
+      text: `Your team is executing well on **${brightSpots.join(" and ")}** — these are strengths to build on.`,
+    });
+  } else if (onTrackCount > 0) {
+    summaryBullets.push({
+      icon: "🟢",
+      text: `${onTrackCount} ${onTrackCount === 1 ? "activity is" : "activities are"} on track — a starting point to build from.`,
+    });
+  }
 
   const dateStr = assessment?.created_date
     ? new Date(assessment.created_date).toLocaleDateString("en-US", { year: "numeric", month: "long" })
@@ -419,6 +521,27 @@ export default function ReportPage() {
           </div>
         </div>
 
+        {/* ── Plain-English summary ── */}
+        {summaryBullets.length > 0 && (
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-8 py-6 mb-10">
+            <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-widest mb-4">What this means</h2>
+            <ul className="space-y-4">
+              {summaryBullets.map((b, i) => (
+                <li key={i} className="flex items-start gap-3">
+                  <span className="text-base mt-0.5 shrink-0">{b.icon}</span>
+                  <p className="text-sm text-gray-700 leading-relaxed">
+                    {b.text.split("**").map((part, j) =>
+                      j % 2 === 1
+                        ? <strong key={j} className="font-semibold text-gray-900">{part}</strong>
+                        : part
+                    )}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         {/* ── Facet overview ── */}
         <div className="mb-10">
           <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-widest mb-4">Overview by phase</h2>
@@ -426,20 +549,30 @@ export default function ReportPage() {
           <p className="text-xs text-gray-400 mt-3">Gap = importance minus execution. Higher is more urgent.</p>
         </div>
 
-        {/* ── Gap legend ── */}
-        <div className="flex items-center gap-6 mb-8 text-xs text-gray-500">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-[#FF3333]" />
-            <span>Critical gap (≥2)</span>
+        {/* ── Gap legend + filter toggle ── */}
+        <div className="flex items-center justify-between mb-8 flex-wrap gap-3">
+          <div className="flex items-center gap-6 text-xs text-gray-500">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-[#FF3333]" />
+              <span>Critical gap (≥2)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-[#FFCC00]" />
+              <span>Needs attention (≥1)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-[#11CC77]" />
+              <span>On track</span>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-[#FFCC00]" />
-            <span>Needs attention (≥1)</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-[#11CC77]" />
-            <span>On track</span>
-          </div>
+          <button
+            onClick={() => setShowAll(s => !s)}
+            className="text-xs font-medium text-[#3366FF] hover:text-[#003366] transition-colors"
+          >
+            {showAll
+              ? `Hide on-track activities`
+              : `Showing ${problemCount} of ${activities.length} activities · Show all`}
+          </button>
         </div>
 
         {/* ── Theme sections ── */}
@@ -449,6 +582,7 @@ export default function ReportPage() {
             group={group}
             activities={activities}
             activityStats={activityStats}
+            showAll={showAll}
           />
         ))}
 
