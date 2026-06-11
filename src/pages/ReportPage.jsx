@@ -169,24 +169,29 @@ function ThemeSection({ group, activities, activityStats, filterLevel }) {
     return gap === null || gap >= 1;
   });
 
-  // If nothing to show in this theme (all on track), show a brief summary row
+  // If nothing to show in this theme
   if (visibleActivities.length === 0) {
-    return (
-      <section className="mb-10">
-        <div className="flex items-center gap-4 mb-4">
-          <div className="w-1 h-12 rounded-full shrink-0" style={{ backgroundColor: group.color }} />
-          <div>
-            <h2 className="text-lg font-bold text-gray-900">{group.label}</h2>
-            <p className="text-xs text-gray-400">{group.facets.join(" · ")}</p>
+    // In problems view: show a positive "all on track" message — it's genuinely meaningful
+    if (filterLevel === "problems") {
+      return (
+        <section className="mb-10">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="w-1 h-12 rounded-full shrink-0" style={{ backgroundColor: group.color }} />
+            <div>
+              <h2 className="text-lg font-bold text-gray-900">{group.label}</h2>
+              <p className="text-xs text-gray-400">{group.facets.join(" · ")}</p>
+            </div>
           </div>
-        </div>
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-4">
-          <p className="text-sm text-[#11CC77] font-medium flex items-center gap-2">
-            <span>✓</span> All activities on track in this area
-          </p>
-        </div>
-      </section>
-    );
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-4">
+            <p className="text-sm text-[#11CC77] font-medium flex items-center gap-2">
+              <span>✓</span> All activities on track in this area
+            </p>
+          </div>
+        </section>
+      );
+    }
+    // For specific filters (critical, attention, ontrack, all): just hide the theme
+    return null;
   }
 
   // Group by facet within the theme
