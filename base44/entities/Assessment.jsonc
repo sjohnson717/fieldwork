@@ -47,7 +47,21 @@
         }
       ]
     },
-    "read": null,
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "data.status": "active"
+        }
+      ]
+    },
     "update": {
       "$or": [
         {
