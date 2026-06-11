@@ -286,8 +286,11 @@ export default function ReportPage() {
     try {
       // Find assessment by buyer_token — list all and find client-side
       // (filter by arbitrary string fields is unreliable in some SDK versions)
+      console.log("[Report] Loading assessments, token:", token);
       const allAssessments = await base44.entities.Assessment.list();
+      console.log("[Report] All assessments:", allAssessments?.length, allAssessments?.map(a => ({ id: a.id, token: a.buyer_token })));
       const assessments = allAssessments.filter(a => a.buyer_token === token);
+      console.log("[Report] Matched assessments:", assessments?.length);
       if (!assessments || assessments.length === 0) {
         setError("Report not found. Please check your link.");
         setLoading(false);
@@ -296,12 +299,14 @@ export default function ReportPage() {
       const a = assessments[0];
       setAssessment(a);
 
+      console.log("[Report] Assessment found:", a.title);
       // Load activities, responses, respondents in parallel
       const [acts, responses, respondents] = await Promise.all([
         base44.entities.Activity.filter({ active: true }, "sort_order"),
         base44.entities.Response.filter({ assessment_id: a.id }),
         base44.entities.Respondent.filter({ assessment_id: a.id }),
       ]);
+      console.log("[Report] Activities:", acts?.length, "Responses:", responses?.length, "Respondents:", respondents?.length);
 
       setActivities(acts);
       setRespondentCount(respondents.length);
