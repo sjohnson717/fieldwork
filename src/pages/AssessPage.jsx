@@ -48,8 +48,8 @@ export default function AssessPage() {
     setError("");
     if (!code.trim()) return setError("Please enter an assessment code.");
     try {
-      const results = await base44.entities.Assessment.list({
-        filters: [{ field: "access_code", operator: "eq", value: code.trim().toUpperCase() }]
+      const results = await base44.entities.Assessment.filter({
+        access_code: code.trim().toUpperCase()
       });
       if (!results || results.length === 0) return setError("Code not found. Please check and try again.");
       const found = results[0];
@@ -75,10 +75,7 @@ export default function AssessPage() {
         status: "started"
       });
       setRespondent(r);
-      const acts = await base44.entities.Activity.list({
-        filters: [{ field: "active", operator: "eq", value: true }],
-        sort: [{ field: "sort_order", direction: "asc" }]
-      });
+      const acts = await base44.entities.Activity.filter({ active: true }, "sort_order");
       setActivities(acts);
       setStep("rating");
     } catch (e) {
