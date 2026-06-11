@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 
 const IMPORTANCE_OPTIONS = ["Not needed", "Nice to have", "Important", "Critical"];
@@ -31,6 +31,9 @@ export default function AssessPage() {
   const [assessment, setAssessment] = useState(null);
   const [name, setName] = useState("");
   const [title, setTitle] = useState("");
+  const [titleQuery, setTitleQuery] = useState("");
+  const [showTitleSuggestions, setShowTitleSuggestions] = useState(false);
+  const titleRef = useRef(null);
   const [respondent, setRespondent] = useState(null);
   const [activities, setActivities] = useState([]);
   const [responses, setResponses] = useState({});
@@ -109,14 +112,10 @@ export default function AssessPage() {
           suggested_owner: r.suggested_owner || ""
         });
       }
-if (currentFacetIndex < availableFacets.length - 1) {
+      if (currentFacetIndex < availableFacets.length - 1) {
         setCurrentFacetIndex(i => i + 1);
         window.scrollTo(0, 0);
       } else {
-        await base44.entities.Respondent.update(respondent.id, {
-          status: "completed",
-          completed_date: new Date().toISOString(),
-        });
         setStep("done");
       }
     } catch (e) {
@@ -173,13 +172,68 @@ if (currentFacetIndex < availableFacets.length - 1) {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Your job title</label>
-            <input
-              type="text"
-              value={title}
-              onChange={e => setTitle(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              placeholder="Senior Product Manager"
-            />
+            {assessment?.job_titles?.length > 0 ? (
+              <div className="relative" ref={titleRef}>
+                <input
+                  type="text"
+                  value={titleQuery}
+                  onChange={e => {
+                    setTitleQuery(e.target.value);
+                    setTitle("");
+                    setShowTitleSuggestions(true);
+                  }}
+                  onFocus={() => setShowTitleSuggestions(true)}
+                  onBlur={() => setTimeout(() => setShowTitleSuggestions(false), 150)}
+                  className={`w-full border rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                    title ? "border-indigo-300 bg-indigo-50" : "border-gray-300"
+                  }`}
+                  placeholder="Search or select your title…"
+                  autoComplete="off"
+                />
+                {title && (
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 text-indigo-500">
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                )}
+                {showTitleSuggestions && (() => {
+                  const filtered = assessment.job_titles.filter(t =>
+                    t.toLowerCase().includes(titleQuery.toLowerCase())
+                  );
+                  if (filtered.length === 0) return null;
+                  return (
+                    <ul className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-52 overflow-y-auto">
+                      {filtered.map(t => (
+                        <li key={t}>
+                          <button
+                            type="button"
+                            onMouseDown={() => {
+                              setTitle(t);
+                              setTitleQuery(t);
+                              setShowTitleSuggestions(false);
+                            }}
+                            className={`w-full text-left px-4 py-2.5 text-sm hover:bg-indigo-50 transition-colors ${
+                              title === t ? "bg-indigo-50 font-medium text-indigo-700" : "text-gray-700"
+                            }`}
+                          >
+                            {t}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  );
+                })()}
+              </div>
+            ) : (
+              <input
+                type="text"
+                value={title}
+                onChange={e => setTitle(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                placeholder="Senior Product Manager"
+              />
+            )}
           </div>
         </div>
         {error && <p className="text-red-500 text-sm mb-4">{error}</p>}

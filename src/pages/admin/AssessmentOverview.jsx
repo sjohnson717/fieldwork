@@ -22,6 +22,10 @@ export default function AssessmentOverview({ assessment, onUpdate }) {
   const [newRole, setNewRole] = useState("");
   const [roles, setRoles] = useState(assessment.roles || []);
   const [savingRoles, setSavingRoles] = useState(false);
+  const [masterTitles, setMasterTitles] = useState([]);
+  const [selectedTitles, setSelectedTitles] = useState(assessment.job_titles || []);
+  const [customTitleInput, setCustomTitleInput] = useState("");
+  const [savingTitles, setSavingTitles] = useState(false);
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState(assessment.title);
   const [companyDraft, setCompanyDraft] = useState(assessment.company_name || "");
@@ -29,10 +33,12 @@ export default function AssessmentOverview({ assessment, onUpdate }) {
 
   useEffect(() => {
     loadRespondents();
+    loadMasterTitles();
   }, [assessment.id]);
 
   useEffect(() => {
     setRoles(assessment.roles || []);
+    setSelectedTitles(assessment.job_titles || []);
     setTitleDraft(assessment.title);
     setCompanyDraft(assessment.company_name || "");
   }, [assessment.id]);
@@ -56,7 +62,49 @@ export default function AssessmentOverview({ assessment, onUpdate }) {
     setLoading(false);
   };
 
-  const handleStatusChange = async (newStatus) => {
+  const loadMasterTitles = async () => {
+    try {
+      const all = await base44.entities.JobTitle.filter({ active: true }, "sort_order");
+      setMasterTitles(all);
+    } catch (e) { console.error("Failed to load job titles", e); }
+  };
+
+  const saveJobTitles = async (updated) => {
+    setSelectedTitles(updated);
+    setSavingTitles(true);
+    try {
+      const saved = await base44.entities.Assessment.update(assessment.id, { job_titles: updated });
+      onUpdate(saved);
+    } catch (e) {
+      console.error("Failed to save job titles", e);
+      setSelectedTitles(selectedTitles); // revert
+    }
+    setSavingTitles(false);
+  };
+
+  const handleToggleTitle = (name) => {
+    const updated = selectedTitles.includes(name)
+      ? selectedTitles.filter(t => t !== name)
+      : [...selectedTitles, name];
+    saveJobTitles(updated);
+  };
+
+  const handleSelectAll = () => {
+    const allNames = masterTitles.map(t => t.name);
+    const allSelected = allNames.every(n => selectedTitles.includes(n));
+    saveJobTitles(allSelected ? [] : allNames);
+  };
+
+  const handleAddCustomTitle = () => {
+    const name = customTitleInput.trim();
+    if (!name || selectedTitles.includes(name)) return;
+    setCustomTitleInput("");
+    saveJobTitles([...selectedTitles, name]);
+  };
+
+  const handleRemoveTitle = (name) => {
+    saveJobTitles(selectedTitles.filter(t => t !== name));
+  };
     setUpdatingStatus(true);
     try {
       const updated = await base44.entities.Assessment.update(assessment.id, { status: newStatus });
@@ -248,7 +296,84 @@ export default function AssessmentOverview({ assessment, onUpdate }) {
         </div>
       </section>
 
-      {/* Roles */}
+      {/* Job Titles */}
+      <section className="bg-white rounded-xl border border-gray-200 p-6">
+        <div className="flex items-center justify-between mb-1">
+          <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Job titles</h3>
+          {savingTitles && <span className="text-xs text-gray-400">Saving…</span>}
+        </div>
+        <p className="text-xs text-gray-400 mb-4">
+          Select which titles respondents can choose from when identifying themselves.
+        </p>
+
+        {masterTitles.length === 0 ? (
+          <p className="text-sm text-gray-400 italic mb-3">
+            No job titles in the library yet. Add some under Settings → Library.
+          </p>
+        ) : (
+          <div className="mb-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs text-gray-500">{selectedTitles.length} selected</span>
+              <button
+                onClick={handleSelectAll}
+                className="text-xs text-indigo-600 hover:text-indigo-800 font-medium"
+              >
+                {masterTitles.every(t => selectedTitles.includes(t.name)) ? "Deselect all" : "Select all"}
+              </button>
+            </div>
+            <div className="space-y-1 max-h-60 overflow-y-auto pr-1">
+              {masterTitles.map(t => (
+                <label key={t.id} className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={selectedTitles.includes(t.name)}
+                    onChange={() => handleToggleTitle(t.name)}
+                    className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                  />
+                  <span className="text-sm text-gray-700">{t.name}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Custom titles not in master list */}
+        {selectedTitles.filter(t => !masterTitles.some(m => m.name === t)).length > 0 && (
+          <div className="mb-4">
+            <p className="text-xs font-medium text-gray-500 mb-2">Custom (assessment-specific)</p>
+            <div className="flex flex-wrap gap-2">
+              {selectedTitles
+                .filter(t => !masterTitles.some(m => m.name === t))
+                .map(t => (
+                  <span key={t} className="flex items-center gap-1.5 bg-amber-50 text-amber-800 text-sm font-medium px-3 py-1 rounded-full border border-amber-200">
+                    {t}
+                    <button onClick={() => handleRemoveTitle(t)} className="text-amber-400 hover:text-amber-700 ml-0.5">×</button>
+                  </span>
+                ))}
+            </div>
+          </div>
+        )}
+
+        <div className="flex gap-2 pt-1">
+          <input
+            type="text"
+            placeholder="Add a custom title…"
+            value={customTitleInput}
+            onChange={e => setCustomTitleInput(e.target.value)}
+            onKeyDown={e => e.key === "Enter" && handleAddCustomTitle()}
+            className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 flex-1 max-w-xs"
+          />
+          <button
+            onClick={handleAddCustomTitle}
+            disabled={!customTitleInput.trim()}
+            className="text-sm font-medium text-indigo-600 hover:text-indigo-800 disabled:opacity-40 transition-colors"
+          >
+            Add
+          </button>
+        </div>
+      </section>
+
+      {/* Ownership Roles */}
       <section className="bg-white rounded-xl border border-gray-200 p-6">
         <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-1">Ownership roles</h3>
         <p className="text-xs text-gray-400 mb-4">Shown in the assessment so respondents can suggest who should own each activity.</p>

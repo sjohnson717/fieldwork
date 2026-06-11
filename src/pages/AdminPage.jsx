@@ -4,6 +4,7 @@ import { useAuth } from "@/lib/AuthContext";
 import AssessmentOverview from "./admin/AssessmentOverview";
 import AssessmentResults from "./admin/AssessmentResults";
 import AssessmentDiscussion from "./admin/AssessmentDiscussion";
+import LibraryPage from "./admin/LibraryPage";
 
 const NAV_TABS = ["Overview", "Results", "Discussion"];
 
@@ -17,6 +18,7 @@ export default function AdminPage() {
   const { user, isAuthenticated, isLoadingAuth, navigateToLogin } = useAuth();
   const [assessments, setAssessments] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
+  const [selectedSection, setSelectedSection] = useState("assessments"); // assessments | library
   const [activeTab, setActiveTab] = useState("Overview");
   const [loading, setLoading] = useState(true);
   const [showNewForm, setShowNewForm] = useState(false);
@@ -117,20 +119,22 @@ export default function AdminPage() {
         </div>
 
         <div className="flex-1 overflow-y-auto py-3 px-3">
+          {/* Assessments section */}
+          <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest px-3 mb-1.5 mt-1">Assessments</p>
           {loading ? (
             <div className="flex items-center justify-center py-10">
               <div className="w-5 h-5 border-2 border-indigo-200 border-t-indigo-500 rounded-full animate-spin" />
             </div>
           ) : assessments.length === 0 ? (
-            <p className="text-xs text-gray-400 text-center py-8 px-2">No assessments yet. Create one to get started.</p>
+            <p className="text-xs text-gray-400 text-center py-4 px-2">No assessments yet.</p>
           ) : (
             <ul className="space-y-1">
               {assessments.map(a => (
                 <li key={a.id}>
                   <button
-                    onClick={() => { setSelectedId(a.id); setActiveTab("Overview"); }}
+                    onClick={() => { setSelectedId(a.id); setSelectedSection("assessments"); setActiveTab("Overview"); }}
                     className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors group ${
-                      selectedId === a.id
+                      selectedSection === "assessments" && selectedId === a.id
                         ? "bg-indigo-50 text-indigo-900"
                         : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                     }`}
@@ -149,6 +153,19 @@ export default function AdminPage() {
               ))}
             </ul>
           )}
+
+          {/* Library section */}
+          <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest px-3 mb-1.5 mt-5">Settings</p>
+          <button
+            onClick={() => setSelectedSection("library")}
+            className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors text-sm font-medium ${
+              selectedSection === "library"
+                ? "bg-indigo-50 text-indigo-900"
+                : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+            }`}
+          >
+            Library
+          </button>
         </div>
 
         <div className="p-3 border-t border-gray-100">
@@ -203,7 +220,13 @@ export default function AdminPage() {
 
       {/* Main */}
       <div className="flex-1 flex flex-col min-w-0">
-        {!selected ? (
+        {selectedSection === "library" ? (
+          <LibraryPage />
+        ) : !selected ? (
+          <div className="flex-1 flex items-center justify-center text-gray-400 text-sm">
+            {loading ? "" : "Select or create an assessment"}
+          </div>
+        ) : (
           <div className="flex-1 flex items-center justify-center text-gray-400 text-sm">
             {loading ? "" : "Select or create an assessment"}
           </div>
