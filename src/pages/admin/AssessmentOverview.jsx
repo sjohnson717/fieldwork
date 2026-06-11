@@ -20,12 +20,13 @@ export default function AssessmentOverview({ assessment, onUpdate }) {
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [copied, setCopied] = useState(false);
   const [newRole, setNewRole] = useState("");
-  const [roles, setRoles] = useState(assessment.roles || []);
   const [savingRoles, setSavingRoles] = useState(false);
   const [masterTitles, setMasterTitles] = useState([]);
   const [selectedTitles, setSelectedTitles] = useState(assessment.job_titles || []);
   const [customTitleInput, setCustomTitleInput] = useState("");
   const [savingTitles, setSavingTitles] = useState(false);
+  const [roles, setRoles] = useState(assessment.roles || []);
+  const [customRoleInput, setCustomRoleInput] = useState("");
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState(assessment.title);
   const [companyDraft, setCompanyDraft] = useState(assessment.company_name || "");
@@ -130,33 +131,41 @@ export default function AssessmentOverview({ assessment, onUpdate }) {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleAddRole = async () => {
-    if (!newRole.trim()) return;
-    const updated = [...roles, newRole.trim()];
+  const saveRoles = async (updated) => {
     setRoles(updated);
-    setNewRole("");
     setSavingRoles(true);
     try {
       const saved = await base44.entities.Assessment.update(assessment.id, { roles: updated });
       onUpdate(saved);
     } catch (e) {
       console.error("Failed to save roles", e);
-      setRoles(roles); // revert
+      setRoles(roles);
     }
     setSavingRoles(false);
   };
 
-  const handleRemoveRole = async (role) => {
-    const updated = roles.filter(r => r !== role);
-    setRoles(updated);
-    setSavingRoles(true);
-    try {
-      const saved = await base44.entities.Assessment.update(assessment.id, { roles: updated });
-      onUpdate(saved);
-    } catch (e) {
-      setRoles(roles);
-    }
-    setSavingRoles(false);
+  const handleToggleRole = (name) => {
+    const updated = roles.includes(name)
+      ? roles.filter(r => r !== name)
+      : [...roles, name];
+    saveRoles(updated);
+  };
+
+  const handleSelectAllRoles = () => {
+    const allNames = masterTitles.map(t => t.name);
+    const allSelected = allNames.every(n => roles.includes(n));
+    saveRoles(allSelected ? [] : allNames);
+  };
+
+  const handleAddCustomRole = () => {
+    const name = newRole.trim();
+    if (!name || roles.includes(name)) return;
+    setNewRole("");
+    saveRoles([...roles, name]);
+  };
+
+  const handleRemoveCustomRole = (name) => {
+    saveRoles(roles.filter(r => r !== name));
   };
 
   const handleSaveTitle = async () => {
@@ -377,35 +386,71 @@ export default function AssessmentOverview({ assessment, onUpdate }) {
 
       {/* Ownership Roles */}
       <section className="bg-white rounded-xl border border-gray-200 p-6">
-        <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-1">Ownership roles</h3>
-        <p className="text-xs text-gray-400 mb-4">Shown in the assessment so respondents can suggest who should own each activity.</p>
-        <div className="flex flex-wrap gap-2 mb-3">
-          {roles.length === 0 && (
-            <p className="text-sm text-gray-400 italic">No roles added yet</p>
-          )}
-          {roles.map(r => (
-            <span key={r} className="flex items-center gap-1.5 bg-indigo-50 text-indigo-800 text-sm font-medium px-3 py-1 rounded-full">
-              {r}
-              <button
-                onClick={() => handleRemoveRole(r)}
-                className="text-indigo-400 hover:text-indigo-700 ml-0.5"
-              >
-                ×
-              </button>
-            </span>
-          ))}
+        <div className="flex items-center justify-between mb-1">
+          <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Ownership roles</h3>
+          {savingRoles && <span className="text-xs text-gray-400">Saving…</span>}
         </div>
-        <div className="flex gap-2">
+        <p className="text-xs text-gray-400 mb-4">Select which roles respondents can suggest as owners of each activity.</p>
+
+        {masterTitles.length === 0 ? (
+          <p className="text-sm text-gray-400 italic mb-3">
+            No job titles in the library yet. Add some under Settings → Library.
+          </p>
+        ) : (
+          <div className="mb-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs text-gray-500">{roles.length} selected</span>
+              <button
+                onClick={handleSelectAllRoles}
+                className="text-xs text-indigo-600 hover:text-indigo-800 font-medium"
+              >
+                {masterTitles.every(t => roles.includes(t.name)) ? "Deselect all" : "Select all"}
+              </button>
+            </div>
+            <div className="space-y-1 max-h-60 overflow-y-auto pr-1">
+              {masterTitles.map(t => (
+                <label key={t.id} className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={roles.includes(t.name)}
+                    onChange={() => handleToggleRole(t.name)}
+                    className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                  />
+                  <span className="text-sm text-gray-700">{t.name}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Custom roles not in master list */}
+        {roles.filter(r => !masterTitles.some(m => m.name === r)).length > 0 && (
+          <div className="mb-4">
+            <p className="text-xs font-medium text-gray-500 mb-2">Custom (assessment-specific)</p>
+            <div className="flex flex-wrap gap-2">
+              {roles
+                .filter(r => !masterTitles.some(m => m.name === r))
+                .map(r => (
+                  <span key={r} className="flex items-center gap-1.5 bg-amber-50 text-amber-800 text-sm font-medium px-3 py-1 rounded-full border border-amber-200">
+                    {r}
+                    <button onClick={() => handleRemoveCustomRole(r)} className="text-amber-400 hover:text-amber-700 ml-0.5">×</button>
+                  </span>
+                ))}
+            </div>
+          </div>
+        )}
+
+        <div className="flex gap-2 pt-1">
           <input
             type="text"
-            placeholder="Add a role…"
+            placeholder="Add a custom role…"
             value={newRole}
             onChange={e => setNewRole(e.target.value)}
-            onKeyDown={e => e.key === "Enter" && handleAddRole()}
-            className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 w-48"
+            onKeyDown={e => e.key === "Enter" && handleAddCustomRole()}
+            className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 flex-1 max-w-xs"
           />
           <button
-            onClick={handleAddRole}
+            onClick={handleAddCustomRole}
             disabled={savingRoles || !newRole.trim()}
             className="text-sm font-medium text-indigo-600 hover:text-indigo-800 disabled:opacity-40 transition-colors"
           >
