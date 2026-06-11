@@ -164,6 +164,7 @@ function ThemeSection({ group, activities, activityStats, filterLevel }) {
     if (filterLevel === "all") return true;
     if (filterLevel === "critical") return gap !== null && gap >= 2;
     if (filterLevel === "attention") return gap !== null && gap >= 1 && gap < 2;
+    if (filterLevel === "ontrack") return gap !== null && gap < 1;
     // "problems" = default: critical + attention
     return gap === null || gap >= 1;
   });
@@ -556,7 +557,7 @@ export default function ReportPage() {
           {[
             { key: "critical", color: "#FF3333", label: `Critical gap`, count: criticalGaps },
             { key: "attention", color: "#FFCC00", label: `Needs attention`, count: attentionGaps },
-            { key: "all", color: "#11CC77", label: `On track`, count: onTrackCount },
+            { key: "ontrack", color: "#11CC77", label: `On track`, count: onTrackCount },
           ].map(({ key, color, label, count }) => {
             const isActive = filterLevel === key ||
               (filterLevel === "problems" && (key === "critical" || key === "attention"));
@@ -572,7 +573,7 @@ export default function ReportPage() {
                 style={{
                   borderColor: color,
                   backgroundColor: isActive ? color + "18" : "white",
-                  color: key === "attention" ? "#92700A" : key === "all" ? "#065F46" : "#991B1B",
+                  color: key === "attention" ? "#92700A" : key === "ontrack" ? "#065F46" : "#991B1B",
                 }}
               >
                 <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
@@ -588,6 +589,8 @@ export default function ReportPage() {
               ? `Showing ${criticalGaps} critical gap${criticalGaps !== 1 ? "s" : ""}`
               : filterLevel === "attention"
               ? `Showing ${attentionGaps} needing attention`
+              : filterLevel === "ontrack"
+              ? `Showing ${onTrackCount} on-track ${onTrackCount === 1 ? "activity" : "activities"}`
               : `Showing ${problemCount} of ${activities.length} activities`}
             {filterLevel !== "all" && (
               <button
