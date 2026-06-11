@@ -530,22 +530,30 @@ export default function ReportPage() {
           <p className="text-sm text-gray-400">{dateStr} · {respondentCount} participant{respondentCount !== 1 ? "s" : ""}</p>
         </div>
 
+        {/* ── Context paragraph ── */}
+        <p className="text-gray-500 leading-relaxed mb-8 text-sm max-w-2xl">
+          This report summarizes how {assessment.company_name || "your team"} rates the key activities
+          that turn good ideas into successful products. For each activity, your team assessed both
+          how important it is and how well it's currently being done. The gaps between those two
+          answers reveal where to focus.
+        </p>
+
         {/* ── Headline finding ── */}
-        <div className="bg-[#003366] text-white rounded-2xl px-8 py-6 mb-10 shadow-md">
-          <p className="text-xs font-semibold uppercase tracking-widest text-[#3366FF]/60 mb-2">Key finding</p>
-          <p className="text-lg font-medium leading-relaxed">{headlineSentence}</p>
-          <div className="flex gap-6 mt-5">
+        <div className="bg-[#0A2447] text-white rounded-2xl px-8 py-8 mb-10 shadow-md">
+          <p className="text-xs font-semibold uppercase tracking-widest text-white/40 mb-3">Key finding</p>
+          <p className="text-xl font-semibold leading-relaxed text-white">{headlineSentence}</p>
+          <div className="border-t border-white/10 mt-6 pt-5 flex gap-8">
             <div>
-              <span className="text-2xl font-bold text-[#FF3333]">{criticalGaps}</span>
-              <span className="text-xs text-white/60 ml-2">critical gaps</span>
+              <span className="text-3xl font-bold text-[#FF6666]">{criticalGaps}</span>
+              <span className="text-sm text-white/50 ml-2">critical gaps</span>
             </div>
             <div>
-              <span className="text-2xl font-bold text-[#FFCC00]">{attentionGaps}</span>
-              <span className="text-xs text-white/60 ml-2">need attention</span>
+              <span className="text-3xl font-bold text-[#FFCC00]">{attentionGaps}</span>
+              <span className="text-sm text-white/50 ml-2">need attention</span>
             </div>
             <div>
-              <span className="text-2xl font-bold text-[#11CC77]">{respondentCount}</span>
-              <span className="text-xs text-white/60 ml-2">{respondentCount === 1 ? "participant" : "participants"}</span>
+              <span className="text-3xl font-bold text-[#11CC77]">{respondentCount}</span>
+              <span className="text-sm text-white/50 ml-2">{respondentCount === 1 ? "participant" : "participants"}</span>
             </div>
           </div>
         </div>
