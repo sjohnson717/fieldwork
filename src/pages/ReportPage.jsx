@@ -262,6 +262,13 @@ function ThemeSection({ group, activities, activityStats, filterLevel }) {
 }
 
 function FacetWheel({ activityStats, activities }) {
+  const statusLabel = (gap) => {
+    if (gap === null) return { label: "No data", color: "#9CA3AF", bg: "#F3F4F6" };
+    if (gap >= 2)     return { label: "At Risk",  color: "#FF3333", bg: "#FFF1F1" };
+    if (gap >= 1)     return { label: "Watch",    color: "#D97706", bg: "#FFFBEB" };
+    return              { label: "Strong",   color: "#11CC77", bg: "#ECFDF5" };
+  };
+
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
       {THEME_GROUPS.map(group => (
@@ -271,28 +278,42 @@ function FacetWheel({ activityStats, activities }) {
             .map(a => activityStats[a.id]?.avgGap)
             .filter(v => v !== null && v !== undefined);
           const avgGap = avg(gaps);
-          const pct = avgGap !== null ? Math.min((avgGap / 3) * 100, 100) : 0;
+          const { label, color, bg } = statusLabel(avgGap);
+          const critCount = facetActs.filter(a => (activityStats[a.id]?.avgGap ?? 0) >= 2).length;
+          const watchCount = facetActs.filter(a => {
+            const g = activityStats[a.id]?.avgGap ?? 0;
+            return g >= 1 && g < 2;
+          }).length;
 
           return (
-            <div key={facet} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-              <div className="flex items-center justify-between mb-2">
-                <div>
-                  <div className="text-xs font-bold uppercase tracking-widest"
-                    style={{ color: group.color }}>{facet}</div>
-                  <div className="text-[10px] text-gray-400">{FACET_SUBTITLES[facet]}</div>
+            <div key={facet} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex">
+              {/* Left color band — theme identity */}
+              <div className="w-1 shrink-0" style={{ backgroundColor: group.color }} />
+              <div className="flex-1 p-4">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <div className="text-xs font-bold uppercase tracking-widest mb-0.5"
+                      style={{ color: group.color }}>{facet}</div>
+                    <div className="text-sm font-semibold text-gray-800">{FACET_SUBTITLES[facet]}</div>
+                  </div>
+                  {/* Status badge */}
+                  <span className="text-xs font-bold px-2.5 py-1 rounded-full shrink-0 mt-0.5"
+                    style={{ backgroundColor: bg, color }}>
+                    {label}
+                  </span>
                 </div>
-                <div className="text-lg font-bold" style={{ color: gapColor(avgGap) }}>
-                  {fmt(avgGap)}
+                {/* Activity count summary */}
+                <div className="flex gap-3 mt-3 text-xs text-gray-400">
+                  {critCount > 0 && (
+                    <span className="text-[#FF3333] font-medium">{critCount} at risk</span>
+                  )}
+                  {watchCount > 0 && (
+                    <span className="text-[#D97706] font-medium">{watchCount} to watch</span>
+                  )}
+                  {critCount === 0 && watchCount === 0 && (
+                    <span className="text-[#11CC77] font-medium">All on track</span>
+                  )}
                 </div>
-              </div>
-              {/* Gap bar */}
-              <div className="h-1.5 bg-gray-100 rounded-full">
-                <div className="h-1.5 rounded-full transition-all"
-                  style={{ width: `${pct}%`, backgroundColor: gapColor(avgGap) }} />
-              </div>
-              <div className="flex justify-between text-[10px] text-gray-300 mt-1">
-                <span>no gap</span>
-                <span>critical</span>
               </div>
             </div>
           );
@@ -554,7 +575,6 @@ export default function ReportPage() {
         <div className="mb-10">
           <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-widest mb-4">Overview by phase</h2>
           <FacetWheel activityStats={activityStats} activities={activities} />
-          <p className="text-xs text-gray-400 mt-3">Gap = importance minus execution. Higher is more urgent.</p>
         </div>
 
         {/* ── Clickable filter chips ── */}
