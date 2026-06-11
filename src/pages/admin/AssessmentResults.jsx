@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 
-const FACET_ORDER = ["LEARN", "DEFINE", "COMMIT", "DESCRIBE", "CREATE", "PREPARE", "DELIVER"];
+const FACET_ORDER = ["DEFINE", "COMMIT", "DESCRIBE", "CREATE", "PREPARE", "DELIVER"];
 
 const IMPORTANCE_SCORE = { "Not needed": 0, "Nice to have": 1, "Important": 2, "Critical": 3 };
 const EXECUTION_SCORE = { "Not done": 0, "Inconsistent": 1, "Good": 2, "Excellent": 3 };

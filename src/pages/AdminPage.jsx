@@ -5,6 +5,7 @@ import AssessmentOverview from "./admin/AssessmentOverview";
 import AssessmentResults from "./admin/AssessmentResults";
 import AssessmentDiscussion from "./admin/AssessmentDiscussion";
 import LibraryPage from "./admin/LibraryPage";
+import DemoDataPage from "./admin/DemoDataPage";
 
 const NAV_TABS = ["Overview", "Results", "Discussion"];
 
@@ -168,6 +169,16 @@ export default function AdminPage() {
           >
             Library
           </button>
+          <button
+            onClick={() => setSelectedSection("demo")}
+            className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors text-sm font-medium ${
+              selectedSection === "demo"
+                ? "bg-indigo-50 text-indigo-900"
+                : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+            }`}
+          >
+            Demo Data
+          </button>
         </div>
 
         <div className="p-3 border-t border-gray-100">
@@ -224,6 +235,8 @@ export default function AdminPage() {
       <div className="flex-1 flex flex-col min-w-0">
         {selectedSection === "library" ? (
           <LibraryPage />
+        ) : selectedSection === "demo" ? (
+          <DemoDataPage />
         ) : !selected ? (
           <div className="flex-1 flex items-center justify-center text-gray-400 text-sm">
             {loading ? "" : "Select or create an assessment"}

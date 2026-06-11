@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 
-const FACET_ORDER = ["LEARN", "DEFINE", "COMMIT", "DESCRIBE", "CREATE", "PREPARE", "DELIVER"];
+const FACET_ORDER = ["DEFINE", "COMMIT", "DESCRIBE", "CREATE", "PREPARE", "DELIVER"];
 
 // ── Shared drag-to-reorder list ──────────────────────────────────────────────
 
@@ -69,7 +69,7 @@ function ActivitiesTab() {
   const [editDraft, setEditDraft] = useState({});
   const [saving, setSaving] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
-  const [newItem, setNewItem] = useState({ name: "", description: "", facet: "LEARN", preferred_owner: "" });
+  const [newItem, setNewItem] = useState({ name: "", description: "", facet: "DEFINE", preferred_owner: "" });
   const [adding, setAdding] = useState(false);
   const [selectedFacet, setSelectedFacet] = useState("ALL");
 
@@ -142,7 +142,7 @@ function ActivitiesTab() {
         active: true,
       });
       setActivities(prev => [...prev, created]);
-      setNewItem({ name: "", description: "", facet: "LEARN", preferred_owner: "" });
+      setNewItem({ name: "", description: "", facet: "DEFINE", preferred_owner: "" });
       setShowAddForm(false);
     } catch (e) { console.error(e); }
     setAdding(false);
@@ -337,7 +337,7 @@ function ActivitiesTab() {
               className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-medium px-4 py-1.5 rounded-lg transition-colors">
               {adding ? "Adding…" : "Add activity"}
             </button>
-            <button onClick={() => { setShowAddForm(false); setNewItem({ name: "", description: "", facet: "LEARN", preferred_owner: "" }); }}
+            <button onClick={() => { setShowAddForm(false); setNewItem({ name: "", description: "", facet: "DEFINE", preferred_owner: "" }); }}
               className="text-sm text-gray-400 hover:text-gray-600 px-2">Cancel</button>
           </div>
         </div>

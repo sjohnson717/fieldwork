@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 
 const IMPORTANCE_OPTIONS = ["Not needed", "Nice to have", "Important", "Critical"];
 const EXECUTION_OPTIONS = ["Not done", "Inconsistent", "Good", "Excellent"];
-const FACET_ORDER = ["LEARN", "DEFINE", "COMMIT", "DESCRIBE", "CREATE", "PREPARE", "DELIVER"];
+const FACET_ORDER = ["DEFINE", "COMMIT", "DESCRIBE", "CREATE", "PREPARE", "DELIVER"];
 
 function RatingButton({ options, value, onChange, colorClass }) {
   return (
