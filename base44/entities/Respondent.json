@@ -1,6 +1,5 @@
 {
   "name": "Respondent",
-  "type": "object",
   "properties": {
     "assessment_id": { "type": "string" },
     "name": { "type": "string" },

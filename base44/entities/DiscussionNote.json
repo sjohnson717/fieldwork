@@ -1,6 +1,5 @@
 {
   "name": "DiscussionNote",
-  "type": "object",
   "properties": {
     "assessment_id": { "type": "string" },
     "activity_id": { "type": "string" },
