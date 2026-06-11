@@ -296,15 +296,17 @@ export default function ReportPage() {
       const a = assessments[0];
       setAssessment(a);
 
-      // Load activities, responses, respondents in parallel
-      const [acts, responses, respondents] = await Promise.all([
+      // Load activities and responses in parallel — no Respondent fetch needed
+      // (Respondent records contain names/titles so we keep them admin-only)
+      const [acts, responses] = await Promise.all([
         base44.entities.Activity.filter({ active: true }, "sort_order"),
         base44.entities.Response.filter({ assessment_id: a.id }),
-        base44.entities.Respondent.filter({ assessment_id: a.id }),
       ]);
 
       setActivities(acts);
-      setRespondentCount(respondents.length);
+      // Derive participant count from distinct respondent_ids in responses
+      const uniqueRespondents = new Set(responses.map(r => r.respondent_id));
+      setRespondentCount(uniqueRespondents.size);
 
       // Build stats per activity
       const stats = {};
