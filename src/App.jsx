@@ -7,6 +7,7 @@ import { AuthProvider } from '@/lib/AuthContext';
 import ScrollToTop from './components/ScrollToTop';
 import AssessPage from './pages/AssessPage';
 import ReadMe from './pages/ReadMe';
+import AdminPage from './pages/AdminPage';
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
           <ScrollToTop />
           <Routes>
             <Route path="/assess" element={<AssessPage />} />
+            <Route path="/admin" element={<AdminPage />} />
             <Route path="/" element={<ReadMe />} />
             <Route path="*" element={<PageNotFound />} />
           </Routes>
