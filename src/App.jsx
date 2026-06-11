@@ -8,6 +8,7 @@ import ScrollToTop from './components/ScrollToTop';
 import AssessPage from './pages/AssessPage';
 import ReadMe from './pages/ReadMe';
 import AdminPage from './pages/AdminPage';
+import ReportPage from './pages/ReportPage';
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
           <Routes>
             <Route path="/assess" element={<AssessPage />} />
             <Route path="/admin" element={<AdminPage />} />
+            <Route path="/report/:token" element={<ReportPage />} />
             <Route path="/" element={<ReadMe />} />
             <Route path="*" element={<PageNotFound />} />
           </Routes>

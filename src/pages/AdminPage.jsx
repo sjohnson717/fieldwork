@@ -59,10 +59,12 @@ export default function AdminPage() {
     setCreating(true);
     try {
       const code = Math.random().toString(36).substring(2, 7).toUpperCase();
+      const buyerToken = Math.random().toString(36).substring(2, 10) + Math.random().toString(36).substring(2, 10);
       const created = await base44.entities.Assessment.create({
         title: newTitle.trim(),
         company_name: newCompany.trim(),
         access_code: code,
+        buyer_token: buyerToken,
         status: "draft",
         roles: [],
       });
@@ -244,6 +246,18 @@ export default function AdminPage() {
                   <span className="text-xs font-mono bg-gray-100 text-gray-600 px-2 py-1 rounded">
                     {selected.access_code}
                   </span>
+                  {selected.buyer_token && (
+                    <button
+                      onClick={() => {
+                        const url = `${window.location.origin}/report/${selected.buyer_token}`;
+                        navigator.clipboard.writeText(url);
+                      }}
+                      className="text-xs font-medium text-[#3366FF] border border-[#3366FF]/30 px-2 py-1 rounded hover:bg-[#3366FF]/5 transition-colors"
+                      title="Copy report link for buyer"
+                    >
+                      Copy report link
+                    </button>
+                  )}
                 </div>
               </div>
               {/* Tabs */}

@@ -1,0 +1,460 @@
+import { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
+import { base44 } from "@/api/base44Client";
+
+// ── PGL brand ────────────────────────────────────────────────────────────────
+const PGL_LOGO = "https://static.wixstatic.com/media/739bca_d49790dff653441fae7d036110019dc2~mv2.png";
+
+const FACET_ORDER = ["DEFINE", "COMMIT", "DESCRIBE", "CREATE", "PREPARE", "DELIVER"];
+
+const THEME_GROUPS = [
+  {
+    label: "Plan the right things",
+    facets: ["DEFINE", "COMMIT"],
+    color: "#3366FF",
+    lightColor: "#EEF2FF",
+    textColor: "#1E3A8A",
+  },
+  {
+    label: "Build what you plan",
+    facets: ["DESCRIBE", "CREATE"],
+    color: "#333333",
+    lightColor: "#F3F4F6",
+    textColor: "#111827",
+  },
+  {
+    label: "Sell what you build",
+    facets: ["PREPARE", "DELIVER"],
+    color: "#11CC77",
+    lightColor: "#ECFDF5",
+    textColor: "#065F46",
+  },
+];
+
+const FACET_SUBTITLES = {
+  DEFINE: "problems to solve",
+  COMMIT: "the resources",
+  DESCRIBE: "problems with stories",
+  CREATE: "winning solutions",
+  PREPARE: "the teams",
+  DELIVER: "to market",
+};
+
+const IMPORTANCE_SCORE = { "Not needed": 0, "Nice to have": 1, "Important": 2, "Critical": 3 };
+const EXECUTION_SCORE  = { "Not done": 0, "Inconsistent": 1, "Good": 2, "Excellent": 3 };
+const IMPORTANCE_LABEL = ["Not needed", "Nice to have", "Important", "Critical"];
+const EXECUTION_LABEL  = ["Not done", "Inconsistent", "Good", "Excellent"];
+
+const avg = (arr) => arr.length === 0 ? null : arr.reduce((a, b) => a + b, 0) / arr.length;
+const fmt = (n) => n === null ? "—" : n.toFixed(1);
+
+const gapColor = (gap) => {
+  if (gap === null) return "#E5E7EB";
+  if (gap >= 2)   return "#FF3333";
+  if (gap >= 1)   return "#FFCC00";
+  return "#11CC77";
+};
+
+const gapLabel = (gap) => {
+  if (gap === null) return "No data";
+  if (gap >= 2)   return "Critical gap";
+  if (gap >= 1)   return "Needs attention";
+  return "On track";
+};
+
+// ── Sub-components ───────────────────────────────────────────────────────────
+
+function StatCard({ value, label, color }) {
+  return (
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-6 py-5 text-center">
+      <div className="text-3xl font-bold mb-1" style={{ color }}>{value}</div>
+      <div className="text-xs text-gray-500 font-medium uppercase tracking-wide">{label}</div>
+    </div>
+  );
+}
+
+function GapBar({ importance, execution, gap, maxWidth = 200 }) {
+  const impPct  = importance !== null ? (importance / 3) * 100 : 0;
+  const execPct = execution  !== null ? (execution  / 3) * 100 : 0;
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center gap-2">
+        <span className="text-[10px] text-gray-400 w-16 text-right shrink-0">Importance</span>
+        <div className="flex-1 bg-gray-100 rounded-full h-2 max-w-[200px]">
+          <div className="h-2 rounded-full bg-[#3366FF] transition-all" style={{ width: `${impPct}%` }} />
+        </div>
+        <span className="text-[10px] text-gray-500 w-20 shrink-0">{IMPORTANCE_LABEL[Math.round(importance)] || "—"}</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="text-[10px] text-gray-400 w-16 text-right shrink-0">Execution</span>
+        <div className="flex-1 bg-gray-100 rounded-full h-2 max-w-[200px]">
+          <div className="h-2 rounded-full bg-[#11CC77] transition-all" style={{ width: `${execPct}%` }} />
+        </div>
+        <span className="text-[10px] text-gray-500 w-20 shrink-0">{EXECUTION_LABEL[Math.round(execution)] || "—"}</span>
+      </div>
+    </div>
+  );
+}
+
+function ActivityRow({ activity, stats, themeColor }) {
+  const [expanded, setExpanded] = useState(false);
+  const gap = stats?.avgGap ?? null;
+  const dot = gapColor(gap);
+
+  return (
+    <div className="border-b border-gray-50 last:border-0">
+      <button
+        onClick={() => setExpanded(e => !e)}
+        className="w-full flex items-center gap-4 px-5 py-3.5 hover:bg-gray-50/50 transition-colors text-left"
+      >
+        {/* Gap dot */}
+        <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: dot }} />
+
+        {/* Name */}
+        <div className="flex-1 min-w-0">
+          <span className="text-sm font-medium text-gray-800">{activity.name}</span>
+          {activity.description && (
+            <p className="text-xs text-gray-400 truncate mt-0.5">{activity.description}</p>
+          )}
+        </div>
+
+        {/* Gap badge */}
+        <div className="shrink-0 flex items-center gap-3">
+          {gap !== null && (
+            <span className="text-xs font-semibold px-2 py-0.5 rounded-full"
+              style={{ backgroundColor: dot + "22", color: gap >= 1 ? dot : "#6B7280" }}>
+              {gapLabel(gap)}
+            </span>
+          )}
+          <svg className={`w-4 h-4 text-gray-300 transition-transform ${expanded ? "rotate-180" : ""}`}
+            fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
+      </button>
+
+      {expanded && stats && (
+        <div className="px-5 pb-4 space-y-4">
+          <GapBar importance={stats.avgImp} execution={stats.avgExec} gap={gap} />
+          {stats.topOwner && (
+            <div className="text-xs text-gray-500">
+              <span className="font-medium text-gray-700">Suggested owner: </span>
+              {stats.topOwner}
+              {stats.ownerAgreement < 0.6 && (
+                <span className="ml-2 text-amber-600 font-medium">⚠ ownership unclear</span>
+              )}
+            </div>
+          )}
+          {stats.n > 0 && (
+            <div className="text-xs text-gray-400">{stats.n} response{stats.n !== 1 ? "s" : ""}</div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ThemeSection({ group, activities, activityStats }) {
+  const groupActivities = activities.filter(a => group.facets.includes(a.facet));
+  if (groupActivities.length === 0) return null;
+
+  // Group by facet within the theme
+  const byFacet = group.facets.map(f => ({
+    facet: f,
+    subtitle: FACET_SUBTITLES[f],
+    items: groupActivities.filter(a => a.facet === f),
+  })).filter(f => f.items.length > 0);
+
+  // Theme-level gap average
+  const themeGaps = groupActivities
+    .map(a => activityStats[a.id]?.avgGap)
+    .filter(v => v !== null && v !== undefined);
+  const themeAvgGap = avg(themeGaps);
+
+  const criticalCount = groupActivities.filter(a => (activityStats[a.id]?.avgGap ?? 0) >= 2).length;
+  const attentionCount = groupActivities.filter(a => {
+    const g = activityStats[a.id]?.avgGap ?? 0;
+    return g >= 1 && g < 2;
+  }).length;
+
+  return (
+    <section className="mb-10">
+      {/* Theme header */}
+      <div className="flex items-center gap-4 mb-4">
+        <div className="w-1 h-12 rounded-full shrink-0" style={{ backgroundColor: group.color }} />
+        <div>
+          <h2 className="text-lg font-bold text-gray-900">{group.label}</h2>
+          <p className="text-xs text-gray-400">
+            {group.facets.join(" · ")}
+            {themeAvgGap !== null && (
+              <span className="ml-3 font-semibold" style={{ color: gapColor(themeAvgGap) }}>
+                avg gap {fmt(themeAvgGap)}
+              </span>
+            )}
+            {criticalCount > 0 && (
+              <span className="ml-2 text-[#FF3333] font-medium">{criticalCount} critical</span>
+            )}
+          </p>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        {byFacet.map(({ facet, subtitle, items }) => (
+          <div key={facet}>
+            {/* Facet sub-header */}
+            <div className="px-5 py-2.5 border-b border-gray-50"
+              style={{ backgroundColor: group.lightColor }}>
+              <span className="text-xs font-bold uppercase tracking-widest"
+                style={{ color: group.color }}>
+                {facet}
+              </span>
+              <span className="text-xs text-gray-400 ml-2">{subtitle}</span>
+            </div>
+            {items.map(act => (
+              <ActivityRow
+                key={act.id}
+                activity={act}
+                stats={activityStats[act.id]}
+                themeColor={group.color}
+              />
+            ))}
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function FacetWheel({ activityStats, activities }) {
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+      {THEME_GROUPS.map(group => (
+        group.facets.map(facet => {
+          const facetActs = activities.filter(a => a.facet === facet);
+          const gaps = facetActs
+            .map(a => activityStats[a.id]?.avgGap)
+            .filter(v => v !== null && v !== undefined);
+          const avgGap = avg(gaps);
+          const pct = avgGap !== null ? Math.min((avgGap / 3) * 100, 100) : 0;
+
+          return (
+            <div key={facet} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+              <div className="flex items-center justify-between mb-2">
+                <div>
+                  <div className="text-xs font-bold uppercase tracking-widest"
+                    style={{ color: group.color }}>{facet}</div>
+                  <div className="text-[10px] text-gray-400">{FACET_SUBTITLES[facet]}</div>
+                </div>
+                <div className="text-lg font-bold" style={{ color: gapColor(avgGap) }}>
+                  {fmt(avgGap)}
+                </div>
+              </div>
+              {/* Gap bar */}
+              <div className="h-1.5 bg-gray-100 rounded-full">
+                <div className="h-1.5 rounded-full transition-all"
+                  style={{ width: `${pct}%`, backgroundColor: gapColor(avgGap) }} />
+              </div>
+              <div className="flex justify-between text-[10px] text-gray-300 mt-1">
+                <span>no gap</span>
+                <span>critical</span>
+              </div>
+            </div>
+          );
+        })
+      ))}
+    </div>
+  );
+}
+
+// ── Main ReportPage ──────────────────────────────────────────────────────────
+
+export default function ReportPage() {
+  const { token } = useParams();
+  const [assessment, setAssessment] = useState(null);
+  const [activities, setActivities] = useState([]);
+  const [activityStats, setActivityStats] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [respondentCount, setRespondentCount] = useState(0);
+
+  useEffect(() => {
+    if (token) loadReport();
+  }, [token]);
+
+  const loadReport = async () => {
+    setLoading(true);
+    try {
+      // Find assessment by buyer_token
+      const assessments = await base44.entities.Assessment.filter({ buyer_token: token });
+      if (!assessments || assessments.length === 0) {
+        setError("Report not found. Please check your link.");
+        setLoading(false);
+        return;
+      }
+      const a = assessments[0];
+      setAssessment(a);
+
+      // Load activities, responses, respondents in parallel
+      const [acts, responses, respondents] = await Promise.all([
+        base44.entities.Activity.filter({ active: true }, "sort_order"),
+        base44.entities.Response.filter({ assessment_id: a.id }),
+        base44.entities.Respondent.filter({ assessment_id: a.id }),
+      ]);
+
+      setActivities(acts);
+      setRespondentCount(respondents.length);
+
+      // Build stats per activity
+      const stats = {};
+      for (const act of acts) {
+        const actResps = responses.filter(r => r.activity_id === act.id);
+        const impScores = actResps.map(r => IMPORTANCE_SCORE[r.importance]).filter(v => v !== undefined);
+        const execScores = actResps.map(r => EXECUTION_SCORE[r.execution]).filter(v => v !== undefined);
+        const avgImp  = avg(impScores);
+        const avgExec = avg(execScores);
+        const avgGap  = avgImp !== null && avgExec !== null ? avgImp - avgExec : null;
+
+        // Owner tally
+        const ownerTally = {};
+        for (const r of actResps) {
+          if (r.suggested_owner) {
+            ownerTally[r.suggested_owner] = (ownerTally[r.suggested_owner] || 0) + 1;
+          }
+        }
+        const ownerEntries = Object.entries(ownerTally).sort((a, b) => b[1] - a[1]);
+        const topOwner = ownerEntries[0]?.[0] || null;
+        const ownerAgreement = ownerEntries[0]
+          ? ownerEntries[0][1] / actResps.filter(r => r.suggested_owner).length
+          : null;
+
+        stats[act.id] = { avgImp, avgExec, avgGap, n: actResps.length, topOwner, ownerAgreement };
+      }
+      setActivityStats(stats);
+
+    } catch (e) {
+      console.error(e);
+      setError("Something went wrong loading this report.");
+    }
+    setLoading(false);
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-[#3366FF]/20 border-t-[#3366FF] rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl border border-gray-200 p-10 text-center max-w-sm shadow-sm">
+          <p className="text-gray-500 text-sm">{error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Compute headline numbers
+  const allGaps = Object.values(activityStats).map(s => s.avgGap).filter(v => v !== null);
+  const criticalGaps = allGaps.filter(g => g >= 2).length;
+  const attentionGaps = allGaps.filter(g => g >= 1 && g < 2).length;
+  const importantOrCritical = Object.values(activityStats).filter(s => s.avgImp !== null && s.avgImp >= 2).length;
+  const underperforming = Object.values(activityStats).filter(s => s.avgImp !== null && s.avgGap !== null && s.avgImp >= 2 && s.avgGap >= 1).length;
+
+  const headlineSentence = importantOrCritical > 0
+    ? `Your team rated ${importantOrCritical} of ${activities.length} activities as Important or Critical — and execution is falling short on ${underperforming} of them.`
+    : `Assessment data is available for ${activities.length} activities across ${respondentCount} respondents.`;
+
+  const dateStr = assessment?.created_date
+    ? new Date(assessment.created_date).toLocaleDateString("en-US", { year: "numeric", month: "long" })
+    : "";
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+
+      {/* ── Header ── */}
+      <header className="bg-white border-b border-gray-100 shadow-sm">
+        <div className="max-w-4xl mx-auto px-6 py-5 flex items-center justify-between">
+          <img src={PGL_LOGO} alt="Product Growth Leaders" className="h-8 object-contain" />
+          <div className="text-right">
+            <p className="text-xs text-gray-400 uppercase tracking-widest">A Product Growth Leaders Assessment</p>
+          </div>
+        </div>
+      </header>
+
+      <main className="max-w-4xl mx-auto px-6 py-10">
+
+        {/* ── Title block ── */}
+        <div className="mb-10">
+          <h1 className="text-3xl font-bold text-gray-900 mb-1">{assessment.title}</h1>
+          {assessment.company_name && (
+            <p className="text-lg text-gray-500 mb-4">{assessment.company_name}</p>
+          )}
+          <p className="text-sm text-gray-400">{dateStr} · {respondentCount} participant{respondentCount !== 1 ? "s" : ""}</p>
+        </div>
+
+        {/* ── Headline finding ── */}
+        <div className="bg-[#003366] text-white rounded-2xl px-8 py-6 mb-10 shadow-md">
+          <p className="text-xs font-semibold uppercase tracking-widest text-[#3366FF]/60 mb-2">Key finding</p>
+          <p className="text-lg font-medium leading-relaxed">{headlineSentence}</p>
+          <div className="flex gap-6 mt-5">
+            <div>
+              <span className="text-2xl font-bold text-[#FF3333]">{criticalGaps}</span>
+              <span className="text-xs text-white/60 ml-2">critical gaps</span>
+            </div>
+            <div>
+              <span className="text-2xl font-bold text-[#FFCC00]">{attentionGaps}</span>
+              <span className="text-xs text-white/60 ml-2">need attention</span>
+            </div>
+            <div>
+              <span className="text-2xl font-bold text-[#11CC77]">{respondentCount}</span>
+              <span className="text-xs text-white/60 ml-2">participants</span>
+            </div>
+          </div>
+        </div>
+
+        {/* ── Facet overview ── */}
+        <div className="mb-10">
+          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-widest mb-4">Overview by phase</h2>
+          <FacetWheel activityStats={activityStats} activities={activities} />
+          <p className="text-xs text-gray-400 mt-3">Gap = importance minus execution. Higher is more urgent.</p>
+        </div>
+
+        {/* ── Gap legend ── */}
+        <div className="flex items-center gap-6 mb-8 text-xs text-gray-500">
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded-full bg-[#FF3333]" />
+            <span>Critical gap (≥2)</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded-full bg-[#FFCC00]" />
+            <span>Needs attention (≥1)</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded-full bg-[#11CC77]" />
+            <span>On track</span>
+          </div>
+        </div>
+
+        {/* ── Theme sections ── */}
+        {THEME_GROUPS.map(group => (
+          <ThemeSection
+            key={group.label}
+            group={group}
+            activities={activities}
+            activityStats={activityStats}
+          />
+        ))}
+
+        {/* ── Footer ── */}
+        <footer className="mt-16 pt-8 border-t border-gray-100 flex items-center justify-between">
+          <img src={PGL_LOGO} alt="Product Growth Leaders" className="h-6 object-contain opacity-40" />
+          <p className="text-xs text-gray-300">© Product Growth Leaders · productgrowthleaders.com</p>
+        </footer>
+
+      </main>
+    </div>
+  );
+}
