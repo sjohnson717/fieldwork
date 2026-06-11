@@ -3,7 +3,6 @@ import { base44 } from "@/api/base44Client";
 
 const IMPORTANCE_OPTIONS = ["Not needed", "Nice to have", "Important", "Critical"];
 const EXECUTION_OPTIONS = ["Not done", "Inconsistent", "Good", "Excellent"];
-
 const FACET_ORDER = ["LEARN", "DEFINE", "COMMIT", "DESCRIBE", "CREATE", "PREPARE", "DELIVER"];
 
 function RatingButton({ options, value, onChange, colorClass }) {
@@ -27,7 +26,7 @@ function RatingButton({ options, value, onChange, colorClass }) {
 }
 
 export default function AssessPage() {
-  const [step, setStep] = useState("entry"); // entry | intro | rating | done
+  const [step, setStep] = useState("entry");
   const [code, setCode] = useState("");
   const [assessment, setAssessment] = useState(null);
   const [name, setName] = useState("");
@@ -39,7 +38,6 @@ export default function AssessPage() {
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
-  // Check for code in URL
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const urlCode = params.get("code");
@@ -101,8 +99,8 @@ export default function AssessPage() {
 
   const handleNext = async () => {
     setSaving(true);
+    setError("");
     try {
-      // Save responses for current facet
       for (const activity of facetActivities) {
         const r = responses[activity.id] || {};
         await base44.entities.Response.create({
@@ -116,8 +114,8 @@ export default function AssessPage() {
       }
       if (currentFacetIndex < availableFacets.length - 1) {
         setCurrentFacetIndex(i => i + 1);
+        window.scrollTo(0, 0);
       } else {
-        await base44.entities.Respondent.update(respondent.id, { status: "completed", completed_date: new Date().toISOString() });
         setStep("done");
       }
     } catch (e) {
@@ -125,8 +123,6 @@ export default function AssessPage() {
     }
     setSaving(false);
   };
-
-  // --- RENDER ---
 
   if (step === "entry") return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
@@ -199,14 +195,12 @@ export default function AssessPage() {
   if (step === "rating") return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-3xl mx-auto px-4 py-8">
-        {/* Header */}
         <div className="mb-6">
           <p className="text-sm font-semibold text-indigo-600 uppercase tracking-wide mb-1">Product Growth Leaders · Fieldwork</p>
           <div className="flex items-center justify-between">
             <h1 className="text-xl font-bold text-gray-900">{currentFacet}</h1>
             <span className="text-sm text-gray-400">{currentFacetIndex + 1} of {availableFacets.length}</span>
           </div>
-          {/* Progress bar */}
           <div className="mt-3 h-1.5 bg-gray-200 rounded-full">
             <div
               className="h-1.5 bg-indigo-500 rounded-full transition-all"
@@ -215,12 +209,6 @@ export default function AssessPage() {
           </div>
         </div>
 
-        {/* Column headers */}
-        <div className="grid grid-cols-[1fr_auto] gap-4 mb-2 px-1">
-          <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Activity</span>
-        </div>
-
-        {/* Activities */}
         <div className="space-y-4">
           {facetActivities.map(activity => {
             const r = responses[activity.id] || {};
