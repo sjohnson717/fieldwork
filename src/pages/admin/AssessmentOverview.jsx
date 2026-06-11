@@ -105,6 +105,8 @@ export default function AssessmentOverview({ assessment, onUpdate }) {
   const handleRemoveTitle = (name) => {
     saveJobTitles(selectedTitles.filter(t => t !== name));
   };
+
+  const handleStatusChange = async (newStatus) => {
     setUpdatingStatus(true);
     try {
       const updated = await base44.entities.Assessment.update(assessment.id, { status: newStatus });
