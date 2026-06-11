@@ -540,20 +540,20 @@ export default function ReportPage() {
 
         {/* ── Headline finding ── */}
         <div className="bg-[#0A2447] text-white rounded-2xl px-8 py-8 mb-10 shadow-md">
-          <p className="text-xs font-semibold uppercase tracking-widest text-white/40 mb-3">Key finding</p>
+          <p className="text-xs font-semibold uppercase tracking-widest text-white/70 mb-3">Key finding</p>
           <p className="text-xl font-semibold leading-relaxed text-white">{headlineSentence}</p>
           <div className="border-t border-white/10 mt-6 pt-5 flex gap-8">
             <div>
               <span className="text-3xl font-bold text-[#FF6666]">{criticalGaps}</span>
-              <span className="text-sm text-white/50 ml-2">critical gaps</span>
+              <span className="text-sm text-white/75 ml-2">critical gaps</span>
             </div>
             <div>
               <span className="text-3xl font-bold text-[#FFCC00]">{attentionGaps}</span>
-              <span className="text-sm text-white/50 ml-2">need attention</span>
+              <span className="text-sm text-white/75 ml-2">need attention</span>
             </div>
             <div>
               <span className="text-3xl font-bold text-[#11CC77]">{respondentCount}</span>
-              <span className="text-sm text-white/50 ml-2">{respondentCount === 1 ? "participant" : "participants"}</span>
+              <span className="text-sm text-white/75 ml-2">{respondentCount === 1 ? "participant" : "participants"}</span>
             </div>
           </div>
         </div>
