@@ -227,10 +227,6 @@ export default function AdminPage() {
             {loading ? "" : "Select or create an assessment"}
           </div>
         ) : (
-          <div className="flex-1 flex items-center justify-center text-gray-400 text-sm">
-            {loading ? "" : "Select or create an assessment"}
-          </div>
-        ) : (
           <>
             {/* Header */}
             <div className="bg-white border-b border-gray-200 px-8 py-4">
