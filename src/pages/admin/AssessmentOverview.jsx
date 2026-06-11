@@ -15,6 +15,7 @@ const STATUS_LABELS = {
 
 export default function AssessmentOverview({ assessment, onUpdate }) {
   const [respondents, setRespondents] = useState([]);
+  const [responseCountMap, setResponseCountMap] = useState({}); // respondentId -> count
   const [loading, setLoading] = useState(true);
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -39,8 +40,16 @@ export default function AssessmentOverview({ assessment, onUpdate }) {
   const loadRespondents = async () => {
     setLoading(true);
     try {
-      const all = await base44.entities.Respondent.filter({ assessment_id: assessment.id });
+      const [all, allResponses] = await Promise.all([
+        base44.entities.Respondent.filter({ assessment_id: assessment.id }),
+        base44.entities.Response.filter({ assessment_id: assessment.id }),
+      ]);
       setRespondents(all.sort((a, b) => new Date(b.created_date) - new Date(a.created_date)));
+      const counts = {};
+      for (const r of allResponses) {
+        counts[r.respondent_id] = (counts[r.respondent_id] || 0) + 1;
+      }
+      setResponseCountMap(counts);
     } catch (e) {
       console.error("Failed to load respondents", e);
     }
@@ -126,6 +135,7 @@ export default function AssessmentOverview({ assessment, onUpdate }) {
       }
       await base44.entities.Respondent.delete(id);
       setRespondents(prev => prev.filter(r => r.id !== id));
+      setResponseCountMap(prev => { const n = { ...prev }; delete n[id]; return n; });
     } catch (e) {
       console.error("Failed to delete respondent", e);
     }
@@ -283,7 +293,7 @@ export default function AssessmentOverview({ assessment, onUpdate }) {
           <div>
             <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Respondents</h3>
             <p className="text-xs text-gray-400 mt-0.5">
-              {respondents.length} total · {completedCount} completed
+              {respondents.length} total · {completedCount} completed · {respondents.filter(r => !responseCountMap[r.id]).length} empty
             </p>
           </div>
           <button
@@ -307,13 +317,17 @@ export default function AssessmentOverview({ assessment, onUpdate }) {
                 <th className="text-left pb-2 font-medium">Name</th>
                 <th className="text-left pb-2 font-medium">Title</th>
                 <th className="text-left pb-2 font-medium">Status</th>
+                <th className="text-left pb-2 font-medium">Responses</th>
                 <th className="text-left pb-2 font-medium">Date</th>
                 <th className="pb-2" />
               </tr>
             </thead>
             <tbody>
-              {respondents.map(r => (
-                <tr key={r.id} className="border-b border-gray-50 last:border-0">
+              {respondents.map(r => {
+                const count = responseCountMap[r.id] || 0;
+                const isEmpty = count === 0;
+                return (
+                <tr key={r.id} className={`border-b border-gray-50 last:border-0 ${isEmpty ? "bg-red-50/40" : ""}`}>
                   <td className="py-2.5 font-medium text-gray-800">{r.name}</td>
                   <td className="py-2.5 text-gray-500">{r.title}</td>
                   <td className="py-2.5">
@@ -325,19 +339,25 @@ export default function AssessmentOverview({ assessment, onUpdate }) {
                       {r.status}
                     </span>
                   </td>
+                  <td className="py-2.5">
+                    <span className={`text-xs font-semibold ${isEmpty ? "text-red-400" : "text-gray-500"}`}>
+                      {isEmpty ? "0 — empty" : count}
+                    </span>
+                  </td>
                   <td className="py-2.5 text-gray-400 text-xs">
                     {new Date(r.created_date).toLocaleDateString()}
                   </td>
                   <td className="py-2.5 text-right">
                     <button
                       onClick={() => handleDeleteRespondent(r.id)}
-                      className="text-xs text-gray-300 hover:text-red-400 transition-colors"
+                      className={`text-xs transition-colors ${isEmpty ? "text-red-300 hover:text-red-500 font-medium" : "text-gray-300 hover:text-red-400"}`}
                     >
                       Remove
                     </button>
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         )}
