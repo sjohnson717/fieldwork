@@ -284,8 +284,10 @@ export default function ReportPage() {
   const loadReport = async () => {
     setLoading(true);
     try {
-      // Find assessment by buyer_token
-      const assessments = await base44.entities.Assessment.filter({ buyer_token: token });
+      // Find assessment by buyer_token — list all and find client-side
+      // (filter by arbitrary string fields is unreliable in some SDK versions)
+      const allAssessments = await base44.entities.Assessment.list();
+      const assessments = allAssessments.filter(a => a.buyer_token === token);
       if (!assessments || assessments.length === 0) {
         setError("Report not found. Please check your link.");
         setLoading(false);
