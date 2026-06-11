@@ -1,0 +1,38 @@
+{
+  "name": "Activity",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "facet": {
+      "type": "string",
+      "enum": [
+        "LEARN",
+        "DEFINE",
+        "COMMIT",
+        "DESCRIBE",
+        "CREATE",
+        "PREPARE",
+        "DELIVER"
+      ]
+    },
+    "preferred_owner": {
+      "type": "string"
+    },
+    "sort_order": {
+      "type": "number"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "name",
+    "facet"
+  ]
+}
