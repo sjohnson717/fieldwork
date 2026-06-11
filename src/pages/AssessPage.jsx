@@ -109,10 +109,14 @@ export default function AssessPage() {
           suggested_owner: r.suggested_owner || ""
         });
       }
-      if (currentFacetIndex < availableFacets.length - 1) {
+if (currentFacetIndex < availableFacets.length - 1) {
         setCurrentFacetIndex(i => i + 1);
         window.scrollTo(0, 0);
       } else {
+        await base44.entities.Respondent.update(respondent.id, {
+          status: "completed",
+          completed_date: new Date().toISOString(),
+        });
         setStep("done");
       }
     } catch (e) {
