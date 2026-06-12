@@ -9,6 +9,7 @@ import AssessPage from './pages/AssessPage';
 import ReadMe from './pages/ReadMe';
 import AdminPage from './pages/AdminPage';
 import ReportPage from './pages/ReportPage';
+import TeamLeaderPage from './pages/TeamLeaderPage';
 import LandingPage from './pages/LandingPage';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -29,6 +30,7 @@ function App() {
             <Route path="/assess" element={<AssessPage />} />
             <Route path="/admin" element={<AdminPage />} />
             <Route path="/report/:token" element={<ReportPage />} />
+            <Route path="/team/:token" element={<TeamLeaderPage />} />
             <Route path="/" element={<LandingPage />} />
             <Route path="/readme" element={<ReadMe />} />
             <Route path="*" element={<PageNotFound />} />
