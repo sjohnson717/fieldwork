@@ -181,19 +181,22 @@ function ActivityRow({ activity, stats, themeColor }) {
   );
 }
 
-function ThemeSection({ group, activities, activityStats, filterLevel }) {
+function ThemeSection({ group, activities, activityStats, filterLevel, facetFilter }) {
   const groupActivities = activities.filter(a => group.facets.includes(a.facet));
   if (groupActivities.length === 0) return null;
 
   // Filter based on selected level
-  const visibleActivities = groupActivities.filter(a => {
+  let visibleActivities = groupActivities.filter(a => {
     const gap = activityStats[a.id]?.avgGap ?? null;
     if (filterLevel === "all") return true;
     if (filterLevel === "critical") return gap !== null && gap >= 2;
     if (filterLevel === "attention") return gap !== null && gap >= 1 && gap < 2;
     if (filterLevel === "ontrack") return gap !== null && gap < 1;
     // "problems" = default: critical + attention
-    return gap === null || gap >= 1;
+    if (gap === null || gap < 1) return false;
+    // Additional facet filter check
+    if (facetFilter && a.facet !== facetFilter) return false;
+    return true;
   });
 
   // If nothing to show in this theme
@@ -265,7 +268,7 @@ function ThemeSection({ group, activities, activityStats, filterLevel }) {
         {byFacet.map(({ facet, subtitle, items }) => (
           <div key={facet}>
             {/* Facet sub-header */}
-            <div className="px-5 py-2.5 border-b border-gray-50"
+            <div id={facet} className="px-5 py-2.5 border-b border-gray-50"
               style={{ backgroundColor: group.lightColor }}>
               <span className="text-xs font-bold uppercase tracking-widest"
                 style={{ color: group.color }}>
@@ -288,7 +291,7 @@ function ThemeSection({ group, activities, activityStats, filterLevel }) {
   );
 }
 
-function FacetWheel({ activityStats, activities }) {
+function FacetWheel({ activityStats, activities, onFacetClick }) {
   const statusLabel = (gap) => {
     if (gap === null) return { label: "No data", color: "#9CA3AF", bg: "#F3F4F6" };
     if (gap >= 2)     return { label: "At Risk",  color: "#FF3333", bg: "#FFF1F1" };
@@ -332,10 +335,20 @@ function FacetWheel({ activityStats, activities }) {
                 {/* Activity count summary */}
                 <div className="flex gap-3 mt-3 text-xs text-gray-400">
                   {critCount > 0 && (
-                    <span className="text-[#FF3333] font-medium">{critCount} at risk</span>
+                    <button
+                      onClick={() => onFacetClick(facet, "critical")}
+                      className="text-[#FF3333] font-medium hover:underline transition-colors"
+                    >
+                      {critCount} at risk
+                    </button>
                   )}
                   {watchCount > 0 && (
-                    <span className="text-[#D97706] font-medium">{watchCount} to watch</span>
+                    <button
+                      onClick={() => onFacetClick(facet, "attention")}
+                      className="text-[#D97706] font-medium hover:underline transition-colors"
+                    >
+                      {watchCount} to watch
+                    </button>
                   )}
                   {critCount === 0 && watchCount === 0 && (
                     <span className="text-[#11CC77] font-medium">All on track</span>
@@ -362,6 +375,7 @@ export default function ReportPage() {
   const [respondentCount, setRespondentCount] = useState(0);
   const [totalRespondentCount, setTotalRespondentCount] = useState(0);
   const [filterLevel, setFilterLevel] = useState("problems"); // problems | critical | attention | all
+  const [facetFilter, setFacetFilter] = useState(null); // null = all, or specific facet like "DEFINE"
 
   useEffect(() => {
     if (token) loadReport();
@@ -449,6 +463,19 @@ export default function ReportPage() {
 
   // Minimum-response gate
   const threshold = Math.min(3, totalRespondentCount);
+
+  const handleFacetClick = (facet, level) => {
+    setFilterLevel(level);
+    setFacetFilter(facet);
+    setTimeout(() => {
+      document.getElementById(facet)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 50);
+  };
+
+  const handleShowAll = () => {
+    setFilterLevel("all");
+    setFacetFilter(null);
+  };
 
   const gateCard = (message) => (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
@@ -632,7 +659,7 @@ export default function ReportPage() {
         {/* ── Facet overview ── */}
         <div className="mb-10">
           <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-widest mb-4">Overview by phase</h2>
-          <FacetWheel activityStats={activityStats} activities={activities} />
+          <FacetWheel activityStats={activityStats} activities={activities} onFacetClick={handleFacetClick} />
         </div>
 
         {/* ── Clickable filter chips ── */}
@@ -677,7 +704,7 @@ export default function ReportPage() {
               : `Showing ${problemCount} of ${activities.length} activities`}
             {filterLevel !== "all" && (
               <button
-                onClick={() => setFilterLevel("all")}
+                onClick={handleShowAll}
                 className="ml-2 text-[#3366FF] hover:text-[#003366] font-medium transition-colors"
               >
                 Show all
@@ -694,6 +721,7 @@ export default function ReportPage() {
             activities={activities}
             activityStats={activityStats}
             filterLevel={filterLevel}
+            facetFilter={facetFilter}
           />
         ))}
 
