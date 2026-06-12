@@ -87,6 +87,35 @@ export default function AdminPage() {
     setAssessments(prev => prev.map(a => a.id === updated.id ? updated : a));
   };
 
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDeleteAssessment = async () => {
+    if (!selected) return;
+    const confirmed = window.confirm(
+      `Delete "${selected.title}"? This permanently removes the assessment and all its respondents, responses, and discussion notes. This cannot be undone.`
+    );
+    if (!confirmed) return;
+    setDeleting(true);
+    const [respondents, responses, notes] = await Promise.all([
+      base44.entities.Respondent.filter({ assessment_id: selected.id }),
+      base44.entities.Response.filter({ assessment_id: selected.id }),
+      base44.entities.DiscussionNote.filter({ assessment_id: selected.id }),
+    ]);
+    await Promise.all([
+      ...respondents.map(r => base44.entities.Respondent.delete(r.id)),
+      ...responses.map(r => base44.entities.Response.delete(r.id)),
+      ...notes.map(n => base44.entities.DiscussionNote.delete(n.id)),
+    ]);
+    await base44.entities.Assessment.delete(selected.id);
+    setAssessments(prev => {
+      const next = prev.filter(a => a.id !== selected.id);
+      setSelectedId(next.length > 0 ? next[0].id : null);
+      if (next.length > 0) setSelectedSection("assessments");
+      return next;
+    });
+    setDeleting(false);
+  };
+
   if (isLoadingAuth) {
     return (
       <div className="fixed inset-0 flex items-center justify-center bg-gray-50">
@@ -324,6 +353,13 @@ export default function AdminPage() {
                       Generate team link
                     </button>
                   )}
+                  <button
+                    onClick={handleDeleteAssessment}
+                    disabled={deleting}
+                    className="ml-2 text-xs font-medium text-red-400 hover:text-red-600 disabled:opacity-50 transition-colors"
+                  >
+                    {deleting ? "Deleting…" : "Delete"}
+                  </button>
                 </div>
               </div>
               {/* Tabs */}
