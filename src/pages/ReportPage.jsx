@@ -545,7 +545,7 @@ export default function ReportPage() {
         </p>
 
         {/* ── Headline finding ── */}
-        <div className="bg-[#EEF2FF] border border-gray-100 rounded-2xl px-8 py-8 mb-10 shadow-md">
+        <div className="bg-[#E1E8F5] border border-gray-100 rounded-2xl px-8 py-8 mb-10 shadow-md">
           <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">Key finding</p>
           <p className="text-xl font-semibold leading-relaxed text-gray-900">{headlineSentence}</p>
           <div className="border-t border-gray-200 mt-6 pt-5 flex gap-8">
