@@ -165,14 +165,21 @@ export default function TeamLeaderPage() {
               onChange={e => setEmail(e.target.value)}
               className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
-            <select
-              value={role}
-              onChange={e => setRole(e.target.value)}
-              className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
-            >
-              <option value="user">Team member</option>
-              <option value="team_leader">Team leader</option>
-            </select>
+            <div>
+              <select
+                value={role}
+                onChange={e => setRole(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+              >
+                <option value="user">Team member</option>
+                <option value="team_leader">Team leader</option>
+              </select>
+              <p className="text-xs text-gray-400 mt-1.5">
+                {role === "team_leader"
+                  ? "Completes the assessment and can also access this page to invite others and check the team's status."
+                  : "Completes the assessment. Won't have access to this page."}
+              </p>
+            </div>
           </div>
 
           {formError && <p className="text-red-500 text-xs mb-3">{formError}</p>}
