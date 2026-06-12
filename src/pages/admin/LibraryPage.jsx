@@ -156,6 +156,27 @@ function ActivitiesTab() {
   const availableFacets = FACET_ORDER.filter(f => activities.some(a => a.facet === f));
   const filtered = selectedFacet === "ALL" ? activities : activities.filter(a => a.facet === selectedFacet);
 
+  const handleExportCSV = () => {
+    const rows = [
+      ["Facet", "Activity", "Description", "Preferred Owner", "Active"],
+      ...activities.map(a => [
+        a.facet,
+        a.name,
+        a.description || "",
+        a.preferred_owner || "",
+        a.active ? "Yes" : "No",
+      ]),
+    ];
+    const csv = rows.map(r => r.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "activities.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   if (loading) return (
     <div className="flex justify-center py-16">
       <div className="w-6 h-6 border-2 border-indigo-200 border-t-indigo-500 rounded-full animate-spin" />
@@ -181,7 +202,18 @@ function ActivitiesTab() {
         ))}
       </div>
 
-      <p className="text-xs text-gray-400">Drag rows to reorder. Order is shared across all assessments.</p>
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-gray-400">Drag rows to reorder. Order is shared across all assessments.</p>
+        <button
+          onClick={handleExportCSV}
+          className="flex items-center gap-1.5 text-xs font-medium text-gray-500 hover:text-indigo-600 border border-gray-200 hover:border-indigo-300 px-3 py-1.5 rounded-lg transition-colors"
+        >
+          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          </svg>
+          Export CSV
+        </button>
+      </div>
 
       <DraggableList
         items={filtered}
