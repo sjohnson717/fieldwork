@@ -45,9 +45,9 @@
     "token"
   ],
   "rls": {
-    "create": null,
+    "create": {},
     "read": {},
-    "update": null,
+    "update": {},
     "delete": {
       "user_condition": {
         "role": "admin"

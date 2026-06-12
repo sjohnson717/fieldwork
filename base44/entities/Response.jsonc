@@ -39,12 +39,8 @@
     "activity_id"
   ],
   "rls": {
-    "create": null,
-    "read": {
-      "user_condition": {
-        "role": "admin"
-      }
-    },
+    "create": {},
+    "read": {},
     "update": {
       "user_condition": {
         "role": "admin"
