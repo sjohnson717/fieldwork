@@ -130,11 +130,11 @@ export default function TeamPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="text-xs text-gray-400 uppercase tracking-wide border-b border-gray-100 bg-gray-50">
-                <th className="text-left px-6 py-3 font-medium">Name</th>
-                <th className="text-left px-6 py-3 font-medium">Email</th>
-                <th className="text-left px-6 py-3 font-medium">Role</th>
-                <th className="text-left px-6 py-3 font-medium">Status</th>
-                <th className="px-6 py-3" />
+                <th className="text-left px-4 py-3 font-medium w-36">Name</th>
+                <th className="text-left px-4 py-3 font-medium">Email</th>
+                <th className="text-left px-4 py-3 font-medium w-28">Role</th>
+                <th className="text-left px-4 py-3 font-medium w-24">Status</th>
+                <th className="px-4 py-3 w-16" />
               </tr>
             </thead>
             <tbody>
@@ -144,15 +144,15 @@ export default function TeamPage() {
                 const isRemoving = removingId === u.id;
                 const pending = isInvited(u);
                 return (
-                  <tr key={u.id} className={`border-b border-gray-50 last:border-0 hover:bg-gray-50/50 ${pending ? "opacity-70" : ""}`}>
-                    <td className="px-6 py-3 font-medium text-gray-800">
+                <tr key={u.id} className={`border-b border-gray-50 last:border-0 hover:bg-gray-50/50 ${pending ? "opacity-70" : ""}`}>
+                  <td className="px-4 py-3 font-medium text-gray-800">
                       {u.full_name || <span className="text-gray-400 italic">Not joined yet</span>}
                       {isSelf && (
                         <span className="ml-2 text-[10px] font-semibold text-indigo-500 bg-indigo-50 px-1.5 py-0.5 rounded-full">you</span>
                       )}
                     </td>
-                    <td className="px-6 py-3 text-gray-500">{u.email}</td>
-                    <td className="px-6 py-3">
+                    <td className="px-4 py-3 text-gray-500">{u.email}</td>
+                    <td className="px-4 py-3">
                       {isSelf ? (
                         <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700">
                           {u.role}
@@ -169,7 +169,7 @@ export default function TeamPage() {
                         </select>
                       )}
                     </td>
-                    <td className="px-6 py-3">
+                    <td className="px-4 py-3">
                       {pending ? (
                         <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 border border-amber-200">
                           Invited
@@ -180,7 +180,7 @@ export default function TeamPage() {
                         </span>
                       )}
                     </td>
-                    <td className="px-6 py-3 text-right">
+                    <td className="px-4 py-3 text-right">
                       {!isSelf && (
                         <button
                           onClick={() => handleRemove(u)}
