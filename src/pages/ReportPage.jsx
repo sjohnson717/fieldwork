@@ -122,7 +122,7 @@ function ActivityRow({ activity, stats, themeColor }) {
         <div className="shrink-0 flex items-center gap-3">
           {gap !== null && (
             <span className="text-xs font-semibold px-2 py-0.5 rounded-full"
-              style={{ backgroundColor: dot + "22", color: gap >= 1 ? dot : "#6B7280" }}>
+              style={{ backgroundColor: dot + "22", color: gap >= 2 ? "#991B1B" : gap >= 1 ? "#92700A" : gap !== null ? "#065F46" : "#6B7280" }}>
               {gapLabel(gap)}
             </span>
           )}
