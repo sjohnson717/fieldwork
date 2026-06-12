@@ -23,7 +23,13 @@ export default function TeamPage() {
   const loadUsers = async () => {
     setLoading(true);
     const all = await base44.entities.User.list();
-    setUsers(all.sort((a, b) => (a.full_name || a.email).localeCompare(b.full_name || b.email)));
+    // Sort: accepted first (have full_name), then invited (no full_name), then alphabetically
+    setUsers(all.sort((a, b) => {
+      const aAccepted = !!a.full_name;
+      const bAccepted = !!b.full_name;
+      if (aAccepted !== bAccepted) return bAccepted ? 1 : -1;
+      return (a.full_name || a.email).localeCompare(b.full_name || b.email);
+    }));
     setLoading(false);
   };
 
@@ -50,12 +56,20 @@ export default function TeamPage() {
 
   const handleRemove = async (user) => {
     if (user.id === currentUser.id) return;
-    if (!confirm(`Remove ${user.full_name || user.email} from the team?`)) return;
+    const isInvited = !user.full_name;
+    const label = isInvited ? `Revoke invitation for ${user.email}?` : `Remove ${user.full_name || user.email} from the team?`;
+    if (!confirm(label)) return;
     setRemovingId(user.id);
     await base44.entities.User.delete(user.id);
     setUsers(prev => prev.filter(u => u.id !== user.id));
     setRemovingId(null);
   };
+
+  // A user is "invited" (pending) if they have no full_name yet
+  const isInvited = (u) => !u.full_name;
+
+  const acceptedCount = users.filter(u => !isInvited(u)).length;
+  const pendingCount = users.filter(u => isInvited(u)).length;
 
   return (
     <div className="p-8 max-w-3xl space-y-8">
@@ -98,7 +112,10 @@ export default function TeamPage() {
         <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
           <div>
             <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Team members</h3>
-            <p className="text-xs text-gray-400 mt-0.5">{users.length} member{users.length !== 1 ? "s" : ""}</p>
+            <p className="text-xs text-gray-400 mt-0.5">
+              {acceptedCount} accepted
+              {pendingCount > 0 && <span className="ml-2 text-amber-500 font-medium">· {pendingCount} pending invite{pendingCount !== 1 ? "s" : ""}</span>}
+            </p>
           </div>
           <button onClick={loadUsers} className="text-xs text-gray-400 hover:text-indigo-600 transition-colors">Refresh</button>
         </div>
@@ -116,6 +133,7 @@ export default function TeamPage() {
                 <th className="text-left px-6 py-3 font-medium">Name</th>
                 <th className="text-left px-6 py-3 font-medium">Email</th>
                 <th className="text-left px-6 py-3 font-medium">Role</th>
+                <th className="text-left px-6 py-3 font-medium">Status</th>
                 <th className="px-6 py-3" />
               </tr>
             </thead>
@@ -124,10 +142,11 @@ export default function TeamPage() {
                 const isSelf = u.id === currentUser?.id;
                 const isUpdating = updatingId === u.id;
                 const isRemoving = removingId === u.id;
+                const pending = isInvited(u);
                 return (
-                  <tr key={u.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50/50">
+                  <tr key={u.id} className={`border-b border-gray-50 last:border-0 hover:bg-gray-50/50 ${pending ? "opacity-70" : ""}`}>
                     <td className="px-6 py-3 font-medium text-gray-800">
-                      {u.full_name || "—"}
+                      {u.full_name || <span className="text-gray-400 italic">Not joined yet</span>}
                       {isSelf && (
                         <span className="ml-2 text-[10px] font-semibold text-indigo-500 bg-indigo-50 px-1.5 py-0.5 rounded-full">you</span>
                       )}
@@ -150,6 +169,17 @@ export default function TeamPage() {
                         </select>
                       )}
                     </td>
+                    <td className="px-6 py-3">
+                      {pending ? (
+                        <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 border border-amber-200">
+                          Invited
+                        </span>
+                      ) : (
+                        <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-green-50 text-green-600 border border-green-200">
+                          Accepted
+                        </span>
+                      )}
+                    </td>
                     <td className="px-6 py-3 text-right">
                       {!isSelf && (
                         <button
@@ -157,7 +187,7 @@ export default function TeamPage() {
                           disabled={isRemoving}
                           className="text-xs text-gray-300 hover:text-red-400 disabled:opacity-40 transition-colors font-medium"
                         >
-                          {isRemoving ? "Removing…" : "Remove"}
+                          {isRemoving ? "…" : pending ? "Revoke" : "Remove"}
                         </button>
                       )}
                     </td>
