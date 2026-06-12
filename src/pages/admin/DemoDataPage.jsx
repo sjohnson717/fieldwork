@@ -40,26 +40,65 @@ const EXECUTION_WEIGHTS = {
   DELIVER:  { default: [1,2,2,1] },
 };
 
-// Ownership suggestions — some activities have clear consensus, some don't
+// Ownership suggestions — some activities have clear consensus, some don't.
+// DEFINE/COMMIT activities are deliberately scattered across roles —
+// this reflects the real-world pattern where strategic activities often
+// have no clear owner without a Head of Product role.
 const OWNER_WEIGHTS = {
-  "Customer Conversations":   { "Product Manager": 4, "Sales": 2, "Customer Success": 1 },
-  "Problem Discovery":        { "Product Manager": 5, "Design / UX": 2 },
-  "Market Validation":        { "Product Manager": 4, "Head of Product": 2, "Sales": 1 },
-  "Product Definition":       { "Product Manager": 5, "Head of Product": 2 },
-  "Competitive Strategy":     { "Product Manager": 3, "Sales": 2, "Product Marketing Manager": 2 },
-  "Market Selection":         { "Head of Product": 3, "Product Manager": 2, "Executive": 2 },
-  "Product Vision":           { "Head of Product": 4, "Product Manager": 2, "Executive": 1 },
-  "Investment Justification": { "Head of Product": 3, "Executive": 3, "Product Manager": 1 },
-  "Pricing & Packaging":      { "Product Marketing Manager": 3, "Product Manager": 2, "Executive": 2 },
-  "Buyer & User Definition":  { "Product Manager": 3, "Design / UX": 3, "Sales": 1 },
-  "Requirements & Stories":   { "Product Manager": 4, "Engineering": 2, "Design / UX": 1 },
-  "Roadmapping":              { "Product Manager": 3, "Head of Product": 3, "Executive": 1 },
-  "Release Planning":         { "Product Manager": 3, "Engineering": 3, "Head of Product": 1 },
-  "Technical Alignment":      { "Engineering": 4, "Product Manager": 3 },
-  "Prioritization":           { "Product Manager": 4, "Head of Product": 2, "Engineering": 1 },
-  "Go-to-Market Planning":    { "Product Marketing Manager": 4, "Product Manager": 2, "Sales": 1 },
-  "Sales Enablement":         { "Sales": 3, "Product Marketing Manager": 3, "Product Manager": 1 },
-  "Win/Loss Analysis":        { "Sales": 3, "Product Manager": 2, "Customer Success": 2 },
+  // DEFINE
+  "Problem Discovery":                 { "Product Manager": 3, "Head of Product": 2, "Sales": 1, "Customer Success": 1 },
+  "Persona Definition":                { "Product Manager": 3, "Design / UX": 2, "Head of Product": 1 },
+  "Solution Validation":               { "Product Manager": 3, "Head of Product": 2, "Design / UX": 1 },
+  "Strategic Fit (ASPIRE)":            { "Head of Product": 2, "Executive": 2, "Product Manager": 2 },
+  "Competitive Research":              { "Product Manager": 2, "Product Marketing Manager": 2, "Sales": 2 },
+  "Product Brief":                     { "Product Manager": 3, "Head of Product": 2 },
+  "DEFINE Go/No-Go Decision":          { "Head of Product": 3, "Executive": 2, "Product Manager": 1 },
+  "Manage Feature Requests":           { "Product Manager": 2, "Engineering": 1, "Customer Success": 2, "Sales": 1 },
+
+  // COMMIT
+  "Develop Product Vision":            { "Head of Product": 3, "Executive": 2, "Product Manager": 1 },
+  "Product Roadmap":                   { "Product Manager": 3, "Head of Product": 2, "Engineering": 1 },
+  "Size Market Opportunity":           { "Head of Product": 2, "Executive": 2, "Product Marketing Manager": 2 },
+  "Pricing":                           { "Product Marketing Manager": 2, "Executive": 2, "Head of Product": 1, "Sales": 1 },
+  "Develop Success Metrics":           { "Head of Product": 2, "Product Manager": 2, "Executive": 2 },
+  "COMMIT Go/No-Go Decision":          { "Head of Product": 3, "Executive": 2 },
+  "Business Plan":                     { "Head of Product": 2, "Executive": 2, "Product Marketing Manager": 1 },
+  "Competitive Strategy":              { "Head of Product": 2, "Product Marketing Manager": 2, "Executive": 1 },
+  "Portfolio Management":              { "Head of Product": 2, "Executive": 2 },
+  "Build, Buy, or Partner":            { "Engineering": 2, "Head of Product": 2, "Executive": 1 },
+
+  // DESCRIBE
+  "Problem Stories & Scenarios":       { "Product Manager": 4, "Design / UX": 2 },
+
+  // CREATE
+  "Prioritize Potential Capabilities": { "Product Manager": 4, "Head of Product": 2, "Engineering": 1 },
+  "Requirements & Technical Briefing": { "Product Manager": 4, "Engineering": 2 },
+  "Release Brief":                     { "Product Manager": 3, "Engineering": 2 },
+  "Interaction Design":                { "Design / UX": 4, "Engineering": 1 },
+  "Usability Testing":                 { "Design / UX": 3, "Product Manager": 1 },
+  "Manage Project Schedules":          { "Engineering": 4, "Product Manager": 1 },
+
+  // PREPARE
+  "Brief the Go-to-Market Teams":      { "Product Marketing Manager": 4, "Product Manager": 1, "Sales": 1 },
+  "Propose the Scope of the Launch":   { "Product Marketing Manager": 3, "Head of Product": 1, "Product Manager": 1 },
+  "Launch Planning":                   { "Product Marketing Manager": 4, "Product Manager": 1 },
+  "Readiness Planning":                { "Product Marketing Manager": 1, "Customer Success": 1, "Sales": 1, "Engineering": 1 },
+  "Sales Enablement":                  { "Sales": 3, "Product Marketing Manager": 3, "Product Manager": 1 },
+  "Positioning":                       { "Product Marketing Manager": 4, "Product Manager": 1 },
+  "Buyer Experience":                  { "Product Marketing Manager": 2, "Sales": 2, "Design / UX": 1 },
+  "Marketing Plan":                    { "Product Marketing Manager": 4, "Executive": 1 },
+  "Communicate Status to Stakeholders":{ "Product Manager": 2, "Head of Product": 1, "Product Marketing Manager": 1 },
+
+  // DELIVER
+  "DELIVER Go/No-Go Decision":         { "Head of Product": 3, "Executive": 2, "Product Marketing Manager": 1 },
+  "Monitor Performance & Metrics":     { "Product Manager": 2, "Head of Product": 2, "Executive": 1 },
+  "Win/Loss Analysis":                 { "Sales": 3, "Product Marketing Manager": 2, "Customer Success": 2 },
+  "Revenue Growth":                    { "Product Marketing Manager": 3, "Sales": 2 },
+  "Revenue Retention":                 { "Customer Success": 3, "Product Marketing Manager": 2, "Sales": 1 },
+  "Customer Success Stories":          { "Customer Success": 3, "Product Marketing Manager": 2 },
+  "Deliver Presentations & Demos":     { "Sales": 3, "Product Marketing Manager": 2 },
+  "Sales Support":                     { "Sales": 4, "Product Marketing Manager": 1 },
+  "Staffing Promotional Events":       { "Product Marketing Manager": 2, "Sales": 1, "Customer Success": 1 },
 };
 
 function weightedRandom(weights) {
