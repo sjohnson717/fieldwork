@@ -62,11 +62,13 @@ export default function AdminPage() {
     try {
       const code = Math.random().toString(36).substring(2, 7).toUpperCase();
       const buyerToken = Math.random().toString(36).substring(2, 10) + Math.random().toString(36).substring(2, 10);
+      const teamToken = Math.random().toString(36).substring(2, 10) + Math.random().toString(36).substring(2, 10);
       const created = await base44.entities.Assessment.create({
         title: newTitle.trim(),
         company_name: newCompany.trim(),
         access_code: code,
         buyer_token: buyerToken,
+        team_token: teamToken,
         status: "draft",
         roles: [],
       });
@@ -292,6 +294,35 @@ export default function AdminPage() {
                         Open report
                       </button>
                     </>
+                  )}
+                  {selected.team_token ? (
+                    <>
+                      <button
+                        onClick={() => navigator.clipboard.writeText(`${window.location.origin}/team/${selected.team_token}`)}
+                        className="text-xs font-medium text-[#3366FF] border border-[#3366FF]/30 px-2 py-1 rounded hover:bg-[#3366FF]/5 transition-colors"
+                        title="Copy team link"
+                      >
+                        Copy team link
+                      </button>
+                      <button
+                        onClick={() => window.open(`${window.location.origin}/team/${selected.team_token}`, "_blank")}
+                        className="text-xs font-medium text-[#3366FF] border border-[#3366FF]/30 px-2 py-1 rounded hover:bg-[#3366FF]/5 transition-colors"
+                        title="Open team link in new tab"
+                      >
+                        Open team link
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      onClick={async () => {
+                        const token = Math.random().toString(36).substring(2, 10) + Math.random().toString(36).substring(2, 10);
+                        const updated = await base44.entities.Assessment.update(selected.id, { team_token: token });
+                        handleAssessmentUpdate(updated);
+                      }}
+                      className="text-xs font-medium text-[#3366FF] border border-[#3366FF]/30 px-2 py-1 rounded hover:bg-[#3366FF]/5 transition-colors"
+                    >
+                      Generate team link
+                    </button>
                   )}
                 </div>
               </div>
