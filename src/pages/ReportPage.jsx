@@ -136,10 +136,16 @@ function ActivityRow({ activity, stats, themeColor }) {
       {expanded && stats && (
         <div className="px-5 pb-4 space-y-4">
           <GapBar importance={stats.avgImp} execution={stats.avgExec} gap={gap} />
-          {stats.topOwner && (
+          {stats.ownerEntries?.length > 0 && (
             <div className="text-xs text-gray-500">
               <span className="font-medium text-gray-700">Suggested owner: </span>
-              {stats.topOwner}
+              {stats.ownerEntries.map(([name, count], i) => (
+                <span key={name}>
+                  {i > 0 && <span className="text-gray-300 mx-1">·</span>}
+                  <span className="text-gray-700">{name}</span>
+                  <span className="text-gray-400 ml-0.5">({count})</span>
+                </span>
+              ))}
               {stats.ownerAgreement < 0.6 && (
                 <span className="ml-2 text-amber-600 font-medium">⚠ ownership unclear</span>
               )}
@@ -389,7 +395,7 @@ export default function ReportPage() {
           ? ownerEntries[0][1] / actResps.filter(r => r.suggested_owner).length
           : null;
 
-        stats[act.id] = { avgImp, avgExec, avgGap, n: actResps.length, topOwner, ownerAgreement };
+        stats[act.id] = { avgImp, avgExec, avgGap, n: actResps.length, topOwner, ownerAgreement, ownerEntries };
       }
       setActivityStats(stats);
 
