@@ -273,16 +273,25 @@ export default function AdminPage() {
                     {selected.access_code}
                   </span>
                   {selected.buyer_token && (
-                    <button
-                      onClick={() => {
-                        const url = `${window.location.origin}/report/${selected.buyer_token}`;
-                        navigator.clipboard.writeText(url);
-                      }}
-                      className="text-xs font-medium text-[#3366FF] border border-[#3366FF]/30 px-2 py-1 rounded hover:bg-[#3366FF]/5 transition-colors"
-                      title="Copy report link for buyer"
-                    >
-                      Copy report link
-                    </button>
+                    <>
+                      <button
+                        onClick={() => {
+                          const url = `${window.location.origin}/report/${selected.buyer_token}`;
+                          navigator.clipboard.writeText(url);
+                        }}
+                        className="text-xs font-medium text-[#3366FF] border border-[#3366FF]/30 px-2 py-1 rounded hover:bg-[#3366FF]/5 transition-colors"
+                        title="Copy report link for buyer"
+                      >
+                        Copy report link
+                      </button>
+                      <button
+                        onClick={() => window.open(`${window.location.origin}/report/${selected.buyer_token}`, "_blank")}
+                        className="text-xs font-medium text-[#3366FF] border border-[#3366FF]/30 px-2 py-1 rounded hover:bg-[#3366FF]/5 transition-colors"
+                        title="Open report in new tab"
+                      >
+                        Open report
+                      </button>
+                    </>
                   )}
                 </div>
               </div>
