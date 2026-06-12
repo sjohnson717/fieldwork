@@ -118,8 +118,19 @@ function ActivityRow({ activity, stats, themeColor }) {
           )}
         </div>
 
-        {/* Gap badge */}
+        {/* Gap badge + ownership badge */}
         <div className="shrink-0 flex items-center gap-3">
+          {stats?.ownerEntries?.length > 0 && (() => {
+            const ownerBadge =
+              stats.ownerAgreement < 0.5 ? "Owner unclear" :
+              (activity.preferred_owner && stats.topOwner !== activity.preferred_owner) ? "Owner mismatch" :
+              null;
+            return ownerBadge ? (
+              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[#F5F3FF] text-[#6D28D9]">
+                {ownerBadge}
+              </span>
+            ) : null;
+          })()}
           {gap !== null && (
             <span className="text-xs font-semibold px-2 py-0.5 rounded-full"
               style={{ backgroundColor: dot + "22", color: gap >= 2 ? "#991B1B" : gap >= 1 ? "#92700A" : gap !== null ? "#065F46" : "#6B7280" }}>

@@ -106,6 +106,17 @@ function ActivityRow({ activity, stats, note, draftNote, draftDecision, saving, 
           )}
         </div>
         <div className="shrink-0 flex items-center gap-3">
+          {stats?.ownerEntries?.length > 0 && (() => {
+            const ownerBadge =
+              stats.ownerAgreement < 0.5 ? "Owner unclear" :
+              (activity.preferred_owner && stats.topOwner !== activity.preferred_owner) ? "Owner mismatch" :
+              null;
+            return ownerBadge ? (
+              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[#F5F3FF] text-[#6D28D9]">
+                {ownerBadge}
+              </span>
+            ) : null;
+          })()}
           {hasDecision && (
             <span className="text-xs font-medium text-green-600 flex items-center gap-1">
               <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -422,7 +433,12 @@ export default function AssessmentDiscussion({ assessment }) {
       if (r.suggested_owner) ownerTally[r.suggested_owner] = (ownerTally[r.suggested_owner] || 0) + 1;
     }
     const ownerEntries = Object.entries(ownerTally).sort((a, b) => b[1] - a[1]);
-    activityStats[act.id] = { avgImp, avgExec, avgGap, n: actResps.length, ownerEntries };
+    const topOwner = ownerEntries[0]?.[0] || null;
+    const ownerWithSuggestion = actResps.filter(r => r.suggested_owner).length;
+    const ownerAgreement = ownerEntries[0] && ownerWithSuggestion > 0
+      ? ownerEntries[0][1] / ownerWithSuggestion
+      : null;
+    activityStats[act.id] = { avgImp, avgExec, avgGap, n: actResps.length, ownerEntries, topOwner, ownerAgreement };
   }
 
   const allGaps = Object.values(activityStats).map(s => s.avgGap).filter(v => v !== null);
