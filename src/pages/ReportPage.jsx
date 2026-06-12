@@ -138,7 +138,7 @@ function ActivityRow({ activity, stats, themeColor }) {
           <GapBar importance={stats.avgImp} execution={stats.avgExec} gap={gap} />
           {stats.ownerEntries?.length > 0 && (
             <div className="text-xs text-gray-500">
-              <span className="font-medium text-gray-700">Suggested owner: </span>
+              <span className="font-medium text-gray-700">Proposed owner: </span>
               {stats.ownerEntries.map(([name, count], i) => (
                 <span key={name}>
                   {i > 0 && <span className="text-gray-300 mx-1">·</span>}
@@ -149,6 +149,12 @@ function ActivityRow({ activity, stats, themeColor }) {
               {stats.ownerAgreement < 0.6 && (
                 <span className="ml-2 text-amber-600 font-medium">⚠ ownership unclear</span>
               )}
+            </div>
+          )}
+          {activity.preferred_owner && (
+            <div className="text-xs text-gray-500">
+              <span className="font-medium text-gray-700">Recommended owner: </span>
+              <span className="text-gray-700">{activity.preferred_owner}</span>
             </div>
           )}
           {stats.n > 0 && (
