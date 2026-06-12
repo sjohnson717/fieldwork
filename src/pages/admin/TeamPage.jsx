@@ -136,7 +136,7 @@ export default function TeamPage() {
           <div className="flex justify-center py-12">
             <div className="w-5 h-5 border-2 border-indigo-200 border-t-indigo-500 rounded-full animate-spin" />
           </div>
-        ) : users.length === 0 ? (
+        ) : users.length === 0 && invitations.length === 0 ? (
           <p className="text-sm text-gray-400 text-center py-10">No users found.</p>
         ) : (
           <table className="w-full text-sm">
