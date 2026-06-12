@@ -8,8 +8,19 @@
     "name": {
       "type": "string"
     },
+    "email": {
+      "type": "string"
+    },
     "title": {
       "type": "string"
+    },
+    "role": {
+      "type": "string",
+      "enum": [
+        "user",
+        "team_leader"
+      ],
+      "default": "user"
     },
     "token": {
       "type": "string"
@@ -17,10 +28,11 @@
     "status": {
       "type": "string",
       "enum": [
+        "invited",
         "started",
         "completed"
       ],
-      "default": "started"
+      "default": "invited"
     },
     "completed_date": {
       "type": "string",
@@ -35,18 +47,7 @@
   "rls": {
     "create": null,
     "read": null,
-    "update": {
-      "$or": [
-        {
-          "created_by_id": "{{user.id}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
+    "update": null,
     "delete": {
       "user_condition": {
         "role": "admin"
