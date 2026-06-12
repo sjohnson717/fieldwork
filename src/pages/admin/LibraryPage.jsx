@@ -64,6 +64,7 @@ function DraggableList({ items, onReorder, renderItem }) {
 
 function ActivitiesTab() {
   const [activities, setActivities] = useState([]);
+  const [jobTitleNames, setJobTitleNames] = useState(new Set());
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState(null);
   const [editDraft, setEditDraft] = useState({});
@@ -78,8 +79,12 @@ function ActivitiesTab() {
   const loadActivities = async () => {
     setLoading(true);
     try {
-      const all = await base44.entities.Activity.list("sort_order");
+      const [all, titles] = await Promise.all([
+        base44.entities.Activity.list("sort_order"),
+        base44.entities.JobTitle.list("sort_order"),
+      ]);
       setActivities(all);
+      setJobTitleNames(new Set(titles.map(t => t.name)));
     } catch (e) { console.error(e); }
     setLoading(false);
   };
@@ -260,13 +265,24 @@ function ActivitiesTab() {
                   </svg>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <span className={`text-sm font-medium ${activity.active ? "text-gray-800" : "text-gray-400 line-through"}`}>
                       {activity.name}
                     </span>
                     <span className="text-[10px] font-semibold text-indigo-400 bg-indigo-50 px-1.5 py-0.5 rounded shrink-0">
                       {activity.facet}
                     </span>
+                    {activity.preferred_owner && !jobTitleNames.has(activity.preferred_owner) && (
+                      <span
+                        title={`Preferred owner "${activity.preferred_owner}" is not in the Job Titles list`}
+                        className="flex items-center gap-1 text-[10px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded shrink-0"
+                      >
+                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                        </svg>
+                        Unknown owner
+                      </span>
+                    )}
                   </div>
                   {activity.description && (
                     <p className="text-xs text-gray-400 truncate mt-0.5">{activity.description}</p>
