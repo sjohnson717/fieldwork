@@ -187,16 +187,14 @@ function ThemeSection({ group, activities, activityStats, filterLevel, facetFilt
 
   // Filter based on selected level
   let visibleActivities = groupActivities.filter(a => {
+    if (facetFilter && a.facet !== facetFilter) return false;
     const gap = activityStats[a.id]?.avgGap ?? null;
     if (filterLevel === "all") return true;
     if (filterLevel === "critical") return gap !== null && gap >= 2;
     if (filterLevel === "attention") return gap !== null && gap >= 1 && gap < 2;
     if (filterLevel === "ontrack") return gap !== null && gap < 1;
     // "problems" = default: critical + attention
-    if (gap === null || gap < 1) return false;
-    // Additional facet filter check
-    if (facetFilter && a.facet !== facetFilter) return false;
-    return true;
+    return gap === null || gap >= 1;
   });
 
   // If nothing to show in this theme
