@@ -7,6 +7,14 @@ export default function TeamPage() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState(null);
+  const [removingId, setRemovingId] = useState(null);
+
+  // Invite form
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteRole, setInviteRole] = useState("user");
+  const [inviting, setInviting] = useState(false);
+  const [inviteError, setInviteError] = useState("");
+  const [inviteSuccess, setInviteSuccess] = useState("");
 
   useEffect(() => {
     loadUsers();
@@ -19,24 +27,82 @@ export default function TeamPage() {
     setLoading(false);
   };
 
+  const handleInvite = async () => {
+    setInviteError("");
+    setInviteSuccess("");
+    if (!inviteEmail.trim()) return setInviteError("Please enter an email address.");
+    setInviting(true);
+    await base44.users.inviteUser(inviteEmail.trim(), inviteRole);
+    setInviteSuccess(`Invite sent to ${inviteEmail.trim()}.`);
+    setInviteEmail("");
+    setInviteRole("user");
+    setInviting(false);
+    await loadUsers();
+  };
+
   const handleRoleChange = async (user, newRole) => {
-    if (user.id === currentUser.id) return; // prevent self-demotion
+    if (user.id === currentUser.id) return;
     setUpdatingId(user.id);
-    const updated = await base44.auth.updateMe
-      ? await base44.entities.User.update(user.id, { role: newRole })
-      : await base44.entities.User.update(user.id, { role: newRole });
+    const updated = await base44.entities.User.update(user.id, { role: newRole });
     setUsers(prev => prev.map(u => u.id === updated.id ? updated : u));
     setUpdatingId(null);
   };
 
-  return (
-    <div className="p-8 max-w-3xl">
-      <div className="mb-6">
-        <h2 className="text-lg font-bold text-gray-900">Team</h2>
-        <p className="text-sm text-gray-400 mt-1">Manage user roles for this app.</p>
-      </div>
+  const handleRemove = async (user) => {
+    if (user.id === currentUser.id) return;
+    if (!confirm(`Remove ${user.full_name || user.email} from the team?`)) return;
+    setRemovingId(user.id);
+    await base44.entities.User.delete(user.id);
+    setUsers(prev => prev.filter(u => u.id !== user.id));
+    setRemovingId(null);
+  };
 
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+  return (
+    <div className="p-8 max-w-3xl space-y-8">
+
+      {/* Invite section */}
+      <section className="bg-white rounded-xl border border-gray-200 p-6">
+        <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-1">Invite a team member</h3>
+        <p className="text-xs text-gray-400 mb-4">They'll receive an email to join the app.</p>
+        <div className="flex gap-2 flex-wrap">
+          <input
+            type="email"
+            placeholder="email@company.com"
+            value={inviteEmail}
+            onChange={e => setInviteEmail(e.target.value)}
+            onKeyDown={e => e.key === "Enter" && handleInvite()}
+            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 flex-1 min-w-48"
+          />
+          <select
+            value={inviteRole}
+            onChange={e => setInviteRole(e.target.value)}
+            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+          >
+            <option value="user">user</option>
+            <option value="admin">admin</option>
+          </select>
+          <button
+            onClick={handleInvite}
+            disabled={inviting || !inviteEmail.trim()}
+            className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+          >
+            {inviting ? "Sending…" : "Send invite"}
+          </button>
+        </div>
+        {inviteError && <p className="text-red-500 text-xs mt-2">{inviteError}</p>}
+        {inviteSuccess && <p className="text-green-600 text-xs mt-2">{inviteSuccess}</p>}
+      </section>
+
+      {/* Users table */}
+      <section className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+          <div>
+            <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Team members</h3>
+            <p className="text-xs text-gray-400 mt-0.5">{users.length} member{users.length !== 1 ? "s" : ""}</p>
+          </div>
+          <button onClick={loadUsers} className="text-xs text-gray-400 hover:text-indigo-600 transition-colors">Refresh</button>
+        </div>
+
         {loading ? (
           <div className="flex justify-center py-12">
             <div className="w-5 h-5 border-2 border-indigo-200 border-t-indigo-500 rounded-full animate-spin" />
@@ -50,12 +116,14 @@ export default function TeamPage() {
                 <th className="text-left px-6 py-3 font-medium">Name</th>
                 <th className="text-left px-6 py-3 font-medium">Email</th>
                 <th className="text-left px-6 py-3 font-medium">Role</th>
+                <th className="px-6 py-3" />
               </tr>
             </thead>
             <tbody>
               {users.map(u => {
                 const isSelf = u.id === currentUser?.id;
                 const isUpdating = updatingId === u.id;
+                const isRemoving = removingId === u.id;
                 return (
                   <tr key={u.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50/50">
                     <td className="px-6 py-3 font-medium text-gray-800">
@@ -82,13 +150,24 @@ export default function TeamPage() {
                         </select>
                       )}
                     </td>
+                    <td className="px-6 py-3 text-right">
+                      {!isSelf && (
+                        <button
+                          onClick={() => handleRemove(u)}
+                          disabled={isRemoving}
+                          className="text-xs text-gray-300 hover:text-red-400 disabled:opacity-40 transition-colors font-medium"
+                        >
+                          {isRemoving ? "Removing…" : "Remove"}
+                        </button>
+                      )}
+                    </td>
                   </tr>
                 );
               })}
             </tbody>
           </table>
         )}
-      </div>
+      </section>
     </div>
   );
 }
