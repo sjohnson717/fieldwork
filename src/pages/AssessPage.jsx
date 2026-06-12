@@ -39,11 +39,87 @@ export default function AssessPage() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-
     const params = new URLSearchParams(window.location.search);
     const urlCode = params.get("code");
-    if (urlCode) setCode(urlCode.toUpperCase());
+    const urlToken = params.get("t");
+
+    if (urlToken) {
+      loadFromToken(urlToken);
+    } else if (urlCode) {
+      setCode(urlCode.toUpperCase());
+    }
   }, []);
+
+  const loadFromToken = async (t) => {
+    setStep("loading");
+    try {
+      const respondents = await base44.entities.Respondent.filter({ token: t });
+      if (!respondents || respondents.length === 0) {
+        setError("This link is no longer valid.");
+        setStep("token-error");
+        return;
+      }
+      const r = respondents[0];
+
+      if (r.status === "completed") {
+        setName(r.name);
+        setStep("already-done");
+        return;
+      }
+
+      // Load parent assessment
+      const assessments = await base44.entities.Assessment.list();
+      const a = assessments.find(a => a.id === r.assessment_id);
+      if (!a) {
+        setError("This link is no longer valid.");
+        setStep("token-error");
+        return;
+      }
+      if (a.status === "closed") {
+        setError("This assessment is no longer accepting responses.");
+        setStep("token-error");
+        return;
+      }
+
+      setAssessment(a);
+      setName(r.name);
+
+      // Mark as started if still invited
+      let updatedRespondent = r;
+      if (r.status === "invited") {
+        updatedRespondent = await base44.entities.Respondent.update(r.id, { status: "started" });
+      }
+      setRespondent(updatedRespondent);
+
+      if (r.title) {
+        // Has title — go straight to rating
+        setTitle(r.title);
+        const acts = await base44.entities.Activity.filter({ active: true }, "sort_order");
+        setActivities(acts);
+        setStep("rating");
+      } else {
+        // Needs title — show minimal intro
+        setStep("token-intro");
+      }
+    } catch (e) {
+      setError("Something went wrong. Please try again.");
+      setStep("token-error");
+    }
+  };
+
+  const handleTokenIntroSubmit = async () => {
+    setError("");
+    if (!title.trim()) return setError("Please enter your job title.");
+    try {
+      const updated = await base44.entities.Respondent.update(respondent.id, { title: title.trim() });
+      setRespondent(updated);
+      const acts = await base44.entities.Activity.filter({ active: true }, "sort_order");
+      setActivities(acts);
+      setStep("rating");
+    } catch (e) {
+      setError("Something went wrong. Please try again.");
+    }
+  };
 
   const handleCodeSubmit = async () => {
     setError("");
@@ -114,6 +190,11 @@ export default function AssessPage() {
         setCurrentFacetIndex(i => i + 1);
         window.scrollTo(0, 0);
       } else {
+        // Mark as completed
+        await base44.entities.Respondent.update(respondent.id, {
+          status: "completed",
+          completed_date: new Date().toISOString()
+        });
         setStep("done");
       }
     } catch (e) {
@@ -122,6 +203,77 @@ export default function AssessPage() {
     setSaving(false);
   };
 
+  // ── Loading state ─────────────────────────────────────────────────────────
+  if (step === "loading") return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="w-8 h-8 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
+    </div>
+  );
+
+  // ── Token error ───────────────────────────────────────────────────────────
+  if (step === "token-error") return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 w-full max-w-md text-center">
+        <p className="text-sm font-semibold text-indigo-600 uppercase tracking-wide mb-4">Product Growth Leaders</p>
+        <p className="text-gray-500">{error}</p>
+      </div>
+    </div>
+  );
+
+  // ── Already done ──────────────────────────────────────────────────────────
+  if (step === "already-done") return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 w-full max-w-md text-center">
+        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <svg className="w-8 h-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">You're all done{name ? `, ${name.split(" ")[0]}` : ""}!</h1>
+        <p className="text-gray-500">You've already completed this assessment. Thanks!</p>
+      </div>
+    </div>
+  );
+
+  // ── Token-based intro (title only) ────────────────────────────────────────
+  if (step === "token-intro") return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 w-full max-w-md">
+        <div className="mb-8">
+          <p className="text-sm font-semibold text-indigo-600 uppercase tracking-wide mb-1">Product Growth Leaders</p>
+          <h1 className="text-2xl font-bold text-gray-900">Before we begin</h1>
+          <p className="text-gray-500 mt-2">Your responses are confidential and will only be seen in aggregate by your team leader.</p>
+        </div>
+        <div className="space-y-4 mb-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Your name</label>
+            <p className="px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-700 text-sm">{name}</p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">What's your title or role?</label>
+            <input
+              type="text"
+              value={title}
+              onChange={e => setTitle(e.target.value)}
+              onKeyDown={e => e.key === "Enter" && handleTokenIntroSubmit()}
+              autoFocus
+              className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              placeholder="e.g. Senior Product Manager"
+            />
+          </div>
+        </div>
+        {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
+        <button
+          onClick={handleTokenIntroSubmit}
+          className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-lg transition-colors"
+        >
+          Start Assessment
+        </button>
+      </div>
+    </div>
+  );
+
+  // ── Entry (access code) ───────────────────────────────────────────────────
   if (step === "entry") return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 w-full max-w-md">
@@ -149,6 +301,7 @@ export default function AssessPage() {
     </div>
   );
 
+  // ── Intro (access-code flow) ──────────────────────────────────────────────
   if (step === "intro") return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 w-full max-w-md">
@@ -190,6 +343,7 @@ export default function AssessPage() {
     </div>
   );
 
+  // ── Rating ────────────────────────────────────────────────────────────────
   if (step === "rating") return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-3xl mx-auto px-4 py-8">
@@ -276,6 +430,7 @@ export default function AssessPage() {
     </div>
   );
 
+  // ── Done ──────────────────────────────────────────────────────────────────
   if (step === "done") return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 w-full max-w-md text-center">
