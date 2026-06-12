@@ -1,18 +1,254 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 
-const FACET_ORDER = ["DEFINE", "COMMIT", "DESCRIBE", "CREATE", "PREPARE", "DELIVER"];
+// ── Constants (mirrored from ReportPage) ─────────────────────────────────────
+const THEME_GROUPS = [
+  {
+    label: "Plan the right things",
+    facets: ["DEFINE", "COMMIT"],
+    color: "#3366FF",
+    lightColor: "#EEF2FF",
+    textColor: "#1E3A8A",
+  },
+  {
+    label: "Build what you plan",
+    facets: ["DESCRIBE", "CREATE"],
+    color: "#333333",
+    lightColor: "#F3F4F6",
+    textColor: "#111827",
+  },
+  {
+    label: "Sell what you build",
+    facets: ["PREPARE", "DELIVER"],
+    color: "#11CC77",
+    lightColor: "#ECFDF5",
+    textColor: "#065F46",
+  },
+];
+
+const FACET_SUBTITLES = {
+  DEFINE: "problems to solve",
+  COMMIT: "the resources",
+  DESCRIBE: "problems with stories",
+  CREATE: "winning solutions",
+  PREPARE: "the teams",
+  DELIVER: "to market",
+};
+
+const IMPORTANCE_SCORE = { "Not needed": 0, "Nice to have": 1, "Important": 2, "Critical": 3 };
+const EXECUTION_SCORE  = { "Not done": 0, "Inconsistent": 1, "Good": 2, "Excellent": 3 };
+const IMPORTANCE_LABEL = ["Not needed", "Nice to have", "Important", "Critical"];
+const EXECUTION_LABEL  = ["Not done", "Inconsistent", "Good", "Excellent"];
+
+const avg = (arr) => arr.length === 0 ? null : arr.reduce((a, b) => a + b, 0) / arr.length;
+
+const gapColor = (gap) => {
+  if (gap === null) return "#E5E7EB";
+  if (gap >= 2) return "#FF3333";
+  if (gap >= 1) return "#FFCC00";
+  return "#11CC77";
+};
+
+const gapLabel = (gap) => {
+  if (gap === null) return "No data";
+  if (gap >= 2) return "Critical gap";
+  if (gap >= 1) return "Needs attention";
+  return "On track";
+};
+
+// ── Sub-components ────────────────────────────────────────────────────────────
+
+function GapBar({ importance, execution }) {
+  const impPct  = importance !== null ? (importance / 3) * 100 : 0;
+  const execPct = execution  !== null ? (execution  / 3) * 100 : 0;
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center gap-2">
+        <span className="text-[10px] text-gray-400 w-16 text-right shrink-0">Importance</span>
+        <div className="flex-1 bg-gray-100 rounded-full h-2 max-w-[200px]">
+          <div className="h-2 rounded-full bg-[#3366FF] transition-all" style={{ width: `${impPct}%` }} />
+        </div>
+        <span className="text-[10px] text-gray-500 w-20 shrink-0">
+          {importance !== null ? IMPORTANCE_LABEL[Math.round(importance)] : "—"}
+        </span>
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="text-[10px] text-gray-400 w-16 text-right shrink-0">Execution</span>
+        <div className="flex-1 bg-gray-100 rounded-full h-2 max-w-[200px]">
+          <div className="h-2 rounded-full bg-[#11CC77] transition-all" style={{ width: `${execPct}%` }} />
+        </div>
+        <span className="text-[10px] text-gray-500 w-20 shrink-0">
+          {execution !== null ? EXECUTION_LABEL[Math.round(execution)] : "—"}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function ActivityRow({ activity, stats }) {
+  const [expanded, setExpanded] = useState(false);
+  const gap = stats?.avgGap ?? null;
+  const dot = gapColor(gap);
+
+  return (
+    <div className="border-b border-gray-50 last:border-0">
+      <button
+        onClick={() => setExpanded(e => !e)}
+        className="w-full flex items-center gap-4 px-5 py-3.5 hover:bg-gray-50/50 transition-colors text-left"
+      >
+        <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: dot }} />
+        <div className="flex-1 min-w-0">
+          <span className="text-sm font-medium text-gray-800">{activity.name}</span>
+          {activity.description && (
+            <p className="text-xs text-gray-400 truncate mt-0.5">{activity.description}</p>
+          )}
+        </div>
+        <div className="shrink-0 flex items-center gap-3">
+          {gap !== null && (
+            <span
+              className="text-xs font-semibold px-2 py-0.5 rounded-full"
+              style={{
+                backgroundColor: dot + "22",
+                color: gap >= 2 ? "#991B1B" : gap >= 1 ? "#92700A" : "#065F46",
+              }}
+            >
+              {gapLabel(gap)}
+            </span>
+          )}
+          <svg
+            className={`w-4 h-4 text-gray-300 transition-transform ${expanded ? "rotate-180" : ""}`}
+            fill="none" viewBox="0 0 24 24" stroke="currentColor"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
+      </button>
+
+      {expanded && stats && (
+        <div className="px-5 pb-4 space-y-4">
+          <GapBar importance={stats.avgImp} execution={stats.avgExec} />
+          {stats.ownerEntries?.length > 0 && (
+            <div className="text-xs text-gray-500">
+              <span className="font-medium text-gray-700">Suggested owner: </span>
+              {stats.ownerEntries.map(([name, count], i) => (
+                <span key={name}>
+                  {i > 0 && <span className="text-gray-300 mx-1">·</span>}
+                  <span className="text-gray-700">{name}</span>
+                  <span className="text-gray-400 ml-0.5">({count})</span>
+                </span>
+              ))}
+            </div>
+          )}
+          {stats.n > 0 && (
+            <div className="text-xs text-gray-400">{stats.n} response{stats.n !== 1 ? "s" : ""}</div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ThemeSection({ group, activities, activityStats, filterLevel }) {
+  const groupActivities = activities.filter(a => group.facets.includes(a.facet));
+  if (groupActivities.length === 0) return null;
+
+  const visibleActivities = groupActivities.filter(a => {
+    const gap = activityStats[a.id]?.avgGap ?? null;
+    if (filterLevel === "all") return true;
+    if (filterLevel === "critical") return gap !== null && gap >= 2;
+    if (filterLevel === "attention") return gap !== null && gap >= 1 && gap < 2;
+    if (filterLevel === "ontrack") return gap !== null && gap < 1;
+    return gap === null || gap >= 1;
+  });
+
+  if (visibleActivities.length === 0) {
+    if (filterLevel === "problems") {
+      return (
+        <section className="mb-10">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="w-1 h-12 rounded-full shrink-0" style={{ backgroundColor: group.color }} />
+            <div>
+              <h2 className="text-lg font-bold text-gray-900">{group.label}</h2>
+              <p className="text-xs text-gray-400">{group.facets.join(" · ")}</p>
+            </div>
+          </div>
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-4">
+            <p className="text-sm text-[#11CC77] font-medium flex items-center gap-2">
+              <span>✓</span> All activities on track in this area
+            </p>
+          </div>
+        </section>
+      );
+    }
+    return null;
+  }
+
+  const byFacet = group.facets.map(f => ({
+    facet: f,
+    subtitle: FACET_SUBTITLES[f],
+    items: visibleActivities.filter(a => a.facet === f),
+  })).filter(f => f.items.length > 0);
+
+  const themeGaps = groupActivities
+    .map(a => activityStats[a.id]?.avgGap)
+    .filter(v => v !== null && v !== undefined);
+  const themeAvgGap = avg(themeGaps);
+  const criticalCount = groupActivities.filter(a => (activityStats[a.id]?.avgGap ?? 0) >= 2).length;
+
+  return (
+    <section className="mb-10">
+      <div className="flex items-center gap-4 mb-4">
+        <div className="w-1 h-12 rounded-full shrink-0" style={{ backgroundColor: group.color }} />
+        <div>
+          <h2 className="text-lg font-bold text-gray-900">{group.label}</h2>
+          <p className="text-xs text-gray-400">
+            {group.facets.join(" · ")}
+            {themeAvgGap !== null && (
+              <span className="ml-3 font-semibold" style={{ color: gapColor(themeAvgGap) }}>
+                avg gap {themeAvgGap.toFixed(1)}
+              </span>
+            )}
+            {criticalCount > 0 && (
+              <span className="ml-2 text-[#FF3333] font-medium">{criticalCount} critical</span>
+            )}
+          </p>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        {byFacet.map(({ facet, subtitle, items }) => (
+          <div key={facet}>
+            <div className="px-5 py-2.5 border-b border-gray-50" style={{ backgroundColor: group.lightColor }}>
+              <span className="text-xs font-bold uppercase tracking-widest" style={{ color: group.color }}>
+                {facet}
+              </span>
+              <span className="text-xs text-gray-400 ml-2">{subtitle}</span>
+            </div>
+            {items.map(act => (
+              <ActivityRow
+                key={act.id}
+                activity={act}
+                stats={activityStats[act.id]}
+              />
+            ))}
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+// ── Main component ────────────────────────────────────────────────────────────
 
 export default function AssessmentDiscussion({ assessment }) {
   const [activities, setActivities] = useState([]);
-  const [notes, setNotes] = useState({}); // activityId -> DiscussionNote
+  const [notes, setNotes] = useState({});
   const [responses, setResponses] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedFacet, setSelectedFacet] = useState("ALL");
-  const [expandedId, setExpandedId] = useState(null);
-  const [draftNote, setDraftNote] = useState({}); // activityId -> string
-  const [draftDecision, setDraftDecision] = useState({}); // activityId -> string
-  const [saving, setSaving] = useState({}); // activityId -> bool
+  const [filterLevel, setFilterLevel] = useState("problems");
+  const [draftNote, setDraftNote] = useState({});
+  const [draftDecision, setDraftDecision] = useState({});
+  const [saving, setSaving] = useState({});
 
   useEffect(() => {
     loadData();
@@ -29,11 +265,8 @@ export default function AssessmentDiscussion({ assessment }) {
       setActivities(acts);
       setResponses(resps);
       const noteMap = {};
-      for (const n of existingNotes) {
-        noteMap[n.activity_id] = n;
-      }
+      for (const n of existingNotes) noteMap[n.activity_id] = n;
       setNotes(noteMap);
-      // Pre-fill drafts from existing notes
       const noteDrafts = {}, decDrafts = {};
       for (const n of existingNotes) {
         noteDrafts[n.activity_id] = n.note || "";
@@ -58,12 +291,9 @@ export default function AssessmentDiscussion({ assessment }) {
         decision: draftDecision[activityId] || "",
         flagged: existing?.flagged || false,
       };
-      let saved;
-      if (existing) {
-        saved = await base44.entities.DiscussionNote.update(existing.id, payload);
-      } else {
-        saved = await base44.entities.DiscussionNote.create(payload);
-      }
+      const saved = existing
+        ? await base44.entities.DiscussionNote.update(existing.id, payload)
+        : await base44.entities.DiscussionNote.create(payload);
       setNotes(prev => ({ ...prev, [activityId]: saved }));
     } catch (e) {
       console.error("Failed to save note", e);
@@ -75,18 +305,15 @@ export default function AssessmentDiscussion({ assessment }) {
     const existing = notes[activityId];
     const newFlagged = !(existing?.flagged);
     try {
-      let saved;
-      if (existing) {
-        saved = await base44.entities.DiscussionNote.update(existing.id, { flagged: newFlagged });
-      } else {
-        saved = await base44.entities.DiscussionNote.create({
-          assessment_id: assessment.id,
-          activity_id: activityId,
-          note: "",
-          decision: "",
-          flagged: newFlagged,
-        });
-      }
+      const saved = existing
+        ? await base44.entities.DiscussionNote.update(existing.id, { flagged: newFlagged })
+        : await base44.entities.DiscussionNote.create({
+            assessment_id: assessment.id,
+            activity_id: activityId,
+            note: "",
+            decision: "",
+            flagged: newFlagged,
+          });
       setNotes(prev => ({ ...prev, [activityId]: saved }));
     } catch (e) {
       console.error("Failed to toggle flag", e);
@@ -101,33 +328,36 @@ export default function AssessmentDiscussion({ assessment }) {
     );
   }
 
-  const availableFacets = FACET_ORDER.filter(f => activities.some(a => a.facet === f));
-  const filteredActivities = selectedFacet === "ALL"
-    ? activities
-    : activities.filter(a => a.facet === selectedFacet);
-
-  const flaggedCount = Object.values(notes).filter(n => n.flagged).length;
-  const decidedCount = Object.values(notes).filter(n => n.decision?.trim()).length;
-
-  // Build importance/execution summaries per activity
-  const IMPORTANCE_SCORE = { "Not needed": 0, "Nice to have": 1, "Important": 2, "Critical": 3 };
-  const EXECUTION_SCORE = { "Not done": 0, "Inconsistent": 1, "Good": 2, "Excellent": 3 };
-
-  const activitySummary = (actId) => {
-    const actResps = responses.filter(r => r.activity_id === actId);
-    if (actResps.length === 0) return null;
+  // Build per-activity stats
+  const activityStats = {};
+  for (const act of activities) {
+    const actResps = responses.filter(r => r.activity_id === act.id);
     const impScores = actResps.map(r => IMPORTANCE_SCORE[r.importance]).filter(v => v !== undefined);
     const execScores = actResps.map(r => EXECUTION_SCORE[r.execution]).filter(v => v !== undefined);
-    const avgImp = impScores.length ? impScores.reduce((a, b) => a + b, 0) / impScores.length : null;
-    const avgExec = execScores.length ? execScores.reduce((a, b) => a + b, 0) / execScores.length : null;
-    const gap = avgImp !== null && avgExec !== null ? avgImp - avgExec : null;
-    return { avgImp, avgExec, gap, n: actResps.length };
-  };
+    const avgImp  = avg(impScores);
+    const avgExec = avg(execScores);
+    const avgGap  = avgImp !== null && avgExec !== null ? avgImp - avgExec : null;
+    const ownerTally = {};
+    for (const r of actResps) {
+      if (r.suggested_owner) ownerTally[r.suggested_owner] = (ownerTally[r.suggested_owner] || 0) + 1;
+    }
+    const ownerEntries = Object.entries(ownerTally).sort((a, b) => b[1] - a[1]);
+    activityStats[act.id] = { avgImp, avgExec, avgGap, n: actResps.length, ownerEntries };
+  }
+
+  const allGaps = Object.values(activityStats).map(s => s.avgGap).filter(v => v !== null);
+  const criticalGaps   = allGaps.filter(g => g >= 2).length;
+  const attentionGaps  = allGaps.filter(g => g >= 1 && g < 2).length;
+  const onTrackCount   = allGaps.filter(g => g < 1).length;
+  const problemCount   = criticalGaps + attentionGaps;
+
+  const flaggedCount  = Object.values(notes).filter(n => n.flagged).length;
+  const decidedCount  = Object.values(notes).filter(n => n.decision?.trim()).length;
 
   return (
-    <div className="p-8 space-y-6">
+    <div className="p-8">
       {/* Summary bar */}
-      <div className="flex items-center gap-6 text-sm text-gray-500">
+      <div className="flex items-center gap-6 text-sm text-gray-500 mb-8">
         <span>
           <span className="font-semibold text-amber-600">{flaggedCount}</span> flagged for discussion
         </span>
@@ -137,181 +367,65 @@ export default function AssessmentDiscussion({ assessment }) {
         <span className="text-gray-400">{activities.length} total activities</span>
       </div>
 
-      {/* Facet filter */}
-      <div className="flex gap-1 bg-gray-100 rounded-lg p-1 flex-wrap w-fit">
-        <button
-          onClick={() => setSelectedFacet("ALL")}
-          className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-            selectedFacet === "ALL" ? "bg-white shadow-sm text-gray-900" : "text-gray-500 hover:text-gray-700"
-          }`}
-        >
-          All
-        </button>
-        {availableFacets.map(f => (
-          <button
-            key={f}
-            onClick={() => setSelectedFacet(f)}
-            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-              selectedFacet === f ? "bg-white shadow-sm text-gray-900" : "text-gray-500 hover:text-gray-700"
-            }`}
-          >
-            {f}
-          </button>
-        ))}
-      </div>
-
-      {/* Activity list */}
-      <div className="space-y-2">
-        {filteredActivities.map(act => {
-          const note = notes[act.id];
-          const isExpanded = expandedId === act.id;
-          const isFlagged = note?.flagged;
-          const hasNote = note?.note?.trim();
-          const hasDecision = note?.decision?.trim();
-          const summary = activitySummary(act.id);
-
+      {/* Filter chips */}
+      <div className="flex items-center gap-2 mb-8 flex-wrap">
+        {[
+          { key: "critical",  color: "#FF3333", label: "Critical gap",      count: criticalGaps  },
+          { key: "attention", color: "#FFCC00", label: "Needs attention",   count: attentionGaps },
+          { key: "ontrack",   color: "#11CC77", label: "On track",          count: onTrackCount  },
+        ].map(({ key, color, label, count }) => {
+          const isActive = filterLevel === key ||
+            (filterLevel === "problems" && (key === "critical" || key === "attention"));
           return (
-            <div
-              key={act.id}
-              className={`bg-white rounded-xl border transition-all ${
-                isFlagged ? "border-amber-300 shadow-amber-50 shadow-sm" : "border-gray-200"
+            <button
+              key={key}
+              onClick={() => setFilterLevel(f => f === key ? "problems" : key)}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-medium transition-all ${
+                isActive ? "shadow-sm" : "opacity-40 hover:opacity-70"
               }`}
+              style={{
+                borderColor: color,
+                backgroundColor: isActive ? color + "18" : "white",
+                color: key === "attention" ? "#92700A" : key === "ontrack" ? "#065F46" : "#991B1B",
+              }}
             >
-              {/* Row header */}
-              <div
-                className="flex items-center gap-3 px-5 py-3.5 cursor-pointer hover:bg-gray-50/50 transition-colors rounded-xl"
-                onClick={() => setExpandedId(isExpanded ? null : act.id)}
-              >
-                {/* Flag button */}
-                <button
-                  onClick={e => { e.stopPropagation(); handleToggleFlag(act.id); }}
-                  className={`shrink-0 transition-colors ${
-                    isFlagged ? "text-amber-500 hover:text-amber-700" : "text-gray-200 hover:text-amber-400"
-                  }`}
-                  title={isFlagged ? "Remove flag" : "Flag for discussion"}
-                >
-                  <svg className="w-4 h-4" fill={isFlagged ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21V5l7-2 4 2 7-2v13l-7 2-4-2-7 2z" />
-                  </svg>
-                </button>
-
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium text-gray-800 text-sm">{act.name}</span>
-                    <span className="text-xs text-gray-400 shrink-0">{act.facet}</span>
-                  </div>
-                  {act.description && (
-                    <p className="text-xs text-gray-400 truncate mt-0.5">{act.description}</p>
-                  )}
-                </div>
-
-                {/* Mini stats */}
-                {summary && (
-                  <div className="flex items-center gap-3 text-xs text-gray-400 shrink-0">
-                    <span>n={summary.n}</span>
-                    {summary.gap !== null && (
-                      <span className={`font-semibold ${
-                        summary.gap >= 2 ? "text-red-500" :
-                        summary.gap >= 1 ? "text-amber-500" :
-                        "text-gray-400"
-                      }`}>
-                        Δ{summary.gap.toFixed(1)}
-                      </span>
-                    )}
-                  </div>
-                )}
-
-                {/* Status pills */}
-                <div className="flex items-center gap-1.5 shrink-0">
-                  {hasNote && (
-                    <span className="w-2 h-2 rounded-full bg-indigo-400" title="Has note" />
-                  )}
-                  {hasDecision && (
-                    <span className="w-2 h-2 rounded-full bg-green-500" title="Has decision" />
-                  )}
-                </div>
-
-                {/* Expand chevron */}
-                <svg
-                  className={`w-4 h-4 text-gray-300 transition-transform shrink-0 ${isExpanded ? "rotate-180" : ""}`}
-                  fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </div>
-
-              {/* Expanded content */}
-              {isExpanded && (
-                <div className="border-t border-gray-100 px-5 py-4 space-y-4">
-                  {/* Response summary */}
-                  {summary && (
-                    <div className="flex gap-4 text-xs text-gray-500 bg-gray-50 rounded-lg px-4 py-2.5">
-                      <span>{summary.n} response{summary.n !== 1 ? "s" : ""}</span>
-                      {summary.avgImp !== null && (
-                        <span>Importance avg <span className="font-semibold text-indigo-600">{summary.avgImp.toFixed(1)}</span>/3</span>
-                      )}
-                      {summary.avgExec !== null && (
-                        <span>Execution avg <span className="font-semibold text-emerald-600">{summary.avgExec.toFixed(1)}</span>/3</span>
-                      )}
-                      {summary.gap !== null && (
-                        <span>Gap <span className={`font-semibold ${summary.gap >= 1 ? "text-amber-600" : "text-gray-500"}`}>{summary.gap.toFixed(1)}</span></span>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Note */}
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
-                      Discussion notes
-                    </label>
-                    <textarea
-                      rows={3}
-                      placeholder="Add notes for the debrief conversation…"
-                      value={draftNote[act.id] || ""}
-                      onChange={e => setDraftNote(prev => ({ ...prev, [act.id]: e.target.value }))}
-                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder:text-gray-300"
-                    />
-                  </div>
-
-                  {/* Decision */}
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
-                      Decision / action
-                    </label>
-                    <textarea
-                      rows={2}
-                      placeholder="What was decided or committed to?"
-                      value={draftDecision[act.id] || ""}
-                      onChange={e => setDraftDecision(prev => ({ ...prev, [act.id]: e.target.value }))}
-                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder:text-gray-300"
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-xs text-gray-400">
-                      {hasDecision && (
-                        <span className="flex items-center gap-1 text-green-600">
-                          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
-                          Decision recorded
-                        </span>
-                      )}
-                    </div>
-                    <button
-                      onClick={() => handleSave(act.id)}
-                      disabled={saving[act.id]}
-                      className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-medium px-4 py-1.5 rounded-lg transition-colors"
-                    >
-                      {saving[act.id] ? "Saving…" : "Save"}
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
+              <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
+              {label}
+              <span className="font-bold" style={{ color }}>{count}</span>
+            </button>
           );
         })}
+        <span className="text-xs text-gray-400 ml-2">
+          {filterLevel === "all"
+            ? `Showing all ${activities.length} activities`
+            : filterLevel === "critical"
+            ? `Showing ${criticalGaps} critical gap${criticalGaps !== 1 ? "s" : ""}`
+            : filterLevel === "attention"
+            ? `Showing ${attentionGaps} needing attention`
+            : filterLevel === "ontrack"
+            ? `Showing ${onTrackCount} on-track ${onTrackCount === 1 ? "activity" : "activities"}`
+            : `Showing ${problemCount} of ${activities.length} activities`}
+          {filterLevel !== "all" && (
+            <button
+              onClick={() => setFilterLevel("all")}
+              className="ml-2 text-[#3366FF] hover:text-[#003366] font-medium transition-colors"
+            >
+              Show all
+            </button>
+          )}
+        </span>
       </div>
+
+      {/* Theme sections */}
+      {THEME_GROUPS.map(group => (
+        <ThemeSection
+          key={group.label}
+          group={group}
+          activities={activities}
+          activityStats={activityStats}
+          filterLevel={filterLevel}
+        />
+      ))}
     </div>
   );
 }
