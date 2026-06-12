@@ -125,11 +125,9 @@ export default function AssessPage() {
     setError("");
     if (!code.trim()) return setError("Please enter an assessment code.");
     try {
-      const results = await base44.entities.Assessment.filter({
-        access_code: code.trim().toUpperCase()
-      });
-      if (!results || results.length === 0) return setError("Code not found. Please check and try again.");
-      const found = results[0];
+      const allAssessments = await base44.entities.Assessment.list();
+      const found = allAssessments.find(a => a.access_code === code.trim().toUpperCase());
+      if (!found) return setError("Code not found. Please check and try again.");
       if (found.status === "closed") return setError("This assessment is no longer accepting responses.");
       setAssessment(found);
       setStep("intro");
