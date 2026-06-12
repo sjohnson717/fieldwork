@@ -150,7 +150,7 @@ export default function TeamLeaderPage() {
           <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-1">Invite a team member</h2>
           <p className="text-xs text-gray-400 mb-4">Create a personal assessment link for each participant.</p>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3 items-start">
             <input
               type="text"
               placeholder="Full name"
