@@ -339,6 +339,7 @@ export default function ReportPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [respondentCount, setRespondentCount] = useState(0);
+  const [totalRespondentCount, setTotalRespondentCount] = useState(0);
   const [filterLevel, setFilterLevel] = useState("problems"); // problems | critical | attention | all
 
   useEffect(() => {
@@ -360,12 +361,13 @@ export default function ReportPage() {
       const a = assessments[0];
       setAssessment(a);
 
-      // Load activities and responses in parallel — no Respondent fetch needed
-      // (Respondent records contain names/titles so we keep them admin-only)
-      const [acts, responses] = await Promise.all([
+      // Load activities, responses, and respondent count in parallel
+      const [acts, responses, allRespondents] = await Promise.all([
         base44.entities.Activity.filter({ active: true }, "sort_order"),
         base44.entities.Response.filter({ assessment_id: a.id }),
+        base44.entities.Respondent.filter({ assessment_id: a.id }),
       ]);
+      setTotalRespondentCount(allRespondents.length);
 
       setActivities(acts);
       // Derive participant count from distinct respondent_ids in responses
@@ -421,6 +423,27 @@ export default function ReportPage() {
           <p className="text-gray-500 text-sm">{error}</p>
         </div>
       </div>
+    );
+  }
+
+  // Minimum-response gate
+  const threshold = Math.min(3, totalRespondentCount);
+
+  const gateCard = (message) => (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl border border-gray-200 p-10 text-center max-w-sm shadow-sm">
+        <p className="text-gray-500 text-sm">{message}</p>
+      </div>
+    </div>
+  );
+
+  if (totalRespondentCount === 0) {
+    return gateCard("No team members have been added to this assessment yet.");
+  }
+
+  if (respondentCount < threshold) {
+    return gateCard(
+      `Results will appear here once at least ${threshold} ${threshold === 1 ? "person has" : "people have"} responded — ${respondentCount} of ${threshold} so far.`
     );
   }
 
