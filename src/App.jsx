@@ -9,6 +9,7 @@ import AssessPage from './pages/AssessPage';
 import ReadMe from './pages/ReadMe';
 import AdminPage from './pages/AdminPage';
 import ReportPage from './pages/ReportPage';
+import LandingPage from './pages/LandingPage';
 
 function App() {
   return (
@@ -20,7 +21,8 @@ function App() {
             <Route path="/assess" element={<AssessPage />} />
             <Route path="/admin" element={<AdminPage />} />
             <Route path="/report/:token" element={<ReportPage />} />
-            <Route path="/" element={<ReadMe />} />
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/readme" element={<ReadMe />} />
             <Route path="*" element={<PageNotFound />} />
           </Routes>
         </Router>
