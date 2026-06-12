@@ -149,22 +149,26 @@ function ActivityRow({ activity, stats, note, draftNote, draftDecision, saving, 
           {stats && (
             <>
               <GapBar importance={stats.avgImp} execution={stats.avgExec} />
-              {stats.ownerEntries?.length > 0 && (
-                <div className="text-xs text-gray-500">
-                  <span className="font-medium text-gray-700">Proposed owner: </span>
-                  {stats.ownerEntries.map(([name, count], i) => (
-                    <span key={name}>
-                      {i > 0 && <span className="text-gray-300 mx-1">·</span>}
-                      <span className="text-gray-700">{name}</span>
-                      <span className="text-gray-400 ml-0.5">({count})</span>
-                    </span>
-                  ))}
-                </div>
-              )}
-              {activity.preferred_owner && (
-                <div className="text-xs text-gray-500">
-                  <span className="font-medium text-gray-700">Recommended owner: </span>
-                  <span className="text-gray-700">{activity.preferred_owner}</span>
+              {(stats.ownerEntries?.length > 0 || activity.preferred_owner) && (
+                <div className="space-y-1">
+                  {stats.ownerEntries?.length > 0 && (
+                    <div className="text-xs text-gray-500">
+                      <span className="font-medium text-gray-700">Proposed owner: </span>
+                      {stats.ownerEntries.map(([name, count], i) => (
+                        <span key={name}>
+                          {i > 0 && <span className="text-gray-300 mx-1">·</span>}
+                          <span className="text-gray-700">{name}</span>
+                          <span className="text-gray-400 ml-0.5">({count})</span>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  {activity.preferred_owner && (
+                    <div className="text-xs text-gray-500">
+                      <span className="font-medium text-gray-700">Recommended owner: </span>
+                      <span className="text-gray-700">{activity.preferred_owner}</span>
+                    </div>
+                  )}
                 </div>
               )}
               {stats.n > 0 && (
