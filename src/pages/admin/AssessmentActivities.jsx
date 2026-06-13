@@ -122,11 +122,19 @@ export default function AssessmentActivities({ assessment, onUpdate }) {
 
   // ── Preset (ActivitySet) ────────────────────────────────────────────────────
 
-  const handleApplyPreset = (set) => {
+  const handleApplyPreset = async (set) => {
     if (activityIds.length > 0) {
       if (!confirm(`Replace current selection (${activityIds.length} activities) with the "${set.name}" preset?`)) return;
     }
-    saveActivityIds(set.activity_ids || []);
+    const newIds = set.activity_ids || [];
+    setActivityIds(newIds);
+    try {
+      const updated = await base44.entities.Assessment.update(assessment.id, { activity_ids: newIds });
+      onUpdate(updated);
+    } catch (e) {
+      console.error(e);
+      setActivityIds(activityIds); // revert
+    }
   };
 
   // ── Library checklist ───────────────────────────────────────────────────────

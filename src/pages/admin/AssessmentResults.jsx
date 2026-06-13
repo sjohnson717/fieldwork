@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
+import { getAssignedActivities } from "@/lib/activities";
 
 const FACET_ORDER = ["DEFINE", "COMMIT", "DESCRIBE", "CREATE", "PREPARE", "DELIVER"];
 
@@ -58,7 +59,7 @@ export default function AssessmentResults({ assessment }) {
     setLoading(true);
     try {
       const [acts, resps, ress] = await Promise.all([
-        base44.entities.Activity.filter({ active: true }, "sort_order"),
+        getAssignedActivities(assessment),
         base44.entities.Respondent.filter({ assessment_id: assessment.id }),
         base44.entities.Response.filter({ assessment_id: assessment.id }),
       ]);
