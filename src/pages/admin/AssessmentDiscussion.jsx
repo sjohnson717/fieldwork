@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
+import { getAssignedActivities } from "@/lib/activities";
 
 // ── Constants (mirrored from ReportPage) ─────────────────────────────────────
 const THEME_GROUPS = [
@@ -349,7 +350,7 @@ export default function AssessmentDiscussion({ assessment }) {
     setLoading(true);
     try {
       const [acts, existingNotes, resps] = await Promise.all([
-        base44.entities.Activity.filter({ active: true }, "sort_order"),
+        getAssignedActivities(assessment),
         base44.entities.DiscussionNote.filter({ assessment_id: assessment.id }),
         base44.entities.Response.filter({ assessment_id: assessment.id }),
       ]);

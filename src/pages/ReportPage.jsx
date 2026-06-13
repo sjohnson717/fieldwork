@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
+import { getAssignedActivities } from "@/lib/activities";
 
 // ── PGL brand ────────────────────────────────────────────────────────────────
 const PGL_LOGO = "https://static.wixstatic.com/media/739bca_d49790dff653441fae7d036110019dc2~mv2.png";
@@ -396,7 +397,7 @@ export default function ReportPage() {
 
       // Load activities, responses, and respondent count in parallel
       const [acts, responses, allRespondents] = await Promise.all([
-        base44.entities.Activity.filter({ active: true }, "sort_order"),
+        getAssignedActivities(a),
         base44.entities.Response.filter({ assessment_id: a.id }),
         base44.entities.Respondent.filter({ assessment_id: a.id }),
       ]);
