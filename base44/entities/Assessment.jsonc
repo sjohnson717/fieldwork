@@ -31,6 +31,13 @@
       "items": {
         "type": "string"
       }
+    },
+    "activity_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": []
     }
   },
   "required": [

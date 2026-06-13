@@ -127,7 +127,7 @@ function ActivitiesTab() {
     setLoading(true);
     try {
       const [all, titles] = await Promise.all([
-        base44.entities.Activity.list("sort_order"),
+        base44.entities.Activity.list("sort_order").then(all => all.filter(a => !a.assessment_id)),
         base44.entities.JobTitle.list("sort_order"),
       ]);
       setActivities(all);
