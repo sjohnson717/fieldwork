@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
+import ActivitySetsTab from "./ActivitySetsTab";
 
 const FACET_ORDER = ["DEFINE", "COMMIT", "DESCRIBE", "CREATE", "PREPARE", "DELIVER"];
 
@@ -617,7 +618,7 @@ function JobTitlesTab() {
 
 // ── Main LibraryPage ─────────────────────────────────────────────────────────
 
-const TABS = ["Activities", "Job Titles"];
+const TABS = ["Activities", "Job Titles", "Activity Sets"];
 
 export default function LibraryPage() {
   const [activeTab, setActiveTab] = useState("Activities");
@@ -651,6 +652,7 @@ export default function LibraryPage() {
       <div className="flex-1 overflow-y-auto p-8 max-w-2xl">
         {activeTab === "Activities" && <ActivitiesTab />}
         {activeTab === "Job Titles" && <JobTitlesTab />}
+        {activeTab === "Activity Sets" && <ActivitySetsTab />}
       </div>
     </div>
   );
