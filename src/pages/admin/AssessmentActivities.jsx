@@ -235,6 +235,9 @@ export default function AssessmentActivities({ assessment, onUpdate }) {
             <span className="ml-2 font-semibold text-gray-700">
               {activityIds.length} of {libraryActivities.length} selected
             </span>
+            {customActivities.length > 0 && (
+              <span className="ml-3 text-gray-500">· Custom activities: <span className="font-semibold text-gray-700">{customActivities.length}</span></span>
+            )}
           </p>
           <div className="flex gap-3">
             <button onClick={handleSelectAll} className="text-xs text-indigo-600 hover:text-indigo-800 font-medium transition-colors">
