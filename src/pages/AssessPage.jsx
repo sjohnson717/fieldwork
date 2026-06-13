@@ -25,6 +25,15 @@ function RatingButton({ options, value, onChange, colorClass }) {
   );
 }
 
+async function loadAssessmentActivities(assessmentRecord) {
+  const all = await base44.entities.Activity.filter({ active: true }, "sort_order");
+  const ids = assessmentRecord.activity_ids;
+  const hasFilter = Array.isArray(ids) && ids.length > 0;
+  const library = all.filter(a => !a.assessment_id && (!hasFilter || ids.includes(a.id)));
+  const custom = all.filter(a => a.assessment_id === assessmentRecord.id);
+  return [...library, ...custom].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+}
+
 export default function AssessPage() {
   const [step, setStep] = useState("entry");
   const [code, setCode] = useState("");
@@ -94,7 +103,7 @@ export default function AssessPage() {
       if (r.title) {
         // Has title — go straight to rating
         setTitle(r.title);
-        const acts = await base44.entities.Activity.filter({ active: true }, "sort_order");
+        const acts = await loadAssessmentActivities(a);
         setActivities(acts);
         setStep("rating");
       } else {
@@ -113,7 +122,7 @@ export default function AssessPage() {
     try {
       const updated = await base44.entities.Respondent.update(respondent.id, { title: title.trim() });
       setRespondent(updated);
-      const acts = await base44.entities.Activity.filter({ active: true }, "sort_order");
+      const acts = await loadAssessmentActivities(assessment);
       setActivities(acts);
       setStep("rating");
     } catch (e) {
@@ -150,7 +159,7 @@ export default function AssessPage() {
         status: "started"
       });
       setRespondent(r);
-      const acts = await base44.entities.Activity.filter({ active: true }, "sort_order");
+      const acts = await loadAssessmentActivities(assessment);
       setActivities(acts);
       setStep("rating");
     } catch (e) {
