@@ -60,6 +60,52 @@ function DraggableList({ items, onReorder, renderItem }) {
   );
 }
 
+// ── Typeahead owner input ─────────────────────────────────────────────────────
+
+function OwnerTypeahead({ value, onChange, jobTitleNames }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  const suggestions = value.trim()
+    ? [...jobTitleNames].filter(t => t.toLowerCase().includes(value.toLowerCase()))
+    : [...jobTitleNames];
+
+  useEffect(() => {
+    const handleClick = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  return (
+    <div className="relative" ref={ref}>
+      <input
+        value={value}
+        onChange={e => { onChange(e.target.value); setOpen(true); }}
+        onFocus={() => setOpen(true)}
+        placeholder="Optional"
+        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+      />
+      {open && suggestions.length > 0 && (
+        <ul className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+          {suggestions.map(title => (
+            <li key={title}>
+              <button
+                type="button"
+                onMouseDown={() => { onChange(title); setOpen(false); }}
+                className={`w-full text-left px-3 py-2 text-sm hover:bg-indigo-50 hover:text-indigo-700 transition-colors ${value === title ? "bg-indigo-50 text-indigo-700 font-medium" : "text-gray-700"}`}
+              >
+                {title}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 // ── Activities tab ───────────────────────────────────────────────────────────
 
 function ActivitiesTab() {
@@ -270,11 +316,10 @@ function ActivitiesTab() {
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-500 mb-1">Preferred owner</label>
-                    <input
+                    <OwnerTypeahead
                       value={editDraft.preferred_owner}
-                      onChange={e => setEditDraft(d => ({ ...d, preferred_owner: e.target.value }))}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                      placeholder="Optional"
+                      onChange={val => setEditDraft(d => ({ ...d, preferred_owner: val }))}
+                      jobTitleNames={jobTitleNames}
                     />
                   </div>
                 </div>
@@ -372,11 +417,10 @@ function ActivitiesTab() {
               </select>
             </div>
             <div>
-              <input
-                placeholder="Preferred owner (optional)"
+              <OwnerTypeahead
                 value={newItem.preferred_owner}
-                onChange={e => setNewItem(d => ({ ...d, preferred_owner: e.target.value }))}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                onChange={val => setNewItem(d => ({ ...d, preferred_owner: val }))}
+                jobTitleNames={jobTitleNames}
               />
             </div>
           </div>
