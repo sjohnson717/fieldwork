@@ -161,7 +161,7 @@ export default function ActivitySetsTab() {
     try {
       const [allSets, allActivities] = await Promise.all([
         base44.entities.ActivitySet.list("sort_order"),
-        base44.entities.Activity.filter({ active: true }, "sort_order"),
+        base44.entities.Activity.filter({ active: true }, "sort_order").then(all => all.filter(a => !a.assessment_id)),
       ]);
       setSets(allSets);
       setActivities(allActivities);
