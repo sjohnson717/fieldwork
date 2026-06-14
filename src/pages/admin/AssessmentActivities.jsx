@@ -127,9 +127,27 @@ export default function AssessmentActivities({ assessment, onUpdate }) {
       if (!confirm(`Replace current selection (${activityIds.length} activities) with the "${set.name}" preset?`)) return;
     }
     const newIds = set.activity_ids || [];
+
+    // Derive preferred_owner values from the preset's activities
+    const presetActivities = libraryActivities.filter(a => newIds.includes(a.id));
+    const derivedRoles = [
+      ...new Set(
+        presetActivities
+          .map(a => a.preferred_owner)
+          .filter(o => o && jobTitleNames.has(o))
+      ),
+    ];
+
+    // Merge with existing roles, preserving any the admin already added
+    const existingRoles = assessment.roles || [];
+    const mergedRoles = [...new Set([...derivedRoles, ...existingRoles])];
+
     setActivityIds(newIds);
     try {
-      const updated = await base44.entities.Assessment.update(assessment.id, { activity_ids: newIds });
+      const updated = await base44.entities.Assessment.update(assessment.id, {
+        activity_ids: newIds,
+        roles: mergedRoles,
+      });
       onUpdate(updated);
     } catch (e) {
       console.error(e);
