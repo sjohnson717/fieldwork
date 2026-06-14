@@ -273,7 +273,7 @@ export default function AssessmentOverview({ assessment, onUpdate }) {
           <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Ownership roles</h3>
           {savingRoles && <span className="text-xs text-gray-400">Saving…</span>}
         </div>
-        <p className="text-xs text-gray-400 mb-4">Select which roles respondents can suggest as owners of each activity.</p>
+        <p className="text-xs text-gray-400 mb-4">Roles are pre-selected when you apply an activity preset. Add or remove roles to match your client's team structure.</p>
 
         {masterTitles.length === 0 ? (
           <p className="text-sm text-gray-400 italic mb-3">
