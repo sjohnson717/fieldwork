@@ -375,6 +375,7 @@ export default function ReportPage() {
   const [totalRespondentCount, setTotalRespondentCount] = useState(0);
   const [filterLevel, setFilterLevel] = useState("problems"); // problems | critical | attention | all
   const [facetFilter, setFacetFilter] = useState(null); // null = all, or specific facet like "DEFINE"
+  const [decisions, setDecisions] = useState([]);
 
   useEffect(() => {
     if (token) loadReport();
@@ -396,10 +397,11 @@ export default function ReportPage() {
       setAssessment(a);
 
       // Load activities, responses, and respondent count in parallel
-      const [acts, responses, allRespondents] = await Promise.all([
+      const [acts, responses, allRespondents, discussionNotes] = await Promise.all([
         getAssignedActivities(a),
         base44.entities.Response.filter({ assessment_id: a.id }),
         base44.entities.Respondent.filter({ assessment_id: a.id }),
+        base44.entities.DiscussionNote.filter({ assessment_id: a.id }),
       ]);
       setTotalRespondentCount(allRespondents.length);
 
@@ -434,6 +436,9 @@ export default function ReportPage() {
         stats[act.id] = { avgImp, avgExec, avgGap, n: actResps.length, topOwner, ownerAgreement, ownerEntries };
       }
       setActivityStats(stats);
+
+      const withDecisions = discussionNotes.filter(n => n.decision?.trim());
+      setDecisions(withDecisions);
 
     } catch (e) {
       console.error(e);
@@ -731,6 +736,49 @@ export default function ReportPage() {
             facetFilter={facetFilter}
           />
         ))}
+
+        {/* ── Decisions & Actions ── */}
+        {assessment.status === "closed" && decisions.length > 0 && (() => {
+          const decisionsByTheme = THEME_GROUPS.map(group => {
+            const themeActs = activities.filter(a => group.facets.includes(a.facet));
+            const themeDecisions = themeActs
+              .map(act => {
+                const note = decisions.find(d => d.activity_id === act.id);
+                return note ? { activity: act, decision: note.decision.trim() } : null;
+              })
+              .filter(Boolean);
+            return { group, themeDecisions };
+          }).filter(t => t.themeDecisions.length > 0);
+
+          if (decisionsByTheme.length === 0) return null;
+
+          return (
+            <section className="mt-16">
+              <div className="border-t-2 border-gray-200 pt-10 mb-8">
+                <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-2">Debrief outcomes</p>
+                <h2 className="text-2xl font-bold text-gray-900">What we decided</h2>
+                <p className="text-sm text-gray-500 mt-2">Decisions and actions recorded during the facilitated session.</p>
+              </div>
+
+              {decisionsByTheme.map(({ group, themeDecisions }) => (
+                <div key={group.label} className="mb-10">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-1 h-8 rounded-full shrink-0" style={{ backgroundColor: group.color }} />
+                    <h3 className="text-base font-bold text-gray-900">{group.label}</h3>
+                  </div>
+                  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                    {themeDecisions.map(({ activity, decision }, idx) => (
+                      <div key={activity.id} className={`px-6 py-4 ${idx < themeDecisions.length - 1 ? "border-b border-gray-50" : ""}`}>
+                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">{activity.name}</p>
+                        <p className="text-sm text-gray-800 leading-relaxed">{decision}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </section>
+          );
+        })()}
 
         {/* ── Footer ── */}
         <footer className="mt-16 pt-8 border-t border-gray-100 flex items-center justify-between">
