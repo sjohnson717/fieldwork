@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
+import { getAssignedActivities } from "@/lib/activities";
 
 const IMPORTANCE_OPTIONS = ["Not needed", "Nice to have", "Important", "Critical"];
 const EXECUTION_OPTIONS  = ["Not done", "Inconsistent", "Good", "Excellent"];
@@ -148,7 +149,6 @@ function generateResponse(activity, respondentTitle, assessmentRoles) {
 export default function DemoDataPage() {
   const [assessments, setAssessments] = useState([]);
   const [selectedId, setSelectedId] = useState("");
-  const [activities, setActivities] = useState([]);
   const [respondentCount, setRespondentCount] = useState(6);
   const [generating, setGenerating] = useState(false);
   const [progress, setProgress] = useState("");
@@ -160,12 +160,8 @@ export default function DemoDataPage() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [assmts, acts] = await Promise.all([
-        base44.entities.Assessment.list(),
-        base44.entities.Activity.filter({ active: true }, "sort_order"),
-      ]);
+      const assmts = await base44.entities.Assessment.list();
       setAssessments(assmts);
-      setActivities(acts);
       if (assmts.length > 0) setSelectedId(assmts[0].id);
     } catch (e) { console.error(e); }
     setLoading(false);
@@ -179,6 +175,13 @@ export default function DemoDataPage() {
     setGenerating(true);
     setDone(false);
     setProgress("Starting…");
+
+    const activities = await getAssignedActivities(assessment);
+    if (activities.length === 0) {
+      setProgress("No activities assigned to this assessment. Add an activity set first.");
+      setGenerating(false);
+      return;
+    }
 
     const count = Math.min(respondentCount, FAKE_RESPONDENTS.length);
     const pool = [...FAKE_RESPONDENTS].sort(() => Math.random() - 0.5).slice(0, count);
@@ -211,6 +214,7 @@ export default function DemoDataPage() {
             execution,
             suggested_owner,
           });
+          await new Promise(r => setTimeout(r, 50));
         }
       }
       setProgress(`Done — created ${count} respondents with ${count * activities.length} responses.`);
@@ -281,7 +285,7 @@ export default function DemoDataPage() {
 
               {selected && (
                 <div className="text-xs text-gray-400 space-y-1 pt-1">
-                  <p>{activities.length} activities · {selected.roles?.length || 0} ownership roles configured</p>
+                  <p>{selected.activity_ids?.length > 0 ? selected.activity_ids.length : "All"} activities assigned · {selected.roles?.length || 0} ownership roles configured</p>
                   {(!selected.roles || selected.roles.length === 0) && (
                     <p className="text-amber-500">⚠ No ownership roles set — suggested_owner will be blank. Add roles in the assessment Overview first.</p>
                   )}
@@ -294,7 +298,7 @@ export default function DemoDataPage() {
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">What gets generated</p>
               <ul className="text-sm text-gray-600 space-y-1.5">
                 <li>• {respondentCount} respondents with realistic names and job titles</li>
-                <li>• {respondentCount * activities.length} responses — one per respondent per activity</li>
+                <li>• {respondentCount} respondents, responses generated per assigned activity</li>
                 <li>• Biased weights by role (PMs rate DEFINE high, engineers rate CREATE high)</li>
                 <li>• Ownership suggestions weighted toward realistic role assignments</li>
                 <li>• Natural disagreement — same activity rated differently by different roles</li>
