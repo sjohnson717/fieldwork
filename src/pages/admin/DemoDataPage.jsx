@@ -7,14 +7,14 @@ const EXECUTION_OPTIONS  = ["Not done", "Inconsistent", "Good", "Excellent"];
 
 // Realistic fake respondent profiles
 const FAKE_RESPONDENTS = [
-  { name: "Alex Rivera",    title: "Product Manager" },
+  { name: "Alex Rivera",    title: "Product Manager / Product Owner" },
   { name: "Jordan Chen",    title: "Engineering" },
   { name: "Morgan Lee",     title: "Design / UX" },
-  { name: "Taylor Okafor",  title: "Product Manager" },
-  { name: "Sam Nguyen",     title: "Head of Product" },
+  { name: "Taylor Okafor",  title: "Product Manager / Product Owner" },
+  { name: "Sam Nguyen",     title: "Head of Product / Principal Product Manager" },
   { name: "Casey Patel",    title: "Engineering" },
   { name: "Drew Kimura",    title: "Customer Success" },
-  { name: "Riley Torres",   title: "Sales" },
+  { name: "Riley Torres",   title: "Sales / Sales Engineering" },
   { name: "Quinn Abbott",   title: "Product Marketing Manager" },
   { name: "Avery Walsh",    title: "Executive" },
 ];
@@ -23,21 +23,21 @@ const FAKE_RESPONDENTS = [
 // PMs rate LEARN/DEFINE high importance but admit low execution
 // Engineers rate CREATE high, PREPARE/DELIVER low
 const IMPORTANCE_WEIGHTS = {
-  DEFINE:   { "Product Manager": [0,0,1,3], "Engineering": [0,1,2,1], "Design / UX": [0,1,2,1], "Head of Product": [0,0,1,3], default: [0,1,2,1] },
-  COMMIT:   { "Product Manager": [0,0,1,2], "Engineering": [1,2,1,0], "Executive": [0,0,1,3], default: [0,1,2,1] },
-  DESCRIBE: { "Product Manager": [0,0,1,3], "Engineering": [0,0,2,2], "Design / UX": [0,0,1,3], default: [0,1,2,1] },
-  CREATE:   { "Engineering": [0,0,1,3], "Product Manager": [0,0,2,2], "Design / UX": [0,0,1,3], default: [0,1,2,1] },
-  PREPARE:  { "Sales": [0,0,1,3], "Customer Success": [0,0,1,2], "Product Manager": [0,1,2,1], default: [0,1,2,1] },
-  DELIVER:  { "Head of Product": [0,0,1,3], "Product Manager": [0,0,2,2], default: [0,1,2,1] },
+  DEFINE:   { "Product Manager / Product Owner": [0,0,1,3], "Engineering": [0,1,2,1], "Design / UX": [0,1,2,1], "Head of Product / Principal Product Manager": [0,0,1,3], default: [0,1,2,1] },
+  COMMIT:   { "Product Manager / Product Owner": [0,0,1,2], "Engineering": [1,2,1,0], "Executive": [0,0,1,3], default: [0,1,2,1] },
+  DESCRIBE: { "Product Manager / Product Owner": [0,0,1,3], "Engineering": [0,0,2,2], "Design / UX": [0,0,1,3], default: [0,1,2,1] },
+  CREATE:   { "Engineering": [0,0,1,3], "Product Manager / Product Owner": [0,0,2,2], "Design / UX": [0,0,1,3], default: [0,1,2,1] },
+  PREPARE:  { "Sales / Sales Engineering": [0,0,1,3], "Customer Success": [0,0,1,2], "Product Manager / Product Owner": [0,1,2,1], default: [0,1,2,1] },
+  DELIVER:  { "Head of Product / Principal Product Manager": [0,0,1,3], "Product Manager / Product Owner": [0,0,2,2], default: [0,1,2,1] },
 };
 
 // Execution is generally lower than importance — that's the whole point
 const EXECUTION_WEIGHTS = {
-  DEFINE:   { "Product Manager": [2,3,1,0], "Engineering": [1,2,1,0], default: [1,2,2,1] },
+  DEFINE:   { "Product Manager / Product Owner": [2,3,1,0], "Engineering": [1,2,1,0], default: [1,2,2,1] },
   COMMIT:   { default: [1,2,2,1] },
-  DESCRIBE: { "Product Manager": [1,2,2,1], "Engineering": [0,1,3,2], default: [1,2,2,1] },
-  CREATE:   { "Engineering": [0,1,2,3], "Product Manager": [1,2,2,1], default: [1,2,2,1] },
-  PREPARE:  { "Sales": [1,2,2,1], default: [2,3,1,0] },
+  DESCRIBE: { "Product Manager / Product Owner": [1,2,2,1], "Engineering": [0,1,3,2], default: [1,2,2,1] },
+  CREATE:   { "Engineering": [0,1,2,3], "Product Manager / Product Owner": [1,2,2,1], default: [1,2,2,1] },
+  PREPARE:  { "Sales / Sales Engineering": [1,2,2,1], default: [2,3,1,0] },
   DELIVER:  { default: [1,2,2,1] },
 };
 
@@ -47,59 +47,59 @@ const EXECUTION_WEIGHTS = {
 // have no clear owner without a Head of Product role.
 const OWNER_WEIGHTS = {
   // DEFINE
-  "Problem Discovery":                 { "Product Manager": 3, "Head of Product": 2, "Sales": 1, "Customer Success": 1 },
-  "Persona Definition":                { "Product Manager": 3, "Design / UX": 2, "Head of Product": 1 },
-  "Solution Validation":               { "Product Manager": 3, "Head of Product": 2, "Design / UX": 1 },
-  "Strategic Fit (ASPIRE)":            { "Head of Product": 2, "Executive": 2, "Product Manager": 2 },
-  "Competitive Research":              { "Product Manager": 2, "Product Marketing Manager": 2, "Sales": 2 },
-  "Product Brief":                     { "Product Manager": 3, "Head of Product": 2 },
-  "DEFINE Go/No-Go Decision":          { "Head of Product": 3, "Executive": 2, "Product Manager": 1 },
-  "Manage Feature Requests":           { "Product Manager": 2, "Engineering": 1, "Customer Success": 2, "Sales": 1 },
+  "Problem Discovery":                 { "Product Manager / Product Owner": 3, "Head of Product / Principal Product Manager": 2, "Sales / Sales Engineering": 1, "Customer Success": 1 },
+  "Persona Definition":                { "Product Manager / Product Owner": 3, "Design / UX": 2, "Head of Product / Principal Product Manager": 1 },
+  "Solution Validation":               { "Product Manager / Product Owner": 3, "Head of Product / Principal Product Manager": 2, "Design / UX": 1 },
+  "Strategic Fit (ASPIRE)":            { "Head of Product / Principal Product Manager": 2, "Executive": 2, "Product Manager / Product Owner": 2 },
+  "Competitive Research":              { "Product Manager / Product Owner": 2, "Product Marketing Manager": 2, "Sales / Sales Engineering": 2 },
+  "Product Brief":                     { "Product Manager / Product Owner": 3, "Head of Product / Principal Product Manager": 2 },
+  "DEFINE Go/No-Go Decision":          { "Head of Product / Principal Product Manager": 3, "Executive": 2, "Product Manager / Product Owner": 1 },
+  "Manage Feature Requests":           { "Product Manager / Product Owner": 2, "Engineering": 1, "Customer Success": 2, "Sales / Sales Engineering": 1 },
 
   // COMMIT
-  "Develop Product Vision":            { "Head of Product": 3, "Executive": 2, "Product Manager": 1 },
-  "Product Roadmap":                   { "Product Manager": 3, "Head of Product": 2, "Engineering": 1 },
-  "Size Market Opportunity":           { "Head of Product": 2, "Executive": 2, "Product Marketing Manager": 2 },
-  "Pricing":                           { "Product Marketing Manager": 2, "Executive": 2, "Head of Product": 1, "Sales": 1 },
-  "Develop Success Metrics":           { "Head of Product": 2, "Product Manager": 2, "Executive": 2 },
-  "COMMIT Go/No-Go Decision":          { "Head of Product": 3, "Executive": 2 },
-  "Business Plan":                     { "Head of Product": 2, "Executive": 2, "Product Marketing Manager": 1 },
-  "Competitive Strategy":              { "Head of Product": 2, "Product Marketing Manager": 2, "Executive": 1 },
-  "Portfolio Management":              { "Head of Product": 2, "Executive": 2 },
-  "Build, Buy, or Partner":            { "Engineering": 2, "Head of Product": 2, "Executive": 1 },
+  "Develop Product Vision":            { "Head of Product / Principal Product Manager": 3, "Executive": 2, "Product Manager / Product Owner": 1 },
+  "Product Roadmap":                   { "Product Manager / Product Owner": 3, "Head of Product / Principal Product Manager": 2, "Engineering": 1 },
+  "Size Market Opportunity":           { "Head of Product / Principal Product Manager": 2, "Executive": 2, "Product Marketing Manager": 2 },
+  "Pricing":                           { "Product Marketing Manager": 2, "Executive": 2, "Head of Product / Principal Product Manager": 1, "Sales / Sales Engineering": 1 },
+  "Develop Success Metrics":           { "Head of Product / Principal Product Manager": 2, "Product Manager / Product Owner": 2, "Executive": 2 },
+  "COMMIT Go/No-Go Decision":          { "Head of Product / Principal Product Manager": 3, "Executive": 2 },
+  "Business Plan":                     { "Head of Product / Principal Product Manager": 2, "Executive": 2, "Product Marketing Manager": 1 },
+  "Competitive Strategy":              { "Head of Product / Principal Product Manager": 2, "Product Marketing Manager": 2, "Executive": 1 },
+  "Portfolio Management":              { "Head of Product / Principal Product Manager": 2, "Executive": 2 },
+  "Build, Buy, or Partner":            { "Engineering": 2, "Head of Product / Principal Product Manager": 2, "Executive": 1 },
 
   // DESCRIBE
-  "Problem Stories & Scenarios":       { "Product Manager": 4, "Design / UX": 2 },
+  "Problem Stories & Scenarios":       { "Product Manager / Product Owner": 4, "Design / UX": 2 },
 
   // CREATE
-  "Prioritize Potential Capabilities": { "Product Manager": 4, "Head of Product": 2, "Engineering": 1 },
-  "Requirements & Technical Briefing": { "Product Manager": 4, "Engineering": 2 },
-  "Release Brief":                     { "Product Manager": 3, "Engineering": 2 },
+  "Prioritize Potential Capabilities": { "Product Manager / Product Owner": 4, "Head of Product / Principal Product Manager": 2, "Engineering": 1 },
+  "Requirements & Technical Briefing": { "Product Manager / Product Owner": 4, "Engineering": 2 },
+  "Release Brief":                     { "Product Manager / Product Owner": 3, "Engineering": 2 },
   "Interaction Design":                { "Design / UX": 4, "Engineering": 1 },
-  "Usability Testing":                 { "Design / UX": 3, "Product Manager": 1 },
-  "Manage Project Schedules":          { "Engineering": 4, "Product Manager": 1 },
+  "Usability Testing":                 { "Design / UX": 3, "Product Manager / Product Owner": 1 },
+  "Manage Project Schedules":          { "Engineering": 4, "Product Manager / Product Owner": 1 },
 
   // PREPARE
-  "Brief the Go-to-Market Teams":      { "Product Marketing Manager": 4, "Product Manager": 1, "Sales": 1 },
-  "Propose the Scope of the Launch":   { "Product Marketing Manager": 3, "Head of Product": 1, "Product Manager": 1 },
-  "Launch Planning":                   { "Product Marketing Manager": 4, "Product Manager": 1 },
-  "Readiness Planning":                { "Product Marketing Manager": 1, "Customer Success": 1, "Sales": 1, "Engineering": 1 },
-  "Sales Enablement":                  { "Sales": 3, "Product Marketing Manager": 3, "Product Manager": 1 },
-  "Positioning":                       { "Product Marketing Manager": 4, "Product Manager": 1 },
-  "Buyer Experience":                  { "Product Marketing Manager": 2, "Sales": 2, "Design / UX": 1 },
+  "Brief the Go-to-Market Teams":      { "Product Marketing Manager": 4, "Product Manager / Product Owner": 1, "Sales / Sales Engineering": 1 },
+  "Propose the Scope of the Launch":   { "Product Marketing Manager": 3, "Head of Product / Principal Product Manager": 1, "Product Manager / Product Owner": 1 },
+  "Launch Planning":                   { "Product Marketing Manager": 4, "Product Manager / Product Owner": 1 },
+  "Readiness Planning":                { "Product Marketing Manager": 1, "Customer Success": 1, "Sales / Sales Engineering": 1, "Engineering": 1 },
+  "Sales Enablement":                  { "Sales / Sales Engineering": 3, "Product Marketing Manager": 3, "Product Manager / Product Owner": 1 },
+  "Positioning":                       { "Product Marketing Manager": 4, "Product Manager / Product Owner": 1 },
+  "Buyer Experience":                  { "Product Marketing Manager": 2, "Sales / Sales Engineering": 2, "Design / UX": 1 },
   "Marketing Plan":                    { "Product Marketing Manager": 4, "Executive": 1 },
-  "Communicate Status to Stakeholders":{ "Product Manager": 2, "Head of Product": 1, "Product Marketing Manager": 1 },
+  "Communicate Status to Stakeholders":{ "Product Manager / Product Owner": 2, "Head of Product / Principal Product Manager": 1, "Product Marketing Manager": 1 },
 
   // DELIVER
-  "DELIVER Go/No-Go Decision":         { "Head of Product": 3, "Executive": 2, "Product Marketing Manager": 1 },
-  "Monitor Performance & Metrics":     { "Product Manager": 2, "Head of Product": 2, "Executive": 1 },
-  "Win/Loss Analysis":                 { "Sales": 3, "Product Marketing Manager": 2, "Customer Success": 2 },
-  "Revenue Growth":                    { "Product Marketing Manager": 3, "Sales": 2 },
-  "Revenue Retention":                 { "Customer Success": 3, "Product Marketing Manager": 2, "Sales": 1 },
+  "DELIVER Go/No-Go Decision":         { "Head of Product / Principal Product Manager": 3, "Executive": 2, "Product Marketing Manager": 1 },
+  "Monitor Performance & Metrics":     { "Product Manager / Product Owner": 2, "Head of Product / Principal Product Manager": 2, "Executive": 1 },
+  "Win/Loss Analysis":                 { "Sales / Sales Engineering": 3, "Product Marketing Manager": 2, "Customer Success": 2 },
+  "Revenue Growth":                    { "Product Marketing Manager": 3, "Sales / Sales Engineering": 2 },
+  "Revenue Retention":                 { "Customer Success": 3, "Product Marketing Manager": 2, "Sales / Sales Engineering": 1 },
   "Customer Success Stories":          { "Customer Success": 3, "Product Marketing Manager": 2 },
-  "Deliver Presentations & Demos":     { "Sales": 3, "Product Marketing Manager": 2 },
-  "Sales Support":                     { "Sales": 4, "Product Marketing Manager": 1 },
-  "Staffing Promotional Events":       { "Product Marketing Manager": 2, "Sales": 1, "Customer Success": 1 },
+  "Deliver Presentations & Demos":     { "Sales / Sales Engineering": 3, "Product Marketing Manager": 2 },
+  "Sales Support":                     { "Sales / Sales Engineering": 4, "Product Marketing Manager": 1 },
+  "Staffing Promotional Events":       { "Product Marketing Manager": 2, "Sales / Sales Engineering": 1, "Customer Success": 1 },
 };
 
 function weightedRandom(weights) {
