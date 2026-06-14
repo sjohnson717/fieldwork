@@ -504,7 +504,9 @@ export default function ReportPage() {
   const underperforming = Object.values(activityStats).filter(s => s.avgImp !== null && s.avgGap !== null && s.avgImp >= 2 && s.avgGap >= 1).length;
 
   const headlineSentence = importantOrCritical > 0
-    ? `Your team rated ${importantOrCritical} of ${activities.length} activities as Important or Critical — and execution is falling short on ${underperforming} of them.`
+    ? underperforming === 0
+      ? `Your team rated ${importantOrCritical} of ${activities.length} activities as Important or Critical — and execution is keeping pace across all of them.`
+      : `Your team rated ${importantOrCritical} of ${activities.length} activities as Important or Critical — and execution is falling short on ${underperforming} of them.`
     : `Assessment data is available for ${activities.length} activities across ${respondentCount} respondents.`;
 
   // ── Plain-English summary bullets ────────────────────────────────────────
@@ -517,7 +519,7 @@ export default function ReportPage() {
     return { group, avg: avg(gaps) };
   }).filter(t => t.avg !== null).sort((a, b) => b.avg - a.avg);
 
-  if (themeGapAvgs.length > 0) {
+  if (themeGapAvgs.length > 0 && themeGapAvgs[0].avg >= 1) {
     const worst = themeGapAvgs[0];
     const worstActs = activities
       .filter(a => worst.group.facets.includes(a.facet))
@@ -535,19 +537,20 @@ export default function ReportPage() {
   // 2. Ownership pattern
   const ownerCounts = {};
   for (const stats of Object.values(activityStats)) {
-    if (stats.topOwner && stats.ownerAgreement >= 0.6) {
+    if (stats.topOwner && stats.ownerAgreement >= 0.5) {
       ownerCounts[stats.topOwner] = (ownerCounts[stats.topOwner] || 0) + 1;
     }
   }
   const topOwners = Object.entries(ownerCounts).sort((a, b) => b[1] - a[1]);
-  const unclearOwnership = Object.values(activityStats).filter(s => s.topOwner && s.ownerAgreement < 0.6).length;
+  const unclearOwnership = Object.values(activityStats).filter(s => s.topOwner && s.ownerAgreement < 0.5).length;
+  const totalWithOwner = Object.values(activityStats).filter(s => s.topOwner).length;
 
   if (topOwners.length > 0) {
     const [topRole, topCount] = topOwners[0];
     if (unclearOwnership > 0) {
       summaryBullets.push({
         icon: "🟡",
-        text: `**${topRole}** is the most commonly suggested owner (${topCount} activities), but ownership is unclear on ${unclearOwnership} ${unclearOwnership === 1 ? "activity" : "activities"} — a potential source of confusion.`,
+        text: `**${topRole}** is the most commonly suggested owner (${topCount} ${topCount === 1 ? "activity" : "activities"}), but ownership is unclear on ${unclearOwnership} ${unclearOwnership === 1 ? "activity" : "activities"} — worth discussing as a team.`,
       });
     } else {
       summaryBullets.push({
@@ -555,6 +558,11 @@ export default function ReportPage() {
         text: `There's strong agreement that **${topRole}** should own most activities, which is a good foundation for accountability.`,
       });
     }
+  } else if (totalWithOwner > 0) {
+    summaryBullets.push({
+      icon: "🟡",
+      text: `Ownership is unclear across most activities — your team doesn't yet have shared agreement on who's responsible for what. This is often the most valuable conversation to have.`,
+    });
   }
 
   // 3. Bright spot — on-track activities with high importance
