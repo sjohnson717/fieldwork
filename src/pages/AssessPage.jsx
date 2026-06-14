@@ -39,6 +39,7 @@ export default function AssessPage() {
   const [currentFacetIndex, setCurrentFacetIndex] = useState(0);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [allTitles, setAllTitles] = useState([]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -98,6 +99,8 @@ export default function AssessPage() {
         setTitle(r.title);
         const acts = await getAssignedActivities(a);
         setActivities(acts);
+        const titles = await base44.entities.JobTitle.filter({ active: true }, "sort_order");
+        setAllTitles(titles.map(t => t.name));
         setStep("rating");
       } else {
         // Needs title — show minimal intro
@@ -117,6 +120,8 @@ export default function AssessPage() {
       setRespondent(updated);
       const acts = await getAssignedActivities(assessment);
       setActivities(acts);
+      const titles = await base44.entities.JobTitle.filter({ active: true }, "sort_order");
+      setAllTitles(titles.map(t => t.name));
       setStep("rating");
     } catch (e) {
       setError("Something went wrong. Please try again.");
@@ -154,6 +159,8 @@ export default function AssessPage() {
       setRespondent(r);
       const acts = await getAssignedActivities(assessment);
       setActivities(acts);
+      const titles = await base44.entities.JobTitle.filter({ active: true }, "sort_order");
+      setAllTitles(titles.map(t => t.name));
       setStep("rating");
     } catch (e) {
       setError("Something went wrong. Please try again.");
@@ -392,20 +399,42 @@ export default function AssessPage() {
                   {assessment?.roles?.length > 0 && (
                     <div>
                       <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Who should own this?</p>
-                      <div className="flex gap-2 flex-wrap">
+                      <div className="space-y-2">
                         {assessment.roles.map(role => (
-                          <button
-                            key={role}
-                            onClick={() => handleRatingChange(activity.id, "suggested_owner", role)}
-                            className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-all ${
-                              r.suggested_owner === role
-                                ? "bg-amber-500 text-white border-transparent"
-                                : "bg-white text-gray-600 border-gray-300 hover:border-gray-400"
-                            }`}
-                          >
-                            {role}
-                          </button>
+                          <label key={role} className="flex items-center gap-3 cursor-pointer">
+                            <input
+                              type="radio"
+                              name={`owner-${activity.id}`}
+                              checked={r.suggested_owner === role}
+                              onChange={() => handleRatingChange(activity.id, "suggested_owner", role)}
+                              className="w-4 h-4 text-amber-500 border-gray-300 focus:ring-amber-400"
+                            />
+                            <span className="text-sm text-gray-700">{role}</span>
+                          </label>
                         ))}
+                        <label className="flex items-center gap-3 cursor-pointer">
+                          <input
+                            type="radio"
+                            name={`owner-${activity.id}`}
+                            checked={!!r.suggested_owner && !assessment.roles.includes(r.suggested_owner)}
+                            onChange={() => {}}
+                            className="w-4 h-4 text-amber-500 border-gray-300 focus:ring-amber-400"
+                          />
+                          <select
+                            value={!!r.suggested_owner && !assessment.roles.includes(r.suggested_owner) ? r.suggested_owner : ""}
+                            onChange={e => {
+                              if (e.target.value) handleRatingChange(activity.id, "suggested_owner", e.target.value);
+                            }}
+                            className="text-sm border border-gray-300 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-amber-400 text-gray-700"
+                          >
+                            <option value="">Other…</option>
+                            {allTitles
+                              .filter(t => !assessment.roles.includes(t))
+                              .map(t => (
+                                <option key={t} value={t}>{t}</option>
+                              ))}
+                          </select>
+                        </label>
                       </div>
                     </div>
                   )}
