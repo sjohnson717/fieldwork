@@ -48,7 +48,7 @@ export default function AssessmentResults({ assessment }) {
   const [respondents, setRespondents] = useState([]);
   const [responses, setResponses] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [view, setView] = useState("importance"); // importance | execution | gap
+  const [view, setView] = useState("summary"); // summary | importance | execution | gap
   const [selectedFacet, setSelectedFacet] = useState("ALL");
 
   useEffect(() => {
@@ -159,7 +159,7 @@ export default function AssessmentResults({ assessment }) {
       {/* Controls */}
       <div className="flex items-center gap-4 flex-wrap">
         <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
-          {["importance", "execution", "gap"].map(v => (
+          {["summary", "importance", "execution", "gap"].map(v => (
             <button
               key={v}
               onClick={() => setView(v)}
@@ -167,7 +167,7 @@ export default function AssessmentResults({ assessment }) {
                 view === v ? "bg-white shadow-sm text-gray-900" : "text-gray-500 hover:text-gray-700"
               }`}
             >
-              {v === "gap" ? "Gap (Priority)" : v.charAt(0).toUpperCase() + v.slice(1)}
+              {v === "gap" ? "Gap (Priority)" : v === "summary" ? "Summary" : v.charAt(0).toUpperCase() + v.slice(1)}
             </button>
           ))}
         </div>
@@ -194,7 +194,90 @@ export default function AssessmentResults({ assessment }) {
         </div>
       </div>
 
-      {/* Legend */}
+      {/* Summary Table */}
+      {view === "summary" && (() => {
+        // Build ownership consensus per activity
+        const ownershipMap = {};
+        for (const act of activities) {
+          const actResponses = responses.filter(r => r.activity_id === act.id && r.suggested_owner);
+          if (actResponses.length === 0) { ownershipMap[act.id] = null; continue; }
+          const tally = {};
+          for (const r of actResponses) tally[r.suggested_owner] = (tally[r.suggested_owner] || 0) + 1;
+          const sorted = Object.entries(tally).sort((a, b) => b[1] - a[1]);
+          const [topOwner, topCount] = sorted[0];
+          const pct = Math.round((topCount / actResponses.length) * 100);
+          const breakdown = sorted.map(([role, count]) => `${role} (${count})`).join(", ");
+          ownershipMap[act.id] = { topOwner, pct, breakdown, total: actResponses.length };
+        }
+
+        const summaryRows = [...activityStats]
+          .filter(a => a.avgGap !== null)
+          .sort((a, b) => (b.avgGap ?? 0) - (a.avgGap ?? 0));
+
+        return (
+          <div className="bg-white rounded-xl border border-gray-200 overflow-x-auto">
+            <table className="text-sm w-full border-collapse">
+              <thead>
+                <tr className="border-b border-gray-100">
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide w-64">Activity</th>
+                  <th className="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wide">Importance</th>
+                  <th className="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wide">Execution</th>
+                  <th className="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wide">Gap ↓</th>
+                  {assessment.roles?.length > 0 && (
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Top Owner</th>
+                  )}
+                </tr>
+              </thead>
+              <tbody>
+                {summaryRows.map((act, idx) => {
+                  const ownership = ownershipMap[act.id];
+                  const hasConflict = ownership && ownership.pct < 60;
+                  return (
+                    <tr key={act.id} className={idx % 2 === 0 ? "bg-white" : "bg-gray-50/40"}>
+                      <td className="px-4 py-3 border-r border-gray-100">
+                        <div className="font-medium text-gray-800">{act.name}</div>
+                        <div className="text-[10px] text-gray-400 mt-0.5">{act.facet}</div>
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <span className={`inline-flex items-center justify-center w-10 h-7 rounded text-xs font-bold ${importanceColor(act.avgImp)}`}>
+                          {fmt(act.avgImp)}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <span className={`inline-flex items-center justify-center w-10 h-7 rounded text-xs font-bold ${executionColor(act.avgExec)}`}>
+                          {fmt(act.avgExec)}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <span className={`inline-flex items-center justify-center w-10 h-7 rounded text-xs font-bold ${gapColor(act.avgGap)}`}>
+                          {fmt(act.avgGap)}
+                        </span>
+                      </td>
+                      {assessment.roles?.length > 0 && (
+                        <td className="px-4 py-3">
+                          {ownership ? (
+                            <div>
+                              <span className="text-sm text-gray-700 font-medium">
+                                {hasConflict && <span title="Low consensus" className="mr-1">⚠</span>}
+                                {ownership.topOwner}
+                              </span>
+                              <div className="text-[10px] text-gray-400 mt-0.5">{ownership.breakdown}</div>
+                            </div>
+                          ) : (
+                            <span className="text-xs text-gray-300">—</span>
+                          )}
+                        </td>
+                      )}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        );
+      })()}
+
+      {view !== "summary" && <>
       <div className="flex items-center gap-4 text-xs text-gray-500">
         <span className="font-medium text-gray-700">
           {view === "gap" ? "Gap = Importance − Execution (higher = more urgent)" : `0 = lowest · 3 = highest`}
@@ -222,6 +305,7 @@ export default function AssessmentResults({ assessment }) {
 
       {/* Heatmap */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-x-auto">
+...
         <table className="text-xs border-collapse min-w-full">
           <thead>
             <tr>
@@ -326,6 +410,7 @@ export default function AssessmentResults({ assessment }) {
           </section>
         );
       })()}
+      </>}
     </div>
   );
 }
