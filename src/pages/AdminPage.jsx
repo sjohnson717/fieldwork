@@ -101,10 +101,16 @@ export default function AdminPage() {
       base44.entities.Response.filter({ assessment_id: selected.id }),
       base44.entities.DiscussionNote.filter({ assessment_id: selected.id }),
     ]);
-    const delay = () => new Promise(r => setTimeout(r, 50));
-    for (const r of respondents) { await base44.entities.Respondent.delete(r.id); await delay(); }
-    for (const r of responses)   { await base44.entities.Response.delete(r.id);   await delay(); }
-    for (const n of notes)        { await base44.entities.DiscussionNote.delete(n.id); await delay(); }
+    const deleteInBatches = async (items, deleteFn) => {
+      const BATCH = 10;
+      for (let i = 0; i < items.length; i += BATCH) {
+        await Promise.all(items.slice(i, i + BATCH).map(item => deleteFn(item.id)));
+        if (i + BATCH < items.length) await new Promise(r => setTimeout(r, 200));
+      }
+    };
+    await deleteInBatches(responses, id => base44.entities.Response.delete(id));
+    await deleteInBatches(respondents, id => base44.entities.Respondent.delete(id));
+    await deleteInBatches(notes, id => base44.entities.DiscussionNote.delete(id));
     await base44.entities.Assessment.delete(selected.id);
     setAssessments(prev => {
       const next = prev.filter(a => a.id !== selected.id);
