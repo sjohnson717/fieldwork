@@ -101,11 +101,10 @@ export default function AdminPage() {
       base44.entities.Response.filter({ assessment_id: selected.id }),
       base44.entities.DiscussionNote.filter({ assessment_id: selected.id }),
     ]);
-    await Promise.all([
-      ...respondents.map(r => base44.entities.Respondent.delete(r.id)),
-      ...responses.map(r => base44.entities.Response.delete(r.id)),
-      ...notes.map(n => base44.entities.DiscussionNote.delete(n.id)),
-    ]);
+    const delay = () => new Promise(r => setTimeout(r, 50));
+    for (const r of respondents) { await base44.entities.Respondent.delete(r.id); await delay(); }
+    for (const r of responses)   { await base44.entities.Response.delete(r.id);   await delay(); }
+    for (const n of notes)        { await base44.entities.DiscussionNote.delete(n.id); await delay(); }
     await base44.entities.Assessment.delete(selected.id);
     setAssessments(prev => {
       const next = prev.filter(a => a.id !== selected.id);
