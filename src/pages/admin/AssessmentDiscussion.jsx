@@ -192,7 +192,7 @@ function ActivityRow({ activity, stats, note, draftNote, draftDecision, saving, 
           {/* Notes */}
           <div>
             <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
-              Discussion notes
+              DISCUSSION NOTES (Internal use only; will not be shared with client)
             </label>
             <textarea
               rows={3}
