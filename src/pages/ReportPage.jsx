@@ -123,8 +123,8 @@ function ActivityRow({ activity, stats, themeColor }) {
         <div className="shrink-0 flex items-center gap-3">
           {stats?.ownerEntries?.length > 0 && (() => {
             const ownerBadge =
-              stats.ownerAgreement < 0.5 ? "Owner unclear" :
-              (activity.preferred_owner && stats.topOwner !== activity.preferred_owner) ? "Owner mismatch" :
+              stats.ownerAgreement < 0.5 ? "Discuss owner" :
+              (activity.preferred_owner && stats.topOwner !== activity.preferred_owner) ? "Discuss owner" :
               null;
             return ownerBadge ? (
               <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[#F5F3FF] text-[#6D28D9]">
