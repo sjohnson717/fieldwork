@@ -6,22 +6,40 @@ const IMPORTANCE_OPTIONS = ["Not needed", "Nice to have", "Important", "Critical
 const EXECUTION_OPTIONS = ["Not done", "Inconsistent", "Good", "Excellent"];
 const FACET_ORDER = ["DEFINE", "COMMIT", "DESCRIBE", "CREATE", "PREPARE", "DELIVER"];
 
-function RatingButton({ options, value, onChange, colorClass }) {
+const IMPORTANCE_COLORS = {
+  "Not needed":   { border: "border-gray-400",   bg: "bg-gray-400",   text: "text-gray-700" },
+  "Nice to have": { border: "border-blue-300",    bg: "bg-blue-300",   text: "text-blue-900" },
+  "Important":    { border: "border-blue-500",    bg: "bg-blue-500",   text: "text-white" },
+  "Critical":     { border: "border-indigo-700",  bg: "bg-indigo-700", text: "text-white" },
+};
+
+const EXECUTION_COLORS = {
+  "Not done":     { border: "border-rose-300",    bg: "bg-rose-300",   text: "text-rose-900" },
+  "Inconsistent": { border: "border-amber-400",   bg: "bg-amber-400",  text: "text-amber-900" },
+  "Good":         { border: "border-green-400",   bg: "bg-green-400",  text: "text-green-900" },
+  "Excellent":    { border: "border-green-600",   bg: "bg-green-600",  text: "text-white" },
+};
+
+function RatingButton({ options, value, onChange, colorMap }) {
   return (
     <div className="flex gap-2 flex-wrap">
-      {options.map(opt => (
-        <button
-          key={opt}
-          onClick={() => onChange(opt)}
-          className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-all ${
-            value === opt
-              ? `${colorClass} text-white border-transparent`
-              : "bg-white text-gray-600 border-gray-300 hover:border-gray-400"
-          }`}
-        >
-          {opt}
-        </button>
-      ))}
+      {options.map(opt => {
+        const colors = colorMap[opt] || { border: "border-gray-300", bg: "bg-gray-300", text: "text-gray-700" };
+        const selected = value === opt;
+        return (
+          <button
+            key={opt}
+            onClick={() => onChange(opt)}
+            className={`px-3 py-1.5 rounded-full text-sm font-medium border-2 transition-all ${
+              selected
+                ? `${colors.bg} ${colors.text} border-transparent`
+                : `bg-white border ${colors.border} text-gray-600 hover:bg-gray-50`
+            }`}
+          >
+            {opt}
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -384,7 +402,7 @@ export default function AssessPage() {
                       options={IMPORTANCE_OPTIONS}
                       value={r.importance}
                       onChange={val => handleRatingChange(activity.id, "importance", val)}
-                      colorClass="bg-indigo-500"
+                      colorMap={IMPORTANCE_COLORS}
                     />
                   </div>
                   <div>
@@ -393,7 +411,7 @@ export default function AssessPage() {
                       options={EXECUTION_OPTIONS}
                       value={r.execution}
                       onChange={val => handleRatingChange(activity.id, "execution", val)}
-                      colorClass="bg-emerald-500"
+                      colorMap={EXECUTION_COLORS}
                     />
                   </div>
                   {assessment?.roles?.length > 0 && (
