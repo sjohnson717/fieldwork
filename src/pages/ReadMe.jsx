@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import ReactMarkdown from "react-markdown";
+import { useSearchParams } from "react-router-dom";
 
 const sections = [
   {
@@ -169,7 +170,9 @@ Check the **Respondents table** in the Overview tab. It shows each participant's
 const groups = ["Facilitator Guide"];
 
 export default function ReadMe() {
-  const [activeSection, setActiveSection] = useState("overview");
+  const [searchParams] = useSearchParams();
+  const initialSection = searchParams.get("section") || "overview";
+  const [activeSection, setActiveSection] = useState(initialSection);
 
   const current = sections.find((s) => s.id === activeSection);
   const currentIndex = sections.findIndex((s) => s.id === activeSection);
