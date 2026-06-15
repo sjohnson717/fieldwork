@@ -22,6 +22,12 @@ const UserNotRegisteredError = () => {
               <li>Try logging out and back in again</li>
             </ul>
           </div>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-6 w-full px-4 py-2 bg-[#3366FF] hover:bg-[#2952CC] text-white text-sm font-medium rounded-lg transition-colors"
+          >
+            Retry
+          </button>
         </div>
       </div>
     </div>

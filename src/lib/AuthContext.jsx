@@ -91,9 +91,19 @@ export const AuthProvider = ({ children }) => {
 
   const checkUserAuth = async () => {
     try {
-      // Now check if the user is authenticated
       setIsLoadingAuth(true);
-      const currentUser = await base44.auth.me();
+      let currentUser;
+      try {
+        currentUser = await base44.auth.me();
+      } catch (firstError) {
+        // Retry once on spurious user_not_registered (platform timing issue)
+        if (firstError.status === 403 && firstError.data?.extra_data?.reason === 'user_not_registered') {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          currentUser = await base44.auth.me();
+        } else {
+          throw firstError;
+        }
+      }
       setUser(currentUser);
       setIsAuthenticated(true);
       setIsLoadingAuth(false);
@@ -104,11 +114,11 @@ export const AuthProvider = ({ children }) => {
       setIsAuthenticated(false);
       setAuthChecked(true);
       
-      // If user auth fails, it might be an expired token
       if (error.status === 401 || error.status === 403) {
+        const reason = error.data?.extra_data?.reason;
         setAuthError({
-          type: 'auth_required',
-          message: 'Authentication required'
+          type: reason === 'user_not_registered' ? 'user_not_registered' : 'auth_required',
+          message: reason === 'user_not_registered' ? 'User not registered for this app' : 'Authentication required'
         });
       }
     }
