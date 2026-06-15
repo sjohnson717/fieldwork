@@ -231,7 +231,7 @@ export default function AssessmentOverview({ assessment, onUpdate }) {
           </div>
           <button
             onClick={handleCopyCode}
-            className="text-sm text-indigo-600 hover:text-indigo-800 font-medium border border-blue-200 px-3 py-2 rounded-lg hover:bg-blue-50 transition-colors"
+            className="text-sm text-[#3366FF] hover:text-[#2952CC] font-medium border border-[#a3b8ff] px-3 py-2 rounded-lg hover:bg-[#eef2ff] transition-colors"
           >
             {copied ? "Copied!" : "Copy code"}
           </button>
@@ -284,7 +284,7 @@ export default function AssessmentOverview({ assessment, onUpdate }) {
                     setCopiedLink('team');
                     setTimeout(() => setCopiedLink(null), 2000);
                   }}
-                  className="text-sm text-indigo-600 hover:text-indigo-800 font-medium border border-blue-200 px-3 py-1.5 rounded-lg hover:bg-blue-50 transition-colors"
+                  className="text-sm text-[#3366FF] hover:text-[#2952CC] font-medium border border-[#a3b8ff] px-3 py-1.5 rounded-lg hover:bg-[#eef2ff] transition-colors"
                 >
                   {copiedLink === 'team' ? 'Copied!' : 'Copy'}
                 </button>
@@ -302,7 +302,7 @@ export default function AssessmentOverview({ assessment, onUpdate }) {
                   const updated = await base44.entities.Assessment.update(assessment.id, { team_token: token });
                   onUpdate(updated);
                 }}
-                className="text-sm text-indigo-600 hover:text-indigo-800 font-medium border border-blue-200 px-3 py-1.5 rounded-lg hover:bg-blue-50 transition-colors"
+                className="text-sm text-[#3366FF] hover:text-[#2952CC] font-medium border border-[#a3b8ff] px-3 py-1.5 rounded-lg hover:bg-[#eef2ff] transition-colors"
               >
                 Generate
               </button>
@@ -319,7 +319,7 @@ export default function AssessmentOverview({ assessment, onUpdate }) {
                     setCopiedLink('report');
                     setTimeout(() => setCopiedLink(null), 2000);
                   }}
-                  className="text-sm text-indigo-600 hover:text-indigo-800 font-medium border border-blue-200 px-3 py-1.5 rounded-lg hover:bg-blue-50 transition-colors"
+                  className="text-sm text-[#3366FF] hover:text-[#2952CC] font-medium border border-[#a3b8ff] px-3 py-1.5 rounded-lg hover:bg-[#eef2ff] transition-colors"
                 >
                   {copiedLink === 'report' ? 'Copied!' : 'Copy'}
                 </button>
@@ -367,7 +367,7 @@ export default function AssessmentOverview({ assessment, onUpdate }) {
                     type="checkbox"
                     checked={roles.includes(t.name)}
                     onChange={() => handleToggleRole(t.name)}
-                    className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-blue-500"
+                    className="w-4 h-4 rounded border-gray-300 text-[#3366FF] focus:ring-[#3366FF]"
                   />
                   <span className="text-sm text-gray-700">{t.name}</span>
                 </label>
@@ -405,7 +405,7 @@ export default function AssessmentOverview({ assessment, onUpdate }) {
           <button
             onClick={handleAddCustomRole}
             disabled={savingRoles || !newRole.trim()}
-            className="text-sm font-medium text-indigo-600 hover:text-indigo-800 disabled:opacity-40 transition-colors"
+            className="text-sm font-medium text-[#3366FF] hover:text-[#2952CC] disabled:opacity-40 transition-colors"
           >
             Add
           </button>
