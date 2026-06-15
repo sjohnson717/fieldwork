@@ -244,6 +244,30 @@ export default function AssessmentOverview({ assessment, onUpdate }) {
         </div>
       </section>
 
+      {/* Status */}
+      <section className="bg-white rounded-xl border border-gray-200 p-6">
+        <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-4">Status</h3>
+        <div className="flex items-center gap-4 flex-wrap">
+          <div className="text-sm text-gray-600">
+            Currently <span className="font-semibold text-gray-900">{assessment.status}</span>
+          </div>
+          {nextStatuses.map(s => (
+            <button
+              key={s}
+              onClick={() => handleStatusChange(s)}
+              disabled={updatingStatus}
+              className={`text-sm font-medium px-4 py-2 rounded-lg border transition-colors disabled:opacity-50 ${
+                s === "closed"
+                  ? "border-red-200 text-red-600 hover:bg-red-50"
+                  : "border-green-200 text-green-700 hover:bg-green-50"
+              }`}
+            >
+              {updatingStatus ? "Updating…" : STATUS_LABELS[assessment.status]?.[s] || s}
+            </button>
+          ))}
+        </div>
+      </section>
+
       {/* Links */}
       <section className="bg-white rounded-xl border border-gray-200 p-6">
         <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-4">Links to share</h3>
@@ -309,30 +333,6 @@ export default function AssessmentOverview({ assessment, onUpdate }) {
               <span className="text-sm text-gray-400 italic">Not available</span>
             )}
           </div>
-        </div>
-      </section>
-
-      {/* Status */}
-      <section className="bg-white rounded-xl border border-gray-200 p-6">
-        <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-4">Status</h3>
-        <div className="flex items-center gap-4 flex-wrap">
-          <div className="text-sm text-gray-600">
-            Currently <span className="font-semibold text-gray-900">{assessment.status}</span>
-          </div>
-          {nextStatuses.map(s => (
-            <button
-              key={s}
-              onClick={() => handleStatusChange(s)}
-              disabled={updatingStatus}
-              className={`text-sm font-medium px-4 py-2 rounded-lg border transition-colors disabled:opacity-50 ${
-                s === "closed"
-                  ? "border-red-200 text-red-600 hover:bg-red-50"
-                  : "border-green-200 text-green-700 hover:bg-green-50"
-              }`}
-            >
-              {updatingStatus ? "Updating…" : STATUS_LABELS[assessment.status]?.[s] || s}
-            </button>
-          ))}
         </div>
       </section>
 
