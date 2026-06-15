@@ -214,7 +214,7 @@ export default function AdminPage() {
                 : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
             }`}
           >
-            Team
+            Facilitators
           </button>
           <button
             onClick={() => setSelectedSection("demo")}
