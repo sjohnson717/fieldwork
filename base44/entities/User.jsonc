@@ -1,7 +1,16 @@
 {
-  "name": "User",
   "type": "object",
+  "name": "User",
+  "title": "User",
   "properties": {
+    "email": {
+      "type": "string",
+      "description": "The email of the user"
+    },
+    "full_name": {
+      "type": "string",
+      "description": "The full name of the user"
+    },
     "role": {
       "type": "string",
       "description": "The role of the user in the app",
@@ -12,14 +21,16 @@
     }
   },
   "required": [
-    "role"
+    "full_name",
+    "role",
+    "email"
   ],
   "rls": {
     "create": null,
     "read": {
       "$or": [
         {
-          "created_by_id": "{{user.id}}"
+          "id": "{{user.id}}"
         },
         {
           "user_condition": {
@@ -31,7 +42,7 @@
     "update": {
       "$or": [
         {
-          "created_by_id": "{{user.id}}"
+          "id": "{{user.id}}"
         },
         {
           "user_condition": {
