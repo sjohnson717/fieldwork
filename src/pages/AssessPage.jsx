@@ -10,7 +10,7 @@ const IMPORTANCE_COLORS = {
   "Not needed":   { border: "border-gray-400",   bg: "bg-gray-400",   text: "text-gray-700" },
   "Nice to have": { border: "border-blue-300",    bg: "bg-blue-300",   text: "text-blue-900" },
   "Important":    { border: "border-blue-500",    bg: "bg-blue-500",   text: "text-white" },
-  "Critical":     { border: "border-indigo-700",  bg: "bg-indigo-700", text: "text-white" },
+  "Critical":     { border: "border-blue-700",  bg: "bg-blue-700", text: "text-white" },
 };
 
 const EXECUTION_COLORS = {
@@ -231,7 +231,7 @@ export default function AssessPage() {
   // ── Loading state ─────────────────────────────────────────────────────────
   if (step === "loading") return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <div className="w-8 h-8 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
+      <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
     </div>
   );
 
@@ -239,7 +239,7 @@ export default function AssessPage() {
   if (step === "token-error") return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 w-full max-w-md text-center">
-        <p className="text-sm font-semibold text-indigo-600 uppercase tracking-wide mb-4">Product Growth Leaders</p>
+        <p className="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-4">Product Growth Leaders</p>
         <p className="text-gray-500">{error}</p>
       </div>
     </div>
@@ -265,7 +265,7 @@ export default function AssessPage() {
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 w-full max-w-md">
         <div className="mb-8">
-          <p className="text-sm font-semibold text-indigo-600 uppercase tracking-wide mb-1">Product Growth Leaders</p>
+          <p className="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-1">Product Growth Leaders</p>
           <h1 className="text-2xl font-bold text-gray-900">Before we begin</h1>
           <p className="text-gray-500 mt-2">Your responses are confidential and will only be seen in aggregate by your team leader.</p>
         </div>
@@ -282,7 +282,7 @@ export default function AssessPage() {
               onChange={e => setTitle(e.target.value)}
               onKeyDown={e => e.key === "Enter" && handleTokenIntroSubmit()}
               autoFocus
-              className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="e.g. Senior Product Manager"
             />
           </div>
@@ -290,7 +290,7 @@ export default function AssessPage() {
         {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
         <button
           onClick={handleTokenIntroSubmit}
-          className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-lg transition-colors"
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition-colors"
         >
           Start Assessment
         </button>
@@ -303,7 +303,7 @@ export default function AssessPage() {
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 w-full max-w-md">
         <div className="mb-8">
-          <p className="text-sm font-semibold text-indigo-600 uppercase tracking-wide mb-1">Product Growth Leaders</p>
+          <p className="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-1">Product Growth Leaders</p>
           <h1 className="text-2xl font-bold text-gray-900">Fieldwork Assessment</h1>
           <p className="text-gray-500 mt-2">Enter the code you received to begin.</p>
         </div>
@@ -313,12 +313,12 @@ export default function AssessPage() {
           value={code}
           onChange={e => setCode(e.target.value.toUpperCase())}
           onKeyDown={e => e.key === "Enter" && handleCodeSubmit()}
-          className="w-full border border-gray-300 rounded-lg px-4 py-3 text-lg font-mono tracking-widest text-center focus:outline-none focus:ring-2 focus:ring-indigo-500 mb-4"
+          className="w-full border border-gray-300 rounded-lg px-4 py-3 text-lg font-mono tracking-widest text-center focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
         />
         {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
         <button
           onClick={handleCodeSubmit}
-          className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-lg transition-colors"
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition-colors"
         >
           Continue
         </button>
@@ -331,7 +331,7 @@ export default function AssessPage() {
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 w-full max-w-md">
         <div className="mb-8">
-          <p className="text-sm font-semibold text-indigo-600 uppercase tracking-wide mb-1">Product Growth Leaders</p>
+          <p className="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-1">Product Growth Leaders</p>
           <h1 className="text-2xl font-bold text-gray-900">Before we begin</h1>
           <p className="text-gray-500 mt-2">Your responses are confidential and will only be seen in aggregate by your team leader. Only Product Growth Leaders staff will see individual responses.</p>
         </div>
@@ -342,7 +342,7 @@ export default function AssessPage() {
               type="text"
               value={name}
               onChange={e => setName(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Jane Smith"
             />
           </div>
@@ -352,7 +352,7 @@ export default function AssessPage() {
               type="text"
               value={title}
               onChange={e => setTitle(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="e.g. Senior Product Manager"
             />
           </div>
@@ -360,7 +360,7 @@ export default function AssessPage() {
         {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
         <button
           onClick={handleIntroSubmit}
-          className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-lg transition-colors"
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition-colors"
         >
           Start Assessment
         </button>
@@ -373,14 +373,14 @@ export default function AssessPage() {
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-3xl mx-auto px-4 py-8">
         <div className="mb-6">
-          <p className="text-sm font-semibold text-indigo-600 uppercase tracking-wide mb-1">Product Growth Leaders · Fieldwork</p>
+          <p className="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-1">Product Growth Leaders · Fieldwork</p>
           <div className="flex items-center justify-between">
             <h1 className="text-xl font-bold text-gray-900">{currentFacet}</h1>
             <span className="text-sm text-gray-400">{currentFacetIndex + 1} of {availableFacets.length}</span>
           </div>
           <div className="mt-3 h-1.5 bg-gray-200 rounded-full">
             <div
-              className="h-1.5 bg-indigo-500 rounded-full transition-all"
+              className="h-1.5 bg-blue-500 rounded-full transition-all"
               style={{ width: `${((currentFacetIndex + 1) / availableFacets.length) * 100}%` }}
             />
           </div>
@@ -468,7 +468,7 @@ export default function AssessPage() {
           <button
             onClick={handleNext}
             disabled={saving}
-            className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-semibold px-8 py-3 rounded-lg transition-colors"
+            className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold px-8 py-3 rounded-lg transition-colors"
           >
             {saving ? "Saving..." : currentFacetIndex < availableFacets.length - 1 ? "Next →" : "Submit Assessment"}
           </button>

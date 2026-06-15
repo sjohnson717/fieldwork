@@ -124,7 +124,7 @@ export default function AdminPage() {
   if (isLoadingAuth) {
     return (
       <div className="fixed inset-0 flex items-center justify-center bg-gray-50">
-        <div className="w-8 h-8 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
+        <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
       </div>
     );
   }
@@ -154,7 +154,7 @@ export default function AdminPage() {
       {/* Sidebar */}
       <aside className="w-64 shrink-0 bg-white border-r border-gray-200 flex flex-col h-screen sticky top-0">
         <div className="px-5 py-5 border-b border-gray-100">
-          <p className="text-xs font-semibold text-indigo-600 uppercase tracking-wide mb-0.5">Fieldwork</p>
+          <p className="text-xs font-semibold text-blue-600 uppercase tracking-wide mb-0.5">Fieldwork</p>
           <h1 className="text-base font-bold text-gray-900">Admin</h1>
         </div>
 
@@ -163,7 +163,7 @@ export default function AdminPage() {
           <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest px-3 mb-1.5 mt-1">Assessments</p>
           {loading ? (
             <div className="flex items-center justify-center py-10">
-              <div className="w-5 h-5 border-2 border-indigo-200 border-t-indigo-500 rounded-full animate-spin" />
+              <div className="w-5 h-5 border-2 border-blue-200 border-t-blue-500 rounded-full animate-spin" />
             </div>
           ) : assessments.length === 0 ? (
             <p className="text-xs text-gray-400 text-center py-4 px-2">No assessments yet.</p>
@@ -175,7 +175,7 @@ export default function AdminPage() {
                     onClick={() => { setSelectedId(a.id); setSelectedSection("assessments"); setActiveTab("Overview"); }}
                     className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors group ${
                       selectedSection === "assessments" && selectedId === a.id
-                        ? "bg-indigo-50 text-indigo-900"
+                        ? "bg-blue-50 text-blue-900"
                         : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                     }`}
                   >
@@ -200,7 +200,7 @@ export default function AdminPage() {
             onClick={() => setSelectedSection("library")}
             className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors text-sm font-medium ${
               selectedSection === "library"
-                ? "bg-indigo-50 text-indigo-900"
+                ? "bg-blue-50 text-blue-900"
                 : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
             }`}
           >
@@ -210,7 +210,7 @@ export default function AdminPage() {
             onClick={() => setSelectedSection("team")}
             className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors text-sm font-medium ${
               selectedSection === "team"
-                ? "bg-indigo-50 text-indigo-900"
+                ? "bg-blue-50 text-blue-900"
                 : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
             }`}
           >
@@ -220,7 +220,7 @@ export default function AdminPage() {
             onClick={() => setSelectedSection("demo")}
             className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors text-sm font-medium ${
               selectedSection === "demo"
-                ? "bg-indigo-50 text-indigo-900"
+                ? "bg-blue-50 text-blue-900"
                 : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
             }`}
           >
@@ -249,7 +249,7 @@ export default function AdminPage() {
                 value={newTitle}
                 onChange={e => setNewTitle(e.target.value)}
                 onKeyDown={e => e.key === "Enter" && handleCreate()}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
               <input
                 type="text"
@@ -257,13 +257,13 @@ export default function AdminPage() {
                 value={newCompany}
                 onChange={e => setNewCompany(e.target.value)}
                 onKeyDown={e => e.key === "Enter" && handleCreate()}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
               <div className="flex gap-2">
                 <button
                   onClick={handleCreate}
                   disabled={creating || !newTitle.trim()}
-                  className="flex-1 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-medium py-1.5 rounded-lg transition-colors"
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-medium py-1.5 rounded-lg transition-colors"
                 >
                   {creating ? "Creating…" : "Create"}
                 </button>
@@ -278,7 +278,7 @@ export default function AdminPage() {
           ) : (
             <button
               onClick={() => setShowNewForm(true)}
-              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -336,7 +336,7 @@ export default function AdminPage() {
                     onClick={() => setActiveTab(tab)}
                     className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
                       activeTab === tab
-                        ? "bg-indigo-600 text-white"
+                        ? "bg-blue-600 text-white"
                         : "text-gray-500 hover:text-gray-800 hover:bg-gray-100"
                     }`}
                   >

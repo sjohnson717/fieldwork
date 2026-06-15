@@ -174,7 +174,7 @@ export default function AssessmentOverview({ assessment, onUpdate }) {
           {!editingTitle && (
             <button
               onClick={() => setEditingTitle(true)}
-              className="text-xs text-indigo-600 hover:text-indigo-800 font-medium"
+              className="text-xs text-blue-600 hover:text-blue-800 font-medium"
             >
               Edit
             </button>
@@ -189,7 +189,7 @@ export default function AssessmentOverview({ assessment, onUpdate }) {
                 type="text"
                 value={titleDraft}
                 onChange={e => setTitleDraft(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
             <div>
@@ -198,14 +198,14 @@ export default function AssessmentOverview({ assessment, onUpdate }) {
                 type="text"
                 value={companyDraft}
                 onChange={e => setCompanyDraft(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
             <div className="flex gap-2">
               <button
                 onClick={handleSaveTitle}
                 disabled={savingTitle || !titleDraft.trim()}
-                className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-medium px-4 py-1.5 rounded-lg transition-colors"
+                className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-medium px-4 py-1.5 rounded-lg transition-colors"
               >
                 {savingTitle ? "Saving…" : "Save"}
               </button>
@@ -231,7 +231,7 @@ export default function AssessmentOverview({ assessment, onUpdate }) {
           </div>
           <button
             onClick={handleCopyCode}
-            className="text-sm text-indigo-600 hover:text-indigo-800 font-medium border border-indigo-200 px-3 py-2 rounded-lg hover:bg-indigo-50 transition-colors"
+            className="text-sm text-indigo-600 hover:text-indigo-800 font-medium border border-blue-200 px-3 py-2 rounded-lg hover:bg-blue-50 transition-colors"
           >
             {copied ? "Copied!" : "Copy code"}
           </button>
@@ -284,7 +284,7 @@ export default function AssessmentOverview({ assessment, onUpdate }) {
                     setCopiedLink('team');
                     setTimeout(() => setCopiedLink(null), 2000);
                   }}
-                  className="text-sm text-indigo-600 hover:text-indigo-800 font-medium border border-indigo-200 px-3 py-1.5 rounded-lg hover:bg-indigo-50 transition-colors"
+                  className="text-sm text-indigo-600 hover:text-indigo-800 font-medium border border-blue-200 px-3 py-1.5 rounded-lg hover:bg-blue-50 transition-colors"
                 >
                   {copiedLink === 'team' ? 'Copied!' : 'Copy'}
                 </button>
@@ -302,7 +302,7 @@ export default function AssessmentOverview({ assessment, onUpdate }) {
                   const updated = await base44.entities.Assessment.update(assessment.id, { team_token: token });
                   onUpdate(updated);
                 }}
-                className="text-sm text-indigo-600 hover:text-indigo-800 font-medium border border-indigo-200 px-3 py-1.5 rounded-lg hover:bg-indigo-50 transition-colors"
+                className="text-sm text-indigo-600 hover:text-indigo-800 font-medium border border-blue-200 px-3 py-1.5 rounded-lg hover:bg-blue-50 transition-colors"
               >
                 Generate
               </button>
@@ -319,7 +319,7 @@ export default function AssessmentOverview({ assessment, onUpdate }) {
                     setCopiedLink('report');
                     setTimeout(() => setCopiedLink(null), 2000);
                   }}
-                  className="text-sm text-indigo-600 hover:text-indigo-800 font-medium border border-indigo-200 px-3 py-1.5 rounded-lg hover:bg-indigo-50 transition-colors"
+                  className="text-sm text-indigo-600 hover:text-indigo-800 font-medium border border-blue-200 px-3 py-1.5 rounded-lg hover:bg-blue-50 transition-colors"
                 >
                   {copiedLink === 'report' ? 'Copied!' : 'Copy'}
                 </button>
@@ -355,7 +355,7 @@ export default function AssessmentOverview({ assessment, onUpdate }) {
               <span className="text-xs text-gray-500">{roles.length} selected</span>
               <button
                 onClick={handleSelectAllRoles}
-                className="text-xs text-indigo-600 hover:text-indigo-800 font-medium"
+                className="text-xs text-blue-600 hover:text-blue-800 font-medium"
               >
                 {masterTitles.every(t => roles.includes(t.name)) ? "Deselect all" : "Select all"}
               </button>
@@ -367,7 +367,7 @@ export default function AssessmentOverview({ assessment, onUpdate }) {
                     type="checkbox"
                     checked={roles.includes(t.name)}
                     onChange={() => handleToggleRole(t.name)}
-                    className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                    className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-blue-500"
                   />
                   <span className="text-sm text-gray-700">{t.name}</span>
                 </label>
@@ -400,7 +400,7 @@ export default function AssessmentOverview({ assessment, onUpdate }) {
             value={newRole}
             onChange={e => setNewRole(e.target.value)}
             onKeyDown={e => e.key === "Enter" && handleAddCustomRole()}
-            className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 flex-1 max-w-xs"
+            className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 flex-1 max-w-xs"
           />
           <button
             onClick={handleAddCustomRole}
@@ -432,7 +432,7 @@ export default function AssessmentOverview({ assessment, onUpdate }) {
           </div>
           <button
             onClick={loadRespondents}
-            className="text-xs text-gray-400 hover:text-indigo-600 transition-colors"
+            className="text-xs text-gray-400 hover:text-blue-600 transition-colors"
           >
             Refresh
           </button>
@@ -440,7 +440,7 @@ export default function AssessmentOverview({ assessment, onUpdate }) {
 
         {loading ? (
           <div className="flex justify-center py-8">
-            <div className="w-5 h-5 border-2 border-indigo-200 border-t-indigo-500 rounded-full animate-spin" />
+            <div className="w-5 h-5 border-2 border-blue-200 border-t-blue-500 rounded-full animate-spin" />
           </div>
         ) : respondents.length === 0 ? (
           <p className="text-sm text-gray-400 text-center py-6">No responses yet.</p>

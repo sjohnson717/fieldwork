@@ -86,7 +86,7 @@ function OwnerTypeahead({ value, onChange, jobTitleNames }) {
         onChange={e => { onChange(e.target.value); setOpen(true); }}
         onFocus={() => setOpen(true)}
         placeholder="Optional"
-        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
       />
       {open && suggestions.length > 0 && (
         <ul className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
@@ -95,7 +95,7 @@ function OwnerTypeahead({ value, onChange, jobTitleNames }) {
               <button
                 type="button"
                 onMouseDown={() => { onChange(title); setOpen(false); }}
-                className={`w-full text-left px-3 py-2 text-sm hover:bg-indigo-50 hover:text-indigo-700 transition-colors ${value === title ? "bg-indigo-50 text-indigo-700 font-medium" : "text-gray-700"}`}
+                className={`w-full text-left px-3 py-2 text-sm hover:bg-blue-50 hover:text-blue-700 transition-colors ${value === title ? "bg-blue-50 text-blue-700 font-medium" : "text-gray-700"}`}
               >
                 {title}
               </button>
@@ -226,7 +226,7 @@ function ActivitiesTab() {
 
   if (loading) return (
     <div className="flex justify-center py-16">
-      <div className="w-6 h-6 border-2 border-indigo-200 border-t-indigo-500 rounded-full animate-spin" />
+      <div className="w-6 h-6 border-2 border-blue-200 border-t-blue-500 rounded-full animate-spin" />
     </div>
   );
 
@@ -253,7 +253,7 @@ function ActivitiesTab() {
         <p className="text-xs text-gray-400">Drag rows to reorder. Order is shared across all assessments.</p>
         <button
           onClick={handleExportCSV}
-          className="flex items-center gap-1.5 text-xs font-medium text-gray-500 hover:text-indigo-600 border border-gray-200 hover:border-indigo-300 px-3 py-1.5 rounded-lg transition-colors"
+          className="flex items-center gap-1.5 text-xs font-medium text-gray-500 hover:text-blue-600 border border-gray-200 hover:border-blue-300 px-3 py-1.5 rounded-lg transition-colors"
         >
           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -293,7 +293,7 @@ function ActivitiesTab() {
                       autoFocus
                       value={editDraft.name}
                       onChange={e => setEditDraft(d => ({ ...d, name: e.target.value }))}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
                   <div className="col-span-2">
@@ -301,7 +301,7 @@ function ActivitiesTab() {
                     <input
                       value={editDraft.description}
                       onChange={e => setEditDraft(d => ({ ...d, description: e.target.value }))}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="Optional"
                     />
                   </div>
@@ -310,7 +310,7 @@ function ActivitiesTab() {
                     <select
                       value={editDraft.facet}
                       onChange={e => setEditDraft(d => ({ ...d, facet: e.target.value }))}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
                       {FACET_ORDER.map(f => <option key={f} value={f}>{f}</option>)}
                     </select>
@@ -326,7 +326,7 @@ function ActivitiesTab() {
                 </div>
                 <div className="flex gap-2">
                   <button onClick={() => handleSaveEdit(activity.id)} disabled={saving || !editDraft.name.trim()}
-                    className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-medium px-4 py-1.5 rounded-lg transition-colors">
+                    className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-medium px-4 py-1.5 rounded-lg transition-colors">
                     {saving ? "Saving…" : "Save"}
                   </button>
                   <button onClick={() => setEditingId(null)} className="text-sm text-gray-400 hover:text-gray-600 px-2">Cancel</button>
@@ -347,7 +347,7 @@ function ActivitiesTab() {
                     <span className={`text-sm font-medium ${activity.active ? "text-gray-800" : "text-gray-400 line-through"}`}>
                       {activity.name}
                     </span>
-                    <span className="text-[10px] font-semibold text-indigo-400 bg-indigo-50 px-1.5 py-0.5 rounded shrink-0">
+                    <span className="text-[10px] font-semibold text-blue-400 bg-blue-50 px-1.5 py-0.5 rounded shrink-0">
                       {activity.facet}
                     </span>
                     {activity.preferred_owner && !jobTitleNames.has(activity.preferred_owner) && (
@@ -368,7 +368,7 @@ function ActivitiesTab() {
                 </div>
                 <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                   <button onClick={() => handleEdit(activity)}
-                    className="text-xs text-gray-400 hover:text-indigo-600 font-medium transition-colors">
+                    className="text-xs text-gray-400 hover:text-blue-600 font-medium transition-colors">
                     Edit
                   </button>
                   <button onClick={() => handleToggleActive(activity)}
@@ -388,7 +388,7 @@ function ActivitiesTab() {
 
       {/* Add form */}
       {showAddForm ? (
-        <div className="bg-white rounded-xl border border-indigo-200 p-4 space-y-3">
+        <div className="bg-white rounded-xl border border-blue-200 p-4 space-y-3">
           <p className="text-sm font-medium text-gray-700">New activity</p>
           <div className="grid grid-cols-2 gap-3">
             <div className="col-span-2">
@@ -397,7 +397,7 @@ function ActivitiesTab() {
                 placeholder="Activity name"
                 value={newItem.name}
                 onChange={e => setNewItem(d => ({ ...d, name: e.target.value }))}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
             <div className="col-span-2">
@@ -405,14 +405,14 @@ function ActivitiesTab() {
                 placeholder="Description (optional)"
                 value={newItem.description}
                 onChange={e => setNewItem(d => ({ ...d, description: e.target.value }))}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
             <div>
               <select
                 value={newItem.facet}
                 onChange={e => setNewItem(d => ({ ...d, facet: e.target.value }))}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 {FACET_ORDER.map(f => <option key={f} value={f}>{f}</option>)}
               </select>
@@ -427,7 +427,7 @@ function ActivitiesTab() {
           </div>
           <div className="flex gap-2">
             <button onClick={handleAdd} disabled={adding || !newItem.name.trim()}
-              className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-medium px-4 py-1.5 rounded-lg transition-colors">
+              className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-medium px-4 py-1.5 rounded-lg transition-colors">
               {adding ? "Adding…" : "Add activity"}
             </button>
             <button onClick={() => { setShowAddForm(false); setNewItem({ name: "", description: "", facet: "DEFINE", preferred_owner: "" }); }}
@@ -436,7 +436,7 @@ function ActivitiesTab() {
         </div>
       ) : (
         <button onClick={() => setShowAddForm(true)}
-          className="flex items-center gap-2 text-sm text-gray-400 hover:text-indigo-600 transition-colors px-1">
+          className="flex items-center gap-2 text-sm text-gray-400 hover:text-blue-600 transition-colors px-1">
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
           </svg>
@@ -524,7 +524,7 @@ function JobTitlesTab() {
 
   if (loading) return (
     <div className="flex justify-center py-16">
-      <div className="w-6 h-6 border-2 border-indigo-200 border-t-indigo-500 rounded-full animate-spin" />
+      <div className="w-6 h-6 border-2 border-blue-200 border-t-blue-500 rounded-full animate-spin" />
     </div>
   );
 
@@ -546,10 +546,10 @@ function JobTitlesTab() {
                   value={editName}
                   onChange={e => setEditName(e.target.value)}
                   onKeyDown={e => { if (e.key === "Enter") handleSaveEdit(title.id); if (e.key === "Escape") setEditingId(null); }}
-                  className="flex-1 border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="flex-1 border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
                 <button onClick={() => handleSaveEdit(title.id)} disabled={saving || !editName.trim()}
-                  className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-medium px-3 py-1.5 rounded-lg transition-colors">
+                  className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-medium px-3 py-1.5 rounded-lg transition-colors">
                   {saving ? "…" : "Save"}
                 </button>
                 <button onClick={() => setEditingId(null)} className="text-sm text-gray-400 hover:text-gray-600">Cancel</button>
@@ -568,7 +568,7 @@ function JobTitlesTab() {
                 </span>
                 <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                   <button onClick={() => { setEditingId(title.id); setEditName(title.name); }}
-                    className="text-xs text-gray-400 hover:text-indigo-600 font-medium transition-colors">
+                    className="text-xs text-gray-400 hover:text-blue-600 font-medium transition-colors">
                     Edit
                   </button>
                   <button onClick={() => handleToggleActive(title)}
@@ -587,17 +587,17 @@ function JobTitlesTab() {
       />
 
       {showAddForm ? (
-        <div className="flex items-center gap-3 bg-white rounded-xl border border-indigo-200 px-4 py-3">
+        <div className="flex items-center gap-3 bg-white rounded-xl border border-blue-200 px-4 py-3">
           <input
             autoFocus
             placeholder="Job title name"
             value={newName}
             onChange={e => setNewName(e.target.value)}
             onKeyDown={e => { if (e.key === "Enter") handleAdd(); if (e.key === "Escape") { setShowAddForm(false); setNewName(""); } }}
-            className="flex-1 border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="flex-1 border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <button onClick={handleAdd} disabled={adding || !newName.trim()}
-            className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-medium px-4 py-1.5 rounded-lg transition-colors">
+            className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-medium px-4 py-1.5 rounded-lg transition-colors">
             {adding ? "Adding…" : "Add"}
           </button>
           <button onClick={() => { setShowAddForm(false); setNewName(""); }}
@@ -605,7 +605,7 @@ function JobTitlesTab() {
         </div>
       ) : (
         <button onClick={() => setShowAddForm(true)}
-          className="flex items-center gap-2 text-sm text-gray-400 hover:text-indigo-600 transition-colors px-1">
+          className="flex items-center gap-2 text-sm text-gray-400 hover:text-blue-600 transition-colors px-1">
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
           </svg>
@@ -638,7 +638,7 @@ export default function LibraryPage() {
               onClick={() => setActiveTab(tab)}
               className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
                 activeTab === tab
-                  ? "bg-indigo-600 text-white"
+                  ? "bg-blue-600 text-white"
                   : "text-gray-500 hover:text-gray-800 hover:bg-gray-100"
               }`}
             >
