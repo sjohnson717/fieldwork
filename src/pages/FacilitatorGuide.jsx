@@ -34,14 +34,15 @@ const sections = [
     title: "Fielding",
     content: `Distribute links to the client team and monitor completion. All links are in the assessment Overview tab.
 
-## Links
+## Links to share
 
 | Link | What the recipient sees | Where to find it |
 |------|------------------------|------------------|
-| **Team link** | Participant survey. Anonymous. Also shown to the team leader. | Overview tab → Copy team link |
-| **Report link** | Client-facing report. Shows findings, gaps, and ownership analysis. After closing, also shows debrief decisions. | Overview tab → Copy report link |
+| **Assessment** | Participant confidential survey. No summary provided. | Overview tab → Access |
+| **Dashboard** | Participant survey. Anonymous. Also shown to the team leader. | Overview tab → Links to share |
+| **Report** | Client-facing report. Shows findings, gaps, and ownership analysis. After closing, also shows debrief decisions. | Overview tab → Links to share |
 
-> **Who gets which link?** Send the Team link to all participants including the team leader. Share the Report link with the team leader only — after the assessment closes.
+> **Who gets which link?** Send the ACCESS link to all participants, or use the Status Dashboard to create links for each individual. Share the REPORT link with the team leader only — after the assessment closes.
 
 ## Distributing the Survey
 
