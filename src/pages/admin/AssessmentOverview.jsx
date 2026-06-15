@@ -276,7 +276,7 @@ export default function AssessmentOverview({ assessment, onUpdate }) {
           </div>
           {/* Team link */}
           <div className="flex items-center justify-between gap-4">
-            <span className="text-sm text-gray-700 font-medium w-24 shrink-0">Team link</span>
+            <span className="text-sm text-gray-700 font-medium w-24 shrink-0">Status link</span>
             {assessment.team_token ? (
               <div className="flex items-center gap-2">
                 <button
