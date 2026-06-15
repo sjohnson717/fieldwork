@@ -270,7 +270,8 @@ export default function AssessmentOverview({ assessment, onUpdate }) {
 
       {/* Links */}
       <section className="bg-white rounded-xl border border-gray-200 p-6">
-        <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-4">Links to share</h3>
+        <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-1">Links to share</h3>
+        <p className="text-xs text-gray-400 mb-4">Copy or open links to the team leader pages.</p>
         <div className="space-y-3">
           {/* Status link */}
           <div className="flex items-center justify-between gap-4">
