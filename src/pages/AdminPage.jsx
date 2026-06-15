@@ -207,16 +207,6 @@ export default function AdminPage() {
             Library
           </button>
           <button
-            onClick={() => setSelectedSection("demo")}
-            className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors text-sm font-medium ${
-              selectedSection === "demo"
-                ? "bg-indigo-50 text-indigo-900"
-                : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-            }`}
-          >
-            Demo Data
-          </button>
-          <button
             onClick={() => setSelectedSection("team")}
             className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors text-sm font-medium ${
               selectedSection === "team"
@@ -225,6 +215,16 @@ export default function AdminPage() {
             }`}
           >
             Team
+          </button>
+          <button
+            onClick={() => setSelectedSection("demo")}
+            className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors text-sm font-medium ${
+              selectedSection === "demo"
+                ? "bg-indigo-50 text-indigo-900"
+                : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+            }`}
+          >
+            Demo Data
           </button>
           <a
             href="/facilitator-guide"
