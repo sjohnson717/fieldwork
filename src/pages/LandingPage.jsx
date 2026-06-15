@@ -25,7 +25,7 @@ export default function LandingPage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-10 w-full max-w-md text-center">
           <p className="text-sm font-semibold text-indigo-600 uppercase tracking-wide mb-2">Product Growth Leaders</p>
-          <h1 className="text-2xl font-bold text-gray-900 mb-3">Fieldwork Assessment</h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-3">Quartz Assessment</h1>
           <p className="text-gray-500 text-sm mb-8">
             Have an assessment code? Jump straight in. Team members can log in below.
           </p>
