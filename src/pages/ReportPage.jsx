@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { getAssignedActivities } from "@/lib/activities";
@@ -376,9 +376,12 @@ export default function ReportPage() {
   const [filterLevel, setFilterLevel] = useState("problems"); // problems | critical | attention | all
   const [facetFilter, setFacetFilter] = useState(null); // null = all, or specific facet like "DEFINE"
   const [decisions, setDecisions] = useState([]);
+  const hasFetched = useRef(false);
 
   useEffect(() => {
-    if (token) loadReport();
+    if (!token || hasFetched.current) return;
+    hasFetched.current = true;
+    loadReport();
   }, [token]);
 
   const loadReport = async () => {
