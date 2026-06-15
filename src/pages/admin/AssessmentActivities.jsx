@@ -27,7 +27,7 @@ function OwnerTypeahead({ value, onChange, jobTitleNames }) {
         onChange={e => { onChange(e.target.value); setOpen(true); }}
         onFocus={() => setOpen(true)}
         placeholder="Optional"
-        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
       />
       {open && suggestions.length > 0 && (
         <ul className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
@@ -36,7 +36,7 @@ function OwnerTypeahead({ value, onChange, jobTitleNames }) {
               <button
                 type="button"
                 onMouseDown={() => { onChange(title); setOpen(false); }}
-                className={`w-full text-left px-3 py-2 text-sm hover:bg-indigo-50 hover:text-indigo-700 transition-colors ${value === title ? "bg-indigo-50 text-indigo-700 font-medium" : "text-gray-700"}`}
+                className={`w-full text-left px-3 py-2 text-sm hover:bg-[#eef2ff] hover:text-[#2952CC] transition-colors ${value === title ? "bg-[#eef2ff] text-[#2952CC] font-medium" : "text-gray-700"}`}
               >
                 {title}
               </button>
@@ -54,7 +54,7 @@ function FacetGroup({ facet, children }) {
   return (
     <div>
       <div className="mb-1.5">
-        <span className="text-[10px] font-bold uppercase tracking-widest text-indigo-400">{facet}</span>
+        <span className="text-[10px] font-bold uppercase tracking-widest text-[#4d80ff]">{facet}</span>
       </div>
       <div className="space-y-1">{children}</div>
     </div>
@@ -217,7 +217,7 @@ export default function AssessmentActivities({ assessment, onUpdate }) {
 
   if (loading) return (
     <div className="flex justify-center py-10">
-      <div className="w-5 h-5 border-2 border-indigo-200 border-t-indigo-500 rounded-full animate-spin" />
+      <div className="w-5 h-5 border-2 border-[#a3b8ff] border-t-[#4d80ff] rounded-full animate-spin" />
     </div>
   );
 
@@ -243,10 +243,10 @@ export default function AssessmentActivities({ assessment, onUpdate }) {
               <button
                 key={set.id}
                 onClick={() => handleApplyPreset(set)}
-                className="text-sm font-medium px-3 py-1.5 rounded-lg border border-indigo-200 text-indigo-600 hover:bg-indigo-50 transition-colors"
+                className="text-sm font-medium px-3 py-1.5 rounded-lg border border-[#a3b8ff] text-[#3366FF] hover:bg-[#eef2ff] transition-colors"
               >
                 {set.name}
-                <span className="ml-1.5 text-xs text-indigo-400">({(set.activity_ids || []).length})</span>
+                <span className="ml-1.5 text-xs text-[#4d80ff]">({(set.activity_ids || []).length})</span>
               </button>
             ))}
           </div>
@@ -266,7 +266,7 @@ export default function AssessmentActivities({ assessment, onUpdate }) {
             )}
           </p>
           <div className="flex gap-3">
-            <button onClick={handleSelectAll} className="text-xs text-indigo-600 hover:text-indigo-800 font-medium transition-colors">
+            <button onClick={handleSelectAll} className="text-xs text-[#3366FF] hover:text-[#2952CC] font-medium transition-colors">
               Select all
             </button>
             <span className="text-gray-200">·</span>
@@ -285,7 +285,7 @@ export default function AssessmentActivities({ assessment, onUpdate }) {
                   <span />
                   <button
                     onClick={() => handleFacetSelect(items, !allSelected)}
-                    className="text-[10px] text-gray-400 hover:text-indigo-600 font-medium transition-colors"
+                    className="text-[10px] text-gray-400 hover:text-[#3366FF] font-medium transition-colors"
                   >
                     {allSelected ? "Deselect all" : "Select all"}
                   </button>
@@ -296,7 +296,7 @@ export default function AssessmentActivities({ assessment, onUpdate }) {
                       type="checkbox"
                       checked={selectedSet.has(activity.id)}
                       onChange={() => handleToggleLibrary(activity.id)}
-                      className="w-3.5 h-3.5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                      className="w-3.5 h-3.5 rounded border-gray-300 text-[#3366FF] focus:ring-[#3366FF] cursor-pointer"
                     />
                     <span className="text-sm text-gray-700 group-hover:text-gray-900 transition-colors">
                       {activity.name}
@@ -336,7 +336,7 @@ export default function AssessmentActivities({ assessment, onUpdate }) {
                               autoFocus
                               value={editDraft.name}
                               onChange={e => setEditDraft(d => ({ ...d, name: e.target.value }))}
-                              className="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                              className="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
                               placeholder="Name"
                             />
                           </div>
@@ -344,7 +344,7 @@ export default function AssessmentActivities({ assessment, onUpdate }) {
                             <input
                               value={editDraft.description}
                               onChange={e => setEditDraft(d => ({ ...d, description: e.target.value }))}
-                              className="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                              className="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
                               placeholder="Description (optional)"
                             />
                           </div>
@@ -352,7 +352,7 @@ export default function AssessmentActivities({ assessment, onUpdate }) {
                             <select
                               value={editDraft.facet}
                               onChange={e => setEditDraft(d => ({ ...d, facet: e.target.value }))}
-                              className="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                              className="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
                             >
                               {FACET_ORDER.map(f => <option key={f} value={f}>{f}</option>)}
                             </select>
@@ -369,7 +369,7 @@ export default function AssessmentActivities({ assessment, onUpdate }) {
                           <button
                             onClick={() => handleSaveCustomEdit(activity.id)}
                             disabled={savingCustom || !editDraft.name?.trim()}
-                            className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
+                            className="bg-[#3366FF] hover:bg-[#2952CC] disabled:opacity-50 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
                           >
                             {savingCustom ? "Saving…" : "Save"}
                           </button>
@@ -395,7 +395,7 @@ export default function AssessmentActivities({ assessment, onUpdate }) {
                                 preferred_owner: activity.preferred_owner || "",
                               });
                             }}
-                            className="text-xs text-gray-400 hover:text-indigo-600 font-medium transition-colors"
+                            className="text-xs text-gray-400 hover:text-[#3366FF] font-medium transition-colors"
                           >
                             Edit
                           </button>
@@ -417,7 +417,7 @@ export default function AssessmentActivities({ assessment, onUpdate }) {
 
         {/* Add custom form */}
         {showAddForm ? (
-          <div className="bg-gray-50 rounded-lg border border-indigo-200 p-4 space-y-3">
+          <div className="bg-gray-50 rounded-lg border border-[#a3b8ff] p-4 space-y-3">
             <p className="text-xs font-medium text-gray-600">New custom activity</p>
             <div className="grid grid-cols-2 gap-2">
               <div className="col-span-2">
@@ -426,7 +426,7 @@ export default function AssessmentActivities({ assessment, onUpdate }) {
                   placeholder="Activity name"
                   value={newItem.name}
                   onChange={e => setNewItem(d => ({ ...d, name: e.target.value }))}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
                 />
               </div>
               <div className="col-span-2">
@@ -434,14 +434,14 @@ export default function AssessmentActivities({ assessment, onUpdate }) {
                   placeholder="Description (optional)"
                   value={newItem.description}
                   onChange={e => setNewItem(d => ({ ...d, description: e.target.value }))}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
                 />
               </div>
               <div>
                 <select
                   value={newItem.facet}
                   onChange={e => setNewItem(d => ({ ...d, facet: e.target.value }))}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
                 >
                   {FACET_ORDER.map(f => <option key={f} value={f}>{f}</option>)}
                 </select>
@@ -458,7 +458,7 @@ export default function AssessmentActivities({ assessment, onUpdate }) {
               <button
                 onClick={handleAddCustom}
                 disabled={adding || !newItem.name.trim()}
-                className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-medium px-4 py-1.5 rounded-lg transition-colors"
+                className="bg-[#3366FF] hover:bg-[#2952CC] disabled:opacity-50 text-white text-sm font-medium px-4 py-1.5 rounded-lg transition-colors"
               >
                 {adding ? "Adding…" : "Add activity"}
               </button>
@@ -473,7 +473,7 @@ export default function AssessmentActivities({ assessment, onUpdate }) {
         ) : (
           <button
             onClick={() => setShowAddForm(true)}
-            className="flex items-center gap-2 text-sm text-gray-400 hover:text-indigo-600 transition-colors px-1"
+            className="flex items-center gap-2 text-sm text-gray-400 hover:text-[#3366FF] transition-colors px-1"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />

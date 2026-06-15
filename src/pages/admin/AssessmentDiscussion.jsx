@@ -199,7 +199,7 @@ function ActivityRow({ activity, stats, note, draftNote, draftDecision, saving, 
               placeholder="Add notes for the debrief conversation…"
               value={draftNote || ""}
               onChange={e => onDraftNoteChange(activity.id, e.target.value)}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder:text-gray-300"
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 resize-none focus:outline-none focus:ring-2 focus:ring-[#3366FF] placeholder:text-gray-300"
             />
           </div>
 
@@ -213,7 +213,7 @@ function ActivityRow({ activity, stats, note, draftNote, draftDecision, saving, 
               placeholder="What was decided or committed to?"
               value={draftDecision || ""}
               onChange={e => onDraftDecisionChange(activity.id, e.target.value)}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder:text-gray-300"
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#3366FF] placeholder:text-gray-300"
             />
           </div>
 
@@ -221,7 +221,7 @@ function ActivityRow({ activity, stats, note, draftNote, draftDecision, saving, 
             <button
               onClick={() => onSave(activity.id)}
               disabled={saving}
-              className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-medium px-4 py-1.5 rounded-lg transition-colors"
+              className="bg-[#3366FF] hover:bg-[#2952CC] disabled:opacity-50 text-white text-sm font-medium px-4 py-1.5 rounded-lg transition-colors"
             >
               {saving ? "Saving…" : "Save"}
             </button>
@@ -415,7 +415,7 @@ export default function AssessmentDiscussion({ assessment }) {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="w-6 h-6 border-2 border-indigo-200 border-t-indigo-500 rounded-full animate-spin" />
+        <div className="w-6 h-6 border-2 border-[#a3b8ff] border-t-[#4d80ff] rounded-full animate-spin" />
       </div>
     );
   }

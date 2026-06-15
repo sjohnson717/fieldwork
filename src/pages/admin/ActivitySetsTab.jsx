@@ -91,7 +91,7 @@ function ActivityChecklist({ set, activities, onToggle }) {
       <div className="flex gap-3 pt-1">
         <button
           onClick={handleSelectAll}
-          className="text-xs text-indigo-600 hover:text-indigo-800 font-medium transition-colors"
+          className="text-xs text-[#3366FF] hover:text-[#2952CC] font-medium transition-colors"
         >
           Select all
         </button>
@@ -110,10 +110,10 @@ function ActivityChecklist({ set, activities, onToggle }) {
         return (
           <div key={facet}>
             <div className="flex items-center justify-between mb-1.5">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-indigo-400">{facet}</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-[#4d80ff]">{facet}</span>
               <button
                 onClick={() => handleFacetSelectAll(items, !allSelected)}
-                className="text-[10px] text-gray-400 hover:text-indigo-600 font-medium transition-colors"
+                className="text-[10px] text-gray-400 hover:text-[#3366FF] font-medium transition-colors"
               >
                 {allSelected ? "Deselect all" : "Select all"}
               </button>
@@ -125,7 +125,7 @@ function ActivityChecklist({ set, activities, onToggle }) {
                     type="checkbox"
                     checked={selectedIds.has(activity.id)}
                     onChange={() => handleToggleOne(activity.id)}
-                    className="w-3.5 h-3.5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                    className="w-3.5 h-3.5 rounded border-gray-300 text-[#3366FF] focus:ring-[#3366FF] cursor-pointer"
                   />
                   <span className="text-sm text-gray-700 group-hover:text-gray-900 transition-colors">
                     {activity.name}
@@ -232,7 +232,7 @@ export default function ActivitySetsTab() {
 
   if (loading) return (
     <div className="flex justify-center py-16">
-      <div className="w-6 h-6 border-2 border-indigo-200 border-t-indigo-500 rounded-full animate-spin" />
+      <div className="w-6 h-6 border-2 border-[#a3b8ff] border-t-[#4d80ff] rounded-full animate-spin" />
     </div>
   );
 
@@ -258,12 +258,12 @@ export default function ActivitySetsTab() {
                     value={editName}
                     onChange={e => setEditName(e.target.value)}
                     onKeyDown={e => { if (e.key === "Enter") handleSaveEdit(set.id); if (e.key === "Escape") setEditingId(null); }}
-                    className="flex-1 border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="flex-1 border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
                   />
                   <button
                     onClick={() => handleSaveEdit(set.id)}
                     disabled={saving || !editName.trim()}
-                    className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-medium px-3 py-1.5 rounded-lg transition-colors"
+                    className="bg-[#3366FF] hover:bg-[#2952CC] disabled:opacity-50 text-white text-sm font-medium px-3 py-1.5 rounded-lg transition-colors"
                   >
                     {saving ? "…" : "Save"}
                   </button>
@@ -299,7 +299,7 @@ export default function ActivitySetsTab() {
                       <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
                           onClick={() => { setEditingId(set.id); setEditName(set.name); }}
-                          className="text-xs text-gray-400 hover:text-indigo-600 font-medium transition-colors"
+                          className="text-xs text-gray-400 hover:text-[#3366FF] font-medium transition-colors"
                         >
                           Edit
                         </button>
@@ -344,19 +344,19 @@ export default function ActivitySetsTab() {
 
       {/* Add form */}
       {showAddForm ? (
-        <div className="flex items-center gap-3 bg-white rounded-xl border border-indigo-200 px-4 py-3">
+        <div className="flex items-center gap-3 bg-white rounded-xl border border-[#a3b8ff] px-4 py-3">
           <input
             autoFocus
             placeholder="Activity set name"
             value={newName}
             onChange={e => setNewName(e.target.value)}
             onKeyDown={e => { if (e.key === "Enter") handleAdd(); if (e.key === "Escape") { setShowAddForm(false); setNewName(""); } }}
-            className="flex-1 border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="flex-1 border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
           />
           <button
             onClick={handleAdd}
             disabled={adding || !newName.trim()}
-            className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-medium px-4 py-1.5 rounded-lg transition-colors"
+            className="bg-[#3366FF] hover:bg-[#2952CC] disabled:opacity-50 text-white text-sm font-medium px-4 py-1.5 rounded-lg transition-colors"
           >
             {adding ? "Adding…" : "Add"}
           </button>
@@ -365,7 +365,7 @@ export default function ActivitySetsTab() {
       ) : (
         <button
           onClick={() => setShowAddForm(true)}
-          className="flex items-center gap-2 text-sm text-gray-400 hover:text-indigo-600 transition-colors px-1"
+          className="flex items-center gap-2 text-sm text-gray-400 hover:text-[#3366FF] transition-colors px-1"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />

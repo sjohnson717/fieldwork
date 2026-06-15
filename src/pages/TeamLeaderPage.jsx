@@ -36,7 +36,7 @@ function CopyButton({ text }) {
   return (
     <button
       onClick={handleCopy}
-      className="text-xs font-medium text-indigo-600 hover:text-indigo-800 border border-indigo-200 hover:border-indigo-400 px-2 py-1 rounded-lg transition-colors"
+      className="text-xs font-medium text-[#3366FF] hover:text-[#2952CC] border border-[#a3b8ff] hover:border-[#4d80ff] px-2 py-1 rounded-lg transition-colors"
     >
       {copied ? "Copied!" : "Copy link"}
     </button>
@@ -156,20 +156,20 @@ export default function TeamLeaderPage() {
               placeholder="Full name"
               value={name}
               onChange={e => setName(e.target.value)}
-              className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
             />
             <input
               type="email"
               placeholder="Email address"
               value={email}
               onChange={e => setEmail(e.target.value)}
-              className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
             />
             <div>
               <select
                 value={role}
                 onChange={e => setRole(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3366FF] bg-white"
               >
                 <option value="user">Team member</option>
                 <option value="team_leader">Team leader</option>
@@ -187,14 +187,14 @@ export default function TeamLeaderPage() {
           <button
             onClick={handleInvite}
             disabled={submitting}
-            className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-medium px-5 py-2 rounded-lg transition-colors"
+            className="bg-[#3366FF] hover:bg-[#2952CC] disabled:opacity-50 text-white text-sm font-medium px-5 py-2 rounded-lg transition-colors"
           >
             {submitting ? "Creating…" : "Create link"}
           </button>
 
           {lastLink && (
-            <div className="mt-4 flex items-center gap-3 bg-indigo-50 border border-indigo-200 rounded-lg px-4 py-3">
-              <p className="text-xs text-indigo-700 font-mono flex-1 truncate">{lastLink}</p>
+            <div className="mt-4 flex items-center gap-3 bg-[#eef2ff] border border-[#a3b8ff] rounded-lg px-4 py-3">
+              <p className="text-xs text-[#2952CC] font-mono flex-1 truncate">{lastLink}</p>
               <CopyButton text={lastLink} />
             </div>
           )}

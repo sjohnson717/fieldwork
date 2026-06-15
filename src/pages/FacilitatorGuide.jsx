@@ -127,7 +127,7 @@ export default function FacilitatorGuide() {
       {/* Sidebar */}
       <aside className="w-56 shrink-0 bg-white border-r border-gray-200 flex flex-col h-screen sticky top-0">
         <div className="px-5 py-5 border-b border-gray-100">
-          <Link to="/admin" className="text-xs font-semibold text-indigo-600 uppercase tracking-wide hover:text-indigo-800 transition-colors">
+          <Link to="/admin" className="text-xs font-semibold text-[#3366FF] uppercase tracking-wide hover:text-[#2952CC] transition-colors">
             ← Admin
           </Link>
           <h1 className="text-base font-bold text-gray-900 mt-1">Facilitator Guide</h1>
@@ -139,7 +139,7 @@ export default function FacilitatorGuide() {
               onClick={() => handleSectionChange(s.id)}
               className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors text-sm font-medium ${
                 activeId === s.id
-                  ? "bg-indigo-50 text-indigo-900"
+                  ? "bg-[#eef2ff] text-[#1a2e7a]"
                   : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
               }`}
             >
@@ -166,7 +166,7 @@ export default function FacilitatorGuide() {
               <textarea
                 value={currentContent}
                 onChange={e => setContents(prev => ({ ...prev, [activeId]: e.target.value }))}
-                className="w-full font-mono text-sm text-gray-800 border border-gray-200 rounded-lg p-4 focus:outline-none focus:ring-2 focus:ring-indigo-400 resize-y"
+                className="w-full font-mono text-sm text-gray-800 border border-gray-200 rounded-lg p-4 focus:outline-none focus:ring-2 focus:ring-[#3366FF] resize-y"
                 style={{ minHeight: "400px" }}
               />
             ) : (
@@ -178,8 +178,8 @@ export default function FacilitatorGuide() {
                   prose-p:text-gray-600 prose-p:leading-relaxed
                   prose-strong:text-gray-900
                   prose-li:text-gray-600
-                  prose-code:text-indigo-600 prose-code:bg-indigo-50 prose-code:px-1 prose-code:rounded
-                  prose-blockquote:border-l-indigo-300 prose-blockquote:text-gray-500 prose-blockquote:bg-indigo-50/50 prose-blockquote:py-0.5
+                  prose-code:text-[#3366FF] prose-code:bg-[#eef2ff] prose-code:px-1 prose-code:rounded
+                  prose-blockquote:border-l-[#a3b8ff] prose-blockquote:text-gray-500 prose-blockquote:bg-[#eef2ff]/50 prose-blockquote:py-0.5
                   prose-table:text-sm
                   prose-th:text-gray-500 prose-th:font-semibold prose-th:text-left prose-th:pb-2 prose-th:border-b prose-th:border-gray-200
                   prose-td:text-gray-600 prose-td:py-2 prose-td:border-b prose-td:border-gray-100"

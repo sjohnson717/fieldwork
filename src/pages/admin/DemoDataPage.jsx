@@ -240,7 +240,7 @@ export default function DemoDataPage() {
       <div className="flex-1 overflow-y-auto p-8 max-w-xl">
         {loading ? (
           <div className="flex justify-center py-16">
-            <div className="w-6 h-6 border-2 border-indigo-200 border-t-indigo-500 rounded-full animate-spin" />
+            <div className="w-6 h-6 border-2 border-[#a3b8ff] border-t-[#4d80ff] rounded-full animate-spin" />
           </div>
         ) : (
           <div className="space-y-6">
@@ -252,7 +252,7 @@ export default function DemoDataPage() {
                 <select
                   value={selectedId}
                   onChange={e => setSelectedId(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
                 >
                   {assessments.map(a => (
                     <option key={a.id} value={a.id}>
@@ -273,7 +273,7 @@ export default function DemoDataPage() {
                       onClick={() => setRespondentCount(n)}
                       className={`px-4 py-1.5 rounded-full text-sm font-medium border transition-colors ${
                         respondentCount === n
-                          ? "bg-indigo-600 text-white border-transparent"
+                          ? "bg-[#3366FF] text-white border-transparent"
                           : "bg-white text-gray-600 border-gray-300 hover:border-gray-400"
                       }`}
                     >
@@ -309,7 +309,7 @@ export default function DemoDataPage() {
             <button
               onClick={handleGenerate}
               disabled={generating || !selectedId}
-              className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-semibold py-3 rounded-xl transition-colors"
+              className="w-full bg-[#3366FF] hover:bg-[#2952CC] disabled:opacity-50 text-white font-semibold py-3 rounded-xl transition-colors"
             >
               {generating ? "Generating…" : `Generate ${respondentCount} respondents`}
             </button>
@@ -319,7 +319,7 @@ export default function DemoDataPage() {
               <div className={`rounded-xl border px-5 py-4 text-sm ${
                 done
                   ? "bg-green-50 border-green-200 text-green-800"
-                  : "bg-indigo-50 border-indigo-200 text-indigo-800"
+                  : "bg-[#eef2ff] border-[#a3b8ff] text-[#1a2e7a]"
               }`}>
                 {done && <span className="font-semibold mr-2">✓</span>}
                 {progress}

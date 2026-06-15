@@ -17,9 +17,9 @@ const gapScore = (imp, exec) => {
 
 const importanceColor = (avg) => {
   if (avg === null) return "bg-gray-50 text-gray-300";
-  if (avg >= 2.5) return "bg-indigo-600 text-white";
-  if (avg >= 1.5) return "bg-indigo-300 text-indigo-900";
-  if (avg >= 0.5) return "bg-indigo-100 text-indigo-700";
+  if (avg >= 2.5) return "bg-[#3366FF] text-white";
+  if (avg >= 1.5) return "bg-[#4d80ff] text-[#1a2e7a]";
+  if (avg >= 0.5) return "bg-[#dce5ff] text-[#2952CC]";
   return "bg-gray-100 text-gray-500";
 };
 
@@ -75,7 +75,7 @@ export default function AssessmentResults({ assessment }) {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="w-6 h-6 border-2 border-indigo-200 border-t-indigo-500 rounded-full animate-spin" />
+        <div className="w-6 h-6 border-2 border-[#a3b8ff] border-t-[#4d80ff] rounded-full animate-spin" />
       </div>
     );
   }
@@ -284,8 +284,8 @@ export default function AssessmentResults({ assessment }) {
         </span>
         {view === "importance" && (
           <div className="flex gap-1.5 items-center">
-            <span className="w-4 h-4 rounded bg-indigo-100 inline-block" />Not needed →
-            <span className="w-4 h-4 rounded bg-indigo-600 inline-block" />Critical
+            <span className="w-4 h-4 rounded bg-[#dce5ff] inline-block" />Not needed →
+            <span className="w-4 h-4 rounded bg-[#3366FF] inline-block" />Critical
           </div>
         )}
         {view === "execution" && (
@@ -366,7 +366,7 @@ export default function AssessmentResults({ assessment }) {
                   <span className="text-xs text-gray-400 ml-2">{act.facet}</span>
                 </div>
                 <div className="flex items-center gap-2 text-xs text-gray-500">
-                  <span>Imp <span className="font-semibold text-indigo-600">{fmt(act.avgImp)}</span></span>
+                  <span>Imp <span className="font-semibold text-[#3366FF]">{fmt(act.avgImp)}</span></span>
                   <span>Exec <span className="font-semibold text-emerald-600">{fmt(act.avgExec)}</span></span>
                   <span className={`font-bold px-2 py-0.5 rounded-full ${gapColor(act.avgGap)}`}>
                     Δ {fmt(act.avgGap)}

@@ -97,12 +97,12 @@ export default function TeamPage() {
             value={inviteEmail}
             onChange={e => setInviteEmail(e.target.value)}
             onKeyDown={e => e.key === "Enter" && handleInvite()}
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 flex-1 min-w-48"
+            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3366FF] flex-1 min-w-48"
           />
           <select
             value={inviteRole}
             onChange={e => setInviteRole(e.target.value)}
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3366FF] bg-white"
           >
             <option value="user">user</option>
             <option value="admin">admin</option>
@@ -110,7 +110,7 @@ export default function TeamPage() {
           <button
             onClick={handleInvite}
             disabled={inviting || !inviteEmail.trim()}
-            className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+            className="bg-[#3366FF] hover:bg-[#2952CC] disabled:opacity-50 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
           >
             {inviting ? "Sending…" : "Send invite"}
           </button>
@@ -129,12 +129,12 @@ export default function TeamPage() {
               {pendingCount > 0 && <span className="ml-2 text-amber-500 font-medium">· {pendingCount} pending invite{pendingCount !== 1 ? "s" : ""}</span>}
             </p>
           </div>
-          <button onClick={loadUsers} className="text-xs text-gray-400 hover:text-indigo-600 transition-colors">Refresh</button>
+          <button onClick={loadUsers} className="text-xs text-gray-400 hover:text-[#3366FF] transition-colors">Refresh</button>
         </div>
 
         {loading ? (
           <div className="flex justify-center py-12">
-            <div className="w-5 h-5 border-2 border-indigo-200 border-t-indigo-500 rounded-full animate-spin" />
+            <div className="w-5 h-5 border-2 border-[#a3b8ff] border-t-[#4d80ff] rounded-full animate-spin" />
           </div>
         ) : users.length === 0 && invitations.length === 0 ? (
           <p className="text-sm text-gray-400 text-center py-10">No users found.</p>
@@ -159,19 +159,19 @@ export default function TeamPage() {
                     <td className="px-4 py-3 font-medium text-gray-800">
                       {u.full_name}
                       {isSelf && (
-                        <span className="ml-2 text-[10px] font-semibold text-indigo-500 bg-indigo-50 px-1.5 py-0.5 rounded-full">you</span>
+                        <span className="ml-2 text-[10px] font-semibold text-[#4d80ff] bg-[#eef2ff] px-1.5 py-0.5 rounded-full">you</span>
                       )}
                     </td>
                     <td className="px-4 py-3 text-gray-500">{u.email}</td>
                     <td className="px-4 py-3">
                       {isSelf ? (
-                        <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700">{u.role}</span>
+                        <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-[#eef2ff] text-[#2952CC]">{u.role}</span>
                       ) : (
                         <select
                           value={u.role}
                           disabled={isUpdating}
                           onChange={e => handleRoleChange(u, e.target.value)}
-                          className="text-xs font-medium border border-gray-200 rounded-lg px-2.5 py-1 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 cursor-pointer"
+                          className="text-xs font-medium border border-gray-200 rounded-lg px-2.5 py-1 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#3366FF] disabled:opacity-50 cursor-pointer"
                         >
                           <option value="user">user</option>
                           <option value="admin">admin</option>
