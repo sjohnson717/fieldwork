@@ -1,5 +1,6 @@
 import { useState } from "react";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { Link } from "react-router-dom";
 
 const sections = [
@@ -143,6 +144,7 @@ export default function FacilitatorGuide() {
           <h2 className="text-2xl font-bold text-gray-900 mb-6">{current.title}</h2>
           <div className="bg-white rounded-xl border border-gray-200 px-8 py-8">
             <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
               className="prose prose-sm max-w-none
                 prose-headings:font-bold prose-headings:text-gray-900
                 prose-h2:text-base prose-h2:mt-6 prose-h2:mb-3
