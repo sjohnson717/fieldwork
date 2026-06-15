@@ -62,13 +62,11 @@ export default function AdminPage() {
     try {
       const code = Array.from(crypto.getRandomValues(new Uint8Array(4))).map(b => b.toString(36)).join('').substring(0, 5).toUpperCase();
       const buyerToken = crypto.randomUUID();
-      const teamToken = crypto.randomUUID();
       const created = await base44.entities.Assessment.create({
         title: newTitle.trim(),
         company_name: newCompany.trim(),
         access_code: code,
         buyer_token: buyerToken,
-        team_token: teamToken,
         status: "draft",
         roles: [],
       });
