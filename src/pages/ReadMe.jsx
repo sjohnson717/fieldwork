@@ -90,13 +90,79 @@ Examples:
     id: "guide-fielding",
     group: "Facilitator Guide",
     title: "Fielding",
-    content: ``,
+    content: `Distribute links to the client team and monitor completion. All links are in the assessment Overview tab.
+
+## Links
+
+| Link | What the recipient sees | Where to find it |
+|------|------------------------|------------------|
+| **Team link** | Participant survey. Anonymous. Also shown to the team leader. | Overview tab → Copy team link |
+| **Report link** | Client-facing report. Shows findings, gaps, and ownership analysis. After closing, also shows debrief decisions. | Overview tab → Copy report link |
+
+> **Who gets which link?** Send the Team link to all participants including the team leader. Share the Report link with the team leader only — after the assessment closes.
+
+## Distributing the Survey
+
+- Copy the **Team link** from the Overview tab.
+- Send to the team leader to forward, or send directly if you have the contact list.
+- Suggested message: *"Please take 15–20 minutes to complete this assessment before [DATE]. Your responses are anonymous. [LINK]"*
+- Set a deadline. Two business days is usually sufficient.
+
+## Monitoring Completion
+
+Check the **Respondents table** in the Overview tab. It shows each participant's name, title, status (completed or pending), response count, and completion date.
+
+> **Minimum responses:** Aim for at least 4–5 completed responses before running the debrief. The report will not display until the minimum threshold is reached. Follow up with non-completers 24 hours before the deadline.`,
   },
   {
     id: "guide-facilitation",
     group: "Facilitator Guide",
     title: "Facilitation & Delivery",
-    content: ``,
+    content: `The debrief is the core of the engagement. Use the Discussion tab as your working document during the session. The report link updates automatically when you close the assessment.
+
+## Before the Session
+
+- Open **Results → Summary view**. Review the gap table sorted by gap score.
+- Note activities with the highest gaps and any **"Discuss owner"** flags.
+- Open the **Discussion tab**. Flag the 3–5 activities you plan to focus on.
+- Prepare 1–2 open questions per flagged activity.
+
+> **Pre-session framing:** The goal is not to critique execution — it's to surface where expectations and reality diverge, and to agree on who owns what. The data is a conversation starter, not a verdict.
+
+## Running the Session
+
+**Opening (5 min)** — Share your screen showing the report. Walk through the Key Finding and What This Means sections. Let the numbers land before opening discussion.
+
+*Suggested opener: "Before we dig in, I want to acknowledge what's strong here — [bright spots]. Now let's talk about where the team sees the biggest gaps."*
+
+**Structured discussion (30–40 min)** — Work through flagged activities one at a time. For each:
+
+1. Share the gap and ownership data
+2. Ask an open question to surface the story behind the number
+3. Record key observations in the **Discussion Notes** field
+4. Agree on a decision and record it in the **Decision / Action** field
+5. Click **Save** before moving on
+
+**Discussion Questions**
+
+| Situation | Question |
+|-----------|----------|
+| High gap | "The team sees this as important but rates execution low. What's getting in the way?" |
+| Discuss owner flag | "Three different roles were suggested as owner here. Who actually feels accountable for this today?" |
+| Needs attention | "Is this a resource issue, a process issue, or a priority issue?" |
+| All on track in a theme | "Your team rates this whole area as strong. Is that consistent with what you see day to day?" |
+| Execution outpacing importance | "Your team rates execution here higher than importance. Are you over-investing in this area?" |
+
+**Closing (5–10 min)** — Summarize decisions recorded in the Discussion tab. Confirm the team leader has them. Explain the report link will update once you close the assessment.
+
+## After the Session
+
+- Review and clean up **Decision / Action** fields in the Discussion tab.
+- Change the assessment status to **Closed** in the Overview tab.
+- Send the team leader the **Report link**. It now includes the "What we decided" section.
+- Optionally share the report link more broadly with participants.
+
+> **Timing tip:** Close the assessment and send the report link within 24 hours of the debrief while the conversation is still fresh.`,
   },
 ];
 
