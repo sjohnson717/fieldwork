@@ -319,56 +319,6 @@ export default function AdminPage() {
                   <span className="text-xs font-mono bg-gray-100 text-gray-600 px-2 py-1 rounded">
                     {selected.access_code}
                   </span>
-                  {selected.buyer_token && (
-                    <>
-                      <button
-                        onClick={() => {
-                          const url = `${window.location.origin}/report/${selected.buyer_token}`;
-                          navigator.clipboard.writeText(url);
-                        }}
-                        className="text-xs font-medium text-[#3366FF] border border-[#3366FF]/30 px-2 py-1 rounded hover:bg-[#3366FF]/5 transition-colors"
-                        title="Copy report link for buyer"
-                      >
-                        Copy report link
-                      </button>
-                      <button
-                        onClick={() => window.open(`${window.location.origin}/report/${selected.buyer_token}`, "_blank")}
-                        className="text-xs font-medium text-[#3366FF] border border-[#3366FF]/30 px-2 py-1 rounded hover:bg-[#3366FF]/5 transition-colors"
-                        title="Open report in new tab"
-                      >
-                        Open report
-                      </button>
-                    </>
-                  )}
-                  {selected.team_token ? (
-                    <>
-                      <button
-                        onClick={() => navigator.clipboard.writeText(`${window.location.origin}/team/${selected.team_token}`)}
-                        className="text-xs font-medium text-[#3366FF] border border-[#3366FF]/30 px-2 py-1 rounded hover:bg-[#3366FF]/5 transition-colors"
-                        title="Copy team link"
-                      >
-                        Copy team link
-                      </button>
-                      <button
-                        onClick={() => window.open(`${window.location.origin}/team/${selected.team_token}`, "_blank")}
-                        className="text-xs font-medium text-[#3366FF] border border-[#3366FF]/30 px-2 py-1 rounded hover:bg-[#3366FF]/5 transition-colors"
-                        title="Open team link in new tab"
-                      >
-                        Open team link
-                      </button>
-                    </>
-                  ) : (
-                    <button
-                      onClick={async () => {
-                        const token = Math.random().toString(36).substring(2, 10) + Math.random().toString(36).substring(2, 10);
-                        const updated = await base44.entities.Assessment.update(selected.id, { team_token: token });
-                        handleAssessmentUpdate(updated);
-                      }}
-                      className="text-xs font-medium text-[#3366FF] border border-[#3366FF]/30 px-2 py-1 rounded hover:bg-[#3366FF]/5 transition-colors"
-                    >
-                      Generate team link
-                    </button>
-                  )}
                   <button
                     onClick={handleDeleteAssessment}
                     disabled={deleting}

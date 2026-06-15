@@ -20,6 +20,7 @@ export default function AssessmentOverview({ assessment, onUpdate }) {
   const [loading, setLoading] = useState(true);
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(null); // 'report' | 'team'
   const [newRole, setNewRole] = useState("");
   const [savingRoles, setSavingRoles] = useState(false);
   const [masterTitles, setMasterTitles] = useState([]);
@@ -240,6 +241,74 @@ export default function AssessmentOverview({ assessment, onUpdate }) {
           >
             Copy link
           </button>
+        </div>
+      </section>
+
+      {/* Links */}
+      <section className="bg-white rounded-xl border border-gray-200 p-6">
+        <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-4">Links</h3>
+        <div className="space-y-3">
+          {/* Report link */}
+          <div className="flex items-center justify-between gap-4">
+            <span className="text-sm text-gray-700 font-medium w-24 shrink-0">Report link</span>
+            {assessment.buyer_token ? (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(`${window.location.origin}/report/${assessment.buyer_token}`);
+                    setCopiedLink('report');
+                    setTimeout(() => setCopiedLink(null), 2000);
+                  }}
+                  className="text-sm text-indigo-600 hover:text-indigo-800 font-medium border border-indigo-200 px-3 py-1.5 rounded-lg hover:bg-indigo-50 transition-colors"
+                >
+                  {copiedLink === 'report' ? 'Copied!' : 'Copy'}
+                </button>
+                <button
+                  onClick={() => window.open(`${window.location.origin}/report/${assessment.buyer_token}`, '_blank')}
+                  className="text-sm text-gray-500 hover:text-gray-700 font-medium border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Open
+                </button>
+              </div>
+            ) : (
+              <span className="text-sm text-gray-400 italic">Not available</span>
+            )}
+          </div>
+          {/* Team link */}
+          <div className="flex items-center justify-between gap-4">
+            <span className="text-sm text-gray-700 font-medium w-24 shrink-0">Team link</span>
+            {assessment.team_token ? (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(`${window.location.origin}/team/${assessment.team_token}`);
+                    setCopiedLink('team');
+                    setTimeout(() => setCopiedLink(null), 2000);
+                  }}
+                  className="text-sm text-indigo-600 hover:text-indigo-800 font-medium border border-indigo-200 px-3 py-1.5 rounded-lg hover:bg-indigo-50 transition-colors"
+                >
+                  {copiedLink === 'team' ? 'Copied!' : 'Copy'}
+                </button>
+                <button
+                  onClick={() => window.open(`${window.location.origin}/team/${assessment.team_token}`, '_blank')}
+                  className="text-sm text-gray-500 hover:text-gray-700 font-medium border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Open
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={async () => {
+                  const token = Math.random().toString(36).substring(2, 10) + Math.random().toString(36).substring(2, 10);
+                  const updated = await base44.entities.Assessment.update(assessment.id, { team_token: token });
+                  onUpdate(updated);
+                }}
+                className="text-sm text-indigo-600 hover:text-indigo-800 font-medium border border-indigo-200 px-3 py-1.5 rounded-lg hover:bg-indigo-50 transition-colors"
+              >
+                Generate
+              </button>
+            )}
+          </div>
         </div>
       </section>
 
