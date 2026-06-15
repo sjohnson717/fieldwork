@@ -310,7 +310,7 @@ export default function AssessmentOverview({ assessment, onUpdate }) {
           </div>
           {/* Report link */}
           <div className="flex items-center justify-between gap-4">
-            <span className="text-sm text-gray-700 font-medium w-56 shrink-0">Report and action plan</span>
+            <span className="text-sm text-gray-700 font-medium w-56 shrink-0">REPORT and action plan</span>
             {assessment.buyer_token ? (
               <div className="flex items-center gap-2">
                 <button
