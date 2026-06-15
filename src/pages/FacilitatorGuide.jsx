@@ -31,16 +31,16 @@ const sections = [
   },
   {
     id: "fielding",
-    title: "Fielding",
+    title: "Share the survey",
     content: `Distribute links to the client team and monitor completion. All links are in the assessment Overview tab.
 
 ## Links to share
 
 | Link | What the recipient sees | Where to find it |
 |------|------------------------|------------------|
-| **Access** | Participant confidential survey. No summary provided. | Overview tab → Access |
-| **Dashboard** | Team leader status dashboard. Does not show invidual responses. | Overview tab → Links to share |
-| **Report** | Client-facing report. Used during or after the assessment completion. Shows findings, gaps, and ownership analysis. After closing, also shows debrief decisions. | Overview tab → Links to share |
+| **Access** | Participant confidential input. No summary provided. | Overview tab → Access |
+| **Dashboard** | Team leader status dashboard. Does not show individual responses. | Overview tab → Links to share |
+| **Report** | Client-facing report. Used during or after the assessment completion. Shows findings, gaps, and ownership analysis. After closing the assessment, also shows debrief decisions, if any. | Overview tab → Links to share |
 
 > **Who gets which link?** All participants get the Access link. Alternatively, you use the team leader's Status Dashboard to create links for each individual. Share the Dashboard and Report links only with team leaders. 
 
@@ -53,14 +53,14 @@ const sections = [
 
 ## Monitoring Completion
 
-Check the **Respondents table** in the Overview tab. It shows each participant's name, title, status (completed or pending), response count, and completion date. This information is confidental. **Do not share** with team leaders. 
+Check the **Respondents table** in the Overview tab. It shows each participant's name, title, status (completed or pending), response count, and completion date. This information is confidential. *Do not share this page with team leaders*. 
 
 > **Minimum responses:** Aim for at least 4–5 completed responses before running the debrief. The report will not display until the minimum threshold is reached. Follow up with non-completers 24 hours before the deadline.`,
   },
   {
     id: "facilitation",
     title: "Facilitation & Delivery",
-    content: `The debrief is the core of the engagement. Use the Discussion tab as your working document during the session. The report link updates automatically when you close the assessment.
+    content: `The debrief is the core of the engagement. Use the Discussion tab as your working document during the session. The client report updates with action items automatically when you close the assessment.
 
 ## Before the Session
 
