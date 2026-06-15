@@ -13,7 +13,7 @@ const sections = [
 
 | Step | Action | Details |
 |------|--------|---------|
-| 1 | **Create the assessment** | Click **New Assessment**. Enter the assessment title and client company name. |
+| 1 | **Create the assessment** | Click **New Assessment** at the bottom of the navigation panel. Enter an assessment title and client company name. |
 | 2 | **Choose an activity preset** | Go to the **Activities** tab. Click a preset — Default (32), Extended (42), Brief (22), or Executive (6). Ownership roles are pre-populated automatically. |
 | 3 | **Review ownership roles** | Go to the **Overview** tab. Check the **Ownership Roles** section. Add or remove roles to match the client's actual team structure. |
 | 4 | **Set status to Active** | In the Overview tab, set the assessment status to **Active**. Participants cannot access the survey until this is done. |
@@ -39,15 +39,15 @@ const sections = [
 | Link | What the recipient sees | Where to find it |
 |------|------------------------|------------------|
 | **Assessment** | Participant confidential survey. No summary provided. | Overview tab → Access |
-| **Dashboard** | Participant survey. Anonymous. Also shown to the team leader. | Overview tab → Links to share |
-| **Report** | Client-facing report. Shows findings, gaps, and ownership analysis. After closing, also shows debrief decisions. | Overview tab → Links to share |
+| **Dashboard** | Team leader status dashboard. Does not show invidual responses. | Overview tab → Links to share |
+| **Report** | Client-facing report. Used during or after the assessment completion. Shows findings, gaps, and ownership analysis. After closing, also shows debrief decisions. | Overview tab → Links to share |
 
-> **Who gets which link?** Send the ACCESS link to all participants, or use the Status Dashboard to create links for each individual. Share the REPORT link with the team leader only — after the assessment closes.
+> **Who gets which link?** All participants get the ACCESS link. Alternatively, you use the team leader's Status Dashboard to create links for each individual. Share the Dashboard and Report links only with team leaders. 
 
 ## Distributing the Survey
 
-- Copy the **Team link** from the Overview tab.
-- Send to the team leader to forward, or send directly if you have the contact list.
+- For facilitators: Get a list of names and emails from the team leader. You can email the participants with the generic **Access* code or use the the **STATUS Dashboard** link to get custom links to share.
+- For team leaders: Share the **STATUS Dashboard** link from the Overview tab. They can add names and emails for the assessments.
 - Suggested message: *"Please take 15–20 minutes to complete this assessment before [DATE]. Your responses are anonymous. [LINK]"*
 - Set a deadline. Two business days is usually sufficient.
 
