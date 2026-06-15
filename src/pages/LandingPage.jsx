@@ -15,7 +15,7 @@ export default function LandingPage() {
   if (isLoadingAuth) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
+        <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
       </div>
     );
   }
@@ -24,15 +24,15 @@ export default function LandingPage() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-10 w-full max-w-md text-center">
-          <p className="text-sm font-semibold text-indigo-600 uppercase tracking-wide mb-2">Product Growth Leaders</p>
-          <h1 className="text-2xl font-bold text-gray-900 mb-3">Quartz Assessment</h1>
+          <p className="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-2">Product Growth Leaders</p>
+          <h1 className="text-2xl font-bold text-gray-900 mb-3">Quartz Assessments</h1>
           <p className="text-gray-500 text-sm mb-8">
             Have an assessment code? Jump straight in. Team members can log in below.
           </p>
           <div className="flex flex-col gap-3">
             <Link
               to="/assess"
-              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-lg transition-colors text-sm"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition-colors text-sm"
             >
               Start an assessment
             </Link>
@@ -52,16 +52,16 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-10 w-full max-w-md text-center">
-        <p className="text-sm font-semibold text-indigo-600 uppercase tracking-wide mb-2">Product Growth Leaders</p>
+        <p className="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-2">Product Growth Leaders</p>
         <h1 className="text-2xl font-bold text-gray-900 mb-2">
           Welcome{user?.full_name ? `, ${user.full_name.split(" ")[0]}` : ""}!
         </h1>
         <p className="text-gray-500 text-sm mb-8">
-          You're logged in. Use your assessment code to participate in a Fieldwork assessment.
+          You're logged in. Use your assessment code to participate in a Quartz Assessments assessment.
         </p>
         <Link
           to="/assess"
-          className="inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-8 py-3 rounded-lg transition-colors text-sm"
+          className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-3 rounded-lg transition-colors text-sm"
         >
           Start an assessment
         </Link>
