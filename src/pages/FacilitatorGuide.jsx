@@ -109,7 +109,17 @@ Check the **Respondents table** in the Overview tab. It shows each participant's
 
 export default function FacilitatorGuide() {
   const [activeId, setActiveId] = useState("setup");
+  const [editing, setEditing] = useState(false);
+  const [contents, setContents] = useState(
+    Object.fromEntries(sections.map(s => [s.id, s.content]))
+  );
+
   const current = sections.find(s => s.id === activeId);
+  const currentContent = contents[activeId];
+
+  const handleSectionChange = (id) => {
+    setActiveId(id);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
@@ -125,7 +135,7 @@ export default function FacilitatorGuide() {
           {sections.map(s => (
             <button
               key={s.id}
-              onClick={() => setActiveId(s.id)}
+              onClick={() => handleSectionChange(s.id)}
               className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors text-sm font-medium ${
                 activeId === s.id
                   ? "bg-indigo-50 text-indigo-900"
@@ -141,24 +151,41 @@ export default function FacilitatorGuide() {
       {/* Content */}
       <main className="flex-1 overflow-y-auto">
         <div className="max-w-3xl mx-auto px-10 py-10">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">{current.title}</h2>
-          <div className="bg-white rounded-xl border border-gray-200 px-8 py-8">
-            <ReactMarkdown
-              remarkPlugins={[remarkGfm]}
-              className="prose prose-sm max-w-none
-                prose-headings:font-bold prose-headings:text-gray-900
-                prose-h2:text-base prose-h2:mt-6 prose-h2:mb-3
-                prose-p:text-gray-600 prose-p:leading-relaxed
-                prose-strong:text-gray-900
-                prose-li:text-gray-600
-                prose-code:text-indigo-600 prose-code:bg-indigo-50 prose-code:px-1 prose-code:rounded
-                prose-blockquote:border-l-indigo-300 prose-blockquote:text-gray-500 prose-blockquote:bg-indigo-50/50 prose-blockquote:py-0.5
-                prose-table:text-sm
-                prose-th:text-gray-500 prose-th:font-semibold prose-th:text-left prose-th:pb-2 prose-th:border-b prose-th:border-gray-200
-                prose-td:text-gray-600 prose-td:py-2 prose-td:border-b prose-td:border-gray-100"
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold text-gray-900">{current.title}</h2>
+            <button
+              onClick={() => setEditing(e => !e)}
+              className="text-xs font-medium px-3 py-1.5 rounded-lg border border-gray-300 text-gray-600 hover:border-gray-400 hover:text-gray-800 transition-colors"
             >
-              {current.content}
-            </ReactMarkdown>
+              {editing ? "Done" : "Edit"}
+            </button>
+          </div>
+          <div className="bg-white rounded-xl border border-gray-200 px-8 py-8">
+            {editing ? (
+              <textarea
+                value={currentContent}
+                onChange={e => setContents(prev => ({ ...prev, [activeId]: e.target.value }))}
+                className="w-full font-mono text-sm text-gray-800 border border-gray-200 rounded-lg p-4 focus:outline-none focus:ring-2 focus:ring-indigo-400 resize-y"
+                style={{ minHeight: "400px" }}
+              />
+            ) : (
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                className="prose prose-sm max-w-none
+                  prose-headings:font-bold prose-headings:text-gray-900
+                  prose-h2:text-base prose-h2:mt-6 prose-h2:mb-3
+                  prose-p:text-gray-600 prose-p:leading-relaxed
+                  prose-strong:text-gray-900
+                  prose-li:text-gray-600
+                  prose-code:text-indigo-600 prose-code:bg-indigo-50 prose-code:px-1 prose-code:rounded
+                  prose-blockquote:border-l-indigo-300 prose-blockquote:text-gray-500 prose-blockquote:bg-indigo-50/50 prose-blockquote:py-0.5
+                  prose-table:text-sm
+                  prose-th:text-gray-500 prose-th:font-semibold prose-th:text-left prose-th:pb-2 prose-th:border-b prose-th:border-gray-200
+                  prose-td:text-gray-600 prose-td:py-2 prose-td:border-b prose-td:border-gray-100"
+              >
+                {currentContent}
+              </ReactMarkdown>
+            )}
           </div>
         </div>
       </main>
