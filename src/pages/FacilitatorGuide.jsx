@@ -38,22 +38,22 @@ const sections = [
 
 | Link | What the recipient sees | Where to find it |
 |------|------------------------|------------------|
-| **Assessment** | Participant confidential survey. No summary provided. | Overview tab → Access |
+| **Access** | Participant confidential survey. No summary provided. | Overview tab → Access |
 | **Dashboard** | Team leader status dashboard. Does not show invidual responses. | Overview tab → Links to share |
 | **Report** | Client-facing report. Used during or after the assessment completion. Shows findings, gaps, and ownership analysis. After closing, also shows debrief decisions. | Overview tab → Links to share |
 
-> **Who gets which link?** All participants get the ACCESS link. Alternatively, you use the team leader's Status Dashboard to create links for each individual. Share the Dashboard and Report links only with team leaders. 
+> **Who gets which link?** All participants get the Access link. Alternatively, you use the team leader's Status Dashboard to create links for each individual. Share the Dashboard and Report links only with team leaders. 
 
 ## Distributing the Survey
 
-- For facilitators: Get a list of names and emails from the team leader. You can email the participants with the generic **Access* code or use the the **STATUS Dashboard** link to get custom links to share.
+- For facilitators: Get a list of names and emails from the team leader. You can email the participants with the generic **Access** code or use the the **STATUS Dashboard** to get custom links to share.
 - For team leaders: Share the **STATUS Dashboard** link from the Overview tab. They can add names and emails for the assessments.
 - Suggested message: *"Please take 15–20 minutes to complete this assessment before [DATE]. Your responses are anonymous. [LINK]"*
 - Set a deadline. Two business days is usually sufficient.
 
 ## Monitoring Completion
 
-Check the **Respondents table** in the Overview tab. It shows each participant's name, title, status (completed or pending), response count, and completion date.
+Check the **Respondents table** in the Overview tab. It shows each participant's name, title, status (completed or pending), response count, and completion date. This information is confidental. **Do not share** with team leaders. 
 
 > **Minimum responses:** Aim for at least 4–5 completed responses before running the debrief. The report will not display until the minimum threshold is reached. Follow up with non-completers 24 hours before the deadline.`,
   },
