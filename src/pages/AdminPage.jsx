@@ -227,7 +227,7 @@ export default function AdminPage() {
             Team
           </button>
           <a
-            href="/readme?section=guide-setup"
+            href="/facilitator-guide"
             target="_blank"
             rel="noopener noreferrer"
             className="w-full text-left px-3 py-2.5 rounded-lg transition-colors text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 flex items-center gap-1.5"

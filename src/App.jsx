@@ -7,6 +7,7 @@ import { AuthProvider } from '@/lib/AuthContext';
 import ScrollToTop from './components/ScrollToTop';
 import AssessPage from './pages/AssessPage';
 import ReadMe from './pages/ReadMe';
+import FacilitatorGuide from './pages/FacilitatorGuide';
 import AdminPage from './pages/AdminPage';
 import ReportPage from './pages/ReportPage';
 import TeamLeaderPage from './pages/TeamLeaderPage';
@@ -33,6 +34,7 @@ function App() {
             <Route path="/team/:token" element={<TeamLeaderPage />} />
             <Route path="/" element={<LandingPage />} />
             <Route path="/readme" element={<ReadMe />} />
+            <Route path="/facilitator-guide" element={<FacilitatorGuide />} />
             <Route path="*" element={<PageNotFound />} />
           </Routes>
         </Router>
