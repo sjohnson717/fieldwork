@@ -166,7 +166,7 @@ export default function AssessPage() {
     if (!name.trim()) return setError("Please enter your name.");
     if (!title.trim()) return setError("Please enter your job title.");
     try {
-      const token = Math.random().toString(36).substring(2) + Date.now().toString(36);
+      const token = crypto.randomUUID();
       const r = await base44.entities.Respondent.create({
         assessment_id: assessment.id,
         name: name.trim(),

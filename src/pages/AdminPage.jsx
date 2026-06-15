@@ -60,9 +60,9 @@ export default function AdminPage() {
     if (!newTitle.trim()) return;
     setCreating(true);
     try {
-      const code = Math.random().toString(36).substring(2, 7).toUpperCase();
-      const buyerToken = Math.random().toString(36).substring(2, 10) + Math.random().toString(36).substring(2, 10);
-      const teamToken = Math.random().toString(36).substring(2, 10) + Math.random().toString(36).substring(2, 10);
+      const code = Array.from(crypto.getRandomValues(new Uint8Array(4))).map(b => b.toString(36)).join('').substring(0, 5).toUpperCase();
+      const buyerToken = crypto.randomUUID();
+      const teamToken = crypto.randomUUID();
       const created = await base44.entities.Assessment.create({
         title: newTitle.trim(),
         company_name: newCompany.trim(),
@@ -207,6 +207,16 @@ export default function AdminPage() {
             Library
           </button>
           <button
+            onClick={() => setSelectedSection("team")}
+            className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors text-sm font-medium ${
+              selectedSection === "team"
+                ? "bg-indigo-50 text-indigo-900"
+                : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+            }`}
+          >
+            Facilitators
+          </button>
+          <button
             onClick={() => setSelectedSection("demo")}
             className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors text-sm font-medium ${
               selectedSection === "demo"
@@ -215,16 +225,6 @@ export default function AdminPage() {
             }`}
           >
             Demo Data
-          </button>
-          <button
-            onClick={() => setSelectedSection("team")}
-            className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors text-sm font-medium ${
-              selectedSection === "team"
-                ? "bg-indigo-50 text-indigo-900"
-                : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-            }`}
-          >
-            Team
           </button>
           <a
             href="/facilitator-guide"

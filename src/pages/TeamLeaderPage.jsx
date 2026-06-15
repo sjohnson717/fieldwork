@@ -89,7 +89,7 @@ export default function TeamLeaderPage() {
     if (!name.trim()) return setFormError("Please enter a name.");
     if (!email.trim()) return setFormError("Please enter an email.");
     setSubmitting(true);
-    const respondentToken = Math.random().toString(36).substring(2) + Date.now().toString(36);
+    const respondentToken = crypto.randomUUID();
     const created = await base44.entities.Respondent.create({
       assessment_id: assessment.id,
       name: name.trim(),
