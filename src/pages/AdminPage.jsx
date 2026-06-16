@@ -87,28 +87,39 @@ export default function AdminPage() {
     );
     if (!confirmed) return;
     setDeleting(true);
-    const [respondents, responses, notes] = await Promise.all([
-      base44.entities.Respondent.filter({ assessment_id: selected.id }),
-      base44.entities.Response.filter({ assessment_id: selected.id }),
-      base44.entities.DiscussionNote.filter({ assessment_id: selected.id }),
-    ]);
-    const deleteInBatches = async (items, deleteFn) => {
-      const BATCH = 10;
-      for (let i = 0; i < items.length; i += BATCH) {
-        await Promise.all(items.slice(i, i + BATCH).map(item => deleteFn(item.id)));
-        if (i + BATCH < items.length) await new Promise(r => setTimeout(r, 200));
-      }
-    };
-    await deleteInBatches(responses, id => base44.entities.Response.delete(id));
-    await deleteInBatches(respondents, id => base44.entities.Respondent.delete(id));
-    await deleteInBatches(notes, id => base44.entities.DiscussionNote.delete(id));
-    await base44.entities.Assessment.delete(selected.id);
-    setAssessments(prev => {
-      const next = prev.filter(a => a.id !== selected.id);
-      setSelectedId(next.length > 0 ? next[0].id : null);
-      if (next.length > 0) setSelectedSection("assessments");
-      return next;
-    });
+    try {
+      const withTimeout = (promise, ms = 8000) => Promise.race([
+        promise,
+        new Promise((_, reject) => setTimeout(() => reject(new Error("Request timed out")), ms))
+      ]);
+
+      const [respondents, responses, notes] = await withTimeout(Promise.all([
+        base44.entities.Respondent.filter({ assessment_id: selected.id }),
+        base44.entities.Response.filter({ assessment_id: selected.id }),
+        base44.entities.DiscussionNote.filter({ assessment_id: selected.id }),
+      ]));
+
+      const deleteInBatches = async (items, deleteFn) => {
+        const BATCH = 10;
+        for (let i = 0; i < items.length; i += BATCH) {
+          await withTimeout(Promise.all(items.slice(i, i + BATCH).map(item => deleteFn(item.id))));
+        }
+      };
+
+      await deleteInBatches(responses, id => base44.entities.Response.delete(id));
+      await deleteInBatches(respondents, id => base44.entities.Respondent.delete(id));
+      await deleteInBatches(notes, id => base44.entities.DiscussionNote.delete(id));
+      await withTimeout(base44.entities.Assessment.delete(selected.id));
+
+      setAssessments(prev => {
+        const next = prev.filter(a => a.id !== selected.id);
+        setSelectedId(next.length > 0 ? next[0].id : null);
+        if (next.length > 0) setSelectedSection("assessments");
+        return next;
+      });
+    } catch (e) {
+      alert(`Delete failed: ${e.message}. Please try again.`);
+    }
     setDeleting(false);
   };
 
