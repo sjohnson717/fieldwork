@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,7 @@ import AuthLayout from "@/components/AuthLayout";
 import GoogleIcon from "@/components/GoogleIcon";
 
 export default function Login() {
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -21,7 +22,7 @@ export default function Login() {
     try {
       await base44.auth.loginViaEmailPassword(email, password);
       const user = await base44.auth.me();
-      window.location.href = user?.role === "admin" ? "/admin" : "/assess";
+      navigate(user?.role === "admin" ? "/admin" : "/assess", { replace: true });
     } catch (err) {
       setError(err.message || "Invalid email or password");
     } finally {
