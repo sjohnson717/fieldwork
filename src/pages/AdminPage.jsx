@@ -18,7 +18,7 @@ const STATUS_COLORS = {
 };
 
 export default function AdminPage() {
-  const { user, isAuthenticated, isLoadingAuth, authChecked } = useAuth();
+  const { user, isAuthenticated, isLoadingAuth, authChecked, navigateToLogin } = useAuth();
   const navigate = useNavigate();
   const [assessments, setAssessments] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
@@ -33,9 +33,9 @@ export default function AdminPage() {
   // Auth guard
   useEffect(() => {
     if (authChecked && !isAuthenticated) {
-      navigate("/login", { replace: true });
+      navigateToLogin();
     }
-  }, [authChecked, isAuthenticated, navigate]);
+  }, [authChecked, isAuthenticated, navigateToLogin]);
 
   useEffect(() => {
     if (isAuthenticated && user) {
