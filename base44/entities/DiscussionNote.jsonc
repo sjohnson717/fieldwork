@@ -25,24 +25,14 @@
   ],
   "rls": {
     "create": {
-      "user_condition": {
-        "role": "admin"
-      }
+      "createdBy": "me"
     },
-    "read": {
-      "user_condition": {
-        "role": "admin"
-      }
-    },
+    "read": {},
     "update": {
-      "user_condition": {
-        "role": "admin"
-      }
+      "createdBy": "me"
     },
     "delete": {
-      "user_condition": {
-        "role": "admin"
-      }
+      "createdBy": "me"
     }
   }
 }
