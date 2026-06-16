@@ -3,15 +3,15 @@ import { useAuth } from "@/lib/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
 
 export default function LandingPage() {
-  const { user, isAuthenticated, isLoadingAuth } = useAuth();
+  const { user, isAuthenticated, isLoadingAuth, authChecked } = useAuth();
   const navigate = useNavigate();
 
   // Auto-redirect admins to /admin
   useEffect(() => {
-    if (!isLoadingAuth && isAuthenticated && user?.role === "admin") {
+    if (authChecked && isAuthenticated && user?.role === "admin") {
       navigate("/admin", { replace: true });
     }
-  }, [isLoadingAuth, isAuthenticated, user, navigate]);
+  }, [authChecked, isAuthenticated, user, navigate]);
 
   if (isLoadingAuth) {
     return (
