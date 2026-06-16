@@ -77,6 +77,7 @@ export const AuthProvider = ({ children }) => {
         }
         setIsLoadingPublicSettings(false);
         setIsLoadingAuth(false);
+        setAuthChecked(true);
       }
     } catch (error) {
       console.error('Unexpected error:', error);
@@ -138,8 +139,9 @@ export const AuthProvider = ({ children }) => {
   };
 
   const navigateToLogin = () => {
-    // Use the SDK's redirectToLogin method
-    base44.auth.redirectToLogin(window.location.href);
+    // Avoid passing /login as the from_url to prevent redirect loops
+    const fromUrl = window.location.pathname === '/login' ? '/' : window.location.href;
+    base44.auth.redirectToLogin(fromUrl);
   };
 
   return (
