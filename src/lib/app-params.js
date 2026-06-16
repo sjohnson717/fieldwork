@@ -42,7 +42,10 @@ const getAppParams = () => {
 	return {
 		appId: getAppParamValue("app_id", { defaultValue: import.meta.env.VITE_BASE44_APP_ID }),
 		token: getAppParamValue("access_token", { removeFromUrl: true }),
-		fromUrl: getAppParamValue("from_url", { defaultValue: (window.location.pathname === '/login' ? '/' : window.location.href) }),
+		fromUrl: getAppParamValue("from_url", { 
+			defaultValue: (window.location.pathname === '/login' ? '/' : window.location.href),
+			removeFromUrl: true
+		}),
 		functionsVersion: getAppParamValue("functions_version", { defaultValue: import.meta.env.VITE_BASE44_FUNCTIONS_VERSION }),
 		appBaseUrl: getAppParamValue("app_base_url", { defaultValue: import.meta.env.VITE_BASE44_APP_BASE_URL }),
 	}
