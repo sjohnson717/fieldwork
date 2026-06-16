@@ -163,7 +163,7 @@ export default function AssessmentOverview({ assessment, onUpdate }) {
 
   const nextStatuses = STATUS_TRANSITIONS[assessment.status] || [];
   const completedCount = respondents.filter(r => r.status === "completed").length;
-  const totalResponses = Object.values(responseCountMap).reduce((sum, n) => sum + n, 0);
+  const totalResponses = Object.keys(responseCountMap).length;
 
   return (
     <div className="p-8 max-w-3xl space-y-8">
