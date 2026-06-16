@@ -372,7 +372,6 @@ export default function ReportPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [respondentCount, setRespondentCount] = useState(0);
-  const [totalRespondentCount, setTotalRespondentCount] = useState(0);
   const [filterLevel, setFilterLevel] = useState("problems"); // problems | critical | attention | all
   const [facetFilter, setFacetFilter] = useState(null); // null = all, or specific facet like "DEFINE"
   const [decisions, setDecisions] = useState([]);
@@ -399,14 +398,12 @@ export default function ReportPage() {
       const a = assessments[0];
       setAssessment(a);
 
-      // Load activities, responses, and respondent count in parallel
-      const [acts, responses, allRespondents, discussionNotes] = await Promise.all([
+      // Load activities, responses, and discussion notes in parallel
+      const [acts, responses, discussionNotes] = await Promise.all([
         getAssignedActivities(a),
         base44.entities.Response.filter({ assessment_id: a.id }),
-        base44.entities.Respondent.filter({ assessment_id: a.id }),
         base44.entities.DiscussionNote.filter({ assessment_id: a.id }),
       ]);
-      setTotalRespondentCount(allRespondents.length);
 
       setActivities(acts);
       // Derive participant count from distinct respondent_ids in responses
@@ -469,7 +466,7 @@ export default function ReportPage() {
   }
 
   // Minimum-response gate
-  const threshold = Math.min(3, totalRespondentCount);
+  const threshold = Math.min(3, respondentCount);
 
   const handleFacetClick = (facet, level) => {
     setFilterLevel(level);
@@ -492,7 +489,7 @@ export default function ReportPage() {
     </div>
   );
 
-  if (totalRespondentCount === 0) {
+  if (respondentCount === 0) {
     return gateCard("No team members have been added to this assessment yet.");
   }
 
