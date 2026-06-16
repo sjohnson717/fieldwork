@@ -17,7 +17,7 @@ const STATUS_COLORS = {
 };
 
 export default function AdminPage() {
-  const { user, isAuthenticated, isLoadingAuth, authChecked, navigateToLogin } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const [assessments, setAssessments] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
   const [selectedSection, setSelectedSection] = useState("assessments"); // assessments | library
@@ -27,13 +27,6 @@ export default function AdminPage() {
   const [newTitle, setNewTitle] = useState("");
   const [newCompany, setNewCompany] = useState("");
   const [creating, setCreating] = useState(false);
-
-  // Auth guard
-  useEffect(() => {
-    if (authChecked && !isAuthenticated) {
-      navigateToLogin();
-    }
-  }, [authChecked, isAuthenticated, navigateToLogin]);
 
   useEffect(() => {
     if (isAuthenticated && user) {
@@ -118,16 +111,6 @@ export default function AdminPage() {
     });
     setDeleting(false);
   };
-
-  if (isLoadingAuth) {
-    return (
-      <div className="fixed inset-0 flex items-center justify-center bg-gray-50">
-        <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) return null;
 
   if (user?.role !== "admin") {
     return (

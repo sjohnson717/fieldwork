@@ -9,6 +9,7 @@ import AssessPage from './pages/AssessPage';
 import ReadMe from './pages/ReadMe';
 import FacilitatorGuide from './pages/FacilitatorGuide';
 import AdminPage from './pages/AdminPage';
+import ProtectedRoute from './components/ProtectedRoute';
 import ReportPage from './pages/ReportPage';
 import TeamLeaderPage from './pages/TeamLeaderPage';
 import LandingPage from './pages/LandingPage';
@@ -29,7 +30,9 @@ function App() {
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/assess" element={<AssessPage />} />
-            <Route path="/admin" element={<AdminPage />} />
+            <Route element={<ProtectedRoute />}>
+              <Route path="/admin" element={<AdminPage />} />
+            </Route>
             <Route path="/report/:token" element={<ReportPage />} />
             <Route path="/team/:token" element={<TeamLeaderPage />} />
             <Route path="/" element={<LandingPage />} />
