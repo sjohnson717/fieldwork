@@ -163,6 +163,7 @@ export default function AssessmentOverview({ assessment, onUpdate }) {
 
   const nextStatuses = STATUS_TRANSITIONS[assessment.status] || [];
   const completedCount = respondents.filter(r => r.status === "completed").length;
+  const totalResponses = Object.values(responseCountMap).reduce((sum, n) => sum + n, 0);
 
   return (
     <div className="p-8 max-w-3xl space-y-8">
@@ -250,6 +251,9 @@ export default function AssessmentOverview({ assessment, onUpdate }) {
         <div className="flex items-center gap-4 flex-wrap">
           <div className="text-sm text-gray-600">
             Currently <span className="font-semibold text-gray-900">{assessment.status}</span>
+          </div>
+          <div className="text-sm text-gray-600">
+            Responses: <span className="font-semibold text-gray-900">{totalResponses === 0 ? "none" : totalResponses}</span>
           </div>
           {nextStatuses.map(s => (
             <button
