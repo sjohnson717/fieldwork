@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
 import AssessmentOverview from "./admin/AssessmentOverview";
@@ -19,7 +18,6 @@ const STATUS_COLORS = {
 
 export default function AdminPage() {
   const { user, isAuthenticated, isLoadingAuth, authChecked, navigateToLogin } = useAuth();
-  const navigate = useNavigate();
   const [assessments, setAssessments] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
   const [selectedSection, setSelectedSection] = useState("assessments"); // assessments | library
