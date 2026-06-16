@@ -347,7 +347,7 @@ export default function AssessmentOverview({ assessment, onUpdate }) {
           <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Ownership roles</h3>
           {savingRoles && <span className="text-xs text-gray-400">Saving…</span>}
         </div>
-        <p className="text-xs text-gray-400 mb-4">Add or remove roles to match your client's team structure. Additional roles will be added automatically from activity presets.</p>
+        <p className="text-xs text-gray-400 mb-4">Add or remove roles to match your client's team structure. Preferred roles will be added automatically from activity presets.</p>
         {masterTitles.length === 0 ? (
           <p className="text-sm text-gray-400 italic mb-3">
             No job titles in the library yet. Add some under Settings → Library.
