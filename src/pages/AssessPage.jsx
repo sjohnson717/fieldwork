@@ -464,7 +464,18 @@ export default function AssessPage() {
 
         {error && <p className="text-red-500 text-sm mt-4">{error}</p>}
 
-        <div className="mt-6 flex justify-end">
+        <div className="mt-6 flex justify-between items-center">
+          <div>
+            {currentFacetIndex > 0 && (
+              <button
+                onClick={() => { setCurrentFacetIndex(i => i - 1); window.scrollTo(0, 0); }}
+                disabled={saving}
+                className="text-gray-500 hover:text-gray-800 disabled:opacity-50 font-medium px-4 py-3 rounded-lg transition-colors"
+              >
+                ← Back
+              </button>
+            )}
+          </div>
           <button
             onClick={handleNext}
             disabled={saving}
