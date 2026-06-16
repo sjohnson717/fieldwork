@@ -49,6 +49,9 @@
     "read": {
       "$or": [
         {
+          "data.email": "{{user.email}}"
+        },
+        {
           "created_by_id": "{{user.id}}"
         },
         {
@@ -60,6 +63,9 @@
     },
     "update": {
       "$or": [
+        {
+          "data.email": "{{user.email}}"
+        },
         {
           "created_by_id": "{{user.id}}"
         },
