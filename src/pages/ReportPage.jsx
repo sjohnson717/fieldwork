@@ -670,7 +670,7 @@ export default function ReportPage() {
 
         {/* ── Facet overview ── */}
         <div className="mb-10">
-          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-widest mb-4">Overview by Quartz phase</h2>
+          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-widest mb-4">Overview by phase</h2>
           <FacetWheel activityStats={activityStats} activities={activities} onFacetClick={handleFacetClick} />
         </div>
 
