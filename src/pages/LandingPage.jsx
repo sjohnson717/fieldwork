@@ -25,7 +25,7 @@ export default function LandingPage() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-10 w-full max-w-md text-center">
-          <p className="text-sm font-semibold text-[#3366FF] uppercase tracking-wide mb-2">Product Growth Leaders</p>
+          <img src="https://media.base44.com/images/public/6a29ff3bc8effbeb3d637555/9e97ff5e6_Quartzicon.png" alt="Quartz Assessments" className="h-14 w-14 mx-auto mb-4 object-contain" />
           <h1 className="text-2xl font-bold text-gray-900 mb-3">Quartz Assessments</h1>
           <p className="text-gray-500 text-sm mb-8">
             Have an assessment code? Jump straight in. Team members can log in below.
@@ -53,7 +53,7 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-10 w-full max-w-md text-center">
-        <p className="text-sm font-semibold text-[#3366FF] uppercase tracking-wide mb-2">Product Growth Leaders</p>
+        <img src="https://media.base44.com/images/public/6a29ff3bc8effbeb3d637555/9e97ff5e6_Quartzicon.png" alt="Quartz Assessments" className="h-14 w-14 mx-auto mb-4 object-contain" />
         <h1 className="text-2xl font-bold text-gray-900 mb-2">
           Welcome{user?.full_name ? `, ${user.full_name.split(" ")[0]}` : ""}!
         </h1>

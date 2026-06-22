@@ -239,7 +239,7 @@ export default function AssessPage() {
   if (step === "token-error") return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 w-full max-w-md text-center">
-        <p className="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-4">Product Growth Leaders</p>
+        <img src="https://media.base44.com/images/public/6a29ff3bc8effbeb3d637555/9e97ff5e6_Quartzicon.png" alt="Quartz Assessments" className="h-10 w-10 mx-auto mb-4 object-contain" />
         <p className="text-gray-500">{error}</p>
       </div>
     </div>
@@ -265,7 +265,7 @@ export default function AssessPage() {
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 w-full max-w-md">
         <div className="mb-8">
-          <p className="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-1">Product Growth Leaders</p>
+          <img src="https://media.base44.com/images/public/6a29ff3bc8effbeb3d637555/9e97ff5e6_Quartzicon.png" alt="Quartz Assessments" className="h-10 w-10 mb-3 object-contain" />
           <h1 className="text-2xl font-bold text-gray-900">Before we begin</h1>
           <p className="text-gray-500 mt-2">Your responses are confidential and will only be seen in aggregate by your team leader.</p>
         </div>
@@ -303,7 +303,7 @@ export default function AssessPage() {
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 w-full max-w-md">
         <div className="mb-8">
-          <p className="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-1">Product Growth Leaders</p>
+          <img src="https://media.base44.com/images/public/6a29ff3bc8effbeb3d637555/9e97ff5e6_Quartzicon.png" alt="Quartz Assessments" className="h-10 w-10 mb-3 object-contain" />
           <h1 className="text-2xl font-bold text-gray-900">Fieldwork Assessment</h1>
           <p className="text-gray-500 mt-2">Enter the code you received to begin.</p>
         </div>
@@ -331,9 +331,9 @@ export default function AssessPage() {
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 w-full max-w-md">
         <div className="mb-8">
-          <p className="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-1">Product Growth Leaders</p>
+          <img src="https://media.base44.com/images/public/6a29ff3bc8effbeb3d637555/9e97ff5e6_Quartzicon.png" alt="Quartz Assessments" className="h-10 w-10 mb-3 object-contain" />
           <h1 className="text-2xl font-bold text-gray-900">Before we begin</h1>
-          <p className="text-gray-500 mt-2">Your responses are confidential and will only be seen in aggregate by your team leader. Only Product Growth Leaders staff will see individual responses.</p>
+          <p className="text-gray-500 mt-2">Your responses are confidential and will only be seen in aggregate by your team leader.</p>
         </div>
         <div className="space-y-4 mb-6">
           <div>
@@ -373,7 +373,7 @@ export default function AssessPage() {
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-3xl mx-auto px-4 py-8">
         <div className="mb-6">
-          <p className="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-1">Product Growth Leaders · Fieldwork</p>
+          <p className="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-1">Quartz · Fieldwork</p>
           <div className="flex items-center justify-between">
             <h1 className="text-xl font-bold text-gray-900">{currentFacet}</h1>
             <span className="text-sm text-gray-400">{currentFacetIndex + 1} of {availableFacets.length}</span>

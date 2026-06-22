@@ -3,8 +3,8 @@ import { useParams } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { getAssignedActivities } from "@/lib/activities";
 
-// ── PGL brand ────────────────────────────────────────────────────────────────
-const PGL_LOGO = "https://static.wixstatic.com/media/739bca_d49790dff653441fae7d036110019dc2~mv2.png";
+// ── Brand ────────────────────────────────────────────────────────────────────
+const QUARTZ_LOGO = "https://media.base44.com/images/public/6a29ff3bc8effbeb3d637555/9e97ff5e6_Quartzicon.png";
 
 const FACET_ORDER = ["DEFINE", "COMMIT", "DESCRIBE", "CREATE", "PREPARE", "DELIVER"];
 
@@ -601,9 +601,9 @@ export default function ReportPage() {
       {/* ── Header ── */}
       <header className="bg-white border-b border-gray-100 shadow-sm">
         <div className="max-w-4xl mx-auto px-6 py-5 flex items-center justify-between">
-          <img src={PGL_LOGO} alt="Product Growth Leaders" className="h-8 object-contain" />
+          <img src={QUARTZ_LOGO} alt="Quartz Assessments" className="h-8 object-contain" />
           <div className="text-right">
-            <p className="text-xs text-gray-400 uppercase tracking-widest">A Product Growth Leaders Assessment</p>
+            <p className="text-xs text-gray-400 uppercase tracking-widest">Quartz Assessments</p>
           </div>
         </div>
       </header>
@@ -782,8 +782,8 @@ export default function ReportPage() {
 
         {/* ── Footer ── */}
         <footer className="mt-16 pt-8 border-t border-gray-100 flex items-center justify-between">
-          <img src={PGL_LOGO} alt="Product Growth Leaders" className="h-6 object-contain opacity-40" />
-          <p className="text-xs text-gray-300">© Product Growth Leaders · productgrowthleaders.com</p>
+          <img src={QUARTZ_LOGO} alt="Quartz Assessments" className="h-6 object-contain opacity-40" />
+          <p className="text-xs text-gray-300">© Quartz Assessments</p>
         </footer>
 
       </main>
