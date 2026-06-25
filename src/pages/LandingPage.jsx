@@ -24,13 +24,15 @@ export default function LandingPage() {
   }
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center">
-      {/* Hero image */}
-      <img
-        src={HERO_IMAGE}
-        alt=""
-        className="absolute inset-0 w-full h-full object-cover object-center"
-      />
+    <div
+      className="relative min-h-screen flex items-center justify-center"
+      style={{
+        backgroundImage: `url(${HERO_IMAGE})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
+      }}
+    >
       {/* Dark overlay */}
       <div className="absolute inset-0" style={{ backgroundColor: "rgba(0,0,0,0.45)" }} />
 
