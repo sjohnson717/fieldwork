@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useAuth } from "@/lib/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
 
-const HERO_IMAGE = "https://media.base44.com/images/public/6a29ff3bc8effbeb3d637555/dca6f2cc9_curated-lifestyle-H3ZVdxBRIW0-unsplash.jpg";
+const HERO_IMAGE = "https://media.base44.com/images/public/6a29ff3bc8effbeb3d637555/2ffc15b8c_curated-lifestyle-H3ZVdxBRIW0-unsplash.jpg";
 
 export default function LandingPage() {
   const { user, isAuthenticated, isLoadingAuth, authChecked } = useAuth();
