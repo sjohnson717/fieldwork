@@ -34,11 +34,11 @@ export default function LandingPage() {
       }}
     >
       {/* Dark overlay */}
-      <div className="absolute inset-0" style={{ backgroundColor: "rgba(0,0,0,0.25)" }} />
+      <div className="absolute inset-0" style={{ backgroundColor: "rgba(0,0,0,0.15)" }} />
 
       {/* Content card */}
       <div className="relative z-10 w-full max-w-md mx-auto px-4 py-10 text-center">
-        <div className="bg-black/40 backdrop-blur-sm border border-white/40 rounded-2xl p-10 shadow-2xl">
+        <div className="bg-black/50 backdrop-blur-sm border border-white/40 rounded-2xl p-10 shadow-2xl">
           <img
             src="https://media.base44.com/images/public/6a29ff3bc8effbeb3d637555/9e97ff5e6_Quartzicon.png"
             alt="Quartz Assessments"
