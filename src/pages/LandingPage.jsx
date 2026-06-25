@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useAuth } from "@/lib/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
 
-const HERO_IMAGE = "https://media.base44.com/images/public/6a29ff3bc8effbeb3d637555/d5d93e3c8_teamdiscussionteal.jpg";
+const HERO_IMAGE = "https://media.base44.com/images/public/6a29ff3bc8effbeb3d637555/dca6f2cc9_curated-lifestyle-H3ZVdxBRIW0-unsplash.jpg";
 
 export default function LandingPage() {
   const { user, isAuthenticated, isLoadingAuth, authChecked } = useAuth();
@@ -34,7 +34,7 @@ export default function LandingPage() {
       }}
     >
       {/* Dark overlay */}
-      <div className="absolute inset-0" style={{ backgroundColor: "rgba(0,0,0,0.15)" }} />
+      <div className="absolute inset-0" style={{ backgroundColor: "rgba(15, 40, 80, 0.55)" }} />
 
       {/* Content card */}
       <div className="relative z-10 w-full max-w-md mx-auto px-4 py-10 text-center">
