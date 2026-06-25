@@ -47,6 +47,9 @@ export default function LandingPage() {
 
           {!isAuthenticated ? (
             <>
+              <p className="text-xs font-semibold tracking-widest uppercase text-white/50 mb-2">
+                Product team capability assessment
+              </p>
               <h1 className="text-2xl font-bold text-white mb-3">Quartz Assessments</h1>
               <p className="text-white/80 text-sm mb-8">
                 Have an assessment code? Jump straight in. Team members can log in below.
