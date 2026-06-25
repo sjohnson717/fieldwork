@@ -241,7 +241,7 @@ export default function AssessPage() {
   if (step === "token-error") return (
     <div className="relative min-h-screen flex items-center justify-center p-4">
       <img src={HERO_IMAGE} alt="" className="absolute inset-0 w-full h-full object-cover object-center" />
-      <div className="absolute inset-0" style={{ backgroundColor: "rgba(15, 40, 80, 0.55)" }} />
+      <div className="absolute inset-0" style={{ backgroundColor: "rgba(15, 40, 80, 0.35)" }} />
       <div className="relative z-10 w-full flex items-center justify-center p-4">
         <div className="bg-[#1a1f2e]/90 border border-white/10 rounded-2xl shadow-sm p-8 w-full max-w-md text-center">
           <img src="https://media.base44.com/images/public/6a29ff3bc8effbeb3d637555/9e97ff5e6_Quartzicon.png" alt="Quartz Assessments" className="h-10 w-10 mx-auto mb-4 object-contain" />
@@ -255,7 +255,7 @@ export default function AssessPage() {
   if (step === "already-done") return (
     <div className="relative min-h-screen flex items-center justify-center p-4">
       <img src={HERO_IMAGE} alt="" className="absolute inset-0 w-full h-full object-cover object-center" />
-      <div className="absolute inset-0" style={{ backgroundColor: "rgba(15, 40, 80, 0.55)" }} />
+      <div className="absolute inset-0" style={{ backgroundColor: "rgba(15, 40, 80, 0.35)" }} />
       <div className="relative z-10 w-full flex items-center justify-center p-4">
         <div className="bg-[#1a1f2e]/90 border border-white/10 rounded-2xl shadow-sm p-8 w-full max-w-md text-center">
           <div className="w-16 h-16 bg-green-900/50 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -274,7 +274,7 @@ export default function AssessPage() {
   if (step === "token-intro") return (
     <div className="relative min-h-screen flex items-center justify-center p-4">
       <img src={HERO_IMAGE} alt="" className="absolute inset-0 w-full h-full object-cover object-center" />
-      <div className="absolute inset-0" style={{ backgroundColor: "rgba(15, 40, 80, 0.55)" }} />
+      <div className="absolute inset-0" style={{ backgroundColor: "rgba(15, 40, 80, 0.35)" }} />
       <div className="relative z-10 w-full flex items-center justify-center p-4">
         <div className="bg-[#1a1f2e]/90 border border-white/10 rounded-2xl shadow-sm p-8 w-full max-w-md">
           <div className="mb-8">
@@ -316,7 +316,7 @@ export default function AssessPage() {
   if (step === "entry") return (
     <div className="relative min-h-screen flex items-center justify-center p-4">
       <img src={HERO_IMAGE} alt="" className="absolute inset-0 w-full h-full object-cover object-center" />
-      <div className="absolute inset-0" style={{ backgroundColor: "rgba(15, 40, 80, 0.55)" }} />
+      <div className="absolute inset-0" style={{ backgroundColor: "rgba(15, 40, 80, 0.35)" }} />
       <div className="relative z-10 w-full flex items-center justify-center p-4">
         <div className="bg-[#1a1f2e]/90 border border-white/10 rounded-2xl shadow-sm p-8 w-full max-w-md">
           <div className="mb-8">
@@ -348,7 +348,7 @@ export default function AssessPage() {
   if (step === "intro") return (
     <div className="relative min-h-screen flex items-center justify-center p-4">
       <img src={HERO_IMAGE} alt="" className="absolute inset-0 w-full h-full object-cover object-center" />
-      <div className="absolute inset-0" style={{ backgroundColor: "rgba(15, 40, 80, 0.55)" }} />
+      <div className="absolute inset-0" style={{ backgroundColor: "rgba(15, 40, 80, 0.35)" }} />
       <div className="relative z-10 w-full flex items-center justify-center p-4">
         <div className="bg-[#1a1f2e]/90 border border-white/10 rounded-2xl shadow-sm p-8 w-full max-w-md">
           <div className="mb-8">
@@ -514,7 +514,7 @@ export default function AssessPage() {
   if (step === "done") return (
     <div className="relative min-h-screen flex items-center justify-center p-4">
       <img src={HERO_IMAGE} alt="" className="absolute inset-0 w-full h-full object-cover object-center" />
-      <div className="absolute inset-0" style={{ backgroundColor: "rgba(15, 40, 80, 0.55)" }} />
+      <div className="absolute inset-0" style={{ backgroundColor: "rgba(15, 40, 80, 0.35)" }} />
       <div className="relative z-10 w-full flex items-center justify-center p-4">
         <div className="bg-[#1a1f2e]/90 border border-white/10 rounded-2xl shadow-sm p-8 w-full max-w-md text-center">
           <div className="w-16 h-16 bg-green-900/50 rounded-full flex items-center justify-center mx-auto mb-4">
