@@ -2,6 +2,8 @@ import { useEffect } from "react";
 import { useAuth } from "@/lib/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
 
+const HERO_IMAGE = "https://media.base44.com/images/public/6a29ff3bc8effbeb3d637555/team_discussion_teal.jpg";
+
 export default function LandingPage() {
   const { user, isAuthenticated, isLoadingAuth, authChecked } = useAuth();
   const navigate = useNavigate();
@@ -21,51 +23,64 @@ export default function LandingPage() {
     );
   }
 
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-10 w-full max-w-md text-center">
-          <img src="https://media.base44.com/images/public/6a29ff3bc8effbeb3d637555/9e97ff5e6_Quartzicon.png" alt="Quartz Assessments" className="h-14 w-14 mx-auto mb-4 object-contain" />
-          <h1 className="text-2xl font-bold text-gray-900 mb-3">Quartz Assessments</h1>
-          <p className="text-gray-500 text-sm mb-8">
-            Have an assessment code? Jump straight in. Team members can log in below.
-          </p>
-          <div className="flex flex-col gap-3">
-            <Link
-              to="/assess"
-              className="w-full bg-[#3366FF] hover:bg-[#2952CC] text-white font-semibold py-3 rounded-lg transition-colors text-sm"
-            >
-              Start an assessment
-            </Link>
-            <Link
-              to="/login"
-              className="w-full border border-gray-200 hover:bg-gray-50 text-gray-700 font-medium py-3 rounded-lg transition-colors text-sm"
-            >
-              Team login
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Authenticated non-admin (regular user)
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-10 w-full max-w-md text-center">
-        <img src="https://media.base44.com/images/public/6a29ff3bc8effbeb3d637555/9e97ff5e6_Quartzicon.png" alt="Quartz Assessments" className="h-14 w-14 mx-auto mb-4 object-contain" />
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">
-          Welcome{user?.full_name ? `, ${user.full_name.split(" ")[0]}` : ""}!
-        </h1>
-        <p className="text-gray-500 text-sm mb-8">
-          You're logged in. Use your assessment code to participate in a Quartz Assessments assessment.
-        </p>
-        <Link
-          to="/assess"
-          className="inline-block bg-[#3366FF] hover:bg-[#2952CC] text-white font-semibold px-8 py-3 rounded-lg transition-colors text-sm"
-        >
-          Start an assessment
-        </Link>
+    <div className="relative min-h-screen flex items-center justify-center">
+      {/* Hero image */}
+      <img
+        src={HERO_IMAGE}
+        alt=""
+        className="absolute inset-0 w-full h-full object-cover object-center"
+      />
+      {/* Dark overlay */}
+      <div className="absolute inset-0" style={{ backgroundColor: "rgba(0,0,0,0.45)" }} />
+
+      {/* Content card */}
+      <div className="relative z-10 w-full max-w-md mx-auto px-4 py-10 text-center">
+        <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-10 shadow-2xl">
+          <img
+            src="https://media.base44.com/images/public/6a29ff3bc8effbeb3d637555/9e97ff5e6_Quartzicon.png"
+            alt="Quartz Assessments"
+            className="h-14 w-14 mx-auto mb-4 object-contain"
+          />
+
+          {!isAuthenticated ? (
+            <>
+              <h1 className="text-2xl font-bold text-white mb-3">Quartz Assessments</h1>
+              <p className="text-white/80 text-sm mb-8">
+                Have an assessment code? Jump straight in. Team members can log in below.
+              </p>
+              <div className="flex flex-col gap-3">
+                <Link
+                  to="/assess"
+                  className="w-full bg-[#3366FF] hover:bg-[#2952CC] text-white font-semibold py-3 rounded-lg transition-colors text-sm"
+                >
+                  Start an assessment
+                </Link>
+                <Link
+                  to="/login"
+                  className="w-full border border-white/40 hover:bg-white/10 text-white font-medium py-3 rounded-lg transition-colors text-sm"
+                >
+                  Team login
+                </Link>
+              </div>
+            </>
+          ) : (
+            <>
+              <h1 className="text-2xl font-bold text-white mb-2">
+                Welcome{user?.full_name ? `, ${user.full_name.split(" ")[0]}` : ""}!
+              </h1>
+              <p className="text-white/80 text-sm mb-8">
+                You're logged in. Use your assessment code to participate in a Quartz Assessments assessment.
+              </p>
+              <Link
+                to="/assess"
+                className="inline-block bg-[#3366FF] hover:bg-[#2952CC] text-white font-semibold px-8 py-3 rounded-lg transition-colors text-sm"
+              >
+                Start an assessment
+              </Link>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );
