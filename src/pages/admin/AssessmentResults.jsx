@@ -33,10 +33,10 @@ const executionColor = (avg) => {
 
 const gapColor = (gap) => {
   if (gap === null) return "bg-gray-50 text-gray-300";
-  if (gap >= 2) return "bg-red-500 text-white";
-  if (gap >= 1) return "bg-amber-400 text-amber-900";
-  if (gap >= 0) return "bg-gray-100 text-gray-600";
-  return "bg-gray-100 text-gray-400";
+  if (gap >= 2) return "bg-gray-900 text-white";
+  if (gap >= 1) return "bg-gray-500 text-white";
+  if (gap >= 0) return "bg-gray-200 text-gray-700";
+  return "bg-gray-50 text-gray-300";
 };
 
 const avg = (arr) => arr.length === 0 ? null : arr.reduce((a, b) => a + b, 0) / arr.length;
@@ -296,9 +296,9 @@ export default function AssessmentResults({ assessment }) {
         )}
         {view === "gap" && (
           <div className="flex gap-1.5 items-center">
-            <span className="w-4 h-4 rounded bg-gray-100 inline-block" />No gap →
-            <span className="w-4 h-4 rounded bg-amber-400 inline-block" />Moderate →
-            <span className="w-4 h-4 rounded bg-red-500 inline-block" />Critical gap
+            <span className="w-4 h-4 rounded bg-gray-200 inline-block" />No gap →
+            <span className="w-4 h-4 rounded bg-gray-500 inline-block" />Moderate →
+            <span className="w-4 h-4 rounded bg-gray-900 inline-block" />High priority
           </div>
         )}
       </div>
