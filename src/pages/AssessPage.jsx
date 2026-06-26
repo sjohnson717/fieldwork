@@ -5,7 +5,7 @@ import { getAssignedActivities } from "@/lib/activities";
 const HERO_IMAGE = "https://media.base44.com/images/public/6a29ff3bc8effbeb3d637555/2ffc15b8c_curated-lifestyle-H3ZVdxBRIW0-unsplash.jpg";
 
 const IMPORTANCE_OPTIONS = ["Not needed", "Nice to have", "Important", "Critical"];
-const EXECUTION_OPTIONS = ["Not done", "Inconsistent", "Good", "Excellent"];
+const EXECUTION_OPTIONS = ["Not done", "Inconsistent", "Good", "Excellent", "I don't know"];
 const FACET_ORDER = ["DEFINE", "COMMIT", "DESCRIBE", "CREATE", "PREPARE", "DELIVER"];
 
 const IMPORTANCE_COLORS = {
@@ -20,6 +20,7 @@ const EXECUTION_COLORS = {
   "Inconsistent": { border: "border-amber-400",   bg: "bg-amber-400",  text: "text-amber-900" },
   "Good":         { border: "border-green-400",   bg: "bg-green-400",  text: "text-green-900" },
   "Excellent":    { border: "border-green-600",   bg: "bg-green-600",  text: "text-white" },
+  "I don't know": { border: "border-gray-300",    bg: "bg-gray-200",   text: "text-gray-600" },
 };
 
 function RatingButton({ options, value, onChange, colorMap }) {
@@ -60,6 +61,7 @@ export default function AssessPage() {
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [allTitles, setAllTitles] = useState([]);
+  const [arrivedWithCode, setArrivedWithCode] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -70,6 +72,7 @@ export default function AssessPage() {
       loadFromToken(urlToken);
     } else if (urlCode) {
       setCode(urlCode.toUpperCase());
+      setArrivedWithCode(true);
     }
   }, []);
 
@@ -361,7 +364,7 @@ export default function AssessPage() {
           <div className="mb-8">
             <img src="https://media.base44.com/images/public/6a29ff3bc8effbeb3d637555/9e97ff5e6_Quartzicon.png" alt="Quartz Assessments" className="h-10 w-10 mb-3 object-contain" />
             <h1 className="text-2xl font-bold text-white">Quartz Assessments</h1>
-            <p className="text-white/70 mt-2">Enter the code you received to begin.</p>
+            <p className="text-white/70 mt-2">{arrivedWithCode ? "Press continue to begin." : "Enter the code you received to begin."}</p>
           </div>
           <input
             type="text"
@@ -611,7 +614,7 @@ export default function AssessPage() {
                             </td>
                             <td className="px-3 py-3">
                               {r.execution
-                                ? <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${EXECUTION_BADGE[r.execution] || "bg-gray-100 text-gray-600"}`}>{r.execution}</span>
+                                ? <span className={`inline-flex items-center whitespace-nowrap px-2 py-0.5 rounded-full text-xs font-medium ${EXECUTION_BADGE[r.execution] || "bg-gray-100 text-gray-600"}`}>{r.execution}</span>
                                 : <span className="text-gray-300 text-xs">—</span>}
                             </td>
                             {assessment?.roles?.length > 0 && (
@@ -635,7 +638,7 @@ export default function AssessPage() {
               ← Revise my answers
             </button>
           </div>
-          <p className="text-center text-xs text-gray-400">Your feedback will help shape the team's development plan.</p>
+          <p className="text-center text-xs text-gray-400">Your feedback will help shape the team's professional development plan.</p>
         </div>
       </div>
     );
