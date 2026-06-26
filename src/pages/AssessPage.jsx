@@ -230,9 +230,9 @@ export default function AssessPage() {
     }));
   };
 
-  const currentFacet = FACET_ORDER[currentFacetIndex];
-  const facetActivities = activities.filter(a => a.facet === currentFacet);
   const availableFacets = FACET_ORDER.filter(f => activities.some(a => a.facet === f));
+  const currentFacet = availableFacets[currentFacetIndex];
+  const facetActivities = activities.filter(a => a.facet === currentFacet);
 
   const handleNext = async () => {
     setSaving(true);
