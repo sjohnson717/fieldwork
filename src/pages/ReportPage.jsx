@@ -383,6 +383,8 @@ export default function ReportPage() {
     loadReport();
   }, [token]);
 
+  useEffect(() => { document.title = "Report | Quartz Assessments"; }, []);
+
   const loadReport = async () => {
     setLoading(true);
     try {

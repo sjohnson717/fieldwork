@@ -63,6 +63,8 @@ export default function AssessPage() {
   const [allTitles, setAllTitles] = useState([]);
   const [arrivedWithCode, setArrivedWithCode] = useState(false);
 
+  useEffect(() => { document.title = "Assess | Quartz Assessments"; }, []);
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const urlCode = params.get("code");

@@ -28,6 +28,8 @@ export default function AdminPage() {
   const [newCompany, setNewCompany] = useState("");
   const [creating, setCreating] = useState(false);
 
+  useEffect(() => { document.title = "Admin | Quartz Assessments"; }, []);
+
   useEffect(() => {
     if (isAuthenticated && user) {
       if (user.role !== "admin") return; // non-admins see nothing
