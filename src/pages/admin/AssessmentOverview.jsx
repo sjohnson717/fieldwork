@@ -465,8 +465,8 @@ export default function AssessmentOverview({ assessment, onUpdate }) {
           <table className="w-full text-sm">
             <thead>
               <tr className="text-xs text-gray-400 uppercase tracking-wide border-b border-gray-100">
-                <th className="text-left pb-2 font-medium">Name</th>
-                <th className="text-left pb-2 font-medium">Title</th>
+                <th className="text-left pb-2 font-medium w-36">Name</th>
+                 <th className="text-left pb-2 font-medium w-28">Title</th>
                 <th className="text-left pb-2 font-medium">Status</th>
                 <th className="text-left pb-2 font-medium">Responses</th>
                 <th className="text-left pb-2 font-medium">Date</th>
