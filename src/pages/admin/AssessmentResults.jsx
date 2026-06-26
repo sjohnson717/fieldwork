@@ -50,6 +50,7 @@ export default function AssessmentResults({ assessment }) {
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState("summary"); // summary | importance | execution | gap
   const [selectedFacet, setSelectedFacet] = useState("ALL");
+  const [showGapHelp, setShowGapHelp] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -163,11 +164,27 @@ export default function AssessmentResults({ assessment }) {
             <button
               key={v}
               onClick={() => setView(v)}
-              className={`px-3 py-1.5 rounded-md text-sm font-medium capitalize transition-colors ${
+              className={`relative px-3 py-1.5 rounded-md text-sm font-medium capitalize transition-colors ${
                 view === v ? "bg-white shadow-sm text-gray-900" : "text-gray-500 hover:text-gray-700"
               }`}
             >
-              {v === "gap" ? "Gap (Priority)" : v === "summary" ? "Summary" : v.charAt(0).toUpperCase() + v.slice(1)}
+              {v === "gap" ? (
+                <span className="flex items-center">
+                  Gap (Priority)
+                  <span
+                    className="w-4 h-4 rounded-full bg-gray-200 text-gray-500 text-xs font-bold inline-flex items-center justify-center ml-1 hover:bg-gray-300 cursor-pointer"
+                    onClick={e => { e.stopPropagation(); setShowGapHelp(s => !s); }}
+                  >?</span>
+                  {showGapHelp && (
+                    <>
+                      <div className="fixed inset-0 z-10" onClick={() => setShowGapHelp(false)} />
+                      <div className="absolute top-8 left-0 z-20 w-72 bg-white border border-gray-200 rounded-xl shadow-lg p-3 text-left text-xs text-gray-600 font-normal leading-relaxed">
+                        Gap = Importance score minus Execution score. A high gap means the team considers this activity important but rates current execution as low — making it the highest coaching priority. Scores range from 0 (no gap) to 3 (maximum gap).
+                      </div>
+                    </>
+                  )}
+                </span>
+              ) : v === "summary" ? "Summary" : v.charAt(0).toUpperCase() + v.slice(1)}
             </button>
           ))}
         </div>
