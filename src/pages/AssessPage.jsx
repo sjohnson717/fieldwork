@@ -121,6 +121,17 @@ export default function AssessPage() {
         setActivities(acts);
         const titles = await base44.entities.JobTitle.filter({ active: true }, "sort_order");
         setAllTitles(titles.map(t => t.name));
+        // Pre-populate any previously saved answers
+        const saved = await base44.entities.Response.filter({ respondent_id: r.id });
+        const rebuilt = {};
+        for (const resp of saved) {
+          rebuilt[resp.activity_id] = {
+            importance: resp.importance || "",
+            execution: resp.execution || "",
+            suggested_owner: resp.suggested_owner || ""
+          };
+        }
+        setResponses(rebuilt);
         setStep("rating");
       } else {
         // Needs title — show minimal intro
