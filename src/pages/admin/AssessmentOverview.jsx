@@ -495,10 +495,10 @@ export default function AssessmentOverview({ assessment, onUpdate }) {
                       {isEmpty ? "0 — empty" : count}
                     </span>
                   </td>
-                  <td className="py-2.5 text-gray-400 text-xs">
+                  <td className="py-2.5 pr-4 text-gray-400 text-xs">
                     {new Date(r.created_date).toLocaleDateString()}
                   </td>
-                  <td className="py-2.5 text-right">
+                  <td className="py-2.5 pl-2 text-right">
                     <button
                       onClick={() => handleDeleteRespondent(r.id)}
                       className={`text-xs transition-colors ${isEmpty ? "text-red-300 hover:text-red-500 font-medium" : "text-gray-300 hover:text-red-400"}`}
