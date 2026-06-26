@@ -204,14 +204,22 @@ export default function AssessPage() {
     try {
       for (const activity of facetActivities) {
         const r = responses[activity.id] || {};
-        await base44.entities.Response.create({
-          assessment_id: assessment.id,
-          respondent_id: respondent.id,
-          activity_id: activity.id,
+        const payload = {
           importance: r.importance || "",
           execution: r.execution || "",
           suggested_owner: r.suggested_owner || ""
-        });
+        };
+        const existing = await base44.entities.Response.filter({ respondent_id: respondent.id, activity_id: activity.id });
+        if (existing && existing.length > 0) {
+          await base44.entities.Response.update(existing[0].id, payload);
+        } else {
+          await base44.entities.Response.create({
+            assessment_id: assessment.id,
+            respondent_id: respondent.id,
+            activity_id: activity.id,
+            ...payload
+          });
+        }
       }
       if (currentFacetIndex < availableFacets.length - 1) {
         setCurrentFacetIndex(i => i + 1);
