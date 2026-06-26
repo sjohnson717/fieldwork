@@ -632,12 +632,18 @@ export default function AssessPage() {
             );
           })}
 
-          <div className="flex justify-center mt-8 mb-4">
+          <div className="flex justify-center gap-4 mt-8 mb-4">
             <button
               onClick={handleRevise}
               className="border border-gray-300 hover:border-gray-400 text-gray-600 hover:text-gray-800 font-medium px-6 py-2.5 rounded-lg transition-colors text-sm"
             >
               ← Revise my answers
+            </button>
+            <button
+              onClick={() => window.location.href = "/"}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2.5 rounded-lg transition-colors text-sm"
+            >
+              Done
             </button>
           </div>
           <p className="text-center text-xs text-gray-400">Your feedback will help shape the team's professional development plan.</p>
