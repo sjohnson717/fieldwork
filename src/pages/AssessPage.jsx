@@ -511,21 +511,86 @@ export default function AssessPage() {
   );
 
   // ── Done ──────────────────────────────────────────────────────────────────
-  if (step === "done") return (
-    <div className="relative min-h-screen flex items-center justify-center p-4">
-      <img src={HERO_IMAGE} alt="" className="absolute inset-0 w-full h-full object-cover object-center" />
-      <div className="absolute inset-0" style={{ backgroundColor: "rgba(15, 40, 80, 0.35)" }} />
-      <div className="relative z-10 w-full flex items-center justify-center p-4">
-        <div className="bg-[#1a1f2e]/90 border border-white/10 rounded-2xl shadow-sm p-8 w-full max-w-md text-center">
-          <div className="w-16 h-16 bg-green-900/50 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
+  if (step === "done") {
+    const IMPORTANCE_BADGE = {
+      "Not needed":   "bg-gray-100 text-gray-600",
+      "Nice to have": "bg-blue-100 text-blue-700",
+      "Important":    "bg-blue-500 text-white",
+      "Critical":     "bg-blue-800 text-white",
+    };
+    const EXECUTION_BADGE = {
+      "Not done":     "bg-rose-100 text-rose-700",
+      "Inconsistent": "bg-amber-100 text-amber-800",
+      "Good":         "bg-green-100 text-green-700",
+      "Excellent":    "bg-green-600 text-white",
+    };
+
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-3xl mx-auto px-4 py-10">
+          {/* Header */}
+          <div className="flex items-center gap-3 mb-8">
+            <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center shrink-0">
+              <svg className="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-gray-900">Thank you, {name}!</h1>
+              <p className="text-sm text-gray-500">Your responses have been recorded. Here's a summary of what you submitted.</p>
+            </div>
           </div>
-          <h1 className="text-2xl font-bold text-white mb-2">Thank you, {name}!</h1>
-          <p className="text-white/70">Your responses have been recorded. Your feedback will help shape the team's development plan.</p>
+
+          {/* Summary table grouped by facet */}
+          {availableFacets.map(facet => {
+            const facetActs = activities.filter(a => a.facet === facet);
+            return (
+              <div key={facet} className="mb-6">
+                <div className="text-xs font-bold uppercase tracking-widest text-blue-600 mb-2 px-1">{facet}</div>
+                <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-gray-100 bg-gray-50">
+                        <th className="text-left px-4 py-2.5 text-xs font-semibold text-gray-500 w-1/2">Activity</th>
+                        <th className="text-left px-3 py-2.5 text-xs font-semibold text-gray-500">Importance</th>
+                        <th className="text-left px-3 py-2.5 text-xs font-semibold text-gray-500">Execution</th>
+                        {assessment?.roles?.length > 0 && (
+                          <th className="text-left px-3 py-2.5 text-xs font-semibold text-gray-500">Owner</th>
+                        )}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {facetActs.map((activity, idx) => {
+                        const r = responses[activity.id] || {};
+                        return (
+                          <tr key={activity.id} className={idx < facetActs.length - 1 ? "border-b border-gray-50" : ""}>
+                            <td className="px-4 py-3 text-gray-800 font-medium">{activity.name}</td>
+                            <td className="px-3 py-3">
+                              {r.importance
+                                ? <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${IMPORTANCE_BADGE[r.importance] || "bg-gray-100 text-gray-600"}`}>{r.importance}</span>
+                                : <span className="text-gray-300 text-xs">—</span>}
+                            </td>
+                            <td className="px-3 py-3">
+                              {r.execution
+                                ? <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${EXECUTION_BADGE[r.execution] || "bg-gray-100 text-gray-600"}`}>{r.execution}</span>
+                                : <span className="text-gray-300 text-xs">—</span>}
+                            </td>
+                            {assessment?.roles?.length > 0 && (
+                              <td className="px-3 py-3 text-gray-600 text-xs">{r.suggested_owner || <span className="text-gray-300">—</span>}</td>
+                            )}
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            );
+          })}
+
+          <p className="text-center text-xs text-gray-400 mt-8">Your feedback will help shape the team's development plan.</p>
         </div>
       </div>
-    </div>
-  );
+    );
+  }
 }
