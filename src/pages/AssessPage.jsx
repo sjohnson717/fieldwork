@@ -187,6 +187,26 @@ export default function AssessPage() {
     }
   };
 
+  const loadExistingResponses = async () => {
+    const saved = await base44.entities.Response.filter({ respondent_id: respondent.id });
+    const rebuilt = {};
+    for (const r of saved) {
+      rebuilt[r.activity_id] = {
+        importance: r.importance || "",
+        execution: r.execution || "",
+        suggested_owner: r.suggested_owner || ""
+      };
+    }
+    setResponses(rebuilt);
+  };
+
+  const handleRevise = async () => {
+    await base44.entities.Respondent.update(respondent.id, { status: "started" });
+    await loadExistingResponses();
+    setCurrentFacetIndex(0);
+    setStep("rating");
+  };
+
   const handleRatingChange = (activityId, field, value) => {
     setResponses(prev => ({
       ...prev,
@@ -596,7 +616,15 @@ export default function AssessPage() {
             );
           })}
 
-          <p className="text-center text-xs text-gray-400 mt-8">Your feedback will help shape the team's development plan.</p>
+          <div className="flex justify-center mt-8 mb-4">
+            <button
+              onClick={handleRevise}
+              className="border border-gray-300 hover:border-gray-400 text-gray-600 hover:text-gray-800 font-medium px-6 py-2.5 rounded-lg transition-colors text-sm"
+            >
+              ← Revise my answers
+            </button>
+          </div>
+          <p className="text-center text-xs text-gray-400">Your feedback will help shape the team's development plan.</p>
         </div>
       </div>
     );
