@@ -29,6 +29,7 @@ export default function AssessmentOverview({ assessment, onUpdate }) {
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState(assessment.title);
   const [companyDraft, setCompanyDraft] = useState(assessment.company_name || "");
+  const [taglineDraft, setTaglineDraft] = useState(assessment.tagline || "");
   const [savingTitle, setSavingTitle] = useState(false);
 
   useEffect(() => {
@@ -40,6 +41,7 @@ export default function AssessmentOverview({ assessment, onUpdate }) {
     setRoles(assessment.roles || []);
     setTitleDraft(assessment.title);
     setCompanyDraft(assessment.company_name || "");
+    setTaglineDraft(assessment.tagline || "");
   }, [assessment.id]);
 
   const loadRespondents = async () => {
@@ -136,6 +138,7 @@ export default function AssessmentOverview({ assessment, onUpdate }) {
       const saved = await base44.entities.Assessment.update(assessment.id, {
         title: titleDraft.trim(),
         company_name: companyDraft.trim(),
+        tagline: taglineDraft.trim(),
       });
       onUpdate(saved);
       setEditingTitle(false);
@@ -202,6 +205,16 @@ export default function AssessmentOverview({ assessment, onUpdate }) {
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Tagline</label>
+              <input
+                type="text"
+                value={taglineDraft}
+                onChange={e => setTaglineDraft(e.target.value)}
+                placeholder="e.g. Q2 2026 Product Team Diagnostic"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
             <div className="flex gap-2">
               <button
                 onClick={handleSaveTitle}
@@ -219,6 +232,7 @@ export default function AssessmentOverview({ assessment, onUpdate }) {
           <div className="space-y-1">
             <p className="text-base font-semibold text-gray-900">{assessment.title}</p>
             {assessment.company_name && <p className="text-sm text-gray-500">{assessment.company_name}</p>}
+            {assessment.tagline && <p className="text-xs text-gray-400">{assessment.tagline}</p>}
           </div>
         )}
       </section>

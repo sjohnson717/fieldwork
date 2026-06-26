@@ -616,6 +616,9 @@ export default function ReportPage() {
           {assessment.company_name && (
             <p className="text-lg text-gray-500 mb-4">{assessment.company_name}</p>
           )}
+          {assessment.tagline && (
+            <p className="text-base text-gray-400 italic mb-4">{assessment.tagline}</p>
+          )}
           <p className="text-sm text-gray-400">{dateStr} · {respondentCount} participant{respondentCount !== 1 ? "s" : ""}</p>
         </div>
 
