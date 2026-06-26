@@ -5,6 +5,9 @@
     "title": {
       "type": "string"
     },
+    "tagline": {
+      "type": "string"
+    },
     "company_name": {
       "type": "string"
     },
