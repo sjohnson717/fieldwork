@@ -146,7 +146,7 @@ export default function AdminPage() {
       {/* Sidebar */}
       <aside className="w-64 shrink-0 bg-white border-r border-gray-200 flex flex-col h-screen sticky top-0">
         <div className="px-5 py-5 border-b border-gray-100">
-          <p className="text-xs font-semibold text-blue-600 uppercase tracking-wide mb-0.5">Fieldwork</p>
+          <p className="text-xs font-semibold text-blue-600 uppercase tracking-wide mb-0.5">Gap Analysis</p>
           <h1 className="text-base font-bold text-gray-900">Admin</h1>
         </div>
 

@@ -7,7 +7,7 @@ const sections = [
   {
     id: "setup",
     title: "Setup",
-    content: `Complete setup before sending any links to the client. Everything is done in the Fieldwork Admin screen.
+    content: `Complete setup before sending any links to the client. Everything is done in the Gap Analysis Admin screen.
 
 ## Steps
 
