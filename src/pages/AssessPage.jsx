@@ -287,7 +287,7 @@ export default function AssessPage() {
         await base44.entities.Respondent.update(respondent.id, {
           status: "completed",
           completed_date: new Date().toISOString(),
-          activity_log: assessLog
+          activity_log: JSON.stringify(assessLog)
         });
         setStep("done");
       }
