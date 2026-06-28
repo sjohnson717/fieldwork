@@ -608,19 +608,19 @@ export default function AssessPage() {
                         const r = responses[activity.id] || {};
                         return (
                           <tr key={activity.id} className={idx < facetActs.length - 1 ? "border-b border-gray-50" : ""}>
-                            <td className="px-4 py-3 text-gray-800 font-medium">{activity.name}</td>
-                            <td className="px-3 py-3">
+                            <td className="px-4 py-3 text-gray-800 font-medium align-middle">{activity.name}</td>
+                            <td className="px-3 py-3 align-middle">
                               {r.importance
-                                ? <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${IMPORTANCE_BADGE[r.importance] || "bg-gray-100 text-gray-600"}`}>{r.importance}</span>
+                                ? <span className={`inline-block whitespace-nowrap px-2 py-0.5 rounded-full text-xs font-medium ${IMPORTANCE_BADGE[r.importance] || "bg-gray-100 text-gray-600"}`} style={{ minWidth: '90px', textAlign: 'center' }}>{r.importance}</span>
                                 : <span className="text-gray-300 text-xs">—</span>}
                             </td>
-                            <td className="px-3 py-3">
+                            <td className="px-3 py-3 align-middle">
                               {r.execution
-                                ? <span className={`inline-flex items-center whitespace-nowrap px-2 py-0.5 rounded-full text-xs font-medium ${EXECUTION_BADGE[r.execution] || "bg-gray-100 text-gray-600"}`}>{r.execution}</span>
+                                ? <span className={`inline-flex items-center whitespace-nowrap px-2 py-0.5 rounded-full text-xs font-medium ${EXECUTION_BADGE[r.execution] || "bg-gray-100 text-gray-600"}`} style={{ minWidth: '90px', justifyContent: 'center' }}>{r.execution}</span>
                                 : <span className="text-gray-300 text-xs">—</span>}
                             </td>
                             {assessment?.roles?.length > 0 && (
-                              <td className="px-3 py-3 text-gray-600 text-xs">{r.suggested_owner || <span className="text-gray-300">—</span>}</td>
+                              <td className="px-3 py-3 text-gray-600 text-xs align-middle">{r.suggested_owner || <span className="text-gray-300">—</span>}</td>
                             )}
                           </tr>
                         );
