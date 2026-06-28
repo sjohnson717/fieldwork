@@ -240,6 +240,14 @@ export default function AssessPage() {
     setSaving(true);
     setError("");
     try {
+      // Fetch current saved responses for this respondent once
+      const allSaved = await base44.entities.Response.list();
+      const savedForRespondent = allSaved.filter(r => r.respondent_id === respondent.id);
+      const savedMap = {};
+      for (const r of savedForRespondent) {
+        savedMap[r.activity_id] = r.id;
+      }
+
       for (const activity of facetActivities) {
         const r = responses[activity.id] || {};
         const payload = {
@@ -247,23 +255,23 @@ export default function AssessPage() {
           execution: r.execution || "",
           suggested_owner: r.suggested_owner || ""
         };
-        if (r.id) {
-          await base44.entities.Response.update(r.id, payload);
+        const existingId = savedMap[activity.id];
+        if (existingId) {
+          await base44.entities.Response.update(existingId, payload);
         } else {
-          const created = await base44.entities.Response.create({
+          await base44.entities.Response.create({
             assessment_id: assessment.id,
             respondent_id: respondent.id,
             activity_id: activity.id,
             ...payload
           });
-          setResponses(prev => ({ ...prev, [activity.id]: { ...prev[activity.id], id: created.id } }));
         }
       }
+
       if (currentFacetIndex < availableFacets.length - 1) {
         setCurrentFacetIndex(i => i + 1);
         window.scrollTo(0, 0);
       } else {
-        // Mark as completed
         await base44.entities.Respondent.update(respondent.id, {
           status: "completed",
           completed_date: new Date().toISOString()
