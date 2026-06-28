@@ -238,7 +238,7 @@ export default function AssessmentResults({ assessment }) {
                       {new Date(r.created_date).toLocaleDateString()}
                     </td>
                     <td className="py-2.5 pl-2 text-right flex items-center justify-end gap-3">
-                      {r.activity_log && r.activity_log.length > 0 && (
+                      {r.activity_log && (
                         <button
                           onClick={() => setLogRespondent(r)}
                           className="text-xs text-gray-300 hover:text-blue-400 transition-colors"
@@ -602,7 +602,7 @@ export default function AssessmentResults({ assessment }) {
               <button onClick={() => setLogRespondent(null)} className="text-gray-400 hover:text-gray-600 text-xl font-light">✕</button>
             </div>
             <div className="overflow-y-auto px-6 py-4 space-y-1 font-mono text-xs text-gray-600">
-              {logRespondent.activity_log.map((entry, i) => {
+              {(typeof logRespondent.activity_log === 'string' ? JSON.parse(logRespondent.activity_log) : logRespondent.activity_log).map((entry, i) => {
                 const time = new Date(entry.ts).toLocaleTimeString();
                 if (entry.type === 'nav') return (
                   <div key={i} className="text-blue-500">{time} → {entry.path}{entry.search}</div>
