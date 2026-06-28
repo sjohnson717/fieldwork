@@ -595,7 +595,7 @@ export default function AssessPage() {
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-gray-100 bg-gray-50">
-                        <th className="text-left px-4 py-2.5 text-xs font-semibold text-gray-500 w-1/2">Activity</th>
+                        <th className="text-left px-4 py-2.5 text-xs font-semibold text-gray-500 w-2/5">Activity</th>
                         <th className="text-left px-3 py-2.5 text-xs font-semibold text-gray-500">Importance</th>
                         <th className="text-left px-3 py-2.5 text-xs font-semibold text-gray-500">Execution</th>
                         {assessment?.roles?.length > 0 && (
