@@ -269,8 +269,7 @@ function ThemeSection({ group, activities, activityStats, filterLevel, facetFilt
             {/* Facet sub-header */}
             <div id={facet} className="px-5 py-2.5 border-b border-gray-50"
               style={{ backgroundColor: group.lightColor }}>
-              <span className="text-xs font-bold uppercase tracking-widest"
-                style={{ color: group.color }}>
+              <span className="text-xs font-bold uppercase tracking-widest text-gray-900">
                 {facet}
               </span>
               <span className="text-xs text-gray-400 ml-2">{subtitle}</span>
@@ -321,8 +320,7 @@ function FacetWheel({ activityStats, activities, onFacetClick }) {
               <div className="flex-1 p-4">
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <div className="text-xs font-bold uppercase tracking-widest mb-0.5"
-                      style={{ color: group.color }}>{facet}</div>
+                    <div className="text-xs font-bold uppercase tracking-widest mb-0.5 text-gray-900">{facet}</div>
                     <div className="text-sm font-semibold text-gray-800">{FACET_SUBTITLES[facet]}</div>
                   </div>
                   {/* Status badge */}
