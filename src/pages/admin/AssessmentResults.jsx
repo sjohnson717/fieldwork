@@ -54,6 +54,7 @@ export default function AssessmentResults({ assessment }) {
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [selectedRespondentId, setSelectedRespondentId] = useState(null);
   const [responseCountMap, setResponseCountMap] = useState({});
+  const [logRespondent, setLogRespondent] = useState(null);
 
   useEffect(() => {
     base44.auth.me().then(u => setIsSuperAdmin(u?.role === "admin")).catch(() => {});
@@ -236,7 +237,15 @@ export default function AssessmentResults({ assessment }) {
                     <td className="py-2.5 pr-4 text-gray-400 text-xs">
                       {new Date(r.created_date).toLocaleDateString()}
                     </td>
-                    <td className="py-2.5 pl-2 text-right">
+                    <td className="py-2.5 pl-2 text-right flex items-center justify-end gap-3">
+                      {r.activity_log && r.activity_log.length > 0 && (
+                        <button
+                          onClick={() => setLogRespondent(r)}
+                          className="text-xs text-gray-300 hover:text-blue-400 transition-colors"
+                        >
+                          Show log
+                        </button>
+                      )}
                       <button
                         onClick={() => handleDeleteRespondent(r.id)}
                         className={`text-xs transition-colors ${isEmpty ? "text-red-300 hover:text-red-500 font-medium" : "text-gray-300 hover:text-red-400"}`}
@@ -582,6 +591,42 @@ export default function AssessmentResults({ assessment }) {
           </div>
         );
       })()}
+      {logRespondent && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[80vh] flex flex-col">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+              <div>
+                <h2 className="font-semibold text-gray-900">{logRespondent.name}</h2>
+                <p className="text-xs text-gray-400">{logRespondent.title} · Activity log</p>
+              </div>
+              <button onClick={() => setLogRespondent(null)} className="text-gray-400 hover:text-gray-600 text-xl font-light">✕</button>
+            </div>
+            <div className="overflow-y-auto px-6 py-4 space-y-1 font-mono text-xs text-gray-600">
+              {logRespondent.activity_log.map((entry, i) => {
+                const time = new Date(entry.ts).toLocaleTimeString();
+                if (entry.type === 'nav') return (
+                  <div key={i} className="text-blue-500">{time} → {entry.path}{entry.search}</div>
+                );
+                if (entry.type === 'error') return (
+                  <div key={i} className="text-red-500">{time} ✕ {entry.message}</div>
+                );
+                if (entry.event === 'nav_button') return (
+                  <div key={i} className="text-gray-400">{time} &nbsp;&nbsp;{entry.label === 'submit' ? '✓ Submit' : `→ Next`} ({entry.fromFacet})</div>
+                );
+                if (entry.event === 'answer_selected') {
+                  const detail = Object.entries(entry)
+                    .filter(([k]) => !['ts','type','event','facet','activityId'].includes(k))
+                    .map(([k,v]) => `${k}=${v}`).join(', ');
+                  return (
+                    <div key={i}>{time} &nbsp;&nbsp;{entry.facet}: {detail}</div>
+                  );
+                }
+                return <div key={i} className="text-gray-300">{time} {JSON.stringify(entry)}</div>;
+              })}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
