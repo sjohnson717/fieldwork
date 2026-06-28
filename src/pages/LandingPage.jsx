@@ -50,7 +50,7 @@ export default function LandingPage() {
               <p className="text-xs font-semibold tracking-widest uppercase text-white/50 mb-2">
                 Product team capability assessment
               </p>
-              <h1 className="text-2xl font-bold text-white mb-3">Quartz Assessments</h1>
+              <h1 className="text-2xl font-bold text-white mb-3">Quartz Product Assessment</h1>
               <p className="text-white/80 text-sm mb-8">
                 Have an assessment code? Jump straight in. Team members can log in below.
               </p>
@@ -75,7 +75,7 @@ export default function LandingPage() {
                 Welcome{user?.full_name ? `, ${user.full_name.split(" ")[0]}` : ""}!
               </h1>
               <p className="text-white/80 text-sm mb-8">
-                You're logged in. Use your assessment code to participate in a Quartz Assessments assessment.
+                You're logged in. Use your assessment code to participate in a Quartz Product Assessment.
               </p>
               <Link
                 to="/assess"

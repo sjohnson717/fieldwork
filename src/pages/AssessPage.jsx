@@ -63,7 +63,7 @@ export default function AssessPage() {
   const [allTitles, setAllTitles] = useState([]);
   const [arrivedWithCode, setArrivedWithCode] = useState(false);
 
-  useEffect(() => { document.title = "Assess | Quartz Assessments"; }, []);
+  useEffect(() => { document.title = "Assess | Quartz Product Assessment"; }, []);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -439,7 +439,7 @@ export default function AssessPage() {
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-3xl mx-auto px-4 py-8">
         <div className="mb-6">
-          <p className="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-1">Quartz · Assessments</p>
+          <p className="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-1">Quartz · Product Assessment</p>
           <div className="flex items-center justify-between">
             <h1 className="text-xl font-bold text-gray-900">{currentFacet}</h1>
             <span className="text-sm text-gray-400">{currentFacetIndex + 1} of {availableFacets.length}</span>

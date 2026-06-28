@@ -382,7 +382,7 @@ export default function ReportPage() {
     loadReport();
   }, [token]);
 
-  useEffect(() => { document.title = "Report | Quartz Assessments"; }, []);
+  useEffect(() => { document.title = "Report | Quartz Product Assessment"; }, []);
 
   const loadReport = async () => {
     setLoading(true);
@@ -604,7 +604,7 @@ export default function ReportPage() {
         <div className="max-w-4xl mx-auto px-6 py-5 flex items-center justify-between">
           <img src={QUARTZ_LOGO} alt="Quartz Assessments" className="h-8 object-contain" />
           <div className="text-right">
-            <p className="text-xs text-gray-400 uppercase tracking-widest">Quartz Assessments</p>
+            <p className="text-xs text-gray-400 uppercase tracking-widest">Quartz Product Assessment</p>
           </div>
         </div>
       </header>
@@ -796,7 +796,7 @@ export default function ReportPage() {
         {/* ── Footer ── */}
         <footer className="mt-16 pt-8 border-t border-gray-100 flex items-center justify-between">
           <img src={QUARTZ_LOGO} alt="Quartz Assessments" className="h-6 object-contain opacity-40" />
-          <p className="text-xs text-gray-300">© Quartz Assessments</p>
+          <p className="text-xs text-gray-300">© Quartz Product Assessment</p>
         </footer>
 
       </main>
