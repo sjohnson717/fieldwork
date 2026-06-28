@@ -596,8 +596,8 @@ export default function AssessPage() {
                     <thead>
                       <tr className="border-b border-gray-100 bg-gray-50">
                         <th className="text-left px-4 py-2.5 text-xs font-semibold text-gray-500 w-2/5">Activity</th>
-                        <th className="text-left px-3 py-2.5 text-xs font-semibold text-gray-500">Importance</th>
-                        <th className="text-left px-3 py-2.5 text-xs font-semibold text-gray-500">Execution</th>
+                        <th className="text-left px-3 py-2.5 text-xs font-semibold text-gray-500" style={{ width: '120px' }}>Importance</th>
+                        <th className="text-left px-3 py-2.5 text-xs font-semibold text-gray-500" style={{ width: '120px' }}>Execution</th>
                         {assessment?.roles?.length > 0 && (
                           <th className="text-left px-3 py-2.5 text-xs font-semibold text-gray-500">Owner</th>
                         )}
@@ -609,14 +609,14 @@ export default function AssessPage() {
                         return (
                           <tr key={activity.id} className={idx < facetActs.length - 1 ? "border-b border-gray-50" : ""}>
                             <td className="px-4 py-3 text-gray-800 font-medium align-middle">{activity.name}</td>
-                            <td className="px-3 py-3 align-middle">
+                            <td className="px-3 py-3 align-middle" style={{ width: '120px' }}>
                               {r.importance
-                                ? <span className={`inline-block whitespace-nowrap px-2 py-0.5 rounded-full text-xs font-medium ${IMPORTANCE_BADGE[r.importance] || "bg-gray-100 text-gray-600"}`} style={{ minWidth: '90px', textAlign: 'center' }}>{r.importance}</span>
+                                ? <span className={`inline-block whitespace-nowrap px-2 py-0.5 rounded-full text-xs font-medium ${IMPORTANCE_BADGE[r.importance] || "bg-gray-100 text-gray-600"}`} style={{ width: '110px', textAlign: 'center' }}>{r.importance}</span>
                                 : <span className="text-gray-300 text-xs">—</span>}
                             </td>
-                            <td className="px-3 py-3 align-middle">
+                            <td className="px-3 py-3 align-middle" style={{ width: '120px' }}>
                               {r.execution
-                                ? <span className={`inline-flex items-center whitespace-nowrap px-2 py-0.5 rounded-full text-xs font-medium ${EXECUTION_BADGE[r.execution] || "bg-gray-100 text-gray-600"}`} style={{ minWidth: '90px', justifyContent: 'center' }}>{r.execution}</span>
+                                ? <span className={`inline-flex items-center whitespace-nowrap px-2 py-0.5 rounded-full text-xs font-medium ${EXECUTION_BADGE[r.execution] || "bg-gray-100 text-gray-600"}`} style={{ width: '110px', justifyContent: 'center' }}>{r.execution}</span>
                                 : <span className="text-gray-300 text-xs">—</span>}
                             </td>
                             {assessment?.roles?.length > 0 && (
