@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { getAssignedActivities } from "@/lib/activities";
+import ExecSummary from "@/components/ExecSummary";
 
 // ── Brand ────────────────────────────────────────────────────────────────────
 const QUARTZ_LOGO = "https://media.base44.com/images/public/6a29ff3bc8effbeb3d637555/9e97ff5e6_Quartzicon.png";
@@ -621,6 +622,15 @@ export default function ReportPage() {
           )}
           <p className="text-sm text-gray-400">{dateStr} · {respondentCount} participant{respondentCount !== 1 ? "s" : ""}</p>
         </div>
+
+        {/* ── Executive Summary ── */}
+        <ExecSummary
+          assessment={assessment}
+          activities={activities}
+          activityStats={activityStats}
+          respondentCount={respondentCount}
+          decisions={decisions}
+        />
 
         {/* ── Context paragraph ── */}
         <p className="text-gray-500 leading-relaxed mb-8 text-sm max-w-2xl">
