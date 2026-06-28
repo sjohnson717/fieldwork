@@ -53,6 +53,7 @@ export default function AssessmentResults({ assessment }) {
   const [showGapHelp, setShowGapHelp] = useState(false);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [selectedRespondentId, setSelectedRespondentId] = useState(null);
+  const [responseCountMap, setResponseCountMap] = useState({});
 
   useEffect(() => {
     base44.auth.me().then(u => setIsSuperAdmin(u?.role === "admin")).catch(() => {});
@@ -61,6 +62,18 @@ export default function AssessmentResults({ assessment }) {
   useEffect(() => {
     loadData();
   }, [assessment.id]);
+
+  const handleDeleteRespondent = async (id) => {
+    if (!confirm("Remove this respondent and their responses?")) return;
+    try {
+      const resps = await base44.entities.Response.filter({ respondent_id: id });
+      for (const r of resps) await base44.entities.Response.delete(r.id);
+      await base44.entities.Respondent.delete(id);
+      setRespondents(prev => prev.filter(r => r.id !== id));
+    } catch (e) {
+      console.error("Failed to delete respondent", e);
+    }
+  };
 
   const loadData = async () => {
     setLoading(true);
@@ -73,6 +86,11 @@ export default function AssessmentResults({ assessment }) {
       setActivities(acts);
       setRespondents(resps);
       setResponses(ress);
+      const countMap = {};
+      for (const r of ress) {
+        countMap[r.respondent_id] = (countMap[r.respondent_id] || 0) + 1;
+      }
+      setResponseCountMap(countMap);
     } catch (e) {
       console.error("Failed to load results", e);
     }
@@ -160,8 +178,79 @@ export default function AssessmentResults({ assessment }) {
     return "—";
   };
 
+  const completedCount = respondents.filter(r => r.status === "completed").length;
+
   return (
     <div className="p-8 space-y-8">
+
+      {/* Respondents */}
+      <section className="bg-white rounded-xl border border-gray-200 p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Respondents</h3>
+            <p className="text-xs text-gray-400 mt-0.5">
+              {respondents.length} total · {completedCount} completed · {respondents.filter(r => !responseCountMap[r.id]).length} empty
+            </p>
+          </div>
+          <button
+            onClick={loadData}
+            className="text-xs text-gray-400 hover:text-blue-600 transition-colors"
+          >
+            Refresh
+          </button>
+        </div>
+        {respondents.length === 0 ? (
+          <p className="text-sm text-gray-400 text-center py-6">No responses yet.</p>
+        ) : (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-xs text-gray-400 uppercase tracking-wide border-b border-gray-100">
+                <th className="text-left pb-2 font-medium w-36">Name</th>
+                <th className="text-left pb-2 font-medium w-28">Title</th>
+                <th className="text-left pb-2 font-medium">Status</th>
+                <th className="text-left pb-2 font-medium">Responses</th>
+                <th className="text-left pb-2 font-medium">Date</th>
+                <th className="pb-2" />
+              </tr>
+            </thead>
+            <tbody>
+              {respondents.map(r => {
+                const count = responseCountMap[r.id] || 0;
+                const isEmpty = count === 0;
+                return (
+                  <tr key={r.id} className={`border-b border-gray-50 last:border-0 ${isEmpty ? "bg-red-50/40" : ""}`}>
+                    <td className="py-2.5 font-medium text-gray-800">{r.name}</td>
+                    <td className="py-2.5 text-gray-500">{r.title}</td>
+                    <td className="py-2.5">
+                      <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                        r.status === "completed" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"
+                      }`}>
+                        {r.status}
+                      </span>
+                    </td>
+                    <td className="py-2.5">
+                      <span className={`text-xs font-semibold ${isEmpty ? "text-red-400" : "text-gray-500"}`}>
+                        {isEmpty ? "0 — empty" : count}
+                      </span>
+                    </td>
+                    <td className="py-2.5 pr-4 text-gray-400 text-xs">
+                      {new Date(r.created_date).toLocaleDateString()}
+                    </td>
+                    <td className="py-2.5 pl-2 text-right">
+                      <button
+                        onClick={() => handleDeleteRespondent(r.id)}
+                        className={`text-xs transition-colors ${isEmpty ? "text-red-300 hover:text-red-500 font-medium" : "text-gray-300 hover:text-red-400"}`}
+                      >
+                        Remove
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
+      </section>
 
       {/* Controls */}
       <div className="flex items-center gap-4 flex-wrap">
