@@ -52,9 +52,9 @@ const gapColor = (gap) => {
 
 const gapLabel = (gap) => {
   if (gap === null) return "No data";
-  if (gap >= 2) return "Critical gap";
-  if (gap >= 1) return "Needs attention";
-  return "On track";
+  if (gap >= 2) return "Immediate attention";
+  if (gap >= 1) return "Worth discussing";
+  return "Performing well";
 };
 
 // ── Sub-components ────────────────────────────────────────────────────────────
@@ -123,7 +123,7 @@ function ActivityRow({ activity, stats, note, draftNote, draftDecision, saving, 
               <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
-              Decision recorded
+              Team decision
             </span>
           )}
           {gap !== null && (
@@ -192,7 +192,7 @@ function ActivityRow({ activity, stats, note, draftNote, draftDecision, saving, 
           {/* Notes */}
           <div>
             <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
-              DISCUSSION NOTES (Internal use only; will not be shared with client)
+              Facilitator notes (Internal use only; will not be shared with client)
             </label>
             <textarea
               rows={3}
@@ -206,7 +206,7 @@ function ActivityRow({ activity, stats, note, draftNote, draftDecision, saving, 
           {/* Decision */}
           <div>
             <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
-              Decision / action
+              Team decision and next step
             </label>
             <input
               type="text"
@@ -258,7 +258,7 @@ function ThemeSection({ group, activities, activityStats, filterLevel, notes, dr
           </div>
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-4">
             <p className="text-sm text-[#11CC77] font-medium flex items-center gap-2">
-              <span>✓</span> All activities on track in this area
+              <span>✓</span> All activities performing well in this area
             </p>
           </div>
         </section>
@@ -293,7 +293,7 @@ function ThemeSection({ group, activities, activityStats, filterLevel, notes, dr
               </span>
             )}
             {criticalCount > 0 && (
-              <span className="ml-2 text-[#FF3333] font-medium">{criticalCount} critical</span>
+              <span className="ml-2 text-[#FF3333] font-medium">{criticalCount} need focus</span>
             )}
           </p>
         </div>
@@ -459,7 +459,7 @@ export default function AssessmentDiscussion({ assessment }) {
           <span className="font-semibold text-amber-600">{flaggedCount}</span> flagged for discussion
         </span>
         <span>
-          <span className="font-semibold text-green-700">{decidedCount}</span> with decisions recorded
+          <span className="font-semibold text-green-700">{decidedCount}</span> with team decisions
         </span>
         <span className="text-gray-400">{activities.length} total activities</span>
       </div>
@@ -467,9 +467,9 @@ export default function AssessmentDiscussion({ assessment }) {
       {/* Filter chips */}
       <div className="flex items-center gap-2 mb-8 flex-wrap">
         {[
-          { key: "critical",  color: "#FF3333", label: "Critical gap",      count: criticalGaps  },
-          { key: "attention", color: "#FFCC00", label: "Needs attention",   count: attentionGaps },
-          { key: "ontrack",   color: "#11CC77", label: "On track",          count: onTrackCount  },
+          { key: "critical",  color: "#FF3333", label: "Immediate attention", count: criticalGaps  },
+          { key: "attention", color: "#FFCC00", label: "Worth discussing",   count: attentionGaps },
+          { key: "ontrack",   color: "#11CC77", label: "Performing well",    count: onTrackCount  },
         ].map(({ key, color, label, count }) => {
           const isActive = filterLevel === key ||
             (filterLevel === "problems" && (key === "critical" || key === "attention"));
@@ -496,18 +496,18 @@ export default function AssessmentDiscussion({ assessment }) {
           {filterLevel === "all"
             ? `Showing all ${activities.length} activities`
             : filterLevel === "critical"
-            ? `Showing ${criticalGaps} critical gap${criticalGaps !== 1 ? "s" : ""}`
+            ? `Showing ${criticalGaps} ${criticalGaps === 1 ? "activity" : "activities"} needing immediate attention`
             : filterLevel === "attention"
-            ? `Showing ${attentionGaps} needing attention`
+            ? `Showing ${attentionGaps} ${attentionGaps === 1 ? "activity" : "activities"} worth discussing`
             : filterLevel === "ontrack"
-            ? `Showing ${onTrackCount} on-track ${onTrackCount === 1 ? "activity" : "activities"}`
+            ? `Showing ${onTrackCount} ${onTrackCount === 1 ? "activity" : "activities"} performing well`
             : `Showing ${problemCount} of ${activities.length} activities`}
           {filterLevel !== "all" && (
             <button
               onClick={() => setFilterLevel("all")}
               className="ml-2 text-[#3366FF] hover:text-[#003366] font-medium transition-colors"
             >
-              Show all
+              View all activities
             </button>
           )}
         </span>

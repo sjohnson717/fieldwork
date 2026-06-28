@@ -373,7 +373,7 @@ export default function AssessmentResults({ assessment }) {
       {/* Top priorities summary */}
       {view === "gap" && sortedByGap.length > 0 && (
         <section className="bg-white rounded-xl border border-gray-200 p-6">
-          <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-4">Top priorities by gap</h3>
+          <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-4">Top improvement opportunities</h3>
           <ol className="space-y-2">
             {sortedByGap.map((act, i) => (
               <li key={act.id} className="flex items-center gap-4">
@@ -412,7 +412,7 @@ export default function AssessmentResults({ assessment }) {
         if (items.length === 0) return null;
         return (
           <section className="bg-white rounded-xl border border-gray-200 p-6">
-            <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-4">Ownership suggestions</h3>
+            <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-4">Suggested ownership</h3>
             <div className="space-y-2">
               {items.map(({ activity: act, top, count, total }) => (
                 <div key={act.id} className="flex items-center gap-3 text-sm">

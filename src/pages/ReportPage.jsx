@@ -59,9 +59,9 @@ const gapColor = (gap) => {
 
 const gapLabel = (gap) => {
   if (gap === null) return "No data";
-  if (gap >= 2)   return "Critical gap";
-  if (gap >= 1)   return "Needs attention";
-  return "On track";
+  if (gap >= 2)   return "Immediate attention";
+  if (gap >= 1)   return "Worth discussing";
+  return "Performing well";
 };
 
 // ── Sub-components ───────────────────────────────────────────────────────────
@@ -214,7 +214,7 @@ function ThemeSection({ group, activities, activityStats, filterLevel, facetFilt
           </div>
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-4">
             <p className="text-sm text-[#11CC77] font-medium flex items-center gap-2">
-              <span>✓</span> All activities on track in this area
+              <span>✓</span> All activities performing well in this area
             </p>
           </div>
         </section>
@@ -258,7 +258,7 @@ function ThemeSection({ group, activities, activityStats, filterLevel, facetFilt
               </span>
             )}
             {criticalCount > 0 && (
-              <span className="ml-2 text-[#FF3333] font-medium">{criticalCount} critical</span>
+              <span className="ml-2 text-[#FF3333] font-medium">{criticalCount} need focus</span>
             )}
           </p>
         </div>
@@ -292,10 +292,10 @@ function ThemeSection({ group, activities, activityStats, filterLevel, facetFilt
 
 function FacetWheel({ activityStats, activities, onFacetClick }) {
   const statusLabel = (gap) => {
-    if (gap === null) return { label: "No data", color: "#9CA3AF", bg: "#F3F4F6" };
-    if (gap >= 2)     return { label: "At Risk",  color: "#FF3333", bg: "#FFF1F1" };
-    if (gap >= 1)     return { label: "Watch",    color: "#D97706", bg: "#FFFBEB" };
-    return              { label: "Strong",   color: "#11CC77", bg: "#ECFDF5" };
+    if (gap === null) return { label: "No data",       color: "#9CA3AF", bg: "#F3F4F6" };
+    if (gap >= 2)     return { label: "Needs focus",   color: "#FF3333", bg: "#FFF1F1" };
+    if (gap >= 1)     return { label: "Worth discussing", color: "#D97706", bg: "#FFFBEB" };
+    return              { label: "Performing well", color: "#11CC77", bg: "#ECFDF5" };
   };
 
   return (
@@ -337,7 +337,7 @@ function FacetWheel({ activityStats, activities, onFacetClick }) {
                       onClick={() => onFacetClick(facet, "critical")}
                       className="text-[#FF3333] font-medium hover:underline transition-colors"
                     >
-                      {critCount} at risk
+                      {critCount} need focus
                     </button>
                   )}
                   {watchCount > 0 && (
@@ -345,11 +345,11 @@ function FacetWheel({ activityStats, activities, onFacetClick }) {
                       onClick={() => onFacetClick(facet, "attention")}
                       className="text-[#D97706] font-medium hover:underline transition-colors"
                     >
-                      {watchCount} to watch
+                      {watchCount} worth discussing
                     </button>
                   )}
                   {critCount === 0 && watchCount === 0 && (
-                    <span className="text-[#11CC77] font-medium">All on track</span>
+                    <span className="text-[#11CC77] font-medium">All performing well</span>
                   )}
                 </div>
               </div>
@@ -583,12 +583,12 @@ export default function ReportPage() {
   if (brightSpots.length > 0) {
     summaryBullets.push({
       icon: "🟢",
-      text: `Your team is executing well on **${brightSpots.join(" and ")}** — these are strengths to build on.`,
+      text: `Your team is performing well on **${brightSpots.join(" and ")}** — these are strengths to build on.`,
     });
   } else if (onTrackCount > 0) {
     summaryBullets.push({
       icon: "🟢",
-      text: `${onTrackCount} ${onTrackCount === 1 ? "activity is" : "activities are"} on track — a starting point to build from.`,
+      text: `${onTrackCount} ${onTrackCount === 1 ? "activity is" : "activities are"} performing well — a foundation to build from.`,
     });
   }
 
@@ -647,11 +647,11 @@ export default function ReportPage() {
           <div className="border-t border-gray-200 mt-6 pt-5 flex gap-8">
             <div>
               <span className="text-3xl font-bold text-[#E53E3E]">{criticalGaps}</span>
-              <span className="text-sm text-gray-500 ml-2">critical gaps</span>
+              <span className="text-sm text-gray-500 ml-2">immediate attention</span>
             </div>
             <div>
               <span className="text-3xl font-bold text-[#D69E2E]">{attentionGaps}</span>
-              <span className="text-sm text-gray-500 ml-2">need attention</span>
+              <span className="text-sm text-gray-500 ml-2">worth discussing</span>
             </div>
             <div>
               <span className="text-3xl font-bold text-[#11CC77]">{respondentCount}</span>
@@ -663,7 +663,7 @@ export default function ReportPage() {
         {/* ── Plain-English summary ── */}
         {summaryBullets.length > 0 && (
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-8 py-6 mb-10">
-            <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-widest mb-4">What this means</h2>
+            <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-widest mb-4">Key Insights</h2>
             <ul className="space-y-4">
               {summaryBullets.map((b, i) => (
                 <li key={i} className="flex items-start gap-3">
@@ -690,9 +690,9 @@ export default function ReportPage() {
         {/* ── Clickable filter chips ── */}
         <div className="flex items-center gap-2 mb-8 flex-wrap">
           {[
-            { key: "critical", color: "#FF3333", label: `Critical gap`, count: criticalGaps },
-            { key: "attention", color: "#FFCC00", label: `Needs attention`, count: attentionGaps },
-            { key: "ontrack", color: "#11CC77", label: `On track`, count: onTrackCount },
+            { key: "critical", color: "#FF3333", label: `Immediate attention`, count: criticalGaps },
+            { key: "attention", color: "#FFCC00", label: `Worth discussing`, count: attentionGaps },
+            { key: "ontrack", color: "#11CC77", label: `Performing well`, count: onTrackCount },
           ].map(({ key, color, label, count }) => {
             const isActive = filterLevel === key ||
               (filterLevel === "problems" && (key === "critical" || key === "attention"));
@@ -721,18 +721,18 @@ export default function ReportPage() {
             {filterLevel === "all"
               ? `Showing all ${activities.length} activities`
               : filterLevel === "critical"
-              ? `Showing ${criticalGaps} critical gap${criticalGaps !== 1 ? "s" : ""}`
+              ? `Showing ${criticalGaps} ${criticalGaps === 1 ? "activity" : "activities"} needing immediate attention`
               : filterLevel === "attention"
-              ? `Showing ${attentionGaps} needing attention`
+              ? `Showing ${attentionGaps} ${attentionGaps === 1 ? "activity" : "activities"} worth discussing`
               : filterLevel === "ontrack"
-              ? `Showing ${onTrackCount} on-track ${onTrackCount === 1 ? "activity" : "activities"}`
+              ? `Showing ${onTrackCount} ${onTrackCount === 1 ? "activity" : "activities"} performing well`
               : `Showing ${problemCount} of ${activities.length} activities`}
             {filterLevel !== "all" && (
               <button
                 onClick={handleShowAll}
                 className="ml-2 text-[#3366FF] hover:text-[#003366] font-medium transition-colors"
               >
-                Show all
+                View all activities
               </button>
             )}
           </span>
@@ -768,9 +768,9 @@ export default function ReportPage() {
           return (
             <section className="mt-16">
               <div className="border-t-2 border-gray-200 pt-10 mb-8">
-                <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-2">Debrief outcomes</p>
-                <h2 className="text-2xl font-bold text-gray-900">What we decided</h2>
-                <p className="text-sm text-gray-500 mt-2">Decisions and actions recorded during the facilitated session.</p>
+                <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-2">Workshop outcomes</p>
+                <h2 className="text-2xl font-bold text-gray-900">Team decisions and next steps</h2>
+                <p className="text-sm text-gray-500 mt-2">Commitments and actions agreed during the facilitated workshop.</p>
               </div>
 
               {decisionsByTheme.map(({ group, themeDecisions }) => (
