@@ -8,19 +8,8 @@
     "name": {
       "type": "string"
     },
-    "email": {
-      "type": "string"
-    },
     "title": {
       "type": "string"
-    },
-    "role": {
-      "type": "string",
-      "enum": [
-        "user",
-        "team_leader"
-      ],
-      "default": "user"
     },
     "token": {
       "type": "string"
@@ -28,15 +17,17 @@
     "status": {
       "type": "string",
       "enum": [
-        "invited",
         "started",
         "completed"
       ],
-      "default": "invited"
+      "default": "started"
     },
     "completed_date": {
       "type": "string",
       "format": "date-time"
+    },
+    "activity_log": {
+      "type": "array"
     }
   },
   "required": [
