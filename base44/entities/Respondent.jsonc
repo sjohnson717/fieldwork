@@ -27,7 +27,7 @@
       "format": "date-time"
     },
     "activity_log": {
-      "type": "array"
+      "type": "string"
     }
   },
   "required": [
