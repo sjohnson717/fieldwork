@@ -310,7 +310,7 @@ export default function AssessmentResults({ assessment }) {
         );
       })()}
 
-      {view !== "summary" && <>
+      {view !== "summary" && view !== "individual" && <>
       <div className="flex items-center gap-4 text-xs text-gray-500">
         <span className="font-medium text-gray-700">
           {view === "gap" ? "Gap = Importance − Execution (higher = more urgent)" : `0 = lowest · 3 = highest`}
