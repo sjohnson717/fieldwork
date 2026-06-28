@@ -13,12 +13,12 @@ window.onerror = (message, source, lineno, colno, error) => {
   });
 };
 
-window.onunhandledrejection = (event) => {
+window.addEventListener('unhandledrejection', (event) => {
   ActivityLogger.log('error', {
     message: event.reason?.message || String(event.reason),
     type: 'unhandled_promise'
   });
-};
+});
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <App />
