@@ -131,6 +131,7 @@ export default function AssessPage() {
         const rebuilt = {};
         for (const resp of saved) {
           rebuilt[resp.activity_id] = {
+            id: resp.id,
             importance: resp.importance || "",
             execution: resp.execution || "",
             suggested_owner: resp.suggested_owner || ""
@@ -208,6 +209,7 @@ export default function AssessPage() {
     const rebuilt = {};
     for (const r of saved) {
       rebuilt[r.activity_id] = {
+        id: r.id,
         importance: r.importance || "",
         execution: r.execution || "",
         suggested_owner: r.suggested_owner || ""
@@ -245,16 +247,16 @@ export default function AssessPage() {
           execution: r.execution || "",
           suggested_owner: r.suggested_owner || ""
         };
-        const existing = await base44.entities.Response.filter({ respondent_id: respondent.id, activity_id: activity.id });
-        if (existing && existing.length > 0) {
-          await base44.entities.Response.update(existing[0].id, payload);
+        if (r.id) {
+          await base44.entities.Response.update(r.id, payload);
         } else {
-          await base44.entities.Response.create({
+          const created = await base44.entities.Response.create({
             assessment_id: assessment.id,
             respondent_id: respondent.id,
             activity_id: activity.id,
             ...payload
           });
+          setResponses(prev => ({ ...prev, [activity.id]: { ...prev[activity.id], id: created.id } }));
         }
       }
       if (currentFacetIndex < availableFacets.length - 1) {
