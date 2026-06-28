@@ -279,9 +279,16 @@ export default function AssessPage() {
         setCurrentFacetIndex(i => i + 1);
         window.scrollTo(0, 0);
       } else {
+        const fullLog = ActivityLogger.getLog();
+        const assessLog = fullLog.filter(e =>
+          e.type === 'error' ||
+          e.type === 'action' ||
+          (e.type === 'nav' && e.path && e.path.startsWith('/assess'))
+        );
         await base44.entities.Respondent.update(respondent.id, {
           status: "completed",
-          completed_date: new Date().toISOString()
+          completed_date: new Date().toISOString(),
+          activity_log: assessLog
         });
         setStep("done");
       }
