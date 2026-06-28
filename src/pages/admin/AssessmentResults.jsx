@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { getAssignedActivities } from "@/lib/activities";
 
@@ -51,6 +51,11 @@ export default function AssessmentResults({ assessment }) {
   const [view, setView] = useState("summary"); // summary | importance | execution | gap
   const [selectedFacet, setSelectedFacet] = useState("ALL");
   const [showGapHelp, setShowGapHelp] = useState(false);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+
+  useEffect(() => {
+    base44.auth.me().then(u => setIsSuperAdmin(u?.role === "admin")).catch(() => {});
+  }, []);
 
   useEffect(() => {
     loadData();
@@ -187,6 +192,16 @@ export default function AssessmentResults({ assessment }) {
               ) : v === "summary" ? "Summary" : v.charAt(0).toUpperCase() + v.slice(1)}
             </button>
           ))}
+          {isSuperAdmin && (
+            <button
+              onClick={() => setView("individual")}
+              className={`relative px-3 py-1.5 rounded-md text-sm font-medium capitalize transition-colors ${
+                view === "individual" ? "bg-white shadow-sm text-gray-900" : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              Individual Answers
+            </button>
+          )}
         </div>
         <div className="flex gap-1 bg-gray-100 rounded-lg p-1 flex-wrap">
           <button
@@ -428,6 +443,55 @@ export default function AssessmentResults({ assessment }) {
         );
       })()}
       </>}
+
+      {view === "individual" && isSuperAdmin && (
+        <div className="bg-white rounded-xl border border-gray-200 overflow-x-auto">
+          <table className="text-xs border-collapse min-w-full">
+            <thead>
+              <tr>
+                <th className="text-left px-4 py-3 text-gray-500 font-medium border-b border-gray-100 w-64 sticky left-0 bg-white z-10">
+                  Activity
+                </th>
+                {respondents.map(r => (
+                  <th key={r.id} className="px-2 py-3 text-center border-b border-gray-100 font-medium text-gray-500" colSpan={2}>
+                    <div className="truncate w-28 mx-auto" title={r.name}>{r.name}</div>
+                    <div className="text-[10px] font-normal text-gray-400 flex gap-2 justify-center mt-0.5">
+                      <span>Imp</span><span>Exec</span>
+                    </div>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {filteredActivities.map((act, idx) => (
+                <tr key={act.id} className={idx % 2 === 0 ? "bg-white" : "bg-gray-50/30"}>
+                  <td className="px-4 py-2 sticky left-0 bg-inherit z-10 border-r border-gray-100">
+                    <div className="font-medium text-gray-800 leading-snug">{act.name}</div>
+                    <div className="text-gray-400 text-[10px] mt-0.5">{act.facet}</div>
+                  </td>
+                  {respondents.map(r => {
+                    const resp = responseMap[act.id]?.[r.id];
+                    return (
+                      <React.Fragment key={r.id}>
+                        <td className="px-1 py-1 text-center border-l border-gray-50">
+                          <div className="text-[10px] text-gray-700 leading-tight">
+                            {resp?.importance ?? <span className="text-gray-300">—</span>}
+                          </div>
+                        </td>
+                        <td className="px-1 py-1 text-center border-r border-gray-100">
+                          <div className="text-[10px] text-gray-700 leading-tight">
+                            {resp?.execution ?? <span className="text-gray-300">—</span>}
+                          </div>
+                        </td>
+                      </React.Fragment>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
