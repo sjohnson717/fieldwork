@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
+import { ActivityLogger } from "@/utils/activityLogger";
 import { getAssignedActivities } from "@/lib/activities";
 
 const HERO_IMAGE = "https://media.base44.com/images/public/6a29ff3bc8effbeb3d637555/2ffc15b8c_curated-lifestyle-H3ZVdxBRIW0-unsplash.jpg";
@@ -230,6 +231,12 @@ export default function AssessPage() {
       ...prev,
       [activityId]: { ...prev[activityId], [field]: value }
     }));
+    ActivityLogger.log('action', {
+      event: 'answer_selected',
+      facet: currentFacet,
+      activityId,
+      [field]: value
+    });
   };
 
   const availableFacets = FACET_ORDER.filter(f => activities.some(a => a.facet === f));
@@ -544,7 +551,11 @@ export default function AssessPage() {
           <div>
             {currentFacetIndex > 0 && (
               <button
-                onClick={() => { setCurrentFacetIndex(i => i - 1); window.scrollTo(0, 0); }}
+                onClick={() => {
+                  ActivityLogger.log('action', { event: 'nav_button', label: 'back', fromFacet: currentFacet, pageIndex: currentFacetIndex });
+                  setCurrentFacetIndex(i => i - 1);
+                  window.scrollTo(0, 0);
+                }}
                 disabled={saving}
                 className="text-gray-500 hover:text-gray-800 disabled:opacity-50 font-medium px-4 py-3 rounded-lg transition-colors"
               >
@@ -553,7 +564,10 @@ export default function AssessPage() {
             )}
           </div>
           <button
-            onClick={handleNext}
+            onClick={() => {
+              ActivityLogger.log('action', { event: 'nav_button', label: currentFacetIndex < availableFacets.length - 1 ? 'next' : 'submit', fromFacet: currentFacet, pageIndex: currentFacetIndex });
+              handleNext();
+            }}
             disabled={saving}
             className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold px-8 py-3 rounded-lg transition-colors"
           >
