@@ -178,7 +178,7 @@ export default function AssessmentResults({ assessment }) {
                   {showGapHelp && (
                     <>
                       <div className="fixed inset-0 z-10" onClick={() => setShowGapHelp(false)} />
-                      <div className="absolute top-8 left-0 z-20 w-72 bg-white border border-gray-200 rounded-xl shadow-lg p-3 text-left text-xs text-gray-600 font-normal leading-relaxed">
+                      <div className="absolute top-8 left-0 z-20 w-72 bg-white border border-gray-200 rounded-xl shadow-lg p-3 text-left text-xs text-gray-600 font-normal leading-relaxed normal-case">
                         Gap = Importance score minus Execution score. A high gap means the team considers this activity important but rates current execution as low — making it the highest coaching priority. Scores range from 0 (no gap) to 3 (maximum gap).
                       </div>
                     </>
