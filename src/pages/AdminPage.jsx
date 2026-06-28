@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
 import { ActivityLogger } from "@/utils/activityLogger";
+import ActivityLogModal from "@/components/ActivityLogModal";
 import AssessmentOverview from "./admin/AssessmentOverview";
 import AssessmentResults from "./admin/AssessmentResults";
 import AssessmentDiscussion from "./admin/AssessmentDiscussion";
@@ -82,6 +83,7 @@ export default function AdminPage() {
   };
 
   const [deleting, setDeleting] = useState(false);
+  const [showActivityLog, setShowActivityLog] = useState(false);
 
   const handleDeleteAssessment = async () => {
     if (!selected) return;
@@ -236,11 +238,12 @@ export default function AdminPage() {
 
         <div className="px-3 py-2 border-t border-gray-100">
           <button
-            onClick={() => { navigator.clipboard.writeText(ActivityLogger.export()); alert('Log copied to clipboard!'); }}
+            onClick={() => setShowActivityLog(true)}
             className="w-full text-left px-3 py-1.5 rounded-lg text-xs text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-colors"
           >
-            Copy Activity Log
+            Activity Log
           </button>
+          <ActivityLogModal open={showActivityLog} onClose={() => setShowActivityLog(false)} />
         </div>
         <div className="p-3 border-t border-gray-100">
           {showNewForm ? (
