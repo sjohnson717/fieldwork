@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
+import { ActivityLogger } from "@/utils/activityLogger";
 import AssessmentOverview from "./admin/AssessmentOverview";
 import AssessmentResults from "./admin/AssessmentResults";
 import AssessmentDiscussion from "./admin/AssessmentDiscussion";
@@ -233,6 +234,14 @@ export default function AdminPage() {
           </a>
         </div>
 
+        <div className="px-3 py-2 border-t border-gray-100">
+          <button
+            onClick={() => { navigator.clipboard.writeText(ActivityLogger.export()); alert('Log copied to clipboard!'); }}
+            className="w-full text-left px-3 py-1.5 rounded-lg text-xs text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-colors"
+          >
+            Copy Activity Log
+          </button>
+        </div>
         <div className="p-3 border-t border-gray-100">
           {showNewForm ? (
             <div className="space-y-2">
