@@ -5,6 +5,7 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider } from '@/lib/AuthContext';
 import ScrollToTop from './components/ScrollToTop';
+import { RouteTracker } from './components/RouteTracker';
 import AssessPage from './pages/AssessPage';
 import ReadMe from './pages/ReadMe';
 import FacilitatorGuide from './pages/FacilitatorGuide';
@@ -24,6 +25,7 @@ function App() {
       <QueryClientProvider client={queryClientInstance}>
         <Router>
           <ScrollToTop />
+          <RouteTracker />
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
