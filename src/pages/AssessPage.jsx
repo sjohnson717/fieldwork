@@ -248,8 +248,7 @@ export default function AssessPage() {
     setError("");
     try {
       // Fetch current saved responses for this respondent once
-      const allSaved = await base44.entities.Response.list();
-      const savedForRespondent = allSaved.filter(r => r.respondent_id === respondent.id);
+      const savedForRespondent = await base44.entities.Response.filter({ respondent_id: respondent.id });
       const savedMap = {};
       for (const r of savedForRespondent) {
         savedMap[r.activity_id] = r.id;
@@ -293,6 +292,7 @@ export default function AssessPage() {
         setStep("done");
       }
     } catch (e) {
+      console.error("handleNext error:", e);
       setError("Error saving responses. Please try again.");
     }
     setSaving(false);
