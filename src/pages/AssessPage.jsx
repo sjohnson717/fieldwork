@@ -222,6 +222,7 @@ export default function AssessPage() {
   };
 
   const handleRevise = async () => {
+    ActivityLogger.log('action', { event: 'revise_started' });
     await base44.entities.Respondent.update(respondent.id, { status: "started" });
     await loadExistingResponses();
     setCurrentFacetIndex(0);
