@@ -248,7 +248,8 @@ export default function AssessPage() {
     setError("");
     try {
       // Fetch current saved responses for this respondent once
-      const savedForRespondent = await base44.entities.Response.filter({ respondent_id: respondent.id });
+      const allResponses = await base44.entities.Response.list();
+      const savedForRespondent = allResponses.filter(r => r.respondent_id === respondent.id);
       const savedMap = {};
       for (const r of savedForRespondent) {
         savedMap[r.activity_id] = r.id;
