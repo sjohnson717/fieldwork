@@ -297,6 +297,7 @@ export default function AssessPage() {
       }
     } catch (e) {
       console.error("handleNext error:", e);
+      ActivityLogger.log('error', { message: e?.message || String(e), context: 'handleNext' });
       setError("Error saving responses. Please try again.");
     }
     setSaving(false);
