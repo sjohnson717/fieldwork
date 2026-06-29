@@ -246,37 +246,34 @@ export default function AssessPage() {
   const currentFacet = availableFacets[currentFacetIndex];
   const facetActivities = activities.filter(a => a.facet === currentFacet);
 
-  const handleNext = async () => {
-    setSaving(true);
-    setError("");
-    try {
-      // Fetch current saved responses for this respondent once
-      const allResponses = await base44.entities.Response.list();
-      const savedForRespondent = allResponses.filter(r => r.respondent_id === respondent.id);
-      const savedMap = {};
-      for (const r of savedForRespondent) {
-        savedMap[r.activity_id] = r.id;
+const handleNext = async () => {
+  setSaving(true);
+  setError("");
+  try {
+    for (const activity of facetActivities) {
+      const r = responses[activity.id] || {};
+      const payload = {
+        importance: r.importance || "",
+        execution: r.execution || "",
+        suggested_owner: r.suggested_owner || ""
+      };
+      const existingId = r.id; // use the id already in state, loaded at init
+      if (existingId) {
+        await base44.entities.Response.update(existingId, payload);
+      } else {
+        const created = await base44.entities.Response.create({
+          assessment_id: assessment.id,
+          respondent_id: respondent.id,
+          activity_id: activity.id,
+          ...payload
+        });
+        // Store the new id in state so a second Next on this page also updates
+        setResponses(prev => ({
+          ...prev,
+          [activity.id]: { ...prev[activity.id], id: created.id }
+        }));
       }
-
-      for (const activity of facetActivities) {
-        const r = responses[activity.id] || {};
-        const payload = {
-          importance: r.importance || "",
-          execution: r.execution || "",
-          suggested_owner: r.suggested_owner || ""
-        };
-        const existingId = savedMap[activity.id];
-        if (existingId) {
-          await base44.entities.Response.update(existingId, payload);
-        } else {
-          await base44.entities.Response.create({
-            assessment_id: assessment.id,
-            respondent_id: respondent.id,
-            activity_id: activity.id,
-            ...payload
-          });
-        }
-      }
+    }
 
       if (currentFacetIndex < availableFacets.length - 1) {
         setCurrentFacetIndex(i => i + 1);
