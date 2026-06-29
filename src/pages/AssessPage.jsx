@@ -253,10 +253,11 @@ const handleNext = async () => {
     for (const activity of facetActivities) {
       const r = responses[activity.id] || {};
       const payload = {
-        importance: r.importance || "",
-        execution: r.execution || "",
-        suggested_owner: r.suggested_owner || ""
-      };
+        importance: r.importance || null,
+        execution: r.execution || null,
+        suggested_owner: r.suggested_owner || null
+       };
+
       const existingId = r.id; // use the id already in state, loaded at init
       if (existingId) {
         await base44.entities.Response.update(existingId, payload);
