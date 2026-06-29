@@ -128,7 +128,8 @@ export default function AssessPage() {
         const titles = await base44.entities.JobTitle.filter({ active: true }, "sort_order");
         setAllTitles(titles.map(t => t.name));
         // Pre-populate any previously saved answers
-        const saved = await base44.entities.Response.filter({ respondent_id: r.id });
+        const allResponses = await base44.entities.Response.list();
+        const saved = allResponses.filter(resp => resp.respondent_id === r.id);
         const rebuilt = {};
         for (const resp of saved) {
           rebuilt[resp.activity_id] = {
@@ -206,7 +207,8 @@ export default function AssessPage() {
   };
 
   const loadExistingResponses = async () => {
-    const saved = await base44.entities.Response.filter({ respondent_id: respondent.id });
+    const allResponses = await base44.entities.Response.list();
+    const saved = allResponses.filter(r => r.respondent_id === respondent.id);
     const rebuilt = {};
     for (const r of saved) {
       rebuilt[r.activity_id] = {
