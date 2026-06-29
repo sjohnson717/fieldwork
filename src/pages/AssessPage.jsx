@@ -676,7 +676,7 @@ export default function AssessPage() {
               ← Revise my answers
             </button>
             <button
-              onClick={() => window.location.href = "/"}
+              onClick={() => setStep("thankyou")}
               className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2.5 rounded-lg transition-colors text-sm"
             >
               Yes, I'm done ✓
@@ -687,4 +687,28 @@ export default function AssessPage() {
       </div>
     );
   }
+
+  if (step === "thankyou") return (
+    <div className="relative min-h-screen flex items-center justify-center p-4">
+      <img src={HERO_IMAGE} alt="" className="absolute inset-0 w-full h-full object-cover object-center" />
+      <div className="absolute inset-0" style={{ backgroundColor: "rgba(15, 40, 80, 0.35)" }} />
+      <div className="relative z-10 w-full flex items-center justify-center p-4">
+        <div className="bg-[#1a1f2e]/90 border border-white/10 rounded-2xl shadow-sm p-8 w-full max-w-md text-center">
+          <img src="https://media.base44.com/images/public/6a29ff3bc8effbeb3d637555/9e97ff5e6_Quartzicon.png" alt="Quartz Assessments" className="h-10 w-10 mx-auto mb-6 object-contain" />
+          <div className="w-16 h-16 bg-green-900/50 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <h1 className="text-2xl font-bold text-white mb-3">Thank you, {name.split(" ")[0]}!</h1>
+          <p className="text-white/70 text-sm leading-relaxed">
+            Your responses have been recorded. Your feedback will help shape your team's professional development plan.
+          </p>
+          {assessment?.tagline && (
+            <p className="text-white/40 text-xs mt-6 italic">{assessment.tagline}</p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 }
