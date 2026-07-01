@@ -374,6 +374,7 @@ export default function ReportPage() {
   const [filterLevel, setFilterLevel] = useState("problems"); // problems | critical | attention | all
   const [facetFilter, setFacetFilter] = useState(null); // null = all, or specific facet like "DEFINE"
   const [decisions, setDecisions] = useState([]);
+  const [parkedItems, setParkedItems] = useState([]);
   const hasFetched = useRef(false);
 
   useEffect(() => {
@@ -440,6 +441,8 @@ export default function ReportPage() {
 
       const withDecisions = discussionNotes.filter(n => n.decision?.trim());
       setDecisions(withDecisions);
+      const parked = discussionNotes.filter(n => n.status === "parked");
+      setParkedItems(parked);
 
     } catch (e) {
       console.error(e);
@@ -757,7 +760,7 @@ export default function ReportPage() {
             const themeDecisions = themeActs
               .map(act => {
                 const note = decisions.find(d => d.activity_id === act.id);
-                return note ? { activity: act, decision: note.decision.trim() } : null;
+                return note ? { activity: act, decision: note.decision.trim(), decision_role: note.decision_role || "" } : null;
               })
               .filter(Boolean);
             return { group, themeDecisions };
@@ -780,10 +783,56 @@ export default function ReportPage() {
                     <h3 className="text-base font-bold text-gray-900">{group.label}</h3>
                   </div>
                   <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                    {themeDecisions.map(({ activity, decision }, idx) => (
+                    {themeDecisions.map(({ activity, decision, decision_role }, idx) => (
                       <div key={activity.id} className={`px-6 py-4 ${idx < themeDecisions.length - 1 ? "border-b border-gray-50" : ""}`}>
                         <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">{activity.name}</p>
                         <p className="text-sm text-gray-800 leading-relaxed">{decision}</p>
+                        {decision_role && (
+                          <p className="text-xs text-gray-400 mt-1">Responsible: {decision_role}</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </section>
+          );
+        })()}
+
+        {/* ── Open issues (parked) ── */}
+        {assessment.status === "closed" && parkedItems.length > 0 && (() => {
+          const parkedByTheme = THEME_GROUPS.map(group => {
+            const themeActs = activities.filter(a => group.facets.includes(a.facet));
+            const themeParked = themeActs
+              .map(act => {
+                const note = parkedItems.find(n => n.activity_id === act.id);
+                return note ? { activity: act, note: note.note || "" } : null;
+              })
+              .filter(Boolean);
+            return { group, themeParked };
+          }).filter(t => t.themeParked.length > 0);
+
+          if (parkedByTheme.length === 0) return null;
+
+          return (
+            <section className="mt-16">
+              <div className="border-t-2 border-gray-200 pt-10 mb-8">
+                <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-2">Follow-up</p>
+                <h2 className="text-2xl font-bold text-gray-900">Open issues</h2>
+                <p className="text-sm text-gray-500 mt-2">Items parked during the workshop for follow-up after the session.</p>
+              </div>
+
+              {parkedByTheme.map(({ group, themeParked }) => (
+                <div key={group.label} className="mb-10">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-1 h-8 rounded-full shrink-0" style={{ backgroundColor: group.color }} />
+                    <h3 className="text-base font-bold text-gray-900">{group.label}</h3>
+                  </div>
+                  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                    {themeParked.map(({ activity, note }, idx) => (
+                      <div key={activity.id} className={`px-6 py-4 ${idx < themeParked.length - 1 ? "border-b border-gray-50" : ""}`}>
+                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">{activity.name}</p>
+                        <p className="text-sm text-gray-800 leading-relaxed">{note.trim() || "Parked for follow-up after the workshop."}</p>
                       </div>
                     ))}
                   </div>
