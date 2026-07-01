@@ -41,6 +41,14 @@ const EXECUTION_SCORE  = { "Not done": 0, "Inconsistent": 1, "Good": 2, "Excelle
 const IMPORTANCE_LABEL = ["Not needed", "Nice to have", "Important", "Critical"];
 const EXECUTION_LABEL  = ["Not done", "Inconsistent", "Good", "Excellent"];
 
+const STATUS_CONFIG = {
+  not_discussed:     { label: "Not Discussed",    color: "#9CA3AF", bg: "#F3F4F6" },
+  in_discussion:     { label: "In Discussion",     color: "#B45309", bg: "#FFFBEB" },
+  decision_recorded: { label: "Decision Recorded", color: "#065F46", bg: "#ECFDF5" },
+  parked:            { label: "Parked for Later",  color: "#6D28D9", bg: "#F5F3FF" },
+};
+const STATUS_OPTIONS = ["not_discussed", "in_discussion", "decision_recorded", "parked"];
+
 const avg = (arr) => arr.length === 0 ? null : arr.reduce((a, b) => a + b, 0) / arr.length;
 
 const gapColor = (gap) => {
@@ -86,12 +94,13 @@ function GapBar({ importance, execution }) {
   );
 }
 
-function ActivityRow({ activity, stats, note, draftNote, draftDecision, saving, onDraftNoteChange, onDraftDecisionChange, onSave, onToggleFlag }) {
+function ActivityRow({ activity, stats, note, draftNote, draftDecision, draftRole, assessmentRoles, saving, onDraftNoteChange, onDraftDecisionChange, onDraftRoleChange, onSave, onToggleFlag, onStatusChange }) {
   const [expanded, setExpanded] = useState(false);
   const gap = stats?.avgGap ?? null;
   const dot = gapColor(gap);
   const isFlagged = note?.flagged;
-  const hasDecision = note?.decision?.trim();
+  const status = note?.status || "not_discussed";
+  const statusCfg = STATUS_CONFIG[status];
 
   return (
     <div className="border-b border-gray-50 last:border-0">
@@ -118,14 +127,17 @@ function ActivityRow({ activity, stats, note, draftNote, draftDecision, saving, 
               </span>
             ) : null;
           })()}
-          {hasDecision && (
-            <span className="text-xs font-medium text-green-600 flex items-center gap-1">
-              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-              Team decision
-            </span>
-          )}
+          <select
+            value={status}
+            onClick={e => e.stopPropagation()}
+            onChange={e => onStatusChange(activity.id, e.target.value)}
+            className="text-xs font-medium px-2 py-1 rounded-full border-0 focus:outline-none focus:ring-2 focus:ring-[#3366FF] cursor-pointer"
+            style={{ backgroundColor: statusCfg.bg, color: statusCfg.color }}
+          >
+            {STATUS_OPTIONS.map(s => (
+              <option key={s} value={s}>{STATUS_CONFIG[s].label}</option>
+            ))}
+          </select>
           {gap !== null && (
             <span
               className="text-xs font-semibold px-2 py-0.5 rounded-full"
@@ -203,6 +215,23 @@ function ActivityRow({ activity, stats, note, draftNote, draftDecision, saving, 
             />
           </div>
 
+          {/* Responsible role */}
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+              Responsible role
+            </label>
+            <select
+              value={draftRole || ""}
+              onChange={e => onDraftRoleChange(activity.id, e.target.value)}
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#3366FF] bg-white"
+            >
+              <option value="">Select a role…</option>
+              {(assessmentRoles || []).map(role => (
+                <option key={role} value={role}>{role}</option>
+              ))}
+            </select>
+          </div>
+
           {/* Decision */}
           <div>
             <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
@@ -232,7 +261,7 @@ function ActivityRow({ activity, stats, note, draftNote, draftDecision, saving, 
   );
 }
 
-function ThemeSection({ group, activities, activityStats, filterLevel, notes, draftNote, draftDecision, saving, onDraftNoteChange, onDraftDecisionChange, onSave, onToggleFlag }) {
+function ThemeSection({ group, activities, activityStats, filterLevel, notes, draftNote, draftDecision, draftRole, assessmentRoles, saving, onDraftNoteChange, onDraftDecisionChange, onDraftRoleChange, onSave, onToggleFlag, onStatusChange }) {
   const groupActivities = activities.filter(a => group.facets.includes(a.facet));
   if (groupActivities.length === 0) return null;
 
@@ -316,11 +345,15 @@ function ThemeSection({ group, activities, activityStats, filterLevel, notes, dr
                 note={notes[act.id]}
                 draftNote={draftNote[act.id]}
                 draftDecision={draftDecision[act.id]}
+                draftRole={draftRole[act.id]}
+                assessmentRoles={assessmentRoles}
                 saving={saving[act.id]}
                 onDraftNoteChange={onDraftNoteChange}
                 onDraftDecisionChange={onDraftDecisionChange}
+                onDraftRoleChange={onDraftRoleChange}
                 onSave={onSave}
                 onToggleFlag={onToggleFlag}
+                onStatusChange={onStatusChange}
               />
             ))}
           </div>
@@ -340,6 +373,7 @@ export default function AssessmentDiscussion({ assessment }) {
   const [filterLevel, setFilterLevel] = useState("problems");
   const [draftNote, setDraftNote] = useState({});
   const [draftDecision, setDraftDecision] = useState({});
+  const [draftRole, setDraftRole] = useState({});
   const [saving, setSaving] = useState({});
 
   useEffect(() => {
@@ -359,13 +393,15 @@ export default function AssessmentDiscussion({ assessment }) {
       const noteMap = {};
       for (const n of existingNotes) noteMap[n.activity_id] = n;
       setNotes(noteMap);
-      const noteDrafts = {}, decDrafts = {};
+      const noteDrafts = {}, decDrafts = {}, roleDrafts = {};
       for (const n of existingNotes) {
         noteDrafts[n.activity_id] = n.note || "";
         decDrafts[n.activity_id] = n.decision || "";
+        roleDrafts[n.activity_id] = n.decision_role || "";
       }
       setDraftNote(noteDrafts);
       setDraftDecision(decDrafts);
+      setDraftRole(roleDrafts);
     } catch (e) {
       console.error("Failed to load discussion data", e);
     }
@@ -381,6 +417,7 @@ export default function AssessmentDiscussion({ assessment }) {
         activity_id: activityId,
         note: draftNote[activityId] || "",
         decision: draftDecision[activityId] || "",
+        decision_role: draftRole[activityId] || "",
         flagged: existing?.flagged || false,
       };
       const saved = existing
@@ -391,6 +428,26 @@ export default function AssessmentDiscussion({ assessment }) {
       console.error("Failed to save note", e);
     }
     setSaving(s => ({ ...s, [activityId]: false }));
+  };
+
+  const handleStatusChange = async (activityId, newStatus) => {
+    const existing = notes[activityId];
+    try {
+      const saved = existing
+        ? await base44.entities.DiscussionNote.update(existing.id, { status: newStatus })
+        : await base44.entities.DiscussionNote.create({
+            assessment_id: assessment.id,
+            activity_id: activityId,
+            note: "",
+            decision: "",
+            decision_role: "",
+            flagged: false,
+            status: newStatus,
+          });
+      setNotes(prev => ({ ...prev, [activityId]: saved }));
+    } catch (e) {
+      console.error("Failed to update status", e);
+    }
   };
 
   const handleToggleFlag = async (activityId) => {
@@ -450,6 +507,8 @@ export default function AssessmentDiscussion({ assessment }) {
 
   const flaggedCount  = Object.values(notes).filter(n => n.flagged).length;
   const decidedCount  = Object.values(notes).filter(n => n.decision?.trim()).length;
+  const inDiscussionCount = activities.filter(a => (notes[a.id]?.status || "not_discussed") === "in_discussion").length;
+  const parkedCount = activities.filter(a => (notes[a.id]?.status || "not_discussed") === "parked").length;
 
   return (
     <div className="p-8">
@@ -460,6 +519,12 @@ export default function AssessmentDiscussion({ assessment }) {
         </span>
         <span>
           <span className="font-semibold text-green-700">{decidedCount}</span> with team decisions
+        </span>
+        <span>
+          <span className="font-semibold" style={{ color: STATUS_CONFIG.in_discussion.color }}>{inDiscussionCount}</span> in discussion
+        </span>
+        <span>
+          <span className="font-semibold" style={{ color: STATUS_CONFIG.parked.color }}>{parkedCount}</span> parked
         </span>
         <span className="text-gray-400">{activities.length} total activities</span>
       </div>
@@ -524,11 +589,15 @@ export default function AssessmentDiscussion({ assessment }) {
           notes={notes}
           draftNote={draftNote}
           draftDecision={draftDecision}
+          draftRole={draftRole}
+          assessmentRoles={assessment.roles || []}
           saving={saving}
           onDraftNoteChange={(id, val) => setDraftNote(prev => ({ ...prev, [id]: val }))}
           onDraftDecisionChange={(id, val) => setDraftDecision(prev => ({ ...prev, [id]: val }))}
+          onDraftRoleChange={(id, val) => setDraftRole(prev => ({ ...prev, [id]: val }))}
           onSave={handleSave}
           onToggleFlag={handleToggleFlag}
+          onStatusChange={handleStatusChange}
         />
       ))}
     </div>
