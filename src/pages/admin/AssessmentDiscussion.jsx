@@ -104,21 +104,49 @@ function ActivityRow({ activity, stats, note, draftNote, draftDecision, draftRol
 
   return (
     <div className="border-b border-gray-50 last:border-0">
-      <div
-        role="button"
-        tabIndex={0}
-        onClick={() => setExpanded(e => !e)}
-        onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setExpanded(x => !x); } }}
-        className="w-full flex items-center gap-4 px-5 py-3.5 hover:bg-gray-50/50 transition-colors text-left cursor-pointer"
-      >
-        <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: dot }} />
-        <div className="flex-1 min-w-0">
-          <span className="text-sm font-medium text-gray-800">{activity.name}</span>
-          {activity.description && (
-            <p className="text-xs text-gray-400 truncate mt-0.5">{activity.description}</p>
-          )}
+      <div className="w-full flex items-center gap-4 px-5 py-3.5 hover:bg-gray-50/50 transition-colors">
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={() => setExpanded(e => !e)}
+          onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setExpanded(x => !x); } }}
+          className="flex items-center gap-4 flex-1 min-w-0 text-left cursor-pointer"
+        >
+          <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: dot }} />
+          <div className="flex-1 min-w-0">
+            <span className="text-sm font-medium text-gray-800">{activity.name}</span>
+            {activity.description && (
+              <p className="text-xs text-gray-400 truncate mt-0.5">{activity.description}</p>
+            )}
+          </div>
         </div>
-        <div className="shrink-0 flex items-center gap-3">
+        <select
+          value={status}
+          onClick={e => e.stopPropagation()}
+          onChange={e => onStatusChange(activity.id, e.target.value)}
+          className="text-xs font-medium px-2 py-1 rounded-full border-0 focus:outline-none focus:ring-2 focus:ring-[#3366FF] cursor-pointer"
+          style={{ backgroundColor: statusCfg.bg, color: statusCfg.color }}
+        >
+          {STATUS_OPTIONS.map(s => (
+            <option key={s} value={s}>{STATUS_CONFIG[s].label}</option>
+          ))}
+        </select>
+        <button
+          onClick={e => { e.stopPropagation(); onToggleFlag(activity.id); }}
+          className={`transition-colors ${isFlagged ? "text-amber-500 hover:text-amber-700" : "text-gray-300 hover:text-amber-400"}`}
+          title={isFlagged ? "Remove flag" : "Flag for discussion"}
+        >
+          <svg className="w-4 h-4" fill={isFlagged ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21V5l7-2 4 2 7-2v13l-7 2-4-2-7 2z" />
+          </svg>
+        </button>
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={() => setExpanded(e => !e)}
+          onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setExpanded(x => !x); } }}
+          className="shrink-0 flex items-center gap-3 cursor-pointer"
+        >
           {stats?.ownerEntries?.length > 0 && (() => {
             const ownerBadge =
               stats.ownerAgreement < 0.5 ? "Owner unclear" :
@@ -130,17 +158,6 @@ function ActivityRow({ activity, stats, note, draftNote, draftDecision, draftRol
               </span>
             ) : null;
           })()}
-          <select
-            value={status}
-            onClick={e => e.stopPropagation()}
-            onChange={e => onStatusChange(activity.id, e.target.value)}
-            className="text-xs font-medium px-2 py-1 rounded-full border-0 focus:outline-none focus:ring-2 focus:ring-[#3366FF] cursor-pointer"
-            style={{ backgroundColor: statusCfg.bg, color: statusCfg.color }}
-          >
-            {STATUS_OPTIONS.map(s => (
-              <option key={s} value={s}>{STATUS_CONFIG[s].label}</option>
-            ))}
-          </select>
           {gap !== null && (
             <span
               className="text-xs font-semibold px-2 py-0.5 rounded-full"
@@ -152,16 +169,6 @@ function ActivityRow({ activity, stats, note, draftNote, draftDecision, draftRol
               {gapLabel(gap)}
             </span>
           )}
-          {/* Flag button */}
-          <button
-            onClick={e => { e.stopPropagation(); onToggleFlag(activity.id); }}
-            className={`transition-colors ${isFlagged ? "text-amber-500 hover:text-amber-700" : "text-gray-300 hover:text-amber-400"}`}
-            title={isFlagged ? "Remove flag" : "Flag for discussion"}
-          >
-            <svg className="w-4 h-4" fill={isFlagged ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21V5l7-2 4 2 7-2v13l-7 2-4-2-7 2z" />
-            </svg>
-          </button>
           <svg
             className={`w-4 h-4 text-gray-300 transition-transform ${expanded ? "rotate-180" : ""}`}
             fill="none" viewBox="0 0 24 24" stroke="currentColor"
