@@ -104,9 +104,12 @@ function ActivityRow({ activity, stats, note, draftNote, draftDecision, draftRol
 
   return (
     <div className="border-b border-gray-50 last:border-0">
-      <button
+      <div
+        role="button"
+        tabIndex={0}
         onClick={() => setExpanded(e => !e)}
-        className="w-full flex items-center gap-4 px-5 py-3.5 hover:bg-gray-50/50 transition-colors text-left"
+        onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setExpanded(x => !x); } }}
+        className="w-full flex items-center gap-4 px-5 py-3.5 hover:bg-gray-50/50 transition-colors text-left cursor-pointer"
       >
         <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: dot }} />
         <div className="flex-1 min-w-0">
@@ -166,7 +169,7 @@ function ActivityRow({ activity, stats, note, draftNote, draftDecision, draftRol
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
           </svg>
         </div>
-      </button>
+      </div>
 
       {expanded && (
         <div className="px-5 pb-4 space-y-4">
@@ -383,11 +386,12 @@ export default function AssessmentDiscussion({ assessment }) {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [acts, existingNotes, resps] = await Promise.all([
+      const [acts, allNotes, resps] = await Promise.all([
         getAssignedActivities(assessment),
-        base44.entities.DiscussionNote.filter({ assessment_id: assessment.id }),
+        base44.entities.DiscussionNote.list(),
         base44.entities.Response.filter({ assessment_id: assessment.id }),
       ]);
+      const existingNotes = allNotes.filter(n => n.assessment_id === assessment.id);
       setActivities(acts);
       setResponses(resps);
       const noteMap = {};
