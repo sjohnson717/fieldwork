@@ -5,7 +5,13 @@
     "activity_id": { "type": "string" },
     "flagged": { "type": "boolean", "default": false },
     "note": { "type": "string" },
-    "decision": { "type": "string" }
+    "decision": { "type": "string" },
+    "decision_role": { "type": "string" },
+    "status": {
+      "type": "string",
+      "enum": ["not_discussed", "in_discussion", "decision_recorded", "parked"],
+      "default": "not_discussed"
+    }
   },
   "required": ["assessment_id", "activity_id"]
 }
