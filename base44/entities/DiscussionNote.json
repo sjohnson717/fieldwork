@@ -1,4 +1,6 @@
 {
+    "_comment1": "I'm trying to force this sceme into Base44.",
+
   "name": "DiscussionNote",
   "properties": {
     "assessment_id": { "type": "string" },
