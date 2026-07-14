@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
+import { useAuth } from "@/lib/AuthContext";
 import AssessmentActivities from "./AssessmentActivities";
 
 const STATUS_TRANSITIONS = {
@@ -15,8 +16,14 @@ const STATUS_LABELS = {
 };
 
 export default function AssessmentOverview({ assessment, onUpdate, onDelete, deleting }) {
+  const { user: currentUser } = useAuth();
   const [loading, setLoading] = useState(true);
   const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [allUsers, setAllUsers] = useState([]);
+  const [loadingUsers, setLoadingUsers] = useState(true);
+  const [selectedNewCollaborator, setSelectedNewCollaborator] = useState("");
+  const [savingCollaborators, setSavingCollaborators] = useState(false);
+  const [collaboratorError, setCollaboratorError] = useState("");
   const [copied, setCopied] = useState(false);
   const [copiedLink, setCopiedLink] = useState(null); // 'report' | 'team'
   const [newRole, setNewRole] = useState("");
@@ -33,6 +40,21 @@ export default function AssessmentOverview({ assessment, onUpdate, onDelete, del
   useEffect(() => {
     loadMasterTitles();
   }, [assessment.id]);
+
+  useEffect(() => {
+    loadUsers();
+  }, []);
+
+  const loadUsers = async () => {
+    setLoadingUsers(true);
+    try {
+      const all = await base44.entities.User.list();
+      setAllUsers(all.filter(u => u.role === "admin" || u.role === "facilitator"));
+    } catch (e) {
+      console.error("Failed to load users", e);
+    }
+    setLoadingUsers(false);
+  };
 
   useEffect(() => {
     setRoles(assessment.roles || []);
@@ -126,6 +148,47 @@ export default function AssessmentOverview({ assessment, onUpdate, onDelete, del
     setSavingTitle(false);
   };
 
+  const collaboratorIds = assessment.collaborator_ids || [];
+  const owner = allUsers.find(u => u.id === assessment.created_by_id);
+  const currentCollaborators = allUsers.filter(u => collaboratorIds.includes(u.id));
+  const availableToAdd = allUsers.filter(u =>
+    u.id !== currentUser?.id &&
+    u.id !== assessment.created_by_id &&
+    !collaboratorIds.includes(u.id)
+  );
+
+  const handleAddCollaborator = async () => {
+    if (!selectedNewCollaborator) return;
+    setSavingCollaborators(true);
+    setCollaboratorError("");
+    try {
+      const updated = await base44.entities.Assessment.update(assessment.id, {
+        collaborator_ids: [...collaboratorIds, selectedNewCollaborator],
+      });
+      onUpdate(updated);
+      setSelectedNewCollaborator("");
+    } catch (e) {
+      console.error("Failed to add collaborator", e);
+      setCollaboratorError(e?.message || "Failed to add collaborator. Please try again.");
+    }
+    setSavingCollaborators(false);
+  };
+
+  const handleRemoveCollaborator = async (userId) => {
+    setSavingCollaborators(true);
+    setCollaboratorError("");
+    try {
+      const updated = await base44.entities.Assessment.update(assessment.id, {
+        collaborator_ids: collaboratorIds.filter(id => id !== userId),
+      });
+      onUpdate(updated);
+    } catch (e) {
+      console.error("Failed to remove collaborator", e);
+      setCollaboratorError(e?.message || "Failed to remove collaborator. Please try again.");
+    }
+    setSavingCollaborators(false);
+  };
+
   const nextStatuses = STATUS_TRANSITIONS[assessment.status] || [];
 
   return (
@@ -217,6 +280,71 @@ export default function AssessmentOverview({ assessment, onUpdate, onDelete, del
             Copy link
           </button>
         </div>
+      </section>
+
+      {/* Collaborators */}
+      <section className="bg-white rounded-xl border border-gray-200 p-6">
+        <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-1">Collaborators</h3>
+        <p className="text-xs text-gray-400 mb-4">Other facilitators or admins who can fully manage this assessment.</p>
+
+        {collaboratorError && (
+          <p className="text-xs text-red-500 mb-3">{collaboratorError}</p>
+        )}
+
+        {!loadingUsers && (
+          <div className="space-y-1 mb-3">
+            {owner && (
+              <div className="flex items-center justify-between gap-4 py-2">
+                <div>
+                  <span className="text-sm font-medium text-gray-800">{owner.full_name || owner.email}</span>
+                  <span className="ml-2 text-xs text-gray-400">{owner.email}</span>
+                </div>
+                <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Owner</span>
+              </div>
+            )}
+            {currentCollaborators.length === 0 ? (
+              <p className="text-xs text-gray-400 italic py-2">No collaborators yet.</p>
+            ) : (
+              currentCollaborators.map(u => (
+                <div key={u.id} className="flex items-center justify-between gap-4 py-2 border-t border-gray-50">
+                  <div>
+                    <span className="text-sm text-gray-700">{u.full_name || u.email}</span>
+                    <span className="ml-2 text-xs text-gray-400">{u.email}</span>
+                  </div>
+                  <button
+                    onClick={() => handleRemoveCollaborator(u.id)}
+                    disabled={savingCollaborators}
+                    className="text-xs text-gray-300 hover:text-red-400 disabled:opacity-40 transition-colors font-medium"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
+        )}
+
+        {!loadingUsers && availableToAdd.length > 0 && (
+          <div className="flex items-center gap-2 pt-3 border-t border-gray-100">
+            <select
+              value={selectedNewCollaborator}
+              onChange={e => setSelectedNewCollaborator(e.target.value)}
+              className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+            >
+              <option value="">Select a facilitator or admin…</option>
+              {availableToAdd.map(u => (
+                <option key={u.id} value={u.id}>{u.full_name || u.email}</option>
+              ))}
+            </select>
+            <button
+              onClick={handleAddCollaborator}
+              disabled={savingCollaborators || !selectedNewCollaborator}
+              className="text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 px-4 py-2 rounded-lg transition-colors"
+            >
+              Add
+            </button>
+          </div>
+        )}
       </section>
 
       {/* Status */}

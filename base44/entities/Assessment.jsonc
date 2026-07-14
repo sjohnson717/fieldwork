@@ -41,6 +41,13 @@
         "type": "string"
       },
       "default": []
+    },
+    "collaborator_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": []
     }
   },
   "required": [
@@ -71,6 +78,11 @@
         {
           "user_condition": {
             "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "facilitator"
           }
         }
       ]

@@ -48,7 +48,9 @@ export default function AdminPage() {
     setLoading(true);
     try {
       const results = await base44.entities.Assessment.list("created_date");
-      const scoped = isAdmin ? results : results.filter(a => a.created_by_id === user.id);
+      const scoped = isAdmin
+        ? results
+        : results.filter(a => a.created_by_id === user.id || (a.collaborator_ids || []).includes(user.id));
       setAssessments(scoped.reverse());
       if (scoped.length > 0 && !selectedId) {
         setSelectedId(scoped[scoped.length - 1].id); // pick most recent
