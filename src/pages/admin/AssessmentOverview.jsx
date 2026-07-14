@@ -14,7 +14,7 @@ const STATUS_LABELS = {
   closed: { active: "Reopen assessment" },
 };
 
-export default function AssessmentOverview({ assessment, onUpdate }) {
+export default function AssessmentOverview({ assessment, onUpdate, onDelete, deleting }) {
   const [loading, setLoading] = useState(true);
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -241,6 +241,22 @@ export default function AssessmentOverview({ assessment, onUpdate }) {
             </button>
           ))}
         </div>
+
+        {onDelete && (
+          <div className="mt-5 pt-5 border-t border-gray-100 flex items-center justify-between gap-4">
+            <div>
+              <p className="text-sm font-medium text-gray-700">Delete this assessment</p>
+              <p className="text-xs text-gray-400 mt-0.5">Permanently removes it along with all respondents, responses, and discussion notes.</p>
+            </div>
+            <button
+              onClick={onDelete}
+              disabled={deleting}
+              className="shrink-0 text-sm font-medium px-4 py-2 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 disabled:opacity-50 transition-colors"
+            >
+              {deleting ? "Deleting…" : "Delete assessment"}
+            </button>
+          </div>
+        )}
       </section>
 
       {/* Links */}

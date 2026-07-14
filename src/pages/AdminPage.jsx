@@ -340,13 +340,6 @@ export default function AdminPage() {
                   <span className="text-xs font-mono bg-gray-100 text-gray-600 px-2 py-1 rounded">
                     {selected.access_code}
                   </span>
-                  <button
-                    onClick={handleDeleteAssessment}
-                    disabled={deleting}
-                    className="ml-2 text-xs font-medium text-red-400 hover:text-red-600 disabled:opacity-50 transition-colors"
-                  >
-                    {deleting ? "Deleting…" : "Delete"}
-                  </button>
                 </div>
               </div>
               {/* Tabs */}
@@ -373,6 +366,8 @@ export default function AdminPage() {
                 <AssessmentOverview
                   assessment={selected}
                   onUpdate={handleAssessmentUpdate}
+                  onDelete={handleDeleteAssessment}
+                  deleting={deleting}
                 />
               )}
               {activeTab === "Results" && (
