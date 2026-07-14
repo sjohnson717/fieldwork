@@ -82,6 +82,7 @@ export default function AssessmentActivities({ assessment, onUpdate }) {
   const [showAddForm, setShowAddForm] = useState(false);
   const [newItem, setNewItem] = useState({ name: "", description: "", facet: "DEFINE", preferred_owner: "" });
   const [adding, setAdding] = useState(false);
+  const [customError, setCustomError] = useState("");
 
   useEffect(() => {
     setActivityIds(assessment.activity_ids || []);
@@ -178,25 +179,34 @@ export default function AssessmentActivities({ assessment, onUpdate }) {
 
   const handleSaveCustomEdit = async (id) => {
     setSavingCustom(true);
+    setCustomError("");
     try {
       const updated = await base44.entities.Activity.update(id, editDraft);
       setCustomActivities(prev => prev.map(a => a.id === id ? updated : a));
       setEditingCustomId(null);
-    } catch (e) { console.error(e); }
+    } catch (e) {
+      console.error(e);
+      setCustomError(e?.message || "Failed to save changes. Please try again.");
+    }
     setSavingCustom(false);
   };
 
   const handleDeleteCustom = async (id) => {
     if (!confirm("Delete this custom activity? This cannot be undone.")) return;
+    setCustomError("");
     try {
       await base44.entities.Activity.delete(id);
       setCustomActivities(prev => prev.filter(a => a.id !== id));
-    } catch (e) { console.error(e); }
+    } catch (e) {
+      console.error(e);
+      setCustomError(e?.message || "Failed to delete activity. Please try again.");
+    }
   };
 
   const handleAddCustom = async () => {
     if (!newItem.name.trim()) return;
     setAdding(true);
+    setCustomError("");
     try {
       const created = await base44.entities.Activity.create({
         ...newItem,
@@ -209,7 +219,10 @@ export default function AssessmentActivities({ assessment, onUpdate }) {
       setCustomActivities(prev => [...prev, created]);
       setNewItem({ name: "", description: "", facet: "DEFINE", preferred_owner: "" });
       setShowAddForm(false);
-    } catch (e) { console.error(e); }
+    } catch (e) {
+      console.error(e);
+      setCustomError(e?.message || "Failed to add activity. Please try again.");
+    }
     setAdding(false);
   };
 
@@ -317,6 +330,10 @@ export default function AssessmentActivities({ assessment, onUpdate }) {
             <span className="ml-1 text-gray-400">(always included in this assessment)</span>
           )}
         </p>
+
+        {customError && (
+          <p className="text-xs text-red-500 mb-3">{customError}</p>
+        )}
 
         {customActivities.length === 0 && !showAddForm && (
           <p className="text-xs text-gray-400 italic mb-3">No custom activities yet.</p>
