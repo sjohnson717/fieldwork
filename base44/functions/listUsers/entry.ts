@@ -1,4 +1,4 @@
-import { createClientFromRequest } from "npm:@base44/sdk";
+import { createClientFromRequest } from "npm:@base44/sdk@0.8.39";
 
 // The built-in User entity ignores custom RLS rules for list operations
 // (regular tokens only ever get their own record back, regardless of what
