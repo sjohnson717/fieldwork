@@ -21,6 +21,7 @@ export default function AssessmentOverview({ assessment, onUpdate, onDelete, del
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [allUsers, setAllUsers] = useState([]);
   const [loadingUsers, setLoadingUsers] = useState(true);
+  const [usersError, setUsersError] = useState("");
   const [selectedNewCollaborator, setSelectedNewCollaborator] = useState("");
   const [savingCollaborators, setSavingCollaborators] = useState(false);
   const [collaboratorError, setCollaboratorError] = useState("");
@@ -47,11 +48,13 @@ export default function AssessmentOverview({ assessment, onUpdate, onDelete, del
 
   const loadUsers = async () => {
     setLoadingUsers(true);
+    setUsersError("");
     try {
       const all = await base44.entities.User.list();
       setAllUsers(all.filter(u => u.role === "admin" || u.role === "facilitator"));
     } catch (e) {
       console.error("Failed to load users", e);
+      setUsersError(e?.message || "Failed to load facilitators/admins.");
     }
     setLoadingUsers(false);
   };
@@ -287,8 +290,15 @@ export default function AssessmentOverview({ assessment, onUpdate, onDelete, del
         <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-1">Collaborators</h3>
         <p className="text-xs text-gray-400 mb-4">Other facilitators or admins who can fully manage this assessment.</p>
 
+        {usersError && (
+          <p className="text-xs text-red-500 mb-3">{usersError}</p>
+        )}
         {collaboratorError && (
           <p className="text-xs text-red-500 mb-3">{collaboratorError}</p>
+        )}
+
+        {loadingUsers && (
+          <p className="text-xs text-gray-400 italic py-2">Loading…</p>
         )}
 
         {!loadingUsers && (
