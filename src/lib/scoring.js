@@ -68,7 +68,21 @@ export function computeActivityStats(activities, responses) {
     const execScores = actResps.map((r) => EXECUTION_SCORE[r.execution]).filter((v) => v !== undefined);
     const avgImp = avg(impScores);
     const avgExec = avg(execScores);
-    const avgGap = avgImp !== null && avgExec !== null ? avgImp - avgExec : null;
+
+    // Gap is the average of each response's own (importance - execution) —
+    // only responses with both fields answered contribute — rather than the
+    // difference of the two independent averages above. The two diverge
+    // whenever a respondent answered only one side of a question, since that
+    // response would otherwise pull avgImp or avgExec without a matching
+    // partner to subtract against.
+    const gaps = actResps
+      .map((r) => {
+        const i = IMPORTANCE_SCORE[r.importance];
+        const e = EXECUTION_SCORE[r.execution];
+        return i !== undefined && e !== undefined ? i - e : null;
+      })
+      .filter((v) => v !== null);
+    const avgGap = avg(gaps);
 
     const ownerTally = {};
     for (const r of actResps) {
