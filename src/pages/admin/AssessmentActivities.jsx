@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
-import { useAuth } from "@/lib/AuthContext";
 
 const FACET_ORDER = ["DEFINE", "COMMIT", "DESCRIBE", "CREATE", "PREPARE", "DELIVER"];
 
@@ -65,8 +64,6 @@ function FacetGroup({ facet, children }) {
 // ── Main component ────────────────────────────────────────────────────────────
 
 export default function AssessmentActivities({ assessment, onUpdate }) {
-  const { user } = useAuth();
-  const isAdmin = user?.role === "admin";
   const [activitySets, setActivitySets] = useState([]);
   const [libraryActivities, setLibraryActivities] = useState([]); // no assessment_id
   const [customActivities, setCustomActivities] = useState([]); // assessment_id = this assessment
@@ -387,30 +384,28 @@ export default function AssessmentActivities({ assessment, onUpdate }) {
                             <span className="text-xs text-gray-400 ml-2">{activity.description}</span>
                           )}
                         </div>
-                        {isAdmin && (
-                          <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                            <button
-                              onClick={() => {
-                                setEditingCustomId(activity.id);
-                                setEditDraft({
-                                  name: activity.name,
-                                  description: activity.description || "",
-                                  facet: activity.facet,
-                                  preferred_owner: activity.preferred_owner || "",
-                                });
-                              }}
-                              className="text-xs text-gray-400 hover:text-[#3366FF] font-medium transition-colors"
-                            >
-                              Edit
-                            </button>
-                            <button
-                              onClick={() => handleDeleteCustom(activity.id)}
-                              className="text-xs text-gray-300 hover:text-red-400 transition-colors"
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        )}
+                        <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                          <button
+                            onClick={() => {
+                              setEditingCustomId(activity.id);
+                              setEditDraft({
+                                name: activity.name,
+                                description: activity.description || "",
+                                facet: activity.facet,
+                                preferred_owner: activity.preferred_owner || "",
+                              });
+                            }}
+                            className="text-xs text-gray-400 hover:text-[#3366FF] font-medium transition-colors"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDeleteCustom(activity.id)}
+                            className="text-xs text-gray-300 hover:text-red-400 transition-colors"
+                          >
+                            Delete
+                          </button>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -420,8 +415,8 @@ export default function AssessmentActivities({ assessment, onUpdate }) {
           </div>
         )}
 
-        {/* Add custom form — admin only; facilitators use shared library activities only */}
-        {isAdmin && (showAddForm ? (
+        {/* Add custom form */}
+        {showAddForm ? (
           <div className="bg-gray-50 rounded-lg border border-[#a3b8ff] p-4 space-y-3">
             <p className="text-xs font-medium text-gray-600">New custom activity</p>
             <div className="grid grid-cols-2 gap-2">
@@ -485,7 +480,7 @@ export default function AssessmentActivities({ assessment, onUpdate }) {
             </svg>
             Add custom activity
           </button>
-        ))}
+        )}
       </div>
     </div>
   );
