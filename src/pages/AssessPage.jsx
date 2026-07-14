@@ -581,7 +581,7 @@ const handleNext = async () => {
             disabled={saving}
             className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold px-8 py-3 rounded-lg transition-colors"
           >
-            {saving ? "Saving..." : currentFacetIndex < availableFacets.length - 1 ? "Next →" : "Submit Assessment"}
+            {saving ? "Saving..." : currentFacetIndex < availableFacets.length - 1 ? "Next →" : "Preview your responses"}
           </button>
         </div>
       </div>
@@ -677,7 +677,7 @@ const handleNext = async () => {
               onClick={() => setStep("thankyou")}
               className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2.5 rounded-lg transition-colors text-sm"
             >
-              Yes, I'm done ✓
+              Submit
               </button>
               </div>
               <p className="text-center text-xs text-gray-400">Your feedback will help shape the team's professional development plan.</p>
