@@ -32,9 +32,13 @@ export default function AdminPage() {
 
   useEffect(() => { document.title = "Admin | Quartz Assessment"; }, []);
 
+  const isAdmin = user?.role === "admin";
+  const isFacilitator = user?.role === "facilitator";
+  const canAccessAdmin = isAdmin || isFacilitator;
+
   useEffect(() => {
     if (isAuthenticated && user) {
-      if (user.role !== "admin") return; // non-admins see nothing
+      if (!canAccessAdmin) return; // no access for plain "user" role
       loadAssessments();
     }
   }, [isAuthenticated, user]);
@@ -43,9 +47,10 @@ export default function AdminPage() {
     setLoading(true);
     try {
       const results = await base44.entities.Assessment.list("created_date");
-      setAssessments(results.reverse());
-      if (results.length > 0 && !selectedId) {
-        setSelectedId(results[results.length - 1].id); // pick most recent
+      const scoped = isAdmin ? results : results.filter(a => a.created_by_id === user.id);
+      setAssessments(scoped.reverse());
+      if (scoped.length > 0 && !selectedId) {
+        setSelectedId(scoped[scoped.length - 1].id); // pick most recent
       }
     } catch (e) {
       console.error("Failed to load assessments", e);
@@ -128,7 +133,7 @@ export default function AdminPage() {
     setDeleting(false);
   };
 
-  if (user?.role !== "admin") {
+  if (!canAccessAdmin) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-10 text-center max-w-sm">
@@ -191,38 +196,42 @@ export default function AdminPage() {
             </ul>
           )}
 
-          {/* Library section */}
-          <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest px-3 mb-1.5 mt-5">Settings</p>
-          <button
-            onClick={() => setSelectedSection("library")}
-            className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors text-sm font-medium ${
-              selectedSection === "library"
-                ? "bg-blue-50 text-blue-900"
-                : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-            }`}
-          >
-            Library
-          </button>
-          <button
-            onClick={() => setSelectedSection("team")}
-            className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors text-sm font-medium ${
-              selectedSection === "team"
-                ? "bg-blue-50 text-blue-900"
-                : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-            }`}
-          >
-            Facilitators
-          </button>
-          <button
-            onClick={() => setSelectedSection("demo")}
-            className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors text-sm font-medium ${
-              selectedSection === "demo"
-                ? "bg-blue-50 text-blue-900"
-                : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-            }`}
-          >
-            Demo Data
-          </button>
+          {/* Library section — admin only */}
+          {isAdmin && (
+            <>
+              <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest px-3 mb-1.5 mt-5">Settings</p>
+              <button
+                onClick={() => setSelectedSection("library")}
+                className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors text-sm font-medium ${
+                  selectedSection === "library"
+                    ? "bg-blue-50 text-blue-900"
+                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                }`}
+              >
+                Library
+              </button>
+              <button
+                onClick={() => setSelectedSection("team")}
+                className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors text-sm font-medium ${
+                  selectedSection === "team"
+                    ? "bg-blue-50 text-blue-900"
+                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                }`}
+              >
+                Facilitators
+              </button>
+              <button
+                onClick={() => setSelectedSection("demo")}
+                className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors text-sm font-medium ${
+                  selectedSection === "demo"
+                    ? "bg-blue-50 text-blue-900"
+                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                }`}
+              >
+                Demo Data
+              </button>
+            </>
+          )}
           <a
             href="/facilitator-guide"
             target="_blank"

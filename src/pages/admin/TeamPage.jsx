@@ -105,6 +105,7 @@ export default function TeamPage() {
             className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3366FF] bg-white"
           >
             <option value="user">user</option>
+            <option value="facilitator">facilitator</option>
             <option value="admin">admin</option>
           </select>
           <button
@@ -174,6 +175,7 @@ export default function TeamPage() {
                           className="text-xs font-medium border border-gray-200 rounded-lg px-2.5 py-1 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#3366FF] disabled:opacity-50 cursor-pointer"
                         >
                           <option value="user">user</option>
+                          <option value="facilitator">facilitator</option>
                           <option value="admin">admin</option>
                         </select>
                       )}

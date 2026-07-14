@@ -8,9 +8,9 @@ export default function LandingPage() {
   const { user, isAuthenticated, isLoadingAuth, authChecked } = useAuth();
   const navigate = useNavigate();
 
-  // Auto-redirect admins to /admin
+  // Auto-redirect admins and facilitators to /admin
   useEffect(() => {
-    if (authChecked && isAuthenticated && user?.role === "admin") {
+    if (authChecked && isAuthenticated && ["admin", "facilitator"].includes(user?.role)) {
       navigate("/admin", { replace: true });
     }
   }, [authChecked, isAuthenticated, user, navigate]);
