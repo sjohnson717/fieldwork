@@ -20,7 +20,6 @@ export default function AssessmentOverview({ assessment, onUpdate, onDelete, del
   const [loading, setLoading] = useState(true);
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [allUsers, setAllUsers] = useState([]);
-  const [rawUserCount, setRawUserCount] = useState(null);
   const [loadingUsers, setLoadingUsers] = useState(true);
   const [usersError, setUsersError] = useState("");
   const [selectedNewCollaborator, setSelectedNewCollaborator] = useState("");
@@ -51,12 +50,14 @@ export default function AssessmentOverview({ assessment, onUpdate, onDelete, del
     setLoadingUsers(true);
     setUsersError("");
     try {
-      const all = await base44.entities.User.list();
-      setRawUserCount(all.length);
-      setAllUsers(all.filter(u => u.role === "admin" || u.role === "facilitator"));
+      // The built-in User entity ignores custom RLS for list operations, so
+      // this goes through a backend function using the service role instead
+      // of base44.entities.User.list() directly.
+      const res = await base44.functions.invoke("listUsers", {});
+      setAllUsers(res?.data?.users || []);
     } catch (e) {
       console.error("Failed to load users", e);
-      setUsersError(e?.message || "Failed to load facilitators/admins.");
+      setUsersError(e?.response?.data?.error || e?.message || "Failed to load facilitators/admins.");
     }
     setLoadingUsers(false);
   };
@@ -298,10 +299,6 @@ export default function AssessmentOverview({ assessment, onUpdate, onDelete, del
         {collaboratorError && (
           <p className="text-xs text-red-500 mb-3">{collaboratorError}</p>
         )}
-
-        <p className="text-[10px] text-gray-300 mb-2">
-          DEBUG: raw={String(rawUserCount)} · filtered={allUsers.length} · created_by_id={String(assessment.created_by_id)} · currentUser.id={String(currentUser?.id)} · currentUser.role={String(currentUser?.role)}
-        </p>
 
         {loadingUsers && (
           <p className="text-xs text-gray-400 italic py-2">Loading…</p>
