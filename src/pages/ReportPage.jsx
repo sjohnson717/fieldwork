@@ -3,66 +3,20 @@ import { useParams } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { getAssignedActivities } from "@/lib/activities";
 import ExecSummary from "@/components/ExecSummary";
+import {
+  THEME_GROUPS,
+  FACET_SUBTITLES,
+  IMPORTANCE_LABEL,
+  EXECUTION_LABEL,
+  avg,
+  fmt,
+  gapColor,
+  gapLabel,
+  computeActivityStats,
+} from "@/lib/scoring";
 
 // ── Brand ────────────────────────────────────────────────────────────────────
 const QUARTZ_LOGO = "https://media.base44.com/images/public/6a29ff3bc8effbeb3d637555/9e97ff5e6_Quartzicon.png";
-
-const FACET_ORDER = ["DEFINE", "COMMIT", "DESCRIBE", "CREATE", "PREPARE", "DELIVER"];
-
-const THEME_GROUPS = [
-  {
-    label: "Plan the right things",
-    facets: ["DEFINE", "COMMIT"],
-    color: "#3366FF",
-    lightColor: "#EEF2FF",
-    textColor: "#1E3A8A",
-  },
-  {
-    label: "Build what you plan",
-    facets: ["DESCRIBE", "CREATE"],
-    color: "#333333",
-    lightColor: "#F3F4F6",
-    textColor: "#111827",
-  },
-  {
-    label: "Sell what you build",
-    facets: ["PREPARE", "DELIVER"],
-    color: "#11CC77",
-    lightColor: "#ECFDF5",
-    textColor: "#065F46",
-  },
-];
-
-const FACET_SUBTITLES = {
-  DEFINE: "problems to solve",
-  COMMIT: "the resources",
-  DESCRIBE: "problems with stories",
-  CREATE: "winning solutions",
-  PREPARE: "the teams",
-  DELIVER: "to market",
-};
-
-const IMPORTANCE_SCORE = { "Not needed": 0, "Nice to have": 1, "Important": 2, "Critical": 3 };
-const EXECUTION_SCORE  = { "Not done": 0, "Inconsistent": 1, "Good": 2, "Excellent": 3 };
-const IMPORTANCE_LABEL = ["Not needed", "Nice to have", "Important", "Critical"];
-const EXECUTION_LABEL  = ["Not done", "Inconsistent", "Good", "Excellent"];
-
-const avg = (arr) => arr.length === 0 ? null : arr.reduce((a, b) => a + b, 0) / arr.length;
-const fmt = (n) => n === null ? "—" : n.toFixed(1);
-
-const gapColor = (gap) => {
-  if (gap === null) return "#E5E7EB";
-  if (gap >= 2)   return "#FF3333";
-  if (gap >= 1)   return "#FFCC00";
-  return "#11CC77";
-};
-
-const gapLabel = (gap) => {
-  if (gap === null) return "No data";
-  if (gap >= 2)   return "Immediate attention";
-  if (gap >= 1)   return "Worth discussing";
-  return "Performing well";
-};
 
 // ── Sub-components ───────────────────────────────────────────────────────────
 
@@ -413,30 +367,7 @@ export default function ReportPage() {
       setRespondentCount(uniqueRespondents.size);
 
       // Build stats per activity
-      const stats = {};
-      for (const act of acts) {
-        const actResps = responses.filter(r => r.activity_id === act.id);
-        const impScores = actResps.map(r => IMPORTANCE_SCORE[r.importance]).filter(v => v !== undefined);
-        const execScores = actResps.map(r => EXECUTION_SCORE[r.execution]).filter(v => v !== undefined);
-        const avgImp  = avg(impScores);
-        const avgExec = avg(execScores);
-        const avgGap  = avgImp !== null && avgExec !== null ? avgImp - avgExec : null;
-
-        // Owner tally
-        const ownerTally = {};
-        for (const r of actResps) {
-          if (r.suggested_owner) {
-            ownerTally[r.suggested_owner] = (ownerTally[r.suggested_owner] || 0) + 1;
-          }
-        }
-        const ownerEntries = Object.entries(ownerTally).sort((a, b) => b[1] - a[1]);
-        const topOwner = ownerEntries[0]?.[0] || null;
-        const ownerAgreement = ownerEntries[0]
-          ? ownerEntries[0][1] / actResps.filter(r => r.suggested_owner).length
-          : null;
-
-        stats[act.id] = { avgImp, avgExec, avgGap, n: actResps.length, topOwner, ownerAgreement, ownerEntries };
-      }
+      const stats = computeActivityStats(acts, responses);
       setActivityStats(stats);
 
       const withDecisions = discussionNotes.filter(n => n.decision?.trim());

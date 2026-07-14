@@ -1,11 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { getAssignedActivities } from "@/lib/activities";
-
-const FACET_ORDER = ["DEFINE", "COMMIT", "DESCRIBE", "CREATE", "PREPARE", "DELIVER"];
-
-const IMPORTANCE_SCORE = { "Not needed": 0, "Nice to have": 1, "Important": 2, "Critical": 3 };
-const EXECUTION_SCORE = { "Not done": 0, "Inconsistent": 1, "Good": 2, "Excellent": 3 };
+import { FACET_ORDER, IMPORTANCE_SCORE, EXECUTION_SCORE, avg, fmt } from "@/lib/scoring";
 
 // Gap = high importance, low execution = most actionable
 const gapScore = (imp, exec) => {
@@ -38,10 +34,6 @@ const gapColor = (gap) => {
   if (gap >= 0) return "bg-gray-200 text-gray-700";
   return "bg-gray-50 text-gray-300";
 };
-
-const avg = (arr) => arr.length === 0 ? null : arr.reduce((a, b) => a + b, 0) / arr.length;
-
-const fmt = (n) => n === null ? "—" : n.toFixed(1);
 
 export default function AssessmentResults({ assessment }) {
   const [activities, setActivities] = useState([]);
