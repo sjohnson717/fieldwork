@@ -326,21 +326,11 @@ export default function AdminPage() {
           <>
             {/* Header */}
             <div className="bg-white border-b border-gray-200 px-8 py-4">
-              <div className="flex items-center justify-between mb-3">
-                <div>
-                  <h2 className="text-lg font-bold text-gray-900">{selected.title}</h2>
-                  {selected.company_name && (
-                    <p className="text-sm text-gray-400">{selected.company_name}</p>
-                  )}
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className={`text-xs font-semibold px-2 py-1 rounded-full ${STATUS_COLORS[selected.status] || STATUS_COLORS.draft}`}>
-                    {selected.status}
-                  </span>
-                  <span className="text-xs font-mono bg-gray-100 text-gray-600 px-2 py-1 rounded">
-                    {selected.access_code}
-                  </span>
-                </div>
+              <div className="mb-3">
+                <h2 className="text-lg font-bold text-gray-900">{selected.title}</h2>
+                {selected.company_name && (
+                  <p className="text-sm text-gray-400">{selected.company_name}</p>
+                )}
               </div>
               {/* Tabs */}
               <div className="flex gap-1">
