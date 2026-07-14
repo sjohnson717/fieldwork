@@ -4,13 +4,14 @@ import { useAuth } from "@/lib/AuthContext";
 import { ActivityLogger } from "@/utils/activityLogger";
 import ActivityLogModal from "@/components/ActivityLogModal";
 import AssessmentOverview from "./admin/AssessmentOverview";
+import AssessmentSetup from "./admin/AssessmentSetup";
 import AssessmentResults from "./admin/AssessmentResults";
 import AssessmentDiscussion from "./admin/AssessmentDiscussion";
 import LibraryPage from "./admin/LibraryPage";
 import DemoDataPage from "./admin/DemoDataPage";
 import TeamPage from "./admin/TeamPage";
 
-const NAV_TABS = ["Overview", "Results", "Discussion"];
+const NAV_TABS = ["Overview", "Setup", "Results", "Discussion"];
 
 const STATUS_COLORS = {
   draft: "bg-gray-100 text-gray-500",
@@ -369,6 +370,12 @@ export default function AdminPage() {
                   onUpdate={handleAssessmentUpdate}
                   onDelete={handleDeleteAssessment}
                   deleting={deleting}
+                />
+              )}
+              {activeTab === "Setup" && (
+                <AssessmentSetup
+                  assessment={selected}
+                  onUpdate={handleAssessmentUpdate}
                 />
               )}
               {activeTab === "Results" && (
