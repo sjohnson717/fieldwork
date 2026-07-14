@@ -19,7 +19,7 @@ const STATUS_COLORS = {
 };
 
 export default function AdminPage() {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, logout } = useAuth();
   const [assessments, setAssessments] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
   const [selectedSection, setSelectedSection] = useState("assessments"); // assessments | library
@@ -251,11 +251,20 @@ export default function AdminPage() {
         </div>
 
         <div className="px-3 py-2 border-t border-gray-100">
+          {user?.email && (
+            <p className="px-3 py-1 text-xs text-gray-400 truncate" title={user.email}>{user.email}</p>
+          )}
           <button
             onClick={() => setShowActivityLog(true)}
             className="w-full text-left px-3 py-1.5 rounded-lg text-xs text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-colors"
           >
             Activity Log
+          </button>
+          <button
+            onClick={() => logout()}
+            className="w-full text-left px-3 py-1.5 rounded-lg text-xs text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+          >
+            Log out
           </button>
           <ActivityLogModal open={showActivityLog} onClose={() => setShowActivityLog(false)} />
         </div>
