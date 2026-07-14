@@ -314,9 +314,9 @@ const handleNext = async () => {
       <img src={HERO_IMAGE} alt="" className="absolute inset-0 w-full h-full object-cover object-center" />
       <div className="absolute inset-0" style={{ backgroundColor: "rgba(15, 40, 80, 0.35)" }} />
       <div className="relative z-10 w-full flex items-center justify-center p-4">
-        <div className="bg-[#1a1f2e]/90 border border-white/10 rounded-2xl shadow-sm p-8 w-full max-w-md text-center">
+        <div className="bg-white/90 backdrop-blur-md border border-gray-200/60 rounded-2xl shadow-sm p-8 w-full max-w-md text-center">
           <img src="https://media.base44.com/images/public/6a29ff3bc8effbeb3d637555/9e97ff5e6_Quartzicon.png" alt="Quartz Assessments" className="h-10 w-10 mx-auto mb-4 object-contain" />
-          <p className="text-white/70">{error}</p>
+          <p className="text-gray-500">{error}</p>
         </div>
       </div>
     </div>
@@ -328,14 +328,14 @@ const handleNext = async () => {
       <img src={HERO_IMAGE} alt="" className="absolute inset-0 w-full h-full object-cover object-center" />
       <div className="absolute inset-0" style={{ backgroundColor: "rgba(15, 40, 80, 0.35)" }} />
       <div className="relative z-10 w-full flex items-center justify-center p-4">
-        <div className="bg-[#1a1f2e]/90 border border-white/10 rounded-2xl shadow-sm p-8 w-full max-w-md text-center">
-          <div className="w-16 h-16 bg-green-900/50 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div className="bg-white/90 backdrop-blur-md border border-gray-200/60 rounded-2xl shadow-sm p-8 w-full max-w-md text-center">
+          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold text-white mb-2">You're all done{name ? `, ${name.split(" ")[0]}` : ""}!</h1>
-          <p className="text-white/70">You've already completed this assessment. Thanks!</p>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">You're all done{name ? `, ${name.split(" ")[0]}` : ""}!</h1>
+          <p className="text-gray-500">You've already completed this assessment. Thanks!</p>
         </div>
       </div>
     </div>
@@ -347,31 +347,31 @@ const handleNext = async () => {
       <img src={HERO_IMAGE} alt="" className="absolute inset-0 w-full h-full object-cover object-center" />
       <div className="absolute inset-0" style={{ backgroundColor: "rgba(15, 40, 80, 0.35)" }} />
       <div className="relative z-10 w-full flex items-center justify-center p-4">
-        <div className="bg-[#1a1f2e]/90 border border-white/10 rounded-2xl shadow-sm p-8 w-full max-w-md">
+        <div className="bg-white/90 backdrop-blur-md border border-gray-200/60 rounded-2xl shadow-sm p-8 w-full max-w-md">
           <div className="mb-8">
             <img src="https://media.base44.com/images/public/6a29ff3bc8effbeb3d637555/9e97ff5e6_Quartzicon.png" alt="Quartz Assessments" className="h-10 w-10 mb-3 object-contain" />
-            <h1 className="text-2xl font-bold text-white">Before we begin</h1>
-            <p className="text-white/70 mt-2">Your responses are confidential and will only be seen in aggregate by your team leader.</p>
+            <h1 className="text-2xl font-bold text-gray-900">Before we begin</h1>
+            <p className="text-gray-500 mt-2">Your responses are confidential and will only be seen in aggregate by your team leader.</p>
           </div>
           <div className="space-y-4 mb-6">
             <div>
-              <label className="block text-sm font-medium text-white/80 mb-1">Your name</label>
-              <p className="px-4 py-2.5 bg-white/10 border border-white/20 rounded-lg text-white/80 text-sm">{name}</p>
+              <label className="block text-sm font-medium text-gray-600 mb-1">Your name</label>
+              <p className="px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-700 text-sm">{name}</p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-white/80 mb-1">What's your title or role?</label>
+              <label className="block text-sm font-medium text-gray-600 mb-1">What's your title or role?</label>
               <input
                 type="text"
                 value={title}
                 onChange={e => setTitle(e.target.value)}
                 onKeyDown={e => e.key === "Enter" && handleTokenIntroSubmit()}
                 autoFocus
-                className="w-full border border-white/20 bg-white/10 text-white placeholder-white/40 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                className="w-full border border-gray-300 bg-white text-gray-900 placeholder-gray-400 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-400"
                 placeholder="e.g. Senior Product Manager"
               />
             </div>
           </div>
-          {error && <p className="text-red-400 text-sm mb-4">{error}</p>}
+          {error && <p className="text-red-600 text-sm mb-4">{error}</p>}
           <button
             onClick={handleTokenIntroSubmit}
             className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition-colors"
@@ -389,11 +389,11 @@ const handleNext = async () => {
       <img src={HERO_IMAGE} alt="" className="absolute inset-0 w-full h-full object-cover object-center" />
       <div className="absolute inset-0" style={{ backgroundColor: "rgba(15, 40, 80, 0.35)" }} />
       <div className="relative z-10 w-full flex items-center justify-center p-4">
-        <div className="bg-[#1a1f2e]/90 border border-white/10 rounded-2xl shadow-sm p-8 w-full max-w-md">
+        <div className="bg-white/90 backdrop-blur-md border border-gray-200/60 rounded-2xl shadow-sm p-8 w-full max-w-md">
           <div className="mb-8">
             <img src="https://media.base44.com/images/public/6a29ff3bc8effbeb3d637555/9e97ff5e6_Quartzicon.png" alt="Quartz Assessments" className="h-10 w-10 mb-3 object-contain" />
-            <h1 className="text-2xl font-bold text-white">Quartz Assessments</h1>
-            <p className="text-white/70 mt-2">{arrivedWithCode ? "Press continue to begin." : "Enter the code you received to begin."}</p>
+            <h1 className="text-2xl font-bold text-gray-900">Quartz Assessments</h1>
+            <p className="text-gray-500 mt-2">{arrivedWithCode ? "Press continue to begin." : "Enter the code you received to begin."}</p>
           </div>
           <input
             type="text"
@@ -401,9 +401,9 @@ const handleNext = async () => {
             value={code}
             onChange={e => setCode(e.target.value.toUpperCase())}
             onKeyDown={e => e.key === "Enter" && handleCodeSubmit()}
-            className="w-full border border-white/20 bg-white/10 text-white placeholder-white/40 rounded-lg px-4 py-3 text-lg font-mono tracking-widest text-center focus:outline-none focus:ring-2 focus:ring-blue-400 mb-4"
+            className="w-full border border-gray-300 bg-white text-gray-900 placeholder-gray-400 rounded-lg px-4 py-3 text-lg font-mono tracking-widest text-center focus:outline-none focus:ring-2 focus:ring-blue-400 mb-4"
           />
-          {error && <p className="text-red-400 text-sm mb-4">{error}</p>}
+          {error && <p className="text-red-600 text-sm mb-4">{error}</p>}
           <button
             onClick={handleCodeSubmit}
             className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition-colors"
@@ -421,35 +421,35 @@ const handleNext = async () => {
       <img src={HERO_IMAGE} alt="" className="absolute inset-0 w-full h-full object-cover object-center" />
       <div className="absolute inset-0" style={{ backgroundColor: "rgba(15, 40, 80, 0.35)" }} />
       <div className="relative z-10 w-full flex items-center justify-center p-4">
-        <div className="bg-[#1a1f2e]/90 border border-white/10 rounded-2xl shadow-sm p-8 w-full max-w-md">
+        <div className="bg-white/90 backdrop-blur-md border border-gray-200/60 rounded-2xl shadow-sm p-8 w-full max-w-md">
           <div className="mb-8">
             <img src="https://media.base44.com/images/public/6a29ff3bc8effbeb3d637555/9e97ff5e6_Quartzicon.png" alt="Quartz Assessments" className="h-10 w-10 mb-3 object-contain" />
-            <h1 className="text-2xl font-bold text-white">Before we begin</h1>
-            <p className="text-white/70 mt-2">Your responses are confidential and will only be seen in aggregate by your team leader.</p>
+            <h1 className="text-2xl font-bold text-gray-900">Before we begin</h1>
+            <p className="text-gray-500 mt-2">Your responses are confidential and will only be seen in aggregate by your team leader.</p>
           </div>
           <div className="space-y-4 mb-6">
             <div>
-              <label className="block text-sm font-medium text-white/80 mb-1">Your name</label>
+              <label className="block text-sm font-medium text-gray-600 mb-1">Your name</label>
               <input
                 type="text"
                 value={name}
                 onChange={e => setName(e.target.value)}
-                className="w-full border border-white/20 bg-white/10 text-white placeholder-white/40 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                className="w-full border border-gray-300 bg-white text-gray-900 placeholder-gray-400 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-400"
                 placeholder="Jane Smith"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-white/80 mb-1">What's your title or role?</label>
+              <label className="block text-sm font-medium text-gray-600 mb-1">What's your title or role?</label>
               <input
                 type="text"
                 value={title}
                 onChange={e => setTitle(e.target.value)}
-                className="w-full border border-white/20 bg-white/10 text-white placeholder-white/40 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                className="w-full border border-gray-300 bg-white text-gray-900 placeholder-gray-400 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-400"
                 placeholder="e.g. Senior Product Manager"
               />
             </div>
           </div>
-          {error && <p className="text-red-400 text-sm mb-4">{error}</p>}
+          {error && <p className="text-red-600 text-sm mb-4">{error}</p>}
           <button
             onClick={handleIntroSubmit}
             className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition-colors"
@@ -691,17 +691,17 @@ const handleNext = async () => {
       <img src={HERO_IMAGE} alt="" className="absolute inset-0 w-full h-full object-cover object-center" />
       <div className="absolute inset-0" style={{ backgroundColor: "rgba(15, 40, 80, 0.35)" }} />
       <div className="relative z-10 w-full flex items-center justify-center p-4">
-        <div className="bg-[#1a1f2e]/90 border border-white/10 rounded-2xl shadow-sm p-10 w-full max-w-md text-center">
+        <div className="bg-white/90 backdrop-blur-md border border-gray-200/60 rounded-2xl shadow-sm p-10 w-full max-w-md text-center">
           <img src="https://media.base44.com/images/public/6a29ff3bc8effbeb3d637555/9e97ff5e6_Quartzicon.png" alt="Quartz Assessments" className="h-10 w-10 mx-auto mb-6 object-contain" />
-          <div className="w-16 h-16 bg-green-900/50 rounded-full flex items-center justify-center mx-auto mb-5">
-            <svg className="w-8 h-8 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-5">
+            <svg className="w-8 h-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold text-white mb-4">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">
             Thank you, {name ? name.split(" ")[0] : ""}!
           </h1>
-          <p className="text-white/70 text-sm leading-relaxed">
+          <p className="text-gray-500 text-sm leading-relaxed">
             Thanks for completing this assessment. We look forward to working with you and your team.
           </p>
         </div>
