@@ -14,9 +14,13 @@ const sections = [
 | Step | Action | Details |
 |------|--------|---------|
 | 1 | **Create the assessment** | Click **New Assessment** at the bottom of the navigation panel. Enter an assessment title and client company name. |
-| 2 | **Choose an activity preset** | Go to the **Activities** tab. Click a preset — Default (32), Extended (42), Brief (22), or Executive (6). Ownership roles are pre-populated automatically. |
-| 3 | **Review ownership roles** | Go to the **Overview** tab. Check the **Ownership Roles** section. Add or remove roles to match the client's actual team structure. |
+| 2 | **Choose an activity preset** | Go to the **Setup** tab. Click a preset — Default (32), Extended (42), Brief (22), or Executive (6). Ownership roles are pre-populated automatically. |
+| 3 | **Review ownership roles** | Still in the **Setup** tab, check the **Ownership Roles** section. Add or remove roles to match the client's actual team structure. |
 | 4 | **Set status to Active** | In the Overview tab, set the assessment status to **Active**. Participants cannot access the survey until this is done. |
+
+## Facilitators & Collaborators
+
+Each facilitator only sees assessments they created themselves, plus any they've been explicitly added to as a collaborator — admins see every assessment across every client. If another facilitator or admin needs to help run this specific engagement (for example, a colleague co-leading the debrief), add them from the **Overview** tab → **Collaborators** section. Collaborators can fully manage the assessment (Setup, Results, Discussion) the same as the original creator, but can't delete it.
 
 ## Activity Presets
 
@@ -53,7 +57,7 @@ const sections = [
 
 ## Monitoring Completion
 
-Check the **Respondents table** in the Overview tab. It shows each participant's name, title, status (completed or pending), response count, and completion date. This information is confidential. *Do not share this page with team leaders*. 
+Check the **Respondents table** in the Results tab. It shows each participant's name, title, status (completed or pending), response count, and completion date. This information is confidential. *Do not share this page with team leaders*.
 
 > **Minimum responses:** Aim for at least 4–5 completed responses before running the debrief. The report will not display until the minimum threshold is reached. Follow up with non-completers 24 hours before the deadline.`,
   },
