@@ -29,6 +29,7 @@ export default function AdminPage() {
   const [newTitle, setNewTitle] = useState("");
   const [newCompany, setNewCompany] = useState("");
   const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState("");
 
   useEffect(() => { document.title = "Admin | Quartz Assessment"; }, []);
 
@@ -61,6 +62,7 @@ export default function AdminPage() {
   const handleCreate = async () => {
     if (!newTitle.trim()) return;
     setCreating(true);
+    setCreateError("");
     try {
       const code = Array.from(crypto.getRandomValues(new Uint8Array(4))).map(b => b.toString(36)).join('').substring(0, 5).toUpperCase();
       const buyerToken = crypto.randomUUID();
@@ -79,6 +81,7 @@ export default function AdminPage() {
       setNewCompany("");
     } catch (e) {
       console.error("Failed to create assessment", e);
+      setCreateError(e?.message || "Failed to create assessment. Please try again.");
     }
     setCreating(false);
   };
@@ -257,6 +260,9 @@ export default function AdminPage() {
         <div className="p-3 border-t border-gray-100">
           {showNewForm ? (
             <div className="space-y-2">
+              {createError && (
+                <p className="text-xs text-red-500">{createError}</p>
+              )}
               <input
                 autoFocus
                 type="text"
@@ -283,7 +289,7 @@ export default function AdminPage() {
                   {creating ? "Creating…" : "Create"}
                 </button>
                 <button
-                  onClick={() => { setShowNewForm(false); setNewTitle(""); setNewCompany(""); }}
+                  onClick={() => { setShowNewForm(false); setNewTitle(""); setNewCompany(""); setCreateError(""); }}
                   className="px-3 text-sm text-gray-400 hover:text-gray-600 transition-colors"
                 >
                   Cancel
