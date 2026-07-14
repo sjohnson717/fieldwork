@@ -22,7 +22,7 @@ export default function Login() {
     try {
       await base44.auth.loginViaEmailPassword(email, password);
       const user = await base44.auth.me();
-      navigate(user?.role === "admin" ? "/admin" : "/assess", { replace: true });
+      navigate(["admin", "facilitator"].includes(user?.role) ? "/admin" : "/assess", { replace: true });
     } catch (err) {
       setError(err.message || "Invalid email or password");
     } finally {
