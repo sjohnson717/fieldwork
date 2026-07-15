@@ -120,15 +120,15 @@ export default function TeamPage() {
     setUpdatingId(null);
   };
 
-  const handleRemove = async (user) => {
+  const handleRevokeAccess = async (user) => {
     if (user.id === currentUser.id) return;
-    if (!confirm(`Remove ${user.full_name || user.email} from the team?`)) return;
+    if (!confirm(`Revoke access for ${user.full_name || user.email}? They'll lose their role and organization membership.`)) return;
     setRemovingId(user.id);
     try {
-      await base44.entities.User.delete(user.id);
-      setUsers(prev => prev.filter(u => u.id !== user.id));
+      const updated = await base44.entities.User.update(user.id, { role: "user", org_id: null });
+      setUsers(prev => prev.filter(u => u.id !== updated.id));
     } catch (e) {
-      console.error("Failed to remove user", e);
+      console.error("Failed to revoke access", e);
     }
     setRemovingId(null);
   };
@@ -289,11 +289,11 @@ export default function TeamPage() {
                     <td className="px-4 py-3 text-right">
                       {!isSelf && (
                         <button
-                          onClick={() => handleRemove(u)}
+                          onClick={() => handleRevokeAccess(u)}
                           disabled={isRemoving}
                           className="text-xs text-gray-300 hover:text-red-400 disabled:opacity-40 transition-colors font-medium"
                         >
-                          {isRemoving ? "…" : "Remove"}
+                          {isRemoving ? "…" : "Revoke"}
                         </button>
                       )}
                     </td>
