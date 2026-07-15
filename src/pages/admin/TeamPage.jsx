@@ -2,16 +2,24 @@ import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
 
+const sameOrg = (a, b) => (a || null) === (b || null);
+
 export default function TeamPage() {
   const { user: currentUser } = useAuth();
+  const isAdmin = currentUser?.role === "admin";
+  const isOrgAdmin = currentUser?.role === "org_admin";
+
   const [users, setUsers] = useState([]);
+  const [orgs, setOrgs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
   const [updatingId, setUpdatingId] = useState(null);
   const [removingId, setRemovingId] = useState(null);
 
   // Invite form
   const [inviteEmail, setInviteEmail] = useState("");
-  const [inviteRole, setInviteRole] = useState("user");
+  const [inviteRole, setInviteRole] = useState(isAdmin ? "user" : "facilitator");
+  const [inviteOrgId, setInviteOrgId] = useState("");
   const [inviting, setInviting] = useState(false);
   const [inviteError, setInviteError] = useState("");
   const [inviteSuccess, setInviteSuccess] = useState("");
@@ -24,21 +32,47 @@ export default function TeamPage() {
 
   const loadUsers = async () => {
     setLoading(true);
-    const [all, invites] = await Promise.all([
-      base44.entities.User.list(),
-      base44.entities.Invitation.filter({ status: "pending" })
-    ]);
-    setUsers(all.sort((a, b) => {
-      const aAccepted = !!a.full_name;
-      const bAccepted = !!b.full_name;
-      if (aAccepted !== bAccepted) return bAccepted ? 1 : -1;
-      return (a.full_name || a.email).localeCompare(b.full_name || b.email);
-    }));
-    // Filter out invitations for emails that already accepted
-    const acceptedEmails = new Set(all.map(u => u.email?.toLowerCase()));
-    setInvitations(invites.filter(inv => !acceptedEmails.has(inv.email?.toLowerCase())));
+    setLoadError("");
+    try {
+      if (isAdmin) {
+        const [all, invites, allOrgs] = await Promise.all([
+          base44.entities.User.list(),
+          base44.entities.Invitation.filter({ status: "pending" }),
+          base44.entities.Organization.list(),
+        ]);
+        setUsers(sortUsers(all));
+        const acceptedEmails = new Set(all.map(u => u.email?.toLowerCase()));
+        setInvitations(invites.filter(inv => !acceptedEmails.has(inv.email?.toLowerCase())));
+        setOrgs(allOrgs);
+      } else {
+        // org_admin: scoped to their own org via the listUsers backend
+        // function (base44's User entity ignores custom RLS for list
+        // operations, so a direct entities.User.list() call would only
+        // ever return this user's own record).
+        const [res, invites] = await Promise.all([
+          base44.functions.invoke("listUsers", {}),
+          base44.entities.Invitation.filter({ status: "pending" }),
+        ]);
+        const all = res?.data?.users || [];
+        setUsers(sortUsers(all));
+        const acceptedEmails = new Set(all.map(u => u.email?.toLowerCase()));
+        setInvitations(invites.filter(inv =>
+          !acceptedEmails.has(inv.email?.toLowerCase()) && sameOrg(inv.org_id, currentUser.org_id)
+        ));
+      }
+    } catch (e) {
+      console.error("Failed to load team", e);
+      setLoadError(e?.response?.data?.error || e?.message || "Failed to load team members.");
+    }
     setLoading(false);
   };
+
+  const sortUsers = (list) => [...list].sort((a, b) => {
+    const aAccepted = !!a.full_name;
+    const bAccepted = !!b.full_name;
+    if (aAccepted !== bAccepted) return bAccepted ? 1 : -1;
+    return (a.full_name || a.email).localeCompare(b.full_name || b.email);
+  });
 
   const handleInvite = async () => {
     setInviteError("");
@@ -46,11 +80,18 @@ export default function TeamPage() {
     if (!inviteEmail.trim()) return setInviteError("Please enter an email address.");
     setInviting(true);
     const email = inviteEmail.trim();
-    await base44.users.inviteUser(email, inviteRole);
-    await base44.entities.Invitation.create({ email, role: inviteRole, status: "pending" });
-    setInviteSuccess(`Invite sent to ${email}.`);
-    setInviteEmail("");
-    setInviteRole("user");
+    const orgId = isAdmin ? (inviteOrgId || undefined) : currentUser.org_id;
+    try {
+      await base44.users.inviteUser(email, inviteRole);
+      await base44.entities.Invitation.create({ email, role: inviteRole, status: "pending", org_id: orgId || undefined });
+      setInviteSuccess(`Invite sent to ${email}.`);
+      setInviteEmail("");
+      setInviteRole(isAdmin ? "user" : "facilitator");
+      setInviteOrgId("");
+    } catch (e) {
+      console.error("Failed to invite", e);
+      setInviteError(e?.message || "Failed to send invite. Please try again.");
+    }
     setInviting(false);
     await loadUsers();
   };
@@ -58,8 +99,24 @@ export default function TeamPage() {
   const handleRoleChange = async (user, newRole) => {
     if (user.id === currentUser.id) return;
     setUpdatingId(user.id);
-    const updated = await base44.entities.User.update(user.id, { role: newRole });
-    setUsers(prev => prev.map(u => u.id === updated.id ? updated : u));
+    try {
+      const updated = await base44.entities.User.update(user.id, { role: newRole });
+      setUsers(prev => prev.map(u => u.id === updated.id ? updated : u));
+    } catch (e) {
+      console.error("Failed to change role", e);
+    }
+    setUpdatingId(null);
+  };
+
+  const handleOrgChange = async (user, newOrgId) => {
+    if (user.id === currentUser.id) return;
+    setUpdatingId(user.id);
+    try {
+      const updated = await base44.entities.User.update(user.id, { org_id: newOrgId || null });
+      setUsers(prev => prev.map(u => u.id === updated.id ? updated : u));
+    } catch (e) {
+      console.error("Failed to change organization", e);
+    }
     setUpdatingId(null);
   };
 
@@ -67,18 +124,30 @@ export default function TeamPage() {
     if (user.id === currentUser.id) return;
     if (!confirm(`Remove ${user.full_name || user.email} from the team?`)) return;
     setRemovingId(user.id);
-    await base44.entities.User.delete(user.id);
-    setUsers(prev => prev.filter(u => u.id !== user.id));
+    try {
+      await base44.entities.User.delete(user.id);
+      setUsers(prev => prev.filter(u => u.id !== user.id));
+    } catch (e) {
+      console.error("Failed to remove user", e);
+    }
     setRemovingId(null);
   };
 
   const handleRevokeInvite = async (invitation) => {
     if (!confirm(`Revoke invitation for ${invitation.email}?`)) return;
     setRemovingId(invitation.id);
-    await base44.entities.Invitation.update(invitation.id, { status: "revoked" });
-    setInvitations(prev => prev.filter(i => i.id !== invitation.id));
+    try {
+      await base44.entities.Invitation.update(invitation.id, { status: "revoked" });
+      setInvitations(prev => prev.filter(i => i.id !== invitation.id));
+    } catch (e) {
+      console.error("Failed to revoke invite", e);
+    }
     setRemovingId(null);
   };
+
+  const inviteRoleOptions = isAdmin ? ["user", "facilitator", "org_admin", "admin"] : ["facilitator"];
+  const rowRoleOptions = isAdmin ? ["user", "facilitator", "org_admin", "admin"] : ["facilitator", "org_admin"];
+  const orgName = (orgId) => orgs.find(o => o.id === orgId)?.name || "—";
 
   const acceptedCount = users.length;
   const pendingCount = invitations.length;
@@ -88,7 +157,9 @@ export default function TeamPage() {
 
       {/* Invite section */}
       <section className="bg-white rounded-xl border border-gray-200 p-6">
-        <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-1">Invite a team member</h3>
+        <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-1">
+          {isAdmin ? "Invite a team member" : "Invite a facilitator"}
+        </h3>
         <p className="text-xs text-gray-400 mb-4">They'll receive an email to join the app.</p>
         <div className="flex gap-2 flex-wrap">
           <input
@@ -99,15 +170,25 @@ export default function TeamPage() {
             onKeyDown={e => e.key === "Enter" && handleInvite()}
             className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3366FF] flex-1 min-w-48"
           />
-          <select
-            value={inviteRole}
-            onChange={e => setInviteRole(e.target.value)}
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3366FF] bg-white"
-          >
-            <option value="user">user</option>
-            <option value="facilitator">facilitator</option>
-            <option value="admin">admin</option>
-          </select>
+          {isAdmin && (
+            <select
+              value={inviteRole}
+              onChange={e => setInviteRole(e.target.value)}
+              className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3366FF] bg-white"
+            >
+              {inviteRoleOptions.map(r => <option key={r} value={r}>{r}</option>)}
+            </select>
+          )}
+          {isAdmin && (
+            <select
+              value={inviteOrgId}
+              onChange={e => setInviteOrgId(e.target.value)}
+              className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3366FF] bg-white"
+            >
+              <option value="">No organization</option>
+              {orgs.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
+            </select>
+          )}
           <button
             onClick={handleInvite}
             disabled={inviting || !inviteEmail.trim()}
@@ -124,7 +205,9 @@ export default function TeamPage() {
       <section className="bg-white rounded-xl border border-gray-200 overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
           <div>
-            <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Team members</h3>
+            <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
+              {isOrgAdmin ? "Your facilitators" : "Team members"}
+            </h3>
             <p className="text-xs text-gray-400 mt-0.5">
               {acceptedCount} accepted
               {pendingCount > 0 && <span className="ml-2 text-amber-500 font-medium">· {pendingCount} pending invite{pendingCount !== 1 ? "s" : ""}</span>}
@@ -132,6 +215,10 @@ export default function TeamPage() {
           </div>
           <button onClick={loadUsers} className="text-xs text-gray-400 hover:text-[#3366FF] transition-colors">Refresh</button>
         </div>
+
+        {loadError && (
+          <p className="text-xs text-red-500 px-6 py-3">{loadError}</p>
+        )}
 
         {loading ? (
           <div className="flex justify-center py-12">
@@ -146,6 +233,7 @@ export default function TeamPage() {
                 <th className="text-left px-4 py-3 font-medium w-36">Name</th>
                 <th className="text-left px-4 py-3 font-medium">Email</th>
                 <th className="text-left px-4 py-3 font-medium w-28">Role</th>
+                {isAdmin && <th className="text-left px-4 py-3 font-medium w-36">Organization</th>}
                 <th className="text-left px-4 py-3 font-medium w-24">Status</th>
                 <th className="px-4 py-3 w-16" />
               </tr>
@@ -174,12 +262,27 @@ export default function TeamPage() {
                           onChange={e => handleRoleChange(u, e.target.value)}
                           className="text-xs font-medium border border-gray-200 rounded-lg px-2.5 py-1 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#3366FF] disabled:opacity-50 cursor-pointer"
                         >
-                          <option value="user">user</option>
-                          <option value="facilitator">facilitator</option>
-                          <option value="admin">admin</option>
+                          {rowRoleOptions.map(r => <option key={r} value={r}>{r}</option>)}
                         </select>
                       )}
                     </td>
+                    {isAdmin && (
+                      <td className="px-4 py-3">
+                        {isSelf ? (
+                          <span className="text-xs text-gray-500">{orgName(u.org_id)}</span>
+                        ) : (
+                          <select
+                            value={u.org_id || ""}
+                            disabled={isUpdating}
+                            onChange={e => handleOrgChange(u, e.target.value)}
+                            className="text-xs font-medium border border-gray-200 rounded-lg px-2.5 py-1 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#3366FF] disabled:opacity-50 cursor-pointer"
+                          >
+                            <option value="">No organization</option>
+                            {orgs.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
+                          </select>
+                        )}
+                      </td>
+                    )}
                     <td className="px-4 py-3">
                       <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-green-50 text-green-600 border border-green-200">Accepted</span>
                     </td>
@@ -204,6 +307,11 @@ export default function TeamPage() {
                   <td className="px-4 py-3">
                     <span className="text-xs font-medium text-gray-500">{inv.role}</span>
                   </td>
+                  {isAdmin && (
+                    <td className="px-4 py-3">
+                      <span className="text-xs text-gray-500">{orgName(inv.org_id)}</span>
+                    </td>
+                  )}
                   <td className="px-4 py-3">
                     <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 border border-amber-200">Invited</span>
                   </td>

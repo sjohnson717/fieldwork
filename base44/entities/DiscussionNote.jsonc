@@ -40,6 +40,7 @@
     "create": {
       "$or": [
         { "user_condition": { "role": "admin" } },
+        { "user_condition": { "role": "org_admin" } },
         { "user_condition": { "role": "facilitator" } }
       ]
     },
@@ -47,12 +48,14 @@
     "update": {
       "$or": [
         { "user_condition": { "role": "admin" } },
+        { "user_condition": { "role": "org_admin" } },
         { "user_condition": { "role": "facilitator" } }
       ]
     },
     "delete": {
       "$or": [
         { "user_condition": { "role": "admin" } },
+        { "user_condition": { "role": "org_admin" } },
         { "user_condition": { "role": "facilitator" } }
       ]
     }

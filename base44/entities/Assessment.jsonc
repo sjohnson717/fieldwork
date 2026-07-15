@@ -48,6 +48,10 @@
         "type": "string"
       },
       "default": []
+    },
+    "org_id": {
+      "type": "string",
+      "description": "Organization this assessment belongs to. Absent/null means the legacy no-org bucket."
     }
   },
   "required": [
@@ -60,6 +64,11 @@
         {
           "user_condition": {
             "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "org_admin"
           }
         },
         {
@@ -78,6 +87,11 @@
         {
           "user_condition": {
             "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "org_admin"
           }
         },
         {

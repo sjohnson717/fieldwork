@@ -9,6 +9,8 @@
       "type": "string",
       "enum": [
         "user",
+        "facilitator",
+        "org_admin",
         "admin"
       ],
       "default": "user"
@@ -20,6 +22,10 @@
         "revoked"
       ],
       "default": "pending"
+    },
+    "org_id": {
+      "type": "string",
+      "description": "Organization the invited user should be assigned to. Absent/null means the legacy no-org bucket."
     }
   },
   "required": [
@@ -28,24 +34,29 @@
   ],
   "rls": {
     "create": {
-      "user_condition": {
-        "role": "admin"
-      }
+      "$or": [
+        { "user_condition": { "role": "admin" } },
+        { "user_condition": { "role": "org_admin" } }
+      ]
     },
     "read": {
-      "user_condition": {
-        "role": "admin"
-      }
+      "$or": [
+        { "user_condition": { "role": "admin" } },
+        { "user_condition": { "role": "org_admin" } },
+        { "email": "{{user.email}}" }
+      ]
     },
     "update": {
-      "user_condition": {
-        "role": "admin"
-      }
+      "$or": [
+        { "user_condition": { "role": "admin" } },
+        { "user_condition": { "role": "org_admin" } }
+      ]
     },
     "delete": {
-      "user_condition": {
-        "role": "admin"
-      }
+      "$or": [
+        { "user_condition": { "role": "admin" } },
+        { "user_condition": { "role": "org_admin" } }
+      ]
     }
   }
 }

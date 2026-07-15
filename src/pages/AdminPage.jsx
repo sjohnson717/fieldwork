@@ -36,8 +36,9 @@ export default function AdminPage() {
   useEffect(() => { document.title = "Admin | Quartz Assessment"; }, []);
 
   const isAdmin = user?.role === "admin";
+  const isOrgAdmin = user?.role === "org_admin";
   const isFacilitator = user?.role === "facilitator";
-  const canAccessAdmin = isAdmin || isFacilitator;
+  const canAccessAdmin = isAdmin || isOrgAdmin || isFacilitator;
 
   useEffect(() => {
     if (isAuthenticated && user) {
@@ -77,6 +78,7 @@ export default function AdminPage() {
         buyer_token: buyerToken,
         status: "draft",
         roles: [],
+        org_id: user.org_id || undefined,
       });
       setAssessments(prev => [created, ...prev]);
       setSelectedId(created.id);
@@ -203,20 +205,22 @@ export default function AdminPage() {
             </ul>
           )}
 
-          {/* Library section — admin only */}
-          {isAdmin && (
+          {/* Settings section */}
+          {(isAdmin || isOrgAdmin) && (
             <>
               <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest px-3 mb-1.5 mt-5">Settings</p>
-              <button
-                onClick={() => setSelectedSection("library")}
-                className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors text-sm font-medium ${
-                  selectedSection === "library"
-                    ? "bg-blue-50 text-blue-900"
-                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                }`}
-              >
-                Library
-              </button>
+              {isAdmin && (
+                <button
+                  onClick={() => setSelectedSection("library")}
+                  className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors text-sm font-medium ${
+                    selectedSection === "library"
+                      ? "bg-blue-50 text-blue-900"
+                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                  }`}
+                >
+                  Library
+                </button>
+              )}
               <button
                 onClick={() => setSelectedSection("team")}
                 className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors text-sm font-medium ${
@@ -227,16 +231,18 @@ export default function AdminPage() {
               >
                 Facilitators
               </button>
-              <button
-                onClick={() => setSelectedSection("demo")}
-                className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors text-sm font-medium ${
-                  selectedSection === "demo"
-                    ? "bg-blue-50 text-blue-900"
-                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                }`}
-              >
-                Demo Data
-              </button>
+              {isAdmin && (
+                <button
+                  onClick={() => setSelectedSection("demo")}
+                  className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors text-sm font-medium ${
+                    selectedSection === "demo"
+                      ? "bg-blue-50 text-blue-900"
+                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                  }`}
+                >
+                  Demo Data
+                </button>
+              )}
             </>
           )}
           <a

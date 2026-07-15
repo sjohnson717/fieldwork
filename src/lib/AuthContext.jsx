@@ -90,6 +90,25 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // base44.users.inviteUser() sets role correctly but has no concept of our
+  // custom org_id field. If this user hasn't been assigned an org yet, check
+  // for a pending Invitation matching their email and stamp its org_id onto
+  // their own record (a self-update, already permitted by User's RLS).
+  const reconcileOrgId = async (currentUser) => {
+    if (!currentUser || currentUser.org_id) return currentUser;
+    try {
+      const invitations = await base44.entities.Invitation.filter({ email: currentUser.email, status: 'pending' });
+      const invitation = invitations?.[0];
+      if (invitation?.org_id) {
+        const updated = await base44.entities.User.update(currentUser.id, { org_id: invitation.org_id });
+        return updated;
+      }
+    } catch (e) {
+      console.error('Failed to reconcile org_id from invitation', e);
+    }
+    return currentUser;
+  };
+
   const checkUserAuth = async () => {
     try {
       setIsLoadingAuth(true);
@@ -105,6 +124,7 @@ export const AuthProvider = ({ children }) => {
           throw firstError;
         }
       }
+      currentUser = await reconcileOrgId(currentUser);
       setUser(currentUser);
       setIsAuthenticated(true);
       setIsLoadingAuth(false);
