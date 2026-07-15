@@ -211,6 +211,46 @@ export default function AssessmentOverview({ assessment, onUpdate, onDelete, del
         )}
       </section>
 
+      {/* Status */}
+      <section className="bg-white rounded-xl border border-gray-200 p-6">
+        <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-4">Status</h3>
+        <div className="flex items-center gap-4 flex-wrap">
+          <div className="text-sm text-gray-600">
+            Currently <span className="font-semibold text-gray-900">{assessment.status}</span>
+          </div>
+          {nextStatuses.map(s => (
+            <button
+              key={s}
+              onClick={() => handleStatusChange(s)}
+              disabled={updatingStatus}
+              className={`text-sm font-medium px-4 py-2 rounded-lg border transition-colors disabled:opacity-50 ${
+                s === "closed"
+                  ? "border-red-200 text-red-600 hover:bg-red-50"
+                  : "border-green-200 text-green-700 hover:bg-green-50"
+              }`}
+            >
+              {updatingStatus ? "Updating…" : STATUS_LABELS[assessment.status]?.[s] || s}
+            </button>
+          ))}
+        </div>
+
+        {onDelete && (
+          <div className="mt-5 pt-5 border-t border-gray-100 flex items-center justify-between gap-4">
+            <div>
+              <p className="text-sm font-medium text-gray-700">Delete this assessment</p>
+              <p className="text-xs text-gray-400 mt-0.5">Permanently removes it along with all respondents, responses, and discussion notes.</p>
+            </div>
+            <button
+              onClick={onDelete}
+              disabled={deleting}
+              className="shrink-0 text-sm font-medium px-4 py-2 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 disabled:opacity-50 transition-colors"
+            >
+              {deleting ? "Deleting…" : "Delete assessment"}
+            </button>
+          </div>
+        )}
+      </section>
+
       {/* Access */}
       <section className="bg-white rounded-xl border border-gray-200 p-6">
         <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-4">Access</h3>
@@ -230,6 +270,75 @@ export default function AssessmentOverview({ assessment, onUpdate, onDelete, del
           >
             Copy link
           </button>
+        </div>
+      </section>
+
+      {/* Links */}
+      <section className="bg-white rounded-xl border border-gray-200 p-6">
+        <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-1">Links to share</h3>
+        <p className="text-xs text-gray-400 mb-4">Copy or open links to the team leader pages.</p>
+        <div className="space-y-3">
+          {/* Status link */}
+          <div className="flex items-center justify-between gap-4">
+            <span className="text-sm text-gray-700 font-medium w-56 shrink-0">STATUS Dashboard</span>
+            {assessment.team_token ? (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(`${window.location.origin}/team/${assessment.team_token}`);
+                    setCopiedLink('team');
+                    setTimeout(() => setCopiedLink(null), 2000);
+                  }}
+                  className="text-sm text-[#3366FF] hover:text-[#2952CC] font-medium border border-[#a3b8ff] px-3 py-1.5 rounded-lg hover:bg-[#eef2ff] transition-colors"
+                >
+                  {copiedLink === 'team' ? 'Copied!' : 'Copy'}
+                </button>
+                <button
+                  onClick={() => window.open(`${window.location.origin}/team/${assessment.team_token}`, '_blank')}
+                  className="text-sm text-gray-500 hover:text-gray-700 font-medium border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Open
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={async () => {
+                  const token = Math.random().toString(36).substring(2, 10) + Math.random().toString(36).substring(2, 10);
+                  const updated = await base44.entities.Assessment.update(assessment.id, { team_token: token });
+                  onUpdate(updated);
+                }}
+                className="text-sm text-[#3366FF] hover:text-[#2952CC] font-medium border border-[#a3b8ff] px-3 py-1.5 rounded-lg hover:bg-[#eef2ff] transition-colors"
+              >
+                Generate
+              </button>
+            )}
+          </div>
+          {/* Report link */}
+          <div className="flex items-center justify-between gap-4">
+            <span className="text-sm text-gray-700 font-medium w-56 shrink-0">REPORT and action plan</span>
+            {assessment.buyer_token ? (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(`${window.location.origin}/report/${assessment.buyer_token}`);
+                    setCopiedLink('report');
+                    setTimeout(() => setCopiedLink(null), 2000);
+                  }}
+                  className="text-sm text-[#3366FF] hover:text-[#2952CC] font-medium border border-[#a3b8ff] px-3 py-1.5 rounded-lg hover:bg-[#eef2ff] transition-colors"
+                >
+                  {copiedLink === 'report' ? 'Copied!' : 'Copy'}
+                </button>
+                <button
+                  onClick={() => window.open(`${window.location.origin}/report/${assessment.buyer_token}`, '_blank')}
+                  className="text-sm text-gray-500 hover:text-gray-700 font-medium border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Open
+                </button>
+              </div>
+            ) : (
+              <span className="text-sm text-gray-400 italic">Not available</span>
+            )}
+          </div>
         </div>
       </section>
 
@@ -303,115 +412,6 @@ export default function AssessmentOverview({ assessment, onUpdate, onDelete, del
             </button>
           </div>
         )}
-      </section>
-
-      {/* Status */}
-      <section className="bg-white rounded-xl border border-gray-200 p-6">
-        <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-4">Status</h3>
-        <div className="flex items-center gap-4 flex-wrap">
-          <div className="text-sm text-gray-600">
-            Currently <span className="font-semibold text-gray-900">{assessment.status}</span>
-          </div>
-          {nextStatuses.map(s => (
-            <button
-              key={s}
-              onClick={() => handleStatusChange(s)}
-              disabled={updatingStatus}
-              className={`text-sm font-medium px-4 py-2 rounded-lg border transition-colors disabled:opacity-50 ${
-                s === "closed"
-                  ? "border-red-200 text-red-600 hover:bg-red-50"
-                  : "border-green-200 text-green-700 hover:bg-green-50"
-              }`}
-            >
-              {updatingStatus ? "Updating…" : STATUS_LABELS[assessment.status]?.[s] || s}
-            </button>
-          ))}
-        </div>
-
-        {onDelete && (
-          <div className="mt-5 pt-5 border-t border-gray-100 flex items-center justify-between gap-4">
-            <div>
-              <p className="text-sm font-medium text-gray-700">Delete this assessment</p>
-              <p className="text-xs text-gray-400 mt-0.5">Permanently removes it along with all respondents, responses, and discussion notes.</p>
-            </div>
-            <button
-              onClick={onDelete}
-              disabled={deleting}
-              className="shrink-0 text-sm font-medium px-4 py-2 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 disabled:opacity-50 transition-colors"
-            >
-              {deleting ? "Deleting…" : "Delete assessment"}
-            </button>
-          </div>
-        )}
-      </section>
-
-      {/* Links */}
-      <section className="bg-white rounded-xl border border-gray-200 p-6">
-        <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-1">Links to share</h3>
-        <p className="text-xs text-gray-400 mb-4">Copy or open links to the team leader pages.</p>
-        <div className="space-y-3">
-          {/* Status link */}
-          <div className="flex items-center justify-between gap-4">
-            <span className="text-sm text-gray-700 font-medium w-56 shrink-0">STATUS Dashboard</span>
-            {assessment.team_token ? (
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => {
-                    navigator.clipboard.writeText(`${window.location.origin}/team/${assessment.team_token}`);
-                    setCopiedLink('team');
-                    setTimeout(() => setCopiedLink(null), 2000);
-                  }}
-                  className="text-sm text-[#3366FF] hover:text-[#2952CC] font-medium border border-[#a3b8ff] px-3 py-1.5 rounded-lg hover:bg-[#eef2ff] transition-colors"
-                >
-                  {copiedLink === 'team' ? 'Copied!' : 'Copy'}
-                </button>
-                <button
-                  onClick={() => window.open(`${window.location.origin}/team/${assessment.team_token}`, '_blank')}
-                  className="text-sm text-gray-500 hover:text-gray-700 font-medium border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  Open
-                </button>
-              </div>
-            ) : (
-              <button
-                onClick={async () => {
-                  const token = Math.random().toString(36).substring(2, 10) + Math.random().toString(36).substring(2, 10);
-                  const updated = await base44.entities.Assessment.update(assessment.id, { team_token: token });
-                  onUpdate(updated);
-                }}
-                className="text-sm text-[#3366FF] hover:text-[#2952CC] font-medium border border-[#a3b8ff] px-3 py-1.5 rounded-lg hover:bg-[#eef2ff] transition-colors"
-              >
-                Generate
-              </button>
-            )}
-          </div>
-          {/* Report link */}
-          <div className="flex items-center justify-between gap-4">
-            <span className="text-sm text-gray-700 font-medium w-56 shrink-0">REPORT and action plan</span>
-            {assessment.buyer_token ? (
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => {
-                    navigator.clipboard.writeText(`${window.location.origin}/report/${assessment.buyer_token}`);
-                    setCopiedLink('report');
-                    setTimeout(() => setCopiedLink(null), 2000);
-                  }}
-                  className="text-sm text-[#3366FF] hover:text-[#2952CC] font-medium border border-[#a3b8ff] px-3 py-1.5 rounded-lg hover:bg-[#eef2ff] transition-colors"
-                >
-                  {copiedLink === 'report' ? 'Copied!' : 'Copy'}
-                </button>
-                <button
-                  onClick={() => window.open(`${window.location.origin}/report/${assessment.buyer_token}`, '_blank')}
-                  className="text-sm text-gray-500 hover:text-gray-700 font-medium border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  Open
-                </button>
-              </div>
-            ) : (
-              <span className="text-sm text-gray-400 italic">Not available</span>
-            )}
-          </div>
-        </div>
       </section>
 
     </div>
