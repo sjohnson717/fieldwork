@@ -211,6 +211,18 @@ export default function AdminPage() {
               <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest px-3 mb-1.5 mt-5">Settings</p>
               {isAdmin && (
                 <button
+                  onClick={() => setSelectedSection("library")}
+                  className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors text-sm font-medium ${
+                    selectedSection === "library"
+                      ? "bg-blue-50 text-blue-900"
+                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                  }`}
+                >
+                  Library
+                </button>
+              )}
+              {isAdmin && (
+                <button
                   onClick={() => setSelectedSection("organizations")}
                   className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors text-sm font-medium ${
                     selectedSection === "organizations"
@@ -231,18 +243,6 @@ export default function AdminPage() {
               >
                 Facilitators
               </button>
-              {isAdmin && (
-                <button
-                  onClick={() => setSelectedSection("library")}
-                  className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors text-sm font-medium ${
-                    selectedSection === "library"
-                      ? "bg-blue-50 text-blue-900"
-                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                  }`}
-                >
-                  Library
-                </button>
-              )}
             </>
           )}
           <a
