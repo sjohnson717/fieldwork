@@ -145,7 +145,7 @@ export default function TeamPage() {
     setRemovingId(null);
   };
 
-  const inviteRoleOptions = isAdmin ? ["user", "facilitator", "org_admin", "admin"] : ["facilitator"];
+  const inviteRoleOptions = isAdmin ? ["user", "facilitator", "org_admin", "admin"] : ["facilitator", "org_admin"];
   const rowRoleOptions = isAdmin ? ["user", "facilitator", "org_admin", "admin"] : ["facilitator", "org_admin"];
   const orgName = (orgId) => orgs.find(o => o.id === orgId)?.name || "—";
 

@@ -11,6 +11,7 @@ import AssessmentDiscussion from "./admin/AssessmentDiscussion";
 import LibraryPage from "./admin/LibraryPage";
 import DemoDataPage from "./admin/DemoDataPage";
 import TeamPage from "./admin/TeamPage";
+import OrganizationsPage from "./admin/OrganizationsPage";
 
 const NAV_TABS = ["Overview", "Activities", "Ownership Roles", "Results", "Discussion"];
 
@@ -211,6 +212,18 @@ export default function AdminPage() {
               <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest px-3 mb-1.5 mt-5">Settings</p>
               {isAdmin && (
                 <button
+                  onClick={() => setSelectedSection("organizations")}
+                  className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors text-sm font-medium ${
+                    selectedSection === "organizations"
+                      ? "bg-blue-50 text-blue-900"
+                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                  }`}
+                >
+                  Organizations
+                </button>
+              )}
+              {isAdmin && (
+                <button
                   onClick={() => setSelectedSection("library")}
                   className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors text-sm font-medium ${
                     selectedSection === "library"
@@ -331,7 +344,9 @@ export default function AdminPage() {
 
       {/* Main */}
       <div className="flex-1 flex flex-col min-w-0">
-        {selectedSection === "library" ? (
+        {selectedSection === "organizations" ? (
+          <OrganizationsPage />
+        ) : selectedSection === "library" ? (
           <LibraryPage />
         ) : selectedSection === "demo" ? (
           <DemoDataPage />
