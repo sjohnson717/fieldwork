@@ -172,6 +172,57 @@ export default function AdminPage() {
         <div className="flex-1 overflow-y-auto py-3 px-3">
           {/* Assessments section */}
           <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest px-3 mb-1.5 mt-1">Assessments</p>
+
+          {showNewForm ? (
+            <div className="px-3 mb-3 space-y-2">
+              {createError && (
+                <p className="text-xs text-red-500">{createError}</p>
+              )}
+              <input
+                autoFocus
+                type="text"
+                placeholder="Assessment title"
+                value={newTitle}
+                onChange={e => setNewTitle(e.target.value)}
+                onKeyDown={e => e.key === "Enter" && handleCreate()}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <input
+                type="text"
+                placeholder="Company name (optional)"
+                value={newCompany}
+                onChange={e => setNewCompany(e.target.value)}
+                onKeyDown={e => e.key === "Enter" && handleCreate()}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <div className="flex gap-2">
+                <button
+                  onClick={handleCreate}
+                  disabled={creating || !newTitle.trim()}
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-medium py-1.5 rounded-lg transition-colors"
+                >
+                  {creating ? "Creating…" : "Create"}
+                </button>
+                <button
+                  onClick={() => { setShowNewForm(false); setNewTitle(""); setNewCompany(""); setCreateError(""); }}
+                  className="px-3 text-sm text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              onClick={() => setShowNewForm(true)}
+              className="w-full flex items-center gap-2 px-3 py-2 mb-2 text-sm text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              New assessment
+            </button>
+          )}
+
           {loading ? (
             <div className="flex items-center justify-center py-10">
               <div className="w-5 h-5 border-2 border-blue-200 border-t-blue-500 rounded-full animate-spin" />
@@ -275,57 +326,6 @@ export default function AdminPage() {
             Log out
           </button>
           <ActivityLogModal open={showActivityLog} onClose={() => setShowActivityLog(false)} />
-        </div>
-        <div className="p-3 border-t border-gray-100">
-          {showNewForm ? (
-            <div className="space-y-2">
-              {createError && (
-                <p className="text-xs text-red-500">{createError}</p>
-              )}
-              <input
-                autoFocus
-                type="text"
-                placeholder="Assessment title"
-                value={newTitle}
-                onChange={e => setNewTitle(e.target.value)}
-                onKeyDown={e => e.key === "Enter" && handleCreate()}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <input
-                type="text"
-                placeholder="Company name (optional)"
-                value={newCompany}
-                onChange={e => setNewCompany(e.target.value)}
-                onKeyDown={e => e.key === "Enter" && handleCreate()}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <div className="flex gap-2">
-                <button
-                  onClick={handleCreate}
-                  disabled={creating || !newTitle.trim()}
-                  className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-medium py-1.5 rounded-lg transition-colors"
-                >
-                  {creating ? "Creating…" : "Create"}
-                </button>
-                <button
-                  onClick={() => { setShowNewForm(false); setNewTitle(""); setNewCompany(""); setCreateError(""); }}
-                  className="px-3 text-sm text-gray-400 hover:text-gray-600 transition-colors"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          ) : (
-            <button
-              onClick={() => setShowNewForm(true)}
-              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              New assessment
-            </button>
-          )}
         </div>
       </aside>
 
