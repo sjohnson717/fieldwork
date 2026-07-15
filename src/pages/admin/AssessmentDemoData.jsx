@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { getAssignedActivities } from "@/lib/activities";
 
@@ -146,30 +146,13 @@ function generateResponse(activity, respondentTitle, assessmentRoles) {
   };
 }
 
-export default function DemoDataPage() {
-  const [assessments, setAssessments] = useState([]);
-  const [selectedId, setSelectedId] = useState("");
+export default function AssessmentDemoData({ assessment }) {
   const [respondentCount, setRespondentCount] = useState(6);
   const [generating, setGenerating] = useState(false);
   const [progress, setProgress] = useState("");
   const [done, setDone] = useState(false);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => { loadData(); }, []);
-
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      const assmts = await base44.entities.Assessment.list();
-      setAssessments(assmts);
-      if (assmts.length > 0) setSelectedId(assmts[0].id);
-    } catch (e) { console.error(e); }
-    setLoading(false);
-  };
 
   const handleGenerate = async () => {
-    if (!selectedId) return;
-    const assessment = assessments.find(a => a.id === selectedId);
     if (!assessment) return;
 
     setGenerating(true);
@@ -226,114 +209,66 @@ export default function DemoDataPage() {
     setGenerating(false);
   };
 
-  const selected = assessments.find(a => a.id === selectedId);
-
   return (
-    <div className="flex flex-col min-h-0 flex-1">
-      <div className="bg-white border-b border-gray-200 px-8 py-4">
-        <h2 className="text-lg font-bold text-gray-900">Demo Data Generator</h2>
-        <p className="text-sm text-gray-400 mt-0.5">
-          Generate realistic fake respondents and responses for testing. Safe to use on any assessment.
-        </p>
+    <section className="bg-white rounded-xl border border-gray-200 p-6">
+      <div className="mb-4">
+        <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Demo Data</h3>
+        <p className="text-xs text-gray-400 mt-0.5">Generate realistic fake respondents and responses for testing this assessment.</p>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-8 max-w-xl">
-        {loading ? (
-          <div className="flex justify-center py-16">
-            <div className="w-6 h-6 border-2 border-[#a3b8ff] border-t-[#4d80ff] rounded-full animate-spin" />
+      <div className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Number of fake respondents
+          </label>
+          <div className="flex gap-2 flex-wrap">
+            {[3, 5, 6, 8, 10].map(n => (
+              <button
+                key={n}
+                onClick={() => setRespondentCount(n)}
+                className={`px-4 py-1.5 rounded-full text-sm font-medium border transition-colors ${
+                  respondentCount === n
+                    ? "bg-[#3366FF] text-white border-transparent"
+                    : "bg-white text-gray-600 border-gray-300 hover:border-gray-400"
+                }`}
+              >
+                {n}
+              </button>
+            ))}
           </div>
-        ) : (
-          <div className="space-y-6">
+        </div>
 
-            {/* Assessment picker */}
-            <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Assessment</label>
-                <select
-                  value={selectedId}
-                  onChange={e => setSelectedId(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
-                >
-                  {assessments.map(a => (
-                    <option key={a.id} value={a.id}>
-                      {a.title}{a.company_name ? ` — ${a.company_name}` : ""}
-                    </option>
-                  ))}
-                </select>
-              </div>
+        <div className="text-xs text-gray-400 space-y-1">
+          <p>{assessment.activity_ids?.length > 0 ? assessment.activity_ids.length : "All"} activities assigned · {assessment.roles?.length || 0} ownership roles configured</p>
+          {(!assessment.roles || assessment.roles.length === 0) && (
+            <p className="text-amber-500">⚠ No ownership roles set — suggested_owner will be blank. Add roles in the Ownership Roles tab first.</p>
+          )}
+        </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Number of fake respondents
-                </label>
-                <div className="flex gap-2 flex-wrap">
-                  {[3, 5, 6, 8, 10].map(n => (
-                    <button
-                      key={n}
-                      onClick={() => setRespondentCount(n)}
-                      className={`px-4 py-1.5 rounded-full text-sm font-medium border transition-colors ${
-                        respondentCount === n
-                          ? "bg-[#3366FF] text-white border-transparent"
-                          : "bg-white text-gray-600 border-gray-300 hover:border-gray-400"
-                      }`}
-                    >
-                      {n}
-                    </button>
-                  ))}
-                </div>
-              </div>
+        <button
+          onClick={handleGenerate}
+          disabled={generating}
+          className="w-full bg-[#3366FF] hover:bg-[#2952CC] disabled:opacity-50 text-white font-semibold py-3 rounded-xl transition-colors"
+        >
+          {generating ? "Generating…" : `Generate ${respondentCount} respondents`}
+        </button>
 
-              {selected && (
-                <div className="text-xs text-gray-400 space-y-1 pt-1">
-                  <p>{selected.activity_ids?.length > 0 ? selected.activity_ids.length : "All"} activities assigned · {selected.roles?.length || 0} ownership roles configured</p>
-                  {(!selected.roles || selected.roles.length === 0) && (
-                    <p className="text-amber-500">⚠ No ownership roles set — suggested_owner will be blank. Add roles in the assessment Overview first.</p>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* What will be generated */}
-            <div className="bg-gray-50 rounded-xl border border-gray-200 p-5">
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">What gets generated</p>
-              <ul className="text-sm text-gray-600 space-y-1.5">
-                <li>• {respondentCount} respondents with realistic names and job titles</li>
-                <li>• {respondentCount} respondents, responses generated per assigned activity</li>
-                <li>• Biased weights by role (PMs rate DEFINE high, engineers rate CREATE high)</li>
-                <li>• Ownership suggestions weighted toward realistic role assignments</li>
-                <li>• Natural disagreement — same activity rated differently by different roles</li>
-              </ul>
-            </div>
-
-            {/* Generate button */}
-            <button
-              onClick={handleGenerate}
-              disabled={generating || !selectedId}
-              className="w-full bg-[#3366FF] hover:bg-[#2952CC] disabled:opacity-50 text-white font-semibold py-3 rounded-xl transition-colors"
-            >
-              {generating ? "Generating…" : `Generate ${respondentCount} respondents`}
-            </button>
-
-            {/* Progress */}
-            {progress && (
-              <div className={`rounded-xl border px-5 py-4 text-sm ${
-                done
-                  ? "bg-green-50 border-green-200 text-green-800"
-                  : "bg-[#eef2ff] border-[#a3b8ff] text-[#1a2e7a]"
-              }`}>
-                {done && <span className="font-semibold mr-2">✓</span>}
-                {progress}
-                {done && (
-                  <p className="text-xs mt-2 text-green-600">
-                    View results in the assessment's Results tab, or open the report link.
-                  </p>
-                )}
-              </div>
+        {progress && (
+          <div className={`rounded-xl border px-5 py-4 text-sm ${
+            done
+              ? "bg-green-50 border-green-200 text-green-800"
+              : "bg-[#eef2ff] border-[#a3b8ff] text-[#1a2e7a]"
+          }`}>
+            {done && <span className="font-semibold mr-2">✓</span>}
+            {progress}
+            {done && (
+              <p className="text-xs mt-2 text-green-600">
+                View results in the assessment's Results tab, or open the report link.
+              </p>
             )}
-
           </div>
         )}
       </div>
-    </div>
+    </section>
   );
 }

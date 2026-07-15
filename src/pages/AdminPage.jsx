@@ -9,7 +9,6 @@ import AssessmentOwnershipRoles from "./admin/AssessmentOwnershipRoles";
 import AssessmentResults from "./admin/AssessmentResults";
 import AssessmentDiscussion from "./admin/AssessmentDiscussion";
 import LibraryPage from "./admin/LibraryPage";
-import DemoDataPage from "./admin/DemoDataPage";
 import TeamPage from "./admin/TeamPage";
 import OrganizationsPage from "./admin/OrganizationsPage";
 
@@ -222,18 +221,6 @@ export default function AdminPage() {
                   Organizations
                 </button>
               )}
-              {isAdmin && (
-                <button
-                  onClick={() => setSelectedSection("library")}
-                  className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors text-sm font-medium ${
-                    selectedSection === "library"
-                      ? "bg-blue-50 text-blue-900"
-                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                  }`}
-                >
-                  Library
-                </button>
-              )}
               <button
                 onClick={() => setSelectedSection("team")}
                 className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors text-sm font-medium ${
@@ -246,14 +233,14 @@ export default function AdminPage() {
               </button>
               {isAdmin && (
                 <button
-                  onClick={() => setSelectedSection("demo")}
+                  onClick={() => setSelectedSection("library")}
                   className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors text-sm font-medium ${
-                    selectedSection === "demo"
+                    selectedSection === "library"
                       ? "bg-blue-50 text-blue-900"
                       : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                   }`}
                 >
-                  Demo Data
+                  Library
                 </button>
               )}
             </>
@@ -348,8 +335,6 @@ export default function AdminPage() {
           <OrganizationsPage />
         ) : selectedSection === "library" ? (
           <LibraryPage />
-        ) : selectedSection === "demo" ? (
-          <DemoDataPage />
         ) : selectedSection === "team" ? (
           <TeamPage />
         ) : !selected ? (

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
+import AssessmentDemoData from "./AssessmentDemoData";
 
 const STATUS_TRANSITIONS = {
   draft: ["active"],
@@ -413,6 +414,8 @@ export default function AssessmentOverview({ assessment, onUpdate, onDelete, del
           </div>
         )}
       </section>
+
+      <AssessmentDemoData assessment={assessment} />
 
     </div>
   );
