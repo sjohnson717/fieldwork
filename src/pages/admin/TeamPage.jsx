@@ -153,7 +153,7 @@ export default function TeamPage() {
   const pendingCount = invitations.length;
 
   return (
-    <div className="p-8 max-w-3xl space-y-8">
+    <div className="p-8 max-w-5xl space-y-8">
 
       {/* Invite section */}
       <section className="bg-white rounded-xl border border-gray-200 p-6">
@@ -227,6 +227,7 @@ export default function TeamPage() {
         ) : users.length === 0 && invitations.length === 0 ? (
           <p className="text-sm text-gray-400 text-center py-10">No users found.</p>
         ) : (
+          <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="text-xs text-gray-400 uppercase tracking-wide border-b border-gray-100 bg-gray-50">
@@ -328,6 +329,7 @@ export default function TeamPage() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </section>
     </div>
