@@ -71,7 +71,7 @@ function ActivityRow({ activity, stats, note, draftNote, draftDecision, draftRol
           <div className="flex-1 min-w-0">
             <span className="text-sm font-medium text-gray-800">{activity.name}</span>
             {activity.description && (
-              <p className="text-xs text-gray-400 truncate mt-0.5">{activity.description}</p>
+              <p className="text-xs text-gray-400 mt-0.5">{activity.description}</p>
             )}
           </div>
         </div>
