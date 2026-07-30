@@ -162,7 +162,15 @@ to support, and an org-scoped rule would deny them. Denormalising
 So `listRespondents` performs the parent-assessment check server-side, mirroring
 Assessment's own rules, and reads as service role. The public flows get theirs
 from `publicAssessment` the same way. Nothing reads `Respondent` directly from
-the client any more, which is what allows its read rule to be narrowed.
+the client any more, which is what allowed its read rule to be narrowed to
+super-admin only.
+
+`create` and `update` stay open, because `/assess` is unauthenticated and each
+respondent registers themselves. **Unverified:** whether Base44 applies the read
+rule to the record a `create` or `update` call returns. `AssessPage` uses the
+returned record, so if it does, self-registration breaks for everyone who is not
+a super-admin. Walk one respondent through `/assess?code=…` after any deploy
+that touches this rule — a green build proves nothing here.
 
 ## The no-org bucket
 
