@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
+import { getAssignedActivities } from "@/lib/activities";
+import { FACET_ORDER, FACET_SUBTITLES } from "@/lib/scoring";
 
 const PGL_LOGO = "https://static.wixstatic.com/media/739bca_d49790dff653441fae7d036110019dc2~mv2.png";
 
@@ -50,6 +52,13 @@ export default function TeamLeaderPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Activities under review + this team leader's flags, keyed by activity_id
+  const [activities, setActivities] = useState([]);
+  const [flags, setFlags] = useState({});
+  const [draftNotes, setDraftNotes] = useState({});
+  const [savingFlagId, setSavingFlagId] = useState(null);
+  const [flagError, setFlagError] = useState("");
+
   // Invite form
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -75,12 +84,57 @@ export default function TeamLeaderPage() {
         return;
       }
       setAssessment(found);
-      const rList = await base44.entities.Respondent.filter({ assessment_id: found.id });
+      const [rList, acts, flagList] = await Promise.all([
+        base44.entities.Respondent.filter({ assessment_id: found.id }),
+        getAssignedActivities(found),
+        base44.entities.TeamLeaderFlag.filter({ assessment_id: found.id }),
+      ]);
       setRespondents(rList);
+      setActivities(acts);
+      const flagMap = {}, noteMap = {};
+      for (const f of flagList) {
+        flagMap[f.activity_id] = f;
+        noteMap[f.activity_id] = f.note || "";
+      }
+      setFlags(flagMap);
+      setDraftNotes(noteMap);
     } catch (e) {
       setError("Something went wrong loading this page.");
     }
     setLoading(false);
+  };
+
+  // Flags are advisory: the team leader signals which activities are worth
+  // revisiting, and their consultant decides whether to change the set.
+  const saveFlag = async (activityId, { flagged, note }) => {
+    setSavingFlagId(activityId);
+    setFlagError("");
+    try {
+      const existing = flags[activityId];
+      const payload = {
+        assessment_id: assessment.id,
+        activity_id: activityId,
+        flagged,
+        note: note || "",
+      };
+      const saved = existing
+        ? await base44.entities.TeamLeaderFlag.update(existing.id, payload)
+        : await base44.entities.TeamLeaderFlag.create(payload);
+      setFlags(prev => ({ ...prev, [activityId]: saved }));
+    } catch (e) {
+      console.error("Failed to save flag", e);
+      setFlagError(e?.message || "Couldn't save that. Please try again.");
+    }
+    setSavingFlagId(null);
+  };
+
+  const handleToggleFlag = (activityId) => {
+    const isFlagged = !!flags[activityId]?.flagged;
+    saveFlag(activityId, { flagged: !isFlagged, note: draftNotes[activityId] });
+  };
+
+  const handleSaveNote = (activityId) => {
+    saveFlag(activityId, { flagged: true, note: draftNotes[activityId] });
   };
 
   const personalLink = (respondentToken) =>
@@ -238,6 +292,92 @@ export default function TeamLeaderPage() {
                 ))}
               </tbody>
             </table>
+          )}
+        </section>
+
+        {/* Activities under review */}
+        <section className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-100">
+            <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Activities in this assessment</h2>
+            <p className="text-xs text-gray-400 mt-0.5">
+              {activities.length} {activities.length === 1 ? "activity" : "activities"} your team will rate.
+              Flag any you'd like to discuss with your consultant — they'll decide whether to adjust the set.
+            </p>
+          </div>
+
+          {flagError && <p className="text-xs text-red-500 px-6 py-3">{flagError}</p>}
+
+          {activities.length === 0 ? (
+            <p className="text-sm text-gray-400 text-center py-10">No activities have been selected yet.</p>
+          ) : (
+            <div>
+              {FACET_ORDER.map(facet => {
+                const items = activities.filter(a => a.facet === facet);
+                if (items.length === 0) return null;
+                return (
+                  <div key={facet}>
+                    <div className="px-6 py-2.5 bg-gray-50 border-b border-gray-100">
+                      <span className="text-xs font-bold uppercase tracking-widest text-[#3366FF]">{facet}</span>
+                      <span className="text-xs text-gray-400 ml-2">{FACET_SUBTITLES[facet]}</span>
+                    </div>
+                    {items.map(activity => {
+                      const isFlagged = !!flags[activity.id]?.flagged;
+                      const isSaving = savingFlagId === activity.id;
+                      const noteDraft = draftNotes[activity.id] ?? "";
+                      const savedNote = flags[activity.id]?.note || "";
+                      return (
+                        <div key={activity.id} className="px-6 py-4 border-b border-gray-50 last:border-0">
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-gray-800">{activity.name}</p>
+                              {activity.description && (
+                                <p className="text-xs text-gray-500 mt-1 leading-relaxed">{activity.description}</p>
+                              )}
+                            </div>
+                            <button
+                              onClick={() => handleToggleFlag(activity.id)}
+                              disabled={isSaving}
+                              className={`shrink-0 text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors disabled:opacity-50 ${
+                                isFlagged
+                                  ? "border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100"
+                                  : "border-gray-200 text-gray-500 hover:border-gray-300 hover:text-gray-700"
+                              }`}
+                            >
+                              {isSaving ? "Saving…" : isFlagged ? "✓ Flagged" : "Flag for discussion"}
+                            </button>
+                          </div>
+
+                          {isFlagged && (
+                            <div className="mt-3">
+                              <label className="block text-xs font-medium text-gray-500 mb-1.5">
+                                Why? (optional — your consultant will see this)
+                              </label>
+                              <div className="flex gap-2">
+                                <input
+                                  type="text"
+                                  value={noteDraft}
+                                  onChange={e => setDraftNotes(prev => ({ ...prev, [activity.id]: e.target.value }))}
+                                  onKeyDown={e => e.key === "Enter" && handleSaveNote(activity.id)}
+                                  placeholder="e.g. the team is already strong here"
+                                  className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
+                                />
+                                <button
+                                  onClick={() => handleSaveNote(activity.id)}
+                                  disabled={isSaving || noteDraft === savedNote}
+                                  className="shrink-0 text-xs font-medium text-[#3366FF] hover:text-[#2952CC] disabled:opacity-40 px-3 transition-colors"
+                                >
+                                  Save
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })}
+            </div>
           )}
         </section>
       </main>

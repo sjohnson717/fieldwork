@@ -112,10 +112,11 @@ export default function AdminPage() {
         new Promise((_, reject) => setTimeout(() => reject(new Error("Request timed out")), ms))
       ]);
 
-      const [respondents, responses, notes] = await withTimeout(Promise.all([
+      const [respondents, responses, notes, flags] = await withTimeout(Promise.all([
         base44.entities.Respondent.filter({ assessment_id: selected.id }),
         base44.entities.Response.filter({ assessment_id: selected.id }),
         base44.entities.DiscussionNote.filter({ assessment_id: selected.id }),
+        base44.entities.TeamLeaderFlag.filter({ assessment_id: selected.id }),
       ]));
 
       const deleteInBatches = async (items, deleteFn) => {
@@ -128,6 +129,7 @@ export default function AdminPage() {
       await deleteInBatches(responses, id => base44.entities.Response.delete(id));
       await deleteInBatches(respondents, id => base44.entities.Respondent.delete(id));
       await deleteInBatches(notes, id => base44.entities.DiscussionNote.delete(id));
+      await deleteInBatches(flags, id => base44.entities.TeamLeaderFlag.delete(id));
       await withTimeout(base44.entities.Assessment.delete(selected.id));
 
       setAssessments(prev => {

@@ -1,0 +1,36 @@
+{
+  "name": "TeamLeaderFlag",
+  "type": "object",
+  "properties": {
+    "assessment_id": {
+      "type": "string"
+    },
+    "activity_id": {
+      "type": "string"
+    },
+    "flagged": {
+      "type": "boolean",
+      "default": false
+    },
+    "note": {
+      "type": "string",
+      "description": "The team leader's reason for flagging, shown to their consultant."
+    }
+  },
+  "required": [
+    "assessment_id",
+    "activity_id"
+  ],
+  "rls": {
+    "create": {},
+    "read": {},
+    "update": {},
+    "delete": {
+      "$or": [
+        { "user_condition": { "role": "admin" } },
+        { "user_condition": { "role": "org_admin" } },
+        { "user_condition": { "role": "facilitator" } }
+      ]
+    }
+  }
+}

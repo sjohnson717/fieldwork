@@ -68,6 +68,7 @@ export default function AssessmentActivities({ assessment, onUpdate }) {
   const [libraryActivities, setLibraryActivities] = useState([]); // no assessment_id
   const [customActivities, setCustomActivities] = useState([]); // assessment_id = this assessment
   const [jobTitleNames, setJobTitleNames] = useState(new Set());
+  const [teamLeaderFlags, setTeamLeaderFlags] = useState({}); // activity_id -> flag record
   const [loading, setLoading] = useState(true);
 
   // local copy of activity_ids so we can update optimistically
@@ -95,15 +96,19 @@ export default function AssessmentActivities({ assessment, onUpdate }) {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [sets, allActive, titles] = await Promise.all([
+      const [sets, allActive, titles, flagList] = await Promise.all([
         base44.entities.ActivitySet.filter({ active: true }, "sort_order"),
         base44.entities.Activity.filter({ active: true }, "sort_order"),
         base44.entities.JobTitle.filter({ active: true }, "sort_order"),
+        base44.entities.TeamLeaderFlag.filter({ assessment_id: assessment.id }),
       ]);
       setActivitySets(sets);
       setLibraryActivities(allActive.filter(a => !a.assessment_id));
       setCustomActivities(allActive.filter(a => a.assessment_id === assessment.id));
       setJobTitleNames(new Set(titles.map(t => t.name)));
+      const flagMap = {};
+      for (const f of flagList) if (f.flagged) flagMap[f.activity_id] = f;
+      setTeamLeaderFlags(flagMap);
     } catch (e) { console.error(e); }
     setLoading(false);
   };
@@ -277,6 +282,11 @@ export default function AssessmentActivities({ assessment, onUpdate }) {
             {customActivities.length > 0 && (
               <span className="ml-3 text-gray-500">· Custom activities: <span className="font-semibold text-gray-700">{customActivities.length}</span></span>
             )}
+            {Object.keys(teamLeaderFlags).length > 0 && (
+              <span className="ml-3 text-amber-600 font-medium">
+                · ⚑ {Object.keys(teamLeaderFlags).length} flagged by the team leader
+              </span>
+            )}
           </p>
           <div className="flex gap-3">
             <button onClick={handleSelectAll} className="text-xs text-[#3366FF] hover:text-[#2952CC] font-medium transition-colors">
@@ -303,19 +313,35 @@ export default function AssessmentActivities({ assessment, onUpdate }) {
                     {allSelected ? "Deselect all" : "Select all"}
                   </button>
                 </div>
-                {items.map(activity => (
-                  <label key={activity.id} className="flex items-center gap-2.5 cursor-pointer group px-1">
-                    <input
-                      type="checkbox"
-                      checked={selectedSet.has(activity.id)}
-                      onChange={() => handleToggleLibrary(activity.id)}
-                      className="w-3.5 h-3.5 rounded border-gray-300 text-[#3366FF] focus:ring-[#3366FF] cursor-pointer"
-                    />
-                    <span className="text-sm text-gray-700 group-hover:text-gray-900 transition-colors">
-                      {activity.name}
-                    </span>
-                  </label>
-                ))}
+                {items.map(activity => {
+                  const flag = teamLeaderFlags[activity.id];
+                  return (
+                    <div key={activity.id}>
+                      <label className="flex items-center gap-2.5 cursor-pointer group px-1">
+                        <input
+                          type="checkbox"
+                          checked={selectedSet.has(activity.id)}
+                          onChange={() => handleToggleLibrary(activity.id)}
+                          className="w-3.5 h-3.5 rounded border-gray-300 text-[#3366FF] focus:ring-[#3366FF] cursor-pointer"
+                        />
+                        <span className="text-sm text-gray-700 group-hover:text-gray-900 transition-colors">
+                          {activity.name}
+                        </span>
+                        {flag && (
+                          <span
+                            title="The team leader flagged this for discussion"
+                            className="text-[10px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded shrink-0"
+                          >
+                            ⚑ Team leader flagged
+                          </span>
+                        )}
+                      </label>
+                      {flag?.note && (
+                        <p className="text-xs text-amber-700 italic ml-7 mt-0.5 mb-1">"{flag.note}"</p>
+                      )}
+                    </div>
+                  );
+                })}
               </FacetGroup>
             );
           })}
