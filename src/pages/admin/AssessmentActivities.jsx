@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 const FACET_ORDER = ["DEFINE", "COMMIT", "DESCRIBE", "CREATE", "PREPARE", "DELIVER"];
 
@@ -85,6 +86,11 @@ export default function AssessmentActivities({ assessment, onUpdate }) {
   const [adding, setAdding] = useState(false);
   const [customError, setCustomError] = useState("");
 
+  // Confirmation targets: the preset waiting to replace the current selection,
+  // and the custom activity waiting to be deleted.
+  const [pendingPreset, setPendingPreset] = useState(null);
+  const [deletingCustom, setDeletingCustom] = useState(null);
+
   useEffect(() => {
     setActivityIds(assessment.activity_ids || []);
   }, [assessment.id]);
@@ -129,9 +135,7 @@ export default function AssessmentActivities({ assessment, onUpdate }) {
   // ── Preset (ActivitySet) ────────────────────────────────────────────────────
 
   const handleApplyPreset = async (set) => {
-    if (activityIds.length > 0) {
-      if (!confirm(`Replace current selection (${activityIds.length} activities) with the "${set.name}" preset?`)) return;
-    }
+    setPendingPreset(null);
     const newIds = set.activity_ids || [];
 
     // Derive preferred_owner values from the preset's activities
@@ -197,7 +201,7 @@ export default function AssessmentActivities({ assessment, onUpdate }) {
   };
 
   const handleDeleteCustom = async (id) => {
-    if (!confirm("Delete this custom activity? This cannot be undone.")) return;
+    setDeletingCustom(null);
     setCustomError("");
     try {
       await base44.entities.Activity.delete(id);
@@ -260,7 +264,7 @@ export default function AssessmentActivities({ assessment, onUpdate }) {
             {activitySets.map(set => (
               <button
                 key={set.id}
-                onClick={() => handleApplyPreset(set)}
+                onClick={() => activityIds.length > 0 ? setPendingPreset(set) : handleApplyPreset(set)}
                 className="text-sm font-medium px-3 py-1.5 rounded-lg border border-[#a3b8ff] text-[#3366FF] hover:bg-[#eef2ff] transition-colors"
               >
                 {set.name}
@@ -366,7 +370,7 @@ export default function AssessmentActivities({ assessment, onUpdate }) {
                             Edit
                           </button>
                           <button
-                            onClick={() => handleDeleteCustom(activity.id)}
+                            onClick={() => setDeletingCustom(activity)}
                             className="text-xs text-gray-300 hover:text-red-400 transition-colors"
                           >
                             Delete
@@ -525,6 +529,25 @@ export default function AssessmentActivities({ assessment, onUpdate }) {
           })}
         </div>
       </div>
+
+      <ConfirmDialog
+        open={!!pendingPreset}
+        title={`Apply the "${pendingPreset?.name}" preset?`}
+        message={`This replaces the current selection of ${activityIds.length} ${activityIds.length === 1 ? "activity" : "activities"}. Custom activities are unaffected.`}
+        confirmLabel="Apply preset"
+        onConfirm={() => handleApplyPreset(pendingPreset)}
+        onCancel={() => setPendingPreset(null)}
+      />
+
+      <ConfirmDialog
+        open={!!deletingCustom}
+        destructive
+        title="Delete this custom activity?"
+        message={`"${deletingCustom?.name}" will be permanently removed from this assessment. This cannot be undone.`}
+        confirmLabel="Delete"
+        onConfirm={() => handleDeleteCustom(deletingCustom.id)}
+        onCancel={() => setDeletingCustom(null)}
+      />
     </div>
   );
 }

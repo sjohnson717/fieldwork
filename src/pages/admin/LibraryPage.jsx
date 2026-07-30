@@ -3,6 +3,7 @@ import { base44 } from "@/api/base44Client";
 import ActivitySetsTab from "./ActivitySetsTab";
 import { FACET_ORDER } from "@/lib/scoring";
 import DraggableList from "@/components/DraggableList";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 // ── Typeahead owner input ─────────────────────────────────────────────────────
 
@@ -115,8 +116,10 @@ function ActivitiesTab() {
     } catch (e) { console.error(e); }
   };
 
+  const [deletingActivity, setDeletingActivity] = useState(null);
+
   const handleDelete = async (id) => {
-    if (!confirm("Delete this activity? This cannot be undone.")) return;
+    setDeletingActivity(null);
     try {
       await base44.entities.Activity.delete(id);
       setActivities(prev => prev.filter(a => a.id !== id));
@@ -318,7 +321,7 @@ function ActivitiesTab() {
                     className="text-xs text-gray-400 hover:text-gray-700 transition-colors">
                     {activity.active ? "Disable" : "Enable"}
                   </button>
-                  <button onClick={() => handleDelete(activity.id)}
+                  <button onClick={() => setDeletingActivity(activity)}
                     className="text-xs text-gray-300 hover:text-red-400 transition-colors">
                     Delete
                   </button>
@@ -387,6 +390,16 @@ function ActivitiesTab() {
           Add activity
         </button>
       )}
+
+      <ConfirmDialog
+        open={!!deletingActivity}
+        destructive
+        title="Delete this activity?"
+        message={`"${deletingActivity?.name}" will be removed from the library. Assessments that already reference it keep their own copy of the selection. This cannot be undone.`}
+        confirmLabel="Delete"
+        onConfirm={() => handleDelete(deletingActivity.id)}
+        onCancel={() => setDeletingActivity(null)}
+      />
     </div>
   );
 }
@@ -441,8 +454,10 @@ function JobTitlesTab() {
     } catch (e) { console.error(e); }
   };
 
+  const [deletingTitle, setDeletingTitle] = useState(null);
+
   const handleDelete = async (id) => {
-    if (!confirm("Delete this job title? This cannot be undone.")) return;
+    setDeletingTitle(null);
     try {
       await base44.entities.JobTitle.delete(id);
       setTitles(prev => prev.filter(t => t.id !== id));
@@ -519,7 +534,7 @@ function JobTitlesTab() {
                     className="text-xs text-gray-400 hover:text-gray-700 transition-colors">
                     {title.active ? "Disable" : "Enable"}
                   </button>
-                  <button onClick={() => handleDelete(title.id)}
+                  <button onClick={() => setDeletingTitle(title)}
                     className="text-xs text-gray-300 hover:text-red-400 transition-colors">
                     Delete
                   </button>
@@ -556,6 +571,16 @@ function JobTitlesTab() {
           Add job title
         </button>
       )}
+
+      <ConfirmDialog
+        open={!!deletingTitle}
+        destructive
+        title="Delete this job title?"
+        message={`"${deletingTitle?.name}" will be removed from the list. Activities that name it as their recommended owner will show as having an unknown owner. This cannot be undone.`}
+        confirmLabel="Delete"
+        onConfirm={() => handleDelete(deletingTitle.id)}
+        onCancel={() => setDeletingTitle(null)}
+      />
     </div>
   );
 }

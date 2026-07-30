@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { FACET_ORDER } from "@/lib/scoring";
 import DraggableList from "@/components/DraggableList";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 // ── Activity checklist inside an expanded set ─────────────────────────────────
 
@@ -144,8 +145,10 @@ export default function ActivitySetsTab() {
     } catch (e) { console.error(e); }
   };
 
+  const [deletingSet, setDeletingSet] = useState(null);
+
   const handleDelete = async (id) => {
-    if (!confirm("Delete this activity set? This cannot be undone.")) return;
+    setDeletingSet(null);
     try {
       await base44.entities.ActivitySet.delete(id);
       setSets(prev => prev.filter(s => s.id !== id));
@@ -258,7 +261,7 @@ export default function ActivitySetsTab() {
                           {set.active ? "Disable" : "Enable"}
                         </button>
                         <button
-                          onClick={() => handleDelete(set.id)}
+                          onClick={() => setDeletingSet(set)}
                           className="text-xs text-gray-300 hover:text-red-400 transition-colors"
                         >
                           Delete
@@ -321,6 +324,16 @@ export default function ActivitySetsTab() {
           Add activity set
         </button>
       )}
+
+      <ConfirmDialog
+        open={!!deletingSet}
+        destructive
+        title="Delete this activity set?"
+        message={`"${deletingSet?.name}" will no longer be offered as a preset. Assessments already using it keep their activities. This cannot be undone.`}
+        confirmLabel="Delete"
+        onConfirm={() => handleDelete(deletingSet.id)}
+        onCancel={() => setDeletingSet(null)}
+      />
     </div>
   );
 }

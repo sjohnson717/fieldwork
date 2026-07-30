@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
 import { roleLabel, assignableRoles, sameOrg, NO_ACCESS_ROLE } from "@/lib/roles";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 export default function TeamPage({ orgFilter = null, onClearOrgFilter, onBackToOrganizations }) {
   const { user: currentUser } = useAuth();
@@ -151,9 +152,12 @@ export default function TeamPage({ orgFilter = null, onClearOrgFilter, onBackToO
     setUpdatingId(null);
   };
 
+  const [revokingUser, setRevokingUser] = useState(null);
+  const [revokingInvite, setRevokingInvite] = useState(null);
+
   const handleRevokeAccess = async (user) => {
     if (user.id === currentUser.id) return;
-    if (!confirm(`Revoke access for ${user.full_name || user.email}? They'll lose their role and organization membership.`)) return;
+    setRevokingUser(null);
     setRemovingId(user.id);
     setLoadError("");
     try {
@@ -167,7 +171,7 @@ export default function TeamPage({ orgFilter = null, onClearOrgFilter, onBackToO
   };
 
   const handleRevokeInvite = async (invitation) => {
-    if (!confirm(`Revoke invitation for ${invitation.email}?`)) return;
+    setRevokingInvite(null);
     setRemovingId(invitation.id);
     try {
       await base44.entities.Invitation.update(invitation.id, { status: "revoked" });
@@ -353,7 +357,7 @@ export default function TeamPage({ orgFilter = null, onClearOrgFilter, onBackToO
                     <td className="px-4 py-3 text-right">
                       {!isSelf && (
                         <button
-                          onClick={() => handleRevokeAccess(u)}
+                          onClick={() => setRevokingUser(u)}
                           disabled={isRemoving}
                           className="text-xs text-gray-300 hover:text-red-400 disabled:opacity-40 transition-colors font-medium"
                         >
@@ -381,7 +385,7 @@ export default function TeamPage({ orgFilter = null, onClearOrgFilter, onBackToO
                   </td>
                   <td className="px-4 py-3 text-right">
                     <button
-                      onClick={() => handleRevokeInvite(inv)}
+                      onClick={() => setRevokingInvite(inv)}
                       disabled={removingId === inv.id}
                       className="text-xs text-gray-300 hover:text-red-400 disabled:opacity-40 transition-colors font-medium"
                     >
@@ -395,6 +399,26 @@ export default function TeamPage({ orgFilter = null, onClearOrgFilter, onBackToO
           </div>
         )}
       </section>
+
+      <ConfirmDialog
+        open={!!revokingUser}
+        destructive
+        title="Revoke access?"
+        message={`${revokingUser?.full_name || revokingUser?.email} will lose their role and organization membership, and will no longer see any assessment. Their account itself is not deleted.`}
+        confirmLabel="Revoke access"
+        onConfirm={() => handleRevokeAccess(revokingUser)}
+        onCancel={() => setRevokingUser(null)}
+      />
+
+      <ConfirmDialog
+        open={!!revokingInvite}
+        destructive
+        title="Revoke this invitation?"
+        message={`The pending invitation for ${revokingInvite?.email} will no longer be accepted. You can invite them again later.`}
+        confirmLabel="Revoke invitation"
+        onConfirm={() => handleRevokeInvite(revokingInvite)}
+        onCancel={() => setRevokingInvite(null)}
+      />
     </div>
   );
 }

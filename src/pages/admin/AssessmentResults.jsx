@@ -3,6 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { getAssignedActivities } from "@/lib/activities";
 import { listRespondents } from "@/lib/public-assessment";
 import { FACET_ORDER, IMPORTANCE_SCORE, EXECUTION_SCORE, avg, fmt } from "@/lib/scoring";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 // Gap = high importance, low execution = most actionable
 const gapScore = (imp, exec) => {
@@ -56,8 +57,10 @@ export default function AssessmentResults({ assessment }) {
     loadData();
   }, [assessment.id]);
 
+  const [removingRespondent, setRemovingRespondent] = useState(null);
+
   const handleDeleteRespondent = async (id) => {
-    if (!confirm("Remove this respondent and their responses?")) return;
+    setRemovingRespondent(null);
     try {
       const resps = await base44.entities.Response.filter({ respondent_id: id });
       for (const r of resps) await base44.entities.Response.delete(r.id);
@@ -231,7 +234,7 @@ export default function AssessmentResults({ assessment }) {
                     </td>
                     <td className="py-2.5 pl-2 text-right flex items-center justify-end gap-3">
                       <button
-                        onClick={() => handleDeleteRespondent(r.id)}
+                        onClick={() => setRemovingRespondent(r)}
                         className={`text-xs transition-colors ${isEmpty ? "text-red-300 hover:text-red-500 font-medium" : "text-gray-300 hover:text-red-400"}`}
                       >
                         Remove
@@ -575,6 +578,16 @@ export default function AssessmentResults({ assessment }) {
           </div>
         );
       })()}
+
+      <ConfirmDialog
+        open={!!removingRespondent}
+        destructive
+        title="Remove this respondent?"
+        message={`${removingRespondent?.name || "This respondent"} and all of their responses will be permanently removed. This cannot be undone.`}
+        confirmLabel="Remove"
+        onConfirm={() => handleDeleteRespondent(removingRespondent.id)}
+        onCancel={() => setRemovingRespondent(null)}
+      />
     </div>
   );
 }
