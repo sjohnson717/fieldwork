@@ -6,7 +6,7 @@ import DraggableList from "@/components/DraggableList";
 
 // ── Typeahead owner input ─────────────────────────────────────────────────────
 
-function OwnerTypeahead({ value, onChange, jobTitleNames }) {
+function OwnerTypeahead({ value, onChange, jobTitleNames, placeholder = "Optional" }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
@@ -28,7 +28,7 @@ function OwnerTypeahead({ value, onChange, jobTitleNames }) {
         value={value}
         onChange={e => { onChange(e.target.value); setOpen(true); }}
         onFocus={() => setOpen(true)}
-        placeholder="Optional"
+        placeholder={placeholder}
         className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
       />
       {open && suggestions.length > 0 && (
@@ -365,6 +365,7 @@ function ActivitiesTab() {
                 value={newItem.preferred_owner}
                 onChange={val => setNewItem(d => ({ ...d, preferred_owner: val }))}
                 jobTitleNames={jobTitleNames}
+                placeholder="Preferred owner (optional)"
               />
             </div>
           </div>

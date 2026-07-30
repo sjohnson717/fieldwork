@@ -5,7 +5,7 @@ const FACET_ORDER = ["DEFINE", "COMMIT", "DESCRIBE", "CREATE", "PREPARE", "DELIV
 
 // ── OwnerTypeahead (same pattern as LibraryPage) ──────────────────────────────
 
-function OwnerTypeahead({ value, onChange, jobTitleNames }) {
+function OwnerTypeahead({ value, onChange, jobTitleNames, placeholder = "Preferred owner (optional)" }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   const suggestions = value.trim()
@@ -26,7 +26,7 @@ function OwnerTypeahead({ value, onChange, jobTitleNames }) {
         value={value}
         onChange={e => { onChange(e.target.value); setOpen(true); }}
         onFocus={() => setOpen(true)}
-        placeholder="Optional"
+        placeholder={placeholder}
         className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
       />
       {open && suggestions.length > 0 && (
@@ -271,83 +271,6 @@ export default function AssessmentActivities({ assessment, onUpdate }) {
         </div>
       )}
 
-      {/* ── Library checklist ── */}
-      <div>
-        <div className="flex items-center justify-between mb-2">
-          <p className="text-xs font-medium text-gray-500">
-            Library activities
-            <span className="ml-2 font-semibold text-gray-700">
-              {activityIds.length} of {libraryActivities.length} selected
-            </span>
-            {customActivities.length > 0 && (
-              <span className="ml-3 text-gray-500">· Custom activities: <span className="font-semibold text-gray-700">{customActivities.length}</span></span>
-            )}
-            {Object.keys(teamLeaderFlags).length > 0 && (
-              <span className="ml-3 text-amber-600 font-medium">
-                · ⚑ {Object.keys(teamLeaderFlags).length} flagged by the team leader
-              </span>
-            )}
-          </p>
-          <div className="flex gap-3">
-            <button onClick={handleSelectAll} className="text-xs text-[#3366FF] hover:text-[#2952CC] font-medium transition-colors">
-              Select all
-            </button>
-            <span className="text-gray-200">·</span>
-            <button onClick={handleDeselectAll} className="text-xs text-gray-400 hover:text-gray-600 font-medium transition-colors">
-              Deselect all
-            </button>
-          </div>
-        </div>
-
-        <div className="space-y-4">
-          {byFacetLibrary.map(({ facet, items }) => {
-            const allSelected = items.every(a => selectedSet.has(a.id));
-            return (
-              <FacetGroup key={facet} facet={facet}>
-                <div className="flex items-center justify-between mb-1">
-                  <span />
-                  <button
-                    onClick={() => handleFacetSelect(items, !allSelected)}
-                    className="text-[10px] text-gray-400 hover:text-[#3366FF] font-medium transition-colors"
-                  >
-                    {allSelected ? "Deselect all" : "Select all"}
-                  </button>
-                </div>
-                {items.map(activity => {
-                  const flag = teamLeaderFlags[activity.id];
-                  return (
-                    <div key={activity.id}>
-                      <label className="flex items-center gap-2.5 cursor-pointer group px-1">
-                        <input
-                          type="checkbox"
-                          checked={selectedSet.has(activity.id)}
-                          onChange={() => handleToggleLibrary(activity.id)}
-                          className="w-3.5 h-3.5 rounded border-gray-300 text-[#3366FF] focus:ring-[#3366FF] cursor-pointer"
-                        />
-                        <span className="text-sm text-gray-700 group-hover:text-gray-900 transition-colors">
-                          {activity.name}
-                        </span>
-                        {flag && (
-                          <span
-                            title="The team leader flagged this for discussion"
-                            className="text-[10px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded shrink-0"
-                          >
-                            ⚑ Team leader flagged
-                          </span>
-                        )}
-                      </label>
-                      {flag?.note && (
-                        <p className="text-xs text-amber-700 italic ml-7 mt-0.5 mb-1">"{flag.note}"</p>
-                      )}
-                    </div>
-                  );
-                })}
-              </FacetGroup>
-            );
-          })}
-        </div>
-      </div>
-
       {/* ── Custom activities ── */}
       <div>
         <p className="text-xs font-medium text-gray-500 mb-2">
@@ -524,6 +447,83 @@ export default function AssessmentActivities({ assessment, onUpdate }) {
             Add custom activity
           </button>
         )}
+      </div>
+
+      {/* ── Library checklist ── */}
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-xs font-medium text-gray-500">
+            Library activities
+            <span className="ml-2 font-semibold text-gray-700">
+              {activityIds.length} of {libraryActivities.length} selected
+            </span>
+            {customActivities.length > 0 && (
+              <span className="ml-3 text-gray-500">· Custom activities: <span className="font-semibold text-gray-700">{customActivities.length}</span></span>
+            )}
+            {Object.keys(teamLeaderFlags).length > 0 && (
+              <span className="ml-3 text-amber-600 font-medium">
+                · ⚑ {Object.keys(teamLeaderFlags).length} flagged by the team leader
+              </span>
+            )}
+          </p>
+          <div className="flex gap-3">
+            <button onClick={handleSelectAll} className="text-xs text-[#3366FF] hover:text-[#2952CC] font-medium transition-colors">
+              Select all
+            </button>
+            <span className="text-gray-200">·</span>
+            <button onClick={handleDeselectAll} className="text-xs text-gray-400 hover:text-gray-600 font-medium transition-colors">
+              Deselect all
+            </button>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          {byFacetLibrary.map(({ facet, items }) => {
+            const allSelected = items.every(a => selectedSet.has(a.id));
+            return (
+              <FacetGroup key={facet} facet={facet}>
+                <div className="flex items-center justify-between mb-1">
+                  <span />
+                  <button
+                    onClick={() => handleFacetSelect(items, !allSelected)}
+                    className="text-[10px] text-gray-400 hover:text-[#3366FF] font-medium transition-colors"
+                  >
+                    {allSelected ? "Deselect all" : "Select all"}
+                  </button>
+                </div>
+                {items.map(activity => {
+                  const flag = teamLeaderFlags[activity.id];
+                  return (
+                    <div key={activity.id}>
+                      <label className="flex items-center gap-2.5 cursor-pointer group px-1">
+                        <input
+                          type="checkbox"
+                          checked={selectedSet.has(activity.id)}
+                          onChange={() => handleToggleLibrary(activity.id)}
+                          className="w-3.5 h-3.5 rounded border-gray-300 text-[#3366FF] focus:ring-[#3366FF] cursor-pointer"
+                        />
+                        <span className="text-sm text-gray-700 group-hover:text-gray-900 transition-colors">
+                          {activity.name}
+                        </span>
+                        {flag && (
+                          <span
+                            title="The team leader flagged this for discussion"
+                            className="text-[10px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded shrink-0"
+                          >
+                            ⚑ Team leader flagged
+                          </span>
+                        )}
+                      </label>
+                      {flag?.note && (
+                        <p className="text-xs text-amber-700 italic ml-7 mt-0.5 mb-1">"{flag.note}"</p>
+                      )}
+                    </div>
+                  );
+                })}
+              </FacetGroup>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
