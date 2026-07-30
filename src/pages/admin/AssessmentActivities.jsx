@@ -5,7 +5,7 @@ const FACET_ORDER = ["DEFINE", "COMMIT", "DESCRIBE", "CREATE", "PREPARE", "DELIV
 
 // ── OwnerTypeahead (same pattern as LibraryPage) ──────────────────────────────
 
-function OwnerTypeahead({ value, onChange, jobTitleNames, placeholder = "Preferred owner (optional)" }) {
+function OwnerTypeahead({ value, onChange, jobTitleNames, placeholder = "Recommended owner (optional)" }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   const suggestions = value.trim()

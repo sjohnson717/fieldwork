@@ -148,7 +148,7 @@ function ActivitiesTab() {
 
   const handleExportCSV = () => {
     const rows = [
-      ["Facet", "Activity", "Description", "Preferred Owner", "Active"],
+      ["Facet", "Activity", "Description", "Recommended Owner", "Active"],
       ...activities.map(a => [
         a.facet,
         a.name,
@@ -259,7 +259,7 @@ function ActivitiesTab() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-500 mb-1">Preferred owner</label>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">Recommended owner</label>
                     <OwnerTypeahead
                       value={editDraft.preferred_owner}
                       onChange={val => setEditDraft(d => ({ ...d, preferred_owner: val }))}
@@ -295,7 +295,7 @@ function ActivitiesTab() {
                     </span>
                     {activity.preferred_owner && !jobTitleNames.has(activity.preferred_owner) && (
                       <span
-                        title={`Preferred owner "${activity.preferred_owner}" is not in the Job Titles list`}
+                        title={`Recommended owner "${activity.preferred_owner}" is not in the Job Titles list`}
                         className="flex items-center gap-1 text-[10px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded shrink-0"
                       >
                         <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -365,7 +365,7 @@ function ActivitiesTab() {
                 value={newItem.preferred_owner}
                 onChange={val => setNewItem(d => ({ ...d, preferred_owner: val }))}
                 jobTitleNames={jobTitleNames}
-                placeholder="Preferred owner (optional)"
+                placeholder="Recommended owner (optional)"
               />
             </div>
           </div>
