@@ -36,10 +36,23 @@ Deno.serve(async (req) => {
     const pending = await base44.asServiceRole.entities.Invitation.filter({
       status: "pending",
     });
-    const invitation = pending.find((inv) => (inv.email || "").toLowerCase() === email);
+    const mine = pending
+      .filter((inv) => (inv.email || "").toLowerCase() === email)
+      // Newest wins. An address can accumulate several pending invitations
+      // (re-invited, or invited to a different org), and picking arbitrarily
+      // would make the granted role non-deterministic — including the case
+      // where an older "admin" invitation beats the intended one.
+      .sort((a, b) => String(b.created_date || "").localeCompare(String(a.created_date || "")));
 
+    const invitation = mine[0];
     if (!invitation) {
       return Response.json({ applied: false, reason: "no pending invitation" });
+    }
+
+    // Supersede any older pending invitations for this address so they can
+    // never be applied later.
+    for (const stale of mine.slice(1)) {
+      await base44.asServiceRole.entities.Invitation.update(stale.id, { status: "revoked" });
     }
 
     const updates: Record<string, unknown> = {};

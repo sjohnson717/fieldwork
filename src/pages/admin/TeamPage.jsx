@@ -93,6 +93,12 @@ export default function TeamPage({ orgFilter = null, onClearOrgFilter, onBackToO
       // applies it when they first sign in.
       const platformRole = inviteRole === "admin" ? "admin" : "user";
       await base44.users.inviteUser(email, platformRole);
+      // Retire any earlier pending invitation for this address first, so one
+      // address never has two live invitations naming different roles.
+      const existing = await base44.entities.Invitation.filter({ status: "pending" });
+      for (const inv of existing.filter(i => (i.email || "").toLowerCase() === email.toLowerCase())) {
+        await base44.entities.Invitation.update(inv.id, { status: "revoked" });
+      }
       await base44.entities.Invitation.create({ email, role: inviteRole, status: "pending", org_id: orgId || undefined });
       setInviteSuccess(`Invite sent to ${email}.`);
       setInviteEmail("");
