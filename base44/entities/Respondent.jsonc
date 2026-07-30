@@ -14,18 +14,9 @@
     "token": {
       "type": "string"
     },
-    "role": {
-      "type": "string",
-      "enum": [
-        "user",
-        "team_leader"
-      ],
-      "default": "user"
-    },
     "status": {
       "type": "string",
       "enum": [
-        "invited",
         "started",
         "completed"
       ],

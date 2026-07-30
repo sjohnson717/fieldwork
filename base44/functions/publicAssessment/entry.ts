@@ -86,16 +86,28 @@ Deno.serve(async (req) => {
       case "team": {
         const a = assessments.find((x) => x.team_token && x.team_token === token);
         if (!a) return notFound();
-        const respondents = await svc.Respondent.filter({ assessment_id: a.id });
+        const [respondents, responses] = await Promise.all([
+          svc.Respondent.filter({ assessment_id: a.id }),
+          svc.Response.filter({ assessment_id: a.id }),
+        ]);
+        // Answer counts distinguish "signed in but hasn't answered anything"
+        // from "actually working through it". Derived rather than stored, so
+        // it cannot drift out of step with the responses themselves.
+        const answers = {};
+        for (const r of responses) {
+          if (r.importance || r.execution || r.suggested_owner) {
+            answers[r.respondent_id] = (answers[r.respondent_id] || 0) + 1;
+          }
+        }
         return Response.json({
           assessment: shape(a, ["access_code"]),
           respondents: respondents.map((r) => ({
             id: r.id,
             name: r.name,
             title: r.title || null,
-            role: r.role || "user",
             token: r.token,
             status: r.status,
+            answer_count: answers[r.id] || 0,
             completed_date: r.completed_date || null,
             created_date: r.created_date,
           })),

@@ -123,6 +123,13 @@ the point: a team leader never receives the buyer's report token, a buyer never
 receives the access code, and a respondent receives no tokens at all. Failures
 return a uniform `not_found` so a caller cannot probe which tokens exist.
 
+Respondents are **self-registering**: the team leader broadcasts one
+`/assess?code=…` link, and a Respondent row is created when each person enters
+their name and job title. Nobody is pre-added, so there is no "invited" state —
+a row exists only once someone has actually signed in. "In progress" is derived
+from whether they have answered anything, not stored, so it cannot drift out of
+step with the responses.
+
 Token strength matters here. `buyer_token`, `team_token` and the per-respondent
 token are `crypto.randomUUID()`. `access_code` is deliberately short so it can
 be read aloud to a room — treat it as a convenience credential, not a secret.

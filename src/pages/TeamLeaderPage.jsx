@@ -7,7 +7,10 @@ import { FACET_ORDER, FACET_SUBTITLES } from "@/lib/scoring";
 
 const PGL_LOGO = "https://static.wixstatic.com/media/739bca_d49790dff653441fae7d036110019dc2~mv2.png";
 
-function statusBadge(status) {
+// "In progress" means they have actually answered something. Signing in and
+// stopping is a different, useful signal — it says the link works and they
+// haven't engaged, rather than that they're partway through.
+function statusBadge(status, answerCount = 0) {
   if (status === "completed") {
     return (
       <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-green-50 text-green-600 border border-green-200">
@@ -15,7 +18,7 @@ function statusBadge(status) {
       </span>
     );
   }
-  if (status === "started") {
+  if (answerCount > 0) {
     return (
       <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 border border-amber-200">
         In progress
@@ -24,7 +27,7 @@ function statusBadge(status) {
   }
   return (
     <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 border border-gray-200">
-      Invited
+      Started
     </span>
   );
 }
@@ -60,12 +63,6 @@ export default function TeamLeaderPage() {
   const [savingFlagId, setSavingFlagId] = useState(null);
   const [flagError, setFlagError] = useState("");
 
-  // Invite form
-  const [name, setName] = useState("");
-  const [role, setRole] = useState("user");
-  const [submitting, setSubmitting] = useState(false);
-  const [lastLink, setLastLink] = useState(null);
-  const [formError, setFormError] = useState("");
 
   useEffect(() => {
     if (token) loadPage();
@@ -141,26 +138,9 @@ export default function TeamLeaderPage() {
   const personalLink = (respondentToken) =>
     `${window.location.origin}/assess?code=${assessment.access_code}&t=${respondentToken}`;
 
-  const handleInvite = async () => {
-    setFormError("");
-    if (!name.trim()) return setFormError("Please enter a name.");
-    setSubmitting(true);
-    const respondentToken = crypto.randomUUID();
-    const created = await base44.entities.Respondent.create({
-      assessment_id: assessment.id,
-      name: name.trim(),
-      role,
-      token: respondentToken,
-      status: "invited",
-    });
-    setLastLink(personalLink(respondentToken));
-    setName("");
-    setRole("user");
-    setSubmitting(false);
-    // Refresh roster through the same server-side view.
-    const view = await getTeamLeaderView(token);
-    setRespondents(view?.respondents || []);
-  };
+  // The one link that goes to the whole team; people self-register with it.
+  const teamAssessmentLink = `${window.location.origin}/assess?code=${assessment.access_code}`;
+  const thisPageLink = `${window.location.origin}/team/${token}`;
 
   if (loading) {
     return (
@@ -199,52 +179,31 @@ export default function TeamLeaderPage() {
           <p className="text-sm text-gray-400 mt-1">Manage your team's participation in this assessment.</p>
         </div>
 
-        {/* Invite form */}
-        <section className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-          <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-1">Invite a team member</h2>
-          <p className="text-xs text-gray-400 mb-4">Create a personal assessment link for each participant, then send it to them yourself.</p>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3 items-start">
-            <input
-              type="text"
-              placeholder="Full name"
-              value={name}
-              onChange={e => setName(e.target.value)}
-              className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
-            />
-            <div>
-              <select
-                value={role}
-                onChange={e => setRole(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3366FF] bg-white"
-              >
-                <option value="user">Team member</option>
-                <option value="team_leader">Team leader</option>
-              </select>
-              <p className="text-xs text-gray-400 mt-1.5">
-                {role === "team_leader"
-                  ? "Completes the assessment and can also access this page to invite others and check the team's status."
-                  : "Completes the assessment. Won't have access to this page."}
-              </p>
+        {/* Sharing */}
+        <section className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5">
+          <div>
+            <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-1">Send this to your team</h2>
+            <p className="text-xs text-gray-400 mb-3">
+              One link for everyone. Each person enters their name and job title when they open it,
+              and appears below as soon as they do.
+            </p>
+            <div className="flex items-center gap-3 bg-[#eef2ff] border border-[#a3b8ff] rounded-lg px-4 py-3">
+              <p className="text-xs text-[#2952CC] font-mono flex-1 truncate">{teamAssessmentLink}</p>
+              <CopyButton text={teamAssessmentLink} />
             </div>
           </div>
 
-          {formError && <p className="text-red-500 text-xs mb-3">{formError}</p>}
-
-          <button
-            onClick={handleInvite}
-            disabled={submitting}
-            className="bg-[#3366FF] hover:bg-[#2952CC] disabled:opacity-50 text-white text-sm font-medium px-5 py-2 rounded-lg transition-colors"
-          >
-            {submitting ? "Creating…" : "Create link"}
-          </button>
-
-          {lastLink && (
-            <div className="mt-4 flex items-center gap-3 bg-[#eef2ff] border border-[#a3b8ff] rounded-lg px-4 py-3">
-              <p className="text-xs text-[#2952CC] font-mono flex-1 truncate">{lastLink}</p>
-              <CopyButton text={lastLink} />
+          <div className="border-t border-gray-100 pt-5">
+            <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-1">Add a co-leader</h2>
+            <p className="text-xs text-gray-400 mb-3">
+              Share this page with someone else who should watch the team's progress. Anyone with
+              this link can see it, so treat it as confidential.
+            </p>
+            <div className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-lg px-4 py-3">
+              <p className="text-xs text-gray-500 font-mono flex-1 truncate">{thisPageLink}</p>
+              <CopyButton text={thisPageLink} />
             </div>
-          )}
+          </div>
         </section>
 
         {/* Roster */}
@@ -255,13 +214,12 @@ export default function TeamLeaderPage() {
           </div>
 
           {respondents.length === 0 ? (
-            <p className="text-sm text-gray-400 text-center py-10">No participants yet. Invite someone above.</p>
+            <p className="text-sm text-gray-400 text-center py-10">No one has started yet. Send the link above to your team.</p>
           ) : (
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-xs text-gray-400 uppercase tracking-wide border-b border-gray-100 bg-gray-50">
                   <th className="text-left px-4 py-3 font-medium">Name</th>
-                  <th className="text-left px-4 py-3 font-medium w-28">Role</th>
                   <th className="text-left px-4 py-3 font-medium w-28">Status</th>
                   <th className="px-4 py-3 w-24" />
                 </tr>
@@ -270,10 +228,7 @@ export default function TeamLeaderPage() {
                 {respondents.map(r => (
                   <tr key={r.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50/50">
                     <td className="px-4 py-3 font-medium text-gray-800">{r.name}</td>
-                    <td className="px-4 py-3 text-gray-500 text-xs">
-                      {r.role === "team_leader" ? "Team leader" : "Team member"}
-                    </td>
-                    <td className="px-4 py-3">{statusBadge(r.status)}</td>
+                    <td className="px-4 py-3">{statusBadge(r.status, r.answer_count)}</td>
                     <td className="px-4 py-3 text-right">
                       <CopyButton text={personalLink(r.token)} />
                     </td>

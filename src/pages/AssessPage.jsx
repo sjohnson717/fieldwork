@@ -113,12 +113,9 @@ export default function AssessPage() {
       setAssessment(a);
       setName(r.name);
 
-      // Mark as started if still invited
-      let updatedRespondent = r;
-      if (r.status === "invited") {
-        updatedRespondent = await base44.entities.Respondent.update(r.id, { status: "started" });
-      }
-      setRespondent(updatedRespondent);
+      // Respondents self-register through the shared code link and are
+      // created as "started", so there is no earlier state to promote from.
+      setRespondent(r);
 
       if (r.title) {
         // Has title — go straight to rating
