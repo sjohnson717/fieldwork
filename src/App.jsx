@@ -33,13 +33,15 @@ function App() {
             <Route path="/assess" element={<AssessPage />} />
             <Route element={<ProtectedRoute />}>
               <Route path="/admin" element={<AdminPage />} />
+              {/* TEMPORARY — remove after RLS spike. Protected so visiting it
+                  forces the login redirect and the probe runs with a real
+                  token; unprotected, it always reports "unauthenticated". */}
+              <Route path="/zz-rls-probe" element={<ZzRlsProbe />} />
             </Route>
             <Route path="/report/:token" element={<ReportPage />} />
             <Route path="/team/:token" element={<TeamLeaderPage />} />
             <Route path="/" element={<LandingPage />} />
             <Route path="/readme" element={<ReadMe />} />
-            {/* TEMPORARY — remove after RLS spike */}
-            <Route path="/zz-rls-probe" element={<ZzRlsProbe />} />
             <Route path="/facilitator-guide" element={<FacilitatorGuide />} />
             <Route path="*" element={<PageNotFound />} />
           </Routes>
