@@ -138,10 +138,6 @@ export default function TeamLeaderPage() {
   const personalLink = (respondentToken) =>
     `${window.location.origin}/assess?code=${assessment.access_code}&t=${respondentToken}`;
 
-  // The one link that goes to the whole team; people self-register with it.
-  const teamAssessmentLink = `${window.location.origin}/assess?code=${assessment.access_code}`;
-  const thisPageLink = `${window.location.origin}/team/${token}`;
-
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -159,6 +155,11 @@ export default function TeamLeaderPage() {
       </div>
     );
   }
+
+  // Below the guards above, so `assessment` is guaranteed to be loaded —
+  // these read its fields eagerly on every render.
+  const teamAssessmentLink = `${window.location.origin}/assess?code=${assessment.access_code}`;
+  const thisPageLink = `${window.location.origin}/team/${token}`;
 
   return (
     <div className="min-h-screen bg-gray-50">
