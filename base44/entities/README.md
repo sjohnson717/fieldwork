@@ -166,11 +166,16 @@ the client any more, which is what allowed its read rule to be narrowed to
 super-admin only.
 
 `create` and `update` stay open, because `/assess` is unauthenticated and each
-respondent registers themselves. **Unverified:** whether Base44 applies the read
-rule to the record a `create` or `update` call returns. `AssessPage` uses the
-returned record, so if it does, self-registration breaks for everyone who is not
-a super-admin. Walk one respondent through `/assess?code=…` after any deploy
-that touches this rule — a green build proves nothing here.
+respondent registers themselves. The open question was whether Base44 applies
+the read rule to the record a `create` or `update` returns — `AssessPage` uses
+that returned record, so if it did, self-registration would break for everyone
+who is not a super-admin.
+
+**Measured on 2026-07-30: it does not.** With `read` closed to super-admin only,
+an anonymous respondent still registered and answered normally. So a write rule
+is what governs a write's return value, not the read rule. Still worth walking
+one respondent through `/assess?code=…` after any change here, because a green
+build proves nothing about RLS.
 
 ## The no-org bucket
 
