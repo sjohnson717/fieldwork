@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { getAssignedActivities } from "@/lib/activities";
+import { listRespondents } from "@/lib/public-assessment";
 import { FACET_ORDER, IMPORTANCE_SCORE, EXECUTION_SCORE, avg, fmt } from "@/lib/scoring";
 
 // Gap = high importance, low execution = most actionable
@@ -72,7 +73,7 @@ export default function AssessmentResults({ assessment }) {
     try {
       const [acts, resps, ress] = await Promise.all([
         getAssignedActivities(assessment),
-        base44.entities.Respondent.filter({ assessment_id: assessment.id }),
+        listRespondents(assessment.id),
         base44.entities.Response.filter({ assessment_id: assessment.id }),
       ]);
       setActivities(acts);

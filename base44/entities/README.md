@@ -134,6 +134,27 @@ Token strength matters here. `buyer_token`, `team_token` and the per-respondent
 token are `crypto.randomUUID()`. `access_code` is deliberately short so it can
 be read aloud to a room — treat it as a convenience credential, not a secret.
 
+## Why Respondent reads go through a function
+
+`Respondent` holds team members' names and job titles. Together with
+`Assessment.company_name` that is the data one consultant must not see from
+another's engagement, so both need scoping.
+
+`Assessment` can be scoped with RLS directly — super-admin, or `org_id` match,
+or membership of `collaborator_ids`, all of which RLS can express.
+
+`Respondent` cannot. The real rule is "may this user see the *parent
+assessment*?", and RLS cannot join. Denormalising `org_id` onto Respondent
+would answer the wrong question: a facilitator invited to a single assessment
+in another consultant's organisation is exactly the case the role model exists
+to support, and an org-scoped rule would deny them. Denormalising
+`collaborator_ids` as well would go stale whenever collaborators change.
+
+So `listRespondents` performs the parent-assessment check server-side, mirroring
+Assessment's own rules, and reads as service role. The public flows get theirs
+from `publicAssessment` the same way. Nothing reads `Respondent` directly from
+the client any more, which is what allows its read rule to be narrowed.
+
 ## The no-org bucket
 
 Absent/null `org_id` is treated as its own shared bucket by `sameOrg()` in

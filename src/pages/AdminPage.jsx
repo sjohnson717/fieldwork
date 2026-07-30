@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
+import { listRespondents } from "@/lib/public-assessment";
 import { useAuth } from "@/lib/AuthContext";
 import AssessmentOverview from "./admin/AssessmentOverview";
 import AssessmentActivitiesTab from "./admin/AssessmentActivitiesTab";
@@ -135,7 +136,7 @@ export default function AdminPage() {
       ]);
 
       const [respondents, responses, notes, flags] = await withTimeout(Promise.all([
-        base44.entities.Respondent.filter({ assessment_id: selected.id }),
+        listRespondents(selected.id),
         base44.entities.Response.filter({ assessment_id: selected.id }),
         base44.entities.DiscussionNote.filter({ assessment_id: selected.id }),
         base44.entities.TeamLeaderFlag.filter({ assessment_id: selected.id }),

@@ -16,6 +16,14 @@ const resolve = async (mode, token) => {
   }
 };
 
+// Admin-side counterpart: respondents for one assessment, gated server-side on
+// whether the caller may see that assessment. See
+// base44/functions/listRespondents/entry.ts.
+export const listRespondents = async (assessmentId) => {
+  const res = await base44.functions.invoke('listRespondents', { assessmentId });
+  return res?.data?.respondents ?? [];
+};
+
 export const getAssessmentByCode = (code) => resolve('code', code);
 export const getRespondentSession = (token) => resolve('respondent', token);
 export const getTeamLeaderView = (teamToken) => resolve('team', teamToken);
