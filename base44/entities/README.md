@@ -143,6 +143,24 @@ Token strength matters here. `buyer_token`, `team_token` and the per-respondent
 token are `crypto.randomUUID()`. `access_code` is deliberately short so it can
 be read aloud to a room — treat it as a convenience credential, not a secret.
 
+## Why deleting an assessment goes through a function
+
+The child entities — `Response`, `Respondent`, `DiscussionNote`,
+`TeamLeaderFlag` — all permit deletion by role, including `facilitator`.
+`Assessment.delete` permits only its creator or a super-admin. Those rules are
+individually defensible and collectively wrong: the cascade used to run in the
+browser, children first, so a facilitator was *permitted* to destroy every
+respondent and response in an engagement and then denied the final step,
+leaving an empty assessment and an error alert.
+
+`deleteAssessment` checks authority once — creator or super-admin, matching
+`Assessment.delete` — and then cascades as service role. `AdminPage` also hides
+the button from anyone who would fail that check, so the UI and the rule agree.
+
+The general lesson: when one user action spans several entities, the permission
+that matters is the *whole action's*, and RLS can only answer one entity at a
+time. Put the check in a function before the first write.
+
 ## Why Respondent reads go through a function
 
 `Respondent` holds team members' names and job titles. Together with

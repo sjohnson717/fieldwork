@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { listRespondents } from "@/lib/public-assessment";
 import { useAuth } from "@/lib/AuthContext";
 import AssessmentOverview from "./admin/AssessmentOverview";
 import AssessmentActivitiesTab from "./admin/AssessmentActivitiesTab";
@@ -130,30 +129,12 @@ export default function AdminPage() {
     if (!confirmed) return;
     setDeleting(true);
     try {
-      const withTimeout = (promise, ms = 8000) => Promise.race([
-        promise,
-        new Promise((_, reject) => setTimeout(() => reject(new Error("Request timed out")), ms))
-      ]);
-
-      const [respondents, responses, notes, flags] = await withTimeout(Promise.all([
-        listRespondents(selected.id),
-        base44.entities.Response.filter({ assessment_id: selected.id }),
-        base44.entities.DiscussionNote.filter({ assessment_id: selected.id }),
-        base44.entities.TeamLeaderFlag.filter({ assessment_id: selected.id }),
-      ]));
-
-      const deleteInBatches = async (items, deleteFn) => {
-        const BATCH = 10;
-        for (let i = 0; i < items.length; i += BATCH) {
-          await withTimeout(Promise.all(items.slice(i, i + BATCH).map(item => deleteFn(item.id))));
-        }
-      };
-
-      await deleteInBatches(responses, id => base44.entities.Response.delete(id));
-      await deleteInBatches(respondents, id => base44.entities.Respondent.delete(id));
-      await deleteInBatches(notes, id => base44.entities.DiscussionNote.delete(id));
-      await deleteInBatches(flags, id => base44.entities.TeamLeaderFlag.delete(id));
-      await withTimeout(base44.entities.Assessment.delete(selected.id));
+      // The cascade runs in deleteAssessment, which checks authority once
+      // before deleting anything. Done from here it was five independent RLS
+      // decisions that disagreed: every child entity lets a facilitator delete
+      // by role, Assessment does not, so a facilitator wiped the respondents
+      // and responses and then failed on the assessment itself.
+      await base44.functions.invoke("deleteAssessment", { assessmentId: selected.id });
 
       setAssessments(prev => {
         const next = prev.filter(a => a.id !== selected.id);
@@ -184,6 +165,7 @@ export default function AdminPage() {
   }
 
   const selected = assessments.find(a => a.id === selectedId);
+  const canDeleteSelected = !!selected && (isAdmin || selected.created_by_id === user?.id);
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
@@ -405,7 +387,10 @@ export default function AdminPage() {
                 <AssessmentOverview
                   assessment={selected}
                   onUpdate={handleAssessmentUpdate}
-                  onDelete={handleDeleteAssessment}
+                  // Deleting is creator-or-super-admin, matching both
+                  // Assessment's delete rule and deleteAssessment's check.
+                  // Anyone else was shown a button that could only half-work.
+                  onDelete={canDeleteSelected ? handleDeleteAssessment : null}
                   deleting={deleting}
                 />
               )}
