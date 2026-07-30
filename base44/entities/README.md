@@ -70,9 +70,30 @@ authenticated email, and marks the invitation `accepted` so it is consumed
 exactly once — otherwise a stale pending invitation would re-promote someone
 after an admin demoted them.
 
-Role assignment is deliberately server-side. `User.update`'s RLS permits
-unrestricted self-update (`{"id": "{{user.id}}"}`), so anything the browser can
-ask for, a user can ask for on their own behalf.
+Role assignment is deliberately server-side — see the next section for why
+self-update is no longer permitted at all.
+
+## Why User.update is super-admin only
+
+Measured, not assumed. Base44 protects the `role` field itself: an attempt by a
+non-admin to change their own role — sideways or upward — is rejected with
+*"Only platform users can update user roles"*, whatever the RLS rule says.
+
+`org_id` gets no such protection. It is an ordinary custom field, so while
+`User.update` permitted self-update (`{"id": "{{user.id}}"}`), any user could
+rewrite their own organization in a single API call, then read and manage
+another tenant's data. That defeats org scoping entirely, including the
+`listUsers` and `updateTeamMember` functions, which both derive authority from
+the caller's stored `org_id`.
+
+`User.update` is therefore super-admin only. Nothing in the app needs a user to
+write to their own record; `acceptInvitation` and `updateTeamMember` both use
+the service role, which bypasses RLS.
+
+**Any org boundary keyed on `org_id` is only as strong as this rule.** If a
+self-service profile page is ever added, do not restore the blanket
+self-update clause — use per-field RLS inside `properties` so `org_id` stays
+protected.
 
 ## The no-org bucket
 
