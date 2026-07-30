@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { getAssignedActivities } from "@/lib/activities";
+import { getBuyerReport } from "@/lib/public-assessment";
 import ExecSummary from "@/components/ExecSummary";
 import {
   THEME_GROUPS,
@@ -342,16 +343,15 @@ export default function ReportPage() {
   const loadReport = async () => {
     setLoading(true);
     try {
-      // Find assessment by buyer_token — list all and find client-side
-      // (filter by arbitrary string fields is unreliable in some SDK versions)
-      const allAssessments = await base44.entities.Assessment.list();
-      const assessments = allAssessments.filter(a => a.buyer_token === token);
-      if (!assessments || assessments.length === 0) {
+      // Resolved server-side so the buyer token stays a credential rather
+      // than something anyone can read off a listing.
+      const result = await getBuyerReport(token);
+      if (!result?.assessment) {
         setError("Report not found. Please check your link.");
         setLoading(false);
         return;
       }
-      const a = assessments[0];
+      const a = result.assessment;
       setAssessment(a);
 
       // Load activities, responses, and discussion notes in parallel

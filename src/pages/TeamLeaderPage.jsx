@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { getAssignedActivities } from "@/lib/activities";
+import { getTeamLeaderView } from "@/lib/public-assessment";
 import { FACET_ORDER, FACET_SUBTITLES } from "@/lib/scoring";
 
 const PGL_LOGO = "https://static.wixstatic.com/media/739bca_d49790dff653441fae7d036110019dc2~mv2.png";
@@ -76,20 +77,21 @@ export default function TeamLeaderPage() {
   const loadPage = async () => {
     setLoading(true);
     try {
-      const allAssessments = await base44.entities.Assessment.list();
-      const found = allAssessments.find(a => a.team_token === token);
-      if (!found) {
+      // Resolved server-side; the team token is a credential, not something
+      // to be read off a listing of every assessment.
+      const view = await getTeamLeaderView(token);
+      if (!view?.assessment) {
         setError("Team link not found. Please check your link.");
         setLoading(false);
         return;
       }
+      const found = view.assessment;
       setAssessment(found);
-      const [rList, acts, flagList] = await Promise.all([
-        base44.entities.Respondent.filter({ assessment_id: found.id }),
+      const [acts, flagList] = await Promise.all([
         getAssignedActivities(found),
         base44.entities.TeamLeaderFlag.filter({ assessment_id: found.id }),
       ]);
-      setRespondents(rList);
+      setRespondents(view.respondents || []);
       setActivities(acts);
       const flagMap = {}, noteMap = {};
       for (const f of flagList) {
@@ -159,9 +161,9 @@ export default function TeamLeaderPage() {
     setEmail("");
     setRole("user");
     setSubmitting(false);
-    // Refresh roster
-    const rList = await base44.entities.Respondent.filter({ assessment_id: assessment.id });
-    setRespondents(rList);
+    // Refresh roster through the same server-side view.
+    const view = await getTeamLeaderView(token);
+    setRespondents(view?.respondents || []);
   };
 
   if (loading) {

@@ -25,11 +25,13 @@ Verified supported: `$and`, `$or`, `$in`, `$nin`, and array containment
 
 ## Why each non-obvious rule is the way it is
 
-**Assessment.read is `{}` (open).** The respondent (`/assess`), buyer report
-(`/report/:token`) and team leader (`/team/:token`) flows are unauthenticated and
-find their assessment by listing all assessments and matching a token
-client-side. Narrowing this read rule breaks all three. They have to move behind
-service-role functions first.
+**Assessment.read is still `{}` (open), but no longer needs to be.** The three
+unauthenticated flows — `/assess`, `/report/:token`, `/team/:token` — used to
+find their assessment by listing every assessment and matching a token
+client-side, which is why the rule had to stay open. They now resolve tokens
+through the `publicAssessment` function using the service role, so this rule can
+be narrowed (see the phased plan below). Do not narrow it without first checking
+that nothing else reads Assessment anonymously.
 
 **Assessment.update is per-assessment, not per-role.** It grants the creator,
 anyone in `collaborator_ids`, and super-admin. It previously granted any
@@ -106,6 +108,24 @@ bypasses even Base44's own role protection.
 The entity-level `update` rule is kept as defence in depth, but it is not what
 is doing the work. Treat any *new* custom field on `User` as unprotected until
 it has a per-field rule, and verify with a probe rather than assuming.
+
+## Public token flows
+
+`/assess`, `/team/:token` and `/report/:token` are unauthenticated by design —
+the token in the URL *is* the credential, so buyers and team leaders never need
+an account. That only holds if the tokens cannot be enumerated, and originally
+they could: every one of those pages listed all assessments client-side, so
+anyone could read `access_code`, `team_token` and `buyer_token` off the records.
+
+All three now go through `publicAssessment`, which resolves the token with the
+service role and returns only the fields that flow renders. Redaction is part of
+the point: a team leader never receives the buyer's report token, a buyer never
+receives the access code, and a respondent receives no tokens at all. Failures
+return a uniform `not_found` so a caller cannot probe which tokens exist.
+
+Token strength matters here. `buyer_token`, `team_token` and the per-respondent
+token are `crypto.randomUUID()`. `access_code` is deliberately short so it can
+be read aloud to a room — treat it as a convenience credential, not a secret.
 
 ## The no-org bucket
 

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { getAssignedActivities } from "@/lib/activities";
+import { getAssessmentByCode, getRespondentSession } from "@/lib/public-assessment";
 
 const HERO_IMAGE = "https://media.base44.com/images/public/6a29ff3bc8effbeb3d637555/2ffc15b8c_curated-lifestyle-H3ZVdxBRIW0-unsplash.jpg";
 
@@ -81,13 +82,15 @@ export default function AssessPage() {
   const loadFromToken = async (t) => {
     setStep("loading");
     try {
-      const respondents = await base44.entities.Respondent.filter({ token: t });
-      if (!respondents || respondents.length === 0) {
+      // The respondent token and its parent assessment are both resolved
+      // server-side in one call.
+      const session = await getRespondentSession(t);
+      if (!session?.respondent) {
         setError("This link is no longer valid.");
         setStep("token-error");
         return;
       }
-      const r = respondents[0];
+      const r = session.respondent;
 
       if (r.status === "completed") {
         setName(r.name);
@@ -95,9 +98,7 @@ export default function AssessPage() {
         return;
       }
 
-      // Load parent assessment
-      const assessments = await base44.entities.Assessment.list();
-      const a = assessments.find(a => a.id === r.assessment_id);
+      const a = session.assessment;
       if (!a) {
         setError("This link is no longer valid.");
         setStep("token-error");
@@ -170,8 +171,8 @@ export default function AssessPage() {
     setError("");
     if (!code.trim()) return setError("Please enter an assessment code.");
     try {
-      const allAssessments = await base44.entities.Assessment.list();
-      const found = allAssessments.find(a => a.access_code === code.trim().toUpperCase());
+      const result = await getAssessmentByCode(code);
+      const found = result?.assessment;
       if (!found) return setError("Code not found. Please check and try again.");
       if (found.status === "closed") return setError("This assessment is no longer accepting responses.");
       setAssessment(found);

@@ -17,7 +17,6 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
-import ZzRlsProbe from './pages/ZzRlsProbe'; // TEMPORARY — remove after RLS spike
 
 function App() {
   return (
@@ -33,10 +32,6 @@ function App() {
             <Route path="/assess" element={<AssessPage />} />
             <Route element={<ProtectedRoute />}>
               <Route path="/admin" element={<AdminPage />} />
-              {/* TEMPORARY — remove after RLS spike. Protected so visiting it
-                  forces the login redirect and the probe runs with a real
-                  token; unprotected, it always reports "unauthenticated". */}
-              <Route path="/zz-rls-probe" element={<ZzRlsProbe />} />
             </Route>
             <Route path="/report/:token" element={<ReportPage />} />
             <Route path="/team/:token" element={<TeamLeaderPage />} />
