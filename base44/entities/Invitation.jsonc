@@ -13,7 +13,7 @@
         "org_admin",
         "admin"
       ],
-      "default": "user"
+      "default": "facilitator"
     },
     "status": {
       "type": "string",
@@ -43,7 +43,7 @@
       "$or": [
         { "user_condition": { "role": "admin" } },
         { "user_condition": { "role": "org_admin" } },
-        { "email": "{{user.email}}" }
+        { "data.email": "{{user.email}}" }
       ]
     },
     "update": {

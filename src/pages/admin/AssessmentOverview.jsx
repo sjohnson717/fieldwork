@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
+import { roleLabel, NO_ACCESS_ROLE } from "@/lib/roles";
 import AssessmentDemoData from "./AssessmentDemoData";
 
 const STATUS_TRANSITIONS = {
@@ -44,8 +45,10 @@ export default function AssessmentOverview({ assessment, onUpdate, onDelete, del
       // The built-in User entity ignores custom RLS for list operations, so
       // this goes through a backend function using the service role instead
       // of base44.entities.User.list() directly.
+      // listUsers returns everyone in scope including no-access accounts;
+      // only people who can actually run an assessment belong here.
       const res = await base44.functions.invoke("listUsers", {});
-      setAllUsers(res?.data?.users || []);
+      setAllUsers((res?.data?.users || []).filter(u => u.role !== NO_ACCESS_ROLE));
     } catch (e) {
       console.error("Failed to load users", e);
       setUsersError(e?.response?.data?.error || e?.message || "Failed to load facilitators/admins.");
@@ -304,7 +307,10 @@ export default function AssessmentOverview({ assessment, onUpdate, onDelete, del
             ) : (
               <button
                 onClick={async () => {
-                  const token = Math.random().toString(36).substring(2, 10) + Math.random().toString(36).substring(2, 10);
+                  // Must be a CSPRNG: this token is the only thing protecting
+                  // the team leader page, which exposes the roster and the
+                  // team leader's identity. Math.random() is predictable.
+                  const token = crypto.randomUUID();
                   const updated = await base44.entities.Assessment.update(assessment.id, { team_token: token });
                   onUpdate(updated);
                 }}
@@ -346,7 +352,7 @@ export default function AssessmentOverview({ assessment, onUpdate, onDelete, del
       {/* Collaborators */}
       <section className="bg-white rounded-xl border border-gray-200 p-6">
         <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-1">Collaborators</h3>
-        <p className="text-xs text-gray-400 mb-4">Other facilitators or admins who can fully manage this assessment.</p>
+        <p className="text-xs text-gray-400 mb-4">Facilitators and admins invited to this assessment. This is what grants a facilitator access — they can see and manage this assessment and nothing else.</p>
 
         {usersError && (
           <p className="text-xs text-red-500 mb-3">{usersError}</p>
@@ -378,6 +384,7 @@ export default function AssessmentOverview({ assessment, onUpdate, onDelete, del
                   <div>
                     <span className="text-sm text-gray-700">{u.full_name || u.email}</span>
                     <span className="ml-2 text-xs text-gray-400">{u.email}</span>
+                    <span className="ml-2 text-xs text-gray-400">· {roleLabel(u.role)}</span>
                   </div>
                   <button
                     onClick={() => handleRemoveCollaborator(u.id)}

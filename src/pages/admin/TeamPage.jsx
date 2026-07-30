@@ -1,10 +1,9 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
+import { roleLabel, assignableRoles, sameOrg, NO_ACCESS_ROLE } from "@/lib/roles";
 
-const sameOrg = (a, b) => (a || null) === (b || null);
-
-export default function TeamPage() {
+export default function TeamPage({ orgFilter = null, onClearOrgFilter, onBackToOrganizations }) {
   const { user: currentUser } = useAuth();
   const isAdmin = currentUser?.role === "admin";
   const isOrgAdmin = currentUser?.role === "org_admin";
@@ -18,7 +17,7 @@ export default function TeamPage() {
 
   // Invite form
   const [inviteEmail, setInviteEmail] = useState("");
-  const [inviteRole, setInviteRole] = useState(isAdmin ? "user" : "facilitator");
+  const [inviteRole, setInviteRole] = useState("facilitator");
   const [inviteOrgId, setInviteOrgId] = useState("");
   const [inviting, setInviting] = useState(false);
   const [inviteError, setInviteError] = useState("");
@@ -27,6 +26,12 @@ export default function TeamPage() {
   useEffect(() => {
     loadUsers();
   }, []);
+
+  // Arriving from an organization's "View team" link — preselect that org so
+  // an invite sent from here lands in the organization you were looking at.
+  useEffect(() => {
+    if (orgFilter) setInviteOrgId(orgFilter);
+  }, [orgFilter]);
 
   const [invitations, setInvitations] = useState([]);
 
@@ -86,7 +91,7 @@ export default function TeamPage() {
       await base44.entities.Invitation.create({ email, role: inviteRole, status: "pending", org_id: orgId || undefined });
       setInviteSuccess(`Invite sent to ${email}.`);
       setInviteEmail("");
-      setInviteRole(isAdmin ? "user" : "facilitator");
+      setInviteRole("facilitator");
       setInviteOrgId("");
     } catch (e) {
       console.error("Failed to invite", e);
@@ -96,14 +101,27 @@ export default function TeamPage() {
     await loadUsers();
   };
 
+  // All edits to *other* users go through the updateTeamMember function.
+  // User's RLS only permits self-updates and super-admin writes now, so this
+  // is the one path that can change someone else's role or organization —
+  // and it enforces the org and grantable-role limits server-side.
+  const updateMember = async (userId, changes) => {
+    const res = await base44.functions.invoke("updateTeamMember", { userId, ...changes });
+    const error = res?.data?.error;
+    if (error) throw new Error(error);
+    return res.data.user;
+  };
+
   const handleRoleChange = async (user, newRole) => {
     if (user.id === currentUser.id) return;
     setUpdatingId(user.id);
+    setLoadError("");
     try {
-      const updated = await base44.entities.User.update(user.id, { role: newRole });
+      const updated = await updateMember(user.id, { role: newRole });
       setUsers(prev => prev.map(u => u.id === updated.id ? updated : u));
     } catch (e) {
       console.error("Failed to change role", e);
+      setLoadError(e?.response?.data?.error || e?.message || "Failed to change role.");
     }
     setUpdatingId(null);
   };
@@ -111,11 +129,13 @@ export default function TeamPage() {
   const handleOrgChange = async (user, newOrgId) => {
     if (user.id === currentUser.id) return;
     setUpdatingId(user.id);
+    setLoadError("");
     try {
-      const updated = await base44.entities.User.update(user.id, { org_id: newOrgId || null });
+      const updated = await updateMember(user.id, { orgId: newOrgId || null });
       setUsers(prev => prev.map(u => u.id === updated.id ? updated : u));
     } catch (e) {
       console.error("Failed to change organization", e);
+      setLoadError(e?.response?.data?.error || e?.message || "Failed to change organization.");
     }
     setUpdatingId(null);
   };
@@ -124,11 +144,13 @@ export default function TeamPage() {
     if (user.id === currentUser.id) return;
     if (!confirm(`Revoke access for ${user.full_name || user.email}? They'll lose their role and organization membership.`)) return;
     setRemovingId(user.id);
+    setLoadError("");
     try {
-      const updated = await base44.entities.User.update(user.id, { role: "user", org_id: null });
+      const updated = await updateMember(user.id, { role: NO_ACCESS_ROLE });
       setUsers(prev => prev.filter(u => u.id !== updated.id));
     } catch (e) {
       console.error("Failed to revoke access", e);
+      setLoadError(e?.response?.data?.error || e?.message || "Failed to revoke access.");
     }
     setRemovingId(null);
   };
@@ -145,12 +167,24 @@ export default function TeamPage() {
     setRemovingId(null);
   };
 
-  const inviteRoleOptions = isAdmin ? ["user", "facilitator", "org_admin", "admin"] : ["facilitator", "org_admin"];
-  const rowRoleOptions = isAdmin ? ["user", "facilitator", "org_admin", "admin"] : ["facilitator", "org_admin"];
+  const inviteRoleOptions = assignableRoles(currentUser?.role);
+  // Legacy accounts may still sit on the no-access "user" role. It isn't
+  // grantable, but it has to appear in that row's select or the control would
+  // render with the wrong value selected.
+  const rowRoleOptions = (u) =>
+    u.role === NO_ACCESS_ROLE ? [NO_ACCESS_ROLE, ...inviteRoleOptions] : inviteRoleOptions;
   const orgName = (orgId) => orgs.find(o => o.id === orgId)?.name || "—";
 
-  const acceptedCount = users.length;
-  const pendingCount = invitations.length;
+  // A super admin can narrow the page to a single organization from the
+  // Organizations page. Org admins are already scoped to their own org by
+  // the listUsers function, so there's nothing to narrow.
+  const visibleUsers = orgFilter ? users.filter(u => sameOrg(u.org_id, orgFilter)) : users;
+  const visibleInvitations = orgFilter
+    ? invitations.filter(inv => sameOrg(inv.org_id, orgFilter))
+    : invitations;
+
+  const acceptedCount = visibleUsers.length;
+  const pendingCount = visibleInvitations.length;
 
   return (
     <div className="p-8 max-w-5xl space-y-8">
@@ -158,7 +192,7 @@ export default function TeamPage() {
       {/* Invite section */}
       <section className="bg-white rounded-xl border border-gray-200 p-6">
         <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-1">
-          {isAdmin ? "Invite a team member" : "Invite a facilitator"}
+          {isAdmin ? "Invite a team member" : "Invite someone to your organization"}
         </h3>
         <p className="text-xs text-gray-400 mb-4">They'll receive an email to join the app.</p>
         <div className="flex gap-2 flex-wrap">
@@ -170,15 +204,15 @@ export default function TeamPage() {
             onKeyDown={e => e.key === "Enter" && handleInvite()}
             className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3366FF] flex-1 min-w-48"
           />
-          {isAdmin && (
-            <select
-              value={inviteRole}
-              onChange={e => setInviteRole(e.target.value)}
-              className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3366FF] bg-white"
-            >
-              {inviteRoleOptions.map(r => <option key={r} value={r}>{r}</option>)}
-            </select>
-          )}
+          {/* Org admins pick too — they may invite facilitators or a
+              co-admin for their own organization. */}
+          <select
+            value={inviteRole}
+            onChange={e => setInviteRole(e.target.value)}
+            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3366FF] bg-white"
+          >
+            {inviteRoleOptions.map(r => <option key={r} value={r}>{roleLabel(r)}</option>)}
+          </select>
           {isAdmin && (
             <select
               value={inviteOrgId}
@@ -206,14 +240,32 @@ export default function TeamPage() {
         <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
           <div>
             <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
-              {isOrgAdmin ? "Your facilitators" : "Team members"}
+              {orgFilter ? orgName(orgFilter) : isOrgAdmin ? "Your organization" : "Team members"}
             </h3>
             <p className="text-xs text-gray-400 mt-0.5">
               {acceptedCount} accepted
               {pendingCount > 0 && <span className="ml-2 text-amber-500 font-medium">· {pendingCount} pending invite{pendingCount !== 1 ? "s" : ""}</span>}
             </p>
           </div>
-          <button onClick={loadUsers} className="text-xs text-gray-400 hover:text-[#3366FF] transition-colors">Refresh</button>
+          <div className="flex items-center gap-3">
+            {orgFilter && (
+              <>
+                <button
+                  onClick={onBackToOrganizations}
+                  className="text-xs text-gray-400 hover:text-[#3366FF] transition-colors"
+                >
+                  ← Organizations
+                </button>
+                <button
+                  onClick={onClearOrgFilter}
+                  className="text-xs text-gray-400 hover:text-[#3366FF] transition-colors"
+                >
+                  Show all
+                </button>
+              </>
+            )}
+            <button onClick={loadUsers} className="text-xs text-gray-400 hover:text-[#3366FF] transition-colors">Refresh</button>
+          </div>
         </div>
 
         {loadError && (
@@ -224,7 +276,7 @@ export default function TeamPage() {
           <div className="flex justify-center py-12">
             <div className="w-5 h-5 border-2 border-[#a3b8ff] border-t-[#4d80ff] rounded-full animate-spin" />
           </div>
-        ) : users.length === 0 && invitations.length === 0 ? (
+        ) : visibleUsers.length === 0 && visibleInvitations.length === 0 ? (
           <p className="text-sm text-gray-400 text-center py-10">No users found.</p>
         ) : (
           <div className="overflow-x-auto">
@@ -240,7 +292,7 @@ export default function TeamPage() {
               </tr>
             </thead>
             <tbody>
-              {users.map(u => {
+              {visibleUsers.map(u => {
                 const isSelf = u.id === currentUser?.id;
                 const isUpdating = updatingId === u.id;
                 const isRemoving = removingId === u.id;
@@ -255,7 +307,7 @@ export default function TeamPage() {
                     <td className="px-4 py-3 text-gray-500">{u.email}</td>
                     <td className="px-4 py-3">
                       {isSelf ? (
-                        <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-[#eef2ff] text-[#2952CC]">{u.role}</span>
+                        <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-[#eef2ff] text-[#2952CC]">{roleLabel(u.role)}</span>
                       ) : (
                         <select
                           value={u.role}
@@ -263,7 +315,7 @@ export default function TeamPage() {
                           onChange={e => handleRoleChange(u, e.target.value)}
                           className="text-xs font-medium border border-gray-200 rounded-lg px-2.5 py-1 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#3366FF] disabled:opacity-50 cursor-pointer"
                         >
-                          {rowRoleOptions.map(r => <option key={r} value={r}>{r}</option>)}
+                          {rowRoleOptions(u).map(r => <option key={r} value={r}>{roleLabel(r)}</option>)}
                         </select>
                       )}
                     </td>
@@ -301,12 +353,12 @@ export default function TeamPage() {
                   </tr>
                 );
               })}
-              {invitations.map(inv => (
+              {visibleInvitations.map(inv => (
                 <tr key={inv.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50/50 opacity-70">
                   <td className="px-4 py-3 font-medium text-gray-400 italic">Not joined yet</td>
                   <td className="px-4 py-3 text-gray-500">{inv.email}</td>
                   <td className="px-4 py-3">
-                    <span className="text-xs font-medium text-gray-500">{inv.role}</span>
+                    <span className="text-xs font-medium text-gray-500">{roleLabel(inv.role)}</span>
                   </td>
                   {isAdmin && (
                     <td className="px-4 py-3">

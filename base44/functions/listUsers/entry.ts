@@ -10,6 +10,11 @@ import { createClientFromRequest } from "npm:@base44/sdk@0.8.39";
 // facilitators only see others in their own org_id — treating
 // absent/null org_id as its own shared "no org" bucket, so existing
 // accounts created before Organizations existed keep working unchanged.
+//
+// This returns *every* user in scope, including those on the no-access
+// "user" role, so an org admin's team page shows their whole organization.
+// Callers that specifically want people who can facilitate (the assessment
+// collaborator picker) filter by role themselves.
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -24,7 +29,6 @@ Deno.serve(async (req) => {
     const sameOrg = (a, b) => (a || null) === (b || null);
 
     const users = allUsers
-      .filter((u) => allowedRoles.includes(u.role))
       .filter((u) => user.role === "admin" || sameOrg(u.org_id, user.org_id))
       .map((u) => ({ id: u.id, full_name: u.full_name, email: u.email, role: u.role, org_id: u.org_id || null }));
 

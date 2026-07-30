@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { ActivityLogger } from "@/utils/activityLogger";
 import { getAssignedActivities } from "@/lib/activities";
 
 const HERO_IMAGE = "https://media.base44.com/images/public/6a29ff3bc8effbeb3d637555/2ffc15b8c_curated-lifestyle-H3ZVdxBRIW0-unsplash.jpg";
@@ -222,7 +221,6 @@ export default function AssessPage() {
   };
 
   const handleRevise = async () => {
-    ActivityLogger.log('action', { event: 'revise_started' });
     await base44.entities.Respondent.update(respondent.id, { status: "started" });
     await loadExistingResponses();
     setCurrentFacetIndex(0);
@@ -234,12 +232,6 @@ export default function AssessPage() {
       ...prev,
       [activityId]: { ...prev[activityId], [field]: value }
     }));
-    ActivityLogger.log('action', {
-      event: 'answer_selected',
-      facet: currentFacet,
-      activityId,
-      [field]: value
-    });
   };
 
   const availableFacets = FACET_ORDER.filter(f => activities.some(a => a.facet === f));
@@ -280,22 +272,14 @@ const handleNext = async () => {
         setCurrentFacetIndex(i => i + 1);
         window.scrollTo(0, 0);
       } else {
-        const fullLog = ActivityLogger.getLog();
-        const assessLog = fullLog.filter(e =>
-          e.type === 'error' ||
-          e.type === 'action' ||
-          (e.type === 'nav' && e.path && e.path.startsWith('/assess'))
-        );
         await base44.entities.Respondent.update(respondent.id, {
           status: "completed",
-          completed_date: new Date().toISOString(),
-          activity_log: JSON.stringify(assessLog)
+          completed_date: new Date().toISOString()
         });
         setStep("done");
       }
     } catch (e) {
       console.error("handleNext error:", e);
-      ActivityLogger.log('error', { message: e?.message || String(e), context: 'handleNext' });
       setError("Error saving responses. Please try again.");
     }
     setSaving(false);
@@ -562,7 +546,6 @@ const handleNext = async () => {
             {currentFacetIndex > 0 && (
               <button
                 onClick={() => {
-                  ActivityLogger.log('action', { event: 'nav_button', label: 'back', fromFacet: currentFacet, pageIndex: currentFacetIndex });
                   setCurrentFacetIndex(i => i - 1);
                   window.scrollTo(0, 0);
                 }}
@@ -574,10 +557,7 @@ const handleNext = async () => {
             )}
           </div>
           <button
-            onClick={() => {
-              ActivityLogger.log('action', { event: 'nav_button', label: currentFacetIndex < availableFacets.length - 1 ? 'next' : 'submit', fromFacet: currentFacet, pageIndex: currentFacetIndex });
-              handleNext();
-            }}
+            onClick={handleNext}
             disabled={saving}
             className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold px-8 py-3 rounded-lg transition-colors"
           >

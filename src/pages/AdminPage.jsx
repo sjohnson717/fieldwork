@@ -1,8 +1,6 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
-import { ActivityLogger } from "@/utils/activityLogger";
-import ActivityLogModal from "@/components/ActivityLogModal";
 import AssessmentOverview from "./admin/AssessmentOverview";
 import AssessmentActivitiesTab from "./admin/AssessmentActivitiesTab";
 import AssessmentOwnershipRoles from "./admin/AssessmentOwnershipRoles";
@@ -24,7 +22,10 @@ export default function AdminPage() {
   const { user, isAuthenticated, logout } = useAuth();
   const [assessments, setAssessments] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
-  const [selectedSection, setSelectedSection] = useState("assessments"); // assessments | library
+  const [selectedSection, setSelectedSection] = useState("assessments"); // assessments | library | organizations | team
+  // Super-admin only: when set, the team page is narrowed to one organization
+  // (set by following an org's "View team" link on the Organizations page).
+  const [teamOrgFilter, setTeamOrgFilter] = useState(null);
   const [activeTab, setActiveTab] = useState("Overview");
   const [loading, setLoading] = useState(true);
   const [showNewForm, setShowNewForm] = useState(false);
@@ -39,6 +40,7 @@ export default function AdminPage() {
   const isOrgAdmin = user?.role === "org_admin";
   const isFacilitator = user?.role === "facilitator";
   const canAccessAdmin = isAdmin || isOrgAdmin || isFacilitator;
+  const sameOrg = (a, b) => (a || null) === (b || null);
 
   useEffect(() => {
     if (isAuthenticated && user) {
@@ -51,9 +53,17 @@ export default function AdminPage() {
     setLoading(true);
     try {
       const results = await base44.entities.Assessment.list("created_date");
+      // Super admin sees everything. An org admin sees their whole
+      // organization's work, not just what they personally created or were
+      // invited to. A facilitator sees only the assessments they were
+      // invited to (or created themselves).
+      const invitedTo = (a) =>
+        a.created_by_id === user.id || (a.collaborator_ids || []).includes(user.id);
       const scoped = isAdmin
         ? results
-        : results.filter(a => a.created_by_id === user.id || (a.collaborator_ids || []).includes(user.id));
+        : isOrgAdmin
+          ? results.filter(a => sameOrg(a.org_id, user.org_id) || invitedTo(a))
+          : results.filter(invitedTo);
       setAssessments(scoped.reverse());
       if (scoped.length > 0 && !selectedId) {
         setSelectedId(scoped[scoped.length - 1].id); // pick most recent
@@ -71,6 +81,18 @@ export default function AdminPage() {
     try {
       const code = Array.from(crypto.getRandomValues(new Uint8Array(4))).map(b => b.toString(36)).join('').substring(0, 5).toUpperCase();
       const buyerToken = crypto.randomUUID();
+      // Assessment write access is per-assessment (see Assessment.jsonc), so
+      // seed the org's admins as collaborators. Otherwise an org admin could
+      // see an assessment their facilitator created but not edit it.
+      let collaboratorIds = [];
+      try {
+        const res = await base44.functions.invoke("listUsers", {});
+        collaboratorIds = (res?.data?.users || [])
+          .filter(u => u.role === "org_admin" && u.id !== user.id && sameOrg(u.org_id, user.org_id))
+          .map(u => u.id);
+      } catch (e) {
+        console.error("Could not seed org admins as collaborators", e);
+      }
       const created = await base44.entities.Assessment.create({
         title: newTitle.trim(),
         company_name: newCompany.trim(),
@@ -78,6 +100,7 @@ export default function AdminPage() {
         buyer_token: buyerToken,
         status: "draft",
         roles: [],
+        collaborator_ids: collaboratorIds,
         org_id: user.org_id || undefined,
       });
       setAssessments(prev => [created, ...prev]);
@@ -97,7 +120,6 @@ export default function AdminPage() {
   };
 
   const [deleting, setDeleting] = useState(false);
-  const [showActivityLog, setShowActivityLog] = useState(false);
 
   const handleDeleteAssessment = async () => {
     if (!selected) return;
@@ -287,7 +309,7 @@ export default function AdminPage() {
                 </button>
               )}
               <button
-                onClick={() => setSelectedSection("team")}
+                onClick={() => { setSelectedSection("team"); setTeamOrgFilter(null); }}
                 className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors text-sm font-medium ${
                   selectedSection === "team"
                     ? "bg-blue-50 text-blue-900"
@@ -316,29 +338,28 @@ export default function AdminPage() {
             <p className="px-3 py-1 text-xs text-gray-400 truncate" title={user.email}>{user.email}</p>
           )}
           <button
-            onClick={() => setShowActivityLog(true)}
-            className="w-full text-left px-3 py-1.5 rounded-lg text-xs text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-colors"
-          >
-            Activity Log
-          </button>
-          <button
             onClick={() => logout()}
             className="w-full text-left px-3 py-1.5 rounded-lg text-xs text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
           >
             Log out
           </button>
-          <ActivityLogModal open={showActivityLog} onClose={() => setShowActivityLog(false)} />
         </div>
       </aside>
 
       {/* Main */}
       <div className="flex-1 flex flex-col min-w-0">
         {selectedSection === "organizations" ? (
-          <OrganizationsPage />
+          <OrganizationsPage
+            onViewTeam={orgId => { setTeamOrgFilter(orgId); setSelectedSection("team"); }}
+          />
         ) : selectedSection === "library" ? (
           <LibraryPage />
         ) : selectedSection === "team" ? (
-          <TeamPage />
+          <TeamPage
+            orgFilter={teamOrgFilter}
+            onClearOrgFilter={() => setTeamOrgFilter(null)}
+            onBackToOrganizations={() => { setTeamOrgFilter(null); setSelectedSection("organizations"); }}
+          />
         ) : !selected ? (
           <div className="flex-1 flex items-center justify-center text-gray-400 text-sm">
             {loading ? "" : "Select or create an assessment"}

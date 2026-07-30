@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useAuth } from "@/lib/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
+import { canAccessAdmin } from "@/lib/roles";
 
 const HERO_IMAGE = "https://media.base44.com/images/public/6a29ff3bc8effbeb3d637555/2ffc15b8c_curated-lifestyle-H3ZVdxBRIW0-unsplash.jpg";
 
@@ -8,9 +9,10 @@ export default function LandingPage() {
   const { user, isAuthenticated, isLoadingAuth, authChecked } = useAuth();
   const navigate = useNavigate();
 
-  // Auto-redirect admins and facilitators to /admin
+  // Auto-redirect anyone with admin-side access to /admin (org admins were
+  // previously left on the landing page)
   useEffect(() => {
-    if (authChecked && isAuthenticated && ["admin", "facilitator"].includes(user?.role)) {
+    if (authChecked && isAuthenticated && canAccessAdmin(user)) {
       navigate("/admin", { replace: true });
     }
   }, [authChecked, isAuthenticated, user, navigate]);

@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
+import { roleLabel } from "@/lib/roles";
 
-export default function OrganizationsPage() {
+export default function OrganizationsPage({ onViewTeam }) {
   const [orgs, setOrgs] = useState([]);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -56,7 +57,7 @@ export default function OrganizationsPage() {
       {/* Create organization */}
       <section className="bg-white rounded-xl border border-gray-200 p-6">
         <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-1">Add organization</h3>
-        <p className="text-xs text-gray-400 mb-4">Create an organization, then invite its admin from the Facilitators page — pick "org_admin" as the role and this organization when inviting.</p>
+        <p className="text-xs text-gray-400 mb-4">Create an organization, then use "View team" below to invite its first Organization Admin.</p>
         <div className="flex gap-2">
           <input
             type="text"
@@ -103,27 +104,35 @@ export default function OrganizationsPage() {
               <tr className="text-xs text-gray-400 uppercase tracking-wide border-b border-gray-100 bg-gray-50">
                 <th className="text-left px-4 py-3 font-medium">Organization</th>
                 <th className="text-left px-4 py-3 font-medium">Members</th>
+                <th className="px-4 py-3 w-28" />
               </tr>
             </thead>
             <tbody>
               {orgs.map(org => {
                 const members = membersFor(org.id);
+                const admins = members.filter(m => m.role === "org_admin").length;
                 return (
                   <tr key={org.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50/50">
-                    <td className="px-4 py-3 font-medium text-gray-800 align-top">{org.name}</td>
+                    <td className="px-4 py-3 font-medium text-gray-800">{org.name}</td>
                     <td className="px-4 py-3 text-gray-600">
                       {members.length === 0 ? (
                         <span className="text-gray-400 italic">No members yet</span>
                       ) : (
-                        <div className="space-y-1">
-                          {members.map(m => (
-                            <div key={m.id} className="flex items-center gap-2">
-                              <span>{m.full_name || m.email}</span>
-                              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-[#eef2ff] text-[#2952CC]">{m.role}</span>
-                            </div>
-                          ))}
-                        </div>
+                        <span>
+                          {members.length} member{members.length !== 1 ? "s" : ""}
+                          {admins > 0 && (
+                            <span className="text-gray-400"> · {admins} {roleLabel("org_admin")}{admins !== 1 ? "s" : ""}</span>
+                          )}
+                        </span>
                       )}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <button
+                        onClick={() => onViewTeam?.(org.id)}
+                        className="text-xs font-medium text-[#3366FF] hover:text-[#2952CC] transition-colors"
+                      >
+                        View team →
+                      </button>
                     </td>
                   </tr>
                 );

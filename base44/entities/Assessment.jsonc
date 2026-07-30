@@ -85,18 +85,11 @@
           "created_by_id": "{{user.id}}"
         },
         {
+          "data.collaborator_ids": "{{user.id}}"
+        },
+        {
           "user_condition": {
             "role": "admin"
-          }
-        },
-        {
-          "user_condition": {
-            "role": "org_admin"
-          }
-        },
-        {
-          "user_condition": {
-            "role": "facilitator"
           }
         }
       ]

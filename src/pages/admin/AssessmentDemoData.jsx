@@ -174,7 +174,7 @@ export default function AssessmentDemoData({ assessment }) {
         const { name, title } = pool[i];
         setProgress(`Creating respondent ${i + 1} of ${count}: ${name}…`);
 
-        const token = Math.random().toString(36).substring(2) + Date.now().toString(36);
+        const token = crypto.randomUUID();
         const respondent = await base44.entities.Respondent.create({
           assessment_id: assessment.id,
           name,
