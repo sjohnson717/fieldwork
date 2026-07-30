@@ -53,6 +53,27 @@ organization even though their invitation named one.
 Base44 support. A direct `entities.User.list()` only ever returns the caller's
 own record regardless of the read rule, which is why `listUsers` exists.
 
+## Platform roles vs application roles
+
+Base44's `users.inviteUser(email, role)` only accepts its own **platform** roles,
+`user` and `admin`. Passing an application role is rejected:
+
+```
+Invalid role: "facilitator". Role must be either "user" or "admin".
+```
+
+So the two are kept separate. Everyone is invited at the platform level
+(`admin` maps through, everything else becomes `user`), and the intended
+application role travels on the `Invitation` record. The `acceptInvitation`
+function applies it the first time that person signs in, matched to their own
+authenticated email, and marks the invitation `accepted` so it is consumed
+exactly once — otherwise a stale pending invitation would re-promote someone
+after an admin demoted them.
+
+Role assignment is deliberately server-side. `User.update`'s RLS permits
+unrestricted self-update (`{"id": "{{user.id}}"}`), so anything the browser can
+ask for, a user can ask for on their own behalf.
+
 ## The no-org bucket
 
 Absent/null `org_id` is treated as its own shared bucket by `sameOrg()` in

@@ -87,7 +87,12 @@ export default function TeamPage({ orgFilter = null, onClearOrgFilter, onBackToO
     const email = inviteEmail.trim();
     const orgId = isAdmin ? (inviteOrgId || undefined) : currentUser.org_id;
     try {
-      await base44.users.inviteUser(email, inviteRole);
+      // Base44's invite API only accepts its own platform roles ("user" or
+      // "admin") and rejects ours outright. Invite at the platform level, and
+      // carry the application role on the Invitation — acceptInvitation
+      // applies it when they first sign in.
+      const platformRole = inviteRole === "admin" ? "admin" : "user";
+      await base44.users.inviteUser(email, platformRole);
       await base44.entities.Invitation.create({ email, role: inviteRole, status: "pending", org_id: orgId || undefined });
       setInviteSuccess(`Invite sent to ${email}.`);
       setInviteEmail("");
