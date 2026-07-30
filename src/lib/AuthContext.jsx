@@ -132,12 +132,15 @@ export const AuthProvider = ({ children }) => {
       setIsAuthenticated(true);
       setIsLoadingAuth(false);
       setAuthChecked(true);
+      // Returned so callers that need to route on the role — the login form —
+      // see the invitation-applied user rather than the pre-invitation one.
+      return currentUser;
     } catch (error) {
       console.error('User auth check failed:', error);
       setIsLoadingAuth(false);
       setIsAuthenticated(false);
       setAuthChecked(true);
-      
+
       if (error.status === 401 || error.status === 403) {
         const reason = error.data?.extra_data?.reason;
         setAuthError({
@@ -145,6 +148,7 @@ export const AuthProvider = ({ children }) => {
           message: reason === 'user_not_registered' ? 'User not registered for this app' : 'Authentication required'
         });
       }
+      return null;
     }
   };
 

@@ -7,9 +7,12 @@ import { Label } from "@/components/ui/label";
 import { LogIn, Mail, Lock, Loader2 } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
 import GoogleIcon from "@/components/GoogleIcon";
+import { useAuth } from "@/lib/AuthContext";
+import { canAccessAdmin } from "@/lib/roles";
 
 export default function Login() {
   const navigate = useNavigate();
+  const { checkUserAuth } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -21,8 +24,12 @@ export default function Login() {
     setLoading(true);
     try {
       await base44.auth.loginViaEmailPassword(email, password);
-      const user = await base44.auth.me();
-      navigate(["admin", "facilitator"].includes(user?.role) ? "/admin" : "/assess", { replace: true });
+      // Go through the auth context rather than base44.auth.me() directly: on a
+      // first login from an invitation the application role is only applied by
+      // acceptInvitation, so me() still reports the default "user" here and the
+      // invited facilitator would be routed to /assess with no way back.
+      const user = await checkUserAuth();
+      navigate(canAccessAdmin(user) ? "/admin" : "/assess", { replace: true });
     } catch (err) {
       setError(err.message || "Invalid email or password");
     } finally {
