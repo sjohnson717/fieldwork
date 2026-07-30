@@ -28,7 +28,7 @@ export default function ZzRlsProbe() {
   const verdict = result?.verdict || "";
   const tone = verdict.startsWith("PASS")
     ? "text-green-600"
-    : verdict.startsWith("FAIL")
+    : verdict.startsWith("FAIL") || verdict.startsWith("VULNERABLE")
       ? "text-red-600"
       : "text-amber-600";
 
