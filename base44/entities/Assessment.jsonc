@@ -78,7 +78,33 @@
         }
       ]
     },
-    "read": {},
+    "read": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.collaborator_ids": "{{user.id}}"
+        },
+        {
+          "$and": [
+            {
+              "user_condition": {
+                "role": "org_admin"
+              }
+            },
+            {
+              "data.org_id": "{{user.data.org_id}}"
+            }
+          ]
+        }
+      ]
+    },
     "update": {
       "$or": [
         {

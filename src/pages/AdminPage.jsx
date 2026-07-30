@@ -253,7 +253,13 @@ export default function AdminPage() {
               <div className="w-5 h-5 border-2 border-blue-200 border-t-blue-500 rounded-full animate-spin" />
             </div>
           ) : assessments.length === 0 ? (
-            <p className="text-xs text-gray-400 text-center py-4 px-2">No assessments yet.</p>
+            <p className="text-xs text-gray-400 text-center py-4 px-2">
+              {isAdmin
+                ? "No assessments yet."
+                : isOrgAdmin
+                  ? "No assessments for your organization yet."
+                  : "No assessments have been shared with you yet."}
+            </p>
           ) : (
             <ul className="space-y-1">
               {assessments.map(a => (

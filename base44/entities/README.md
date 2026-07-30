@@ -25,13 +25,22 @@ Verified supported: `$and`, `$or`, `$in`, `$nin`, and array containment
 
 ## Why each non-obvious rule is the way it is
 
-**Assessment.read is still `{}` (open), but no longer needs to be.** The three
-unauthenticated flows — `/assess`, `/report/:token`, `/team/:token` — used to
-find their assessment by listing every assessment and matching a token
-client-side, which is why the rule had to stay open. They now resolve tokens
-through the `publicAssessment` function using the service role, so this rule can
-be narrowed (see the phased plan below). Do not narrow it without first checking
-that nothing else reads Assessment anonymously.
+**Assessment.read mirrors `listRespondents`'s own check, clause for clause.**
+The three unauthenticated flows — `/assess`, `/report/:token`, `/team/:token` —
+used to find their assessment by listing every assessment and matching a token
+client-side, which is why the rule stayed open long after it should have. They
+now resolve tokens through `publicAssessment` as service role, so the rule was
+narrowed to super-admin, creator, `collaborator_ids` membership, or an
+`org_admin` whose `org_id` matches.
+
+Note the org clause is deliberately `$and`-ed with `role: org_admin` rather
+than standing alone. An org match on its own would also admit a plain `user` —
+and revoking someone resets their role to `user` while leaving `org_id` in
+place, so a revoked account would have kept reading its former organisation's
+assessments.
+
+`AdminPage` still filters the same way client-side. That is now redundant, and
+worth keeping: with both layers a mistake in either one fails closed.
 
 **Assessment.update is per-assessment, not per-role.** It grants the creator,
 anyone in `collaborator_ids`, and super-admin. It previously granted any
