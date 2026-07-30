@@ -62,6 +62,7 @@ export default function TeamLeaderPage() {
   const [draftNotes, setDraftNotes] = useState({});
   const [savingFlagId, setSavingFlagId] = useState(null);
   const [flagError, setFlagError] = useState("");
+  const [showFlaggedOnly, setShowFlaggedOnly] = useState(false);
 
 
   useEffect(() => {
@@ -161,6 +162,14 @@ export default function TeamLeaderPage() {
   const teamAssessmentLink = `${window.location.origin}/assess?code=${assessment.access_code}`;
   const thisPageLink = `${window.location.origin}/team/${token}`;
 
+  const flaggedCount = activities.filter(a => flags[a.id]?.flagged).length;
+  // Falls back to the full list if the last flag is removed while filtered,
+  // so the view never strands on an empty screen with no toggle to escape it.
+  const visibleActivities =
+    showFlaggedOnly && flaggedCount > 0
+      ? activities.filter(a => flags[a.id]?.flagged)
+      : activities;
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -242,12 +251,34 @@ export default function TeamLeaderPage() {
 
         {/* Activities under review */}
         <section className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-100">
-            <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Activities in this assessment</h2>
-            <p className="text-xs text-gray-400 mt-0.5">
-              {activities.length} {activities.length === 1 ? "activity" : "activities"} your team will rate.
-              Flag any you'd like to discuss with your consultant — they'll decide whether to adjust the set.
-            </p>
+          <div className="px-6 py-4 border-b border-gray-100 flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Activities in this assessment</h2>
+              <p className="text-xs text-gray-400 mt-0.5">
+                {activities.length} {activities.length === 1 ? "activity" : "activities"} your team will rate.
+                Flag any you'd like to discuss with your consultant — they'll decide whether to adjust the set.
+              </p>
+            </div>
+            {flaggedCount > 0 && (
+              <div className="flex shrink-0 rounded-lg border border-gray-200 overflow-hidden">
+                <button
+                  onClick={() => setShowFlaggedOnly(false)}
+                  className={`text-xs font-medium px-3 py-1.5 transition-colors ${
+                    showFlaggedOnly ? "bg-white text-gray-500 hover:bg-gray-50" : "bg-[#3366FF] text-white"
+                  }`}
+                >
+                  All {activities.length}
+                </button>
+                <button
+                  onClick={() => setShowFlaggedOnly(true)}
+                  className={`text-xs font-medium px-3 py-1.5 border-l border-gray-200 transition-colors ${
+                    showFlaggedOnly ? "bg-[#3366FF] text-white" : "bg-white text-gray-500 hover:bg-gray-50"
+                  }`}
+                >
+                  Flagged {flaggedCount}
+                </button>
+              </div>
+            )}
           </div>
 
           {flagError && <p className="text-xs text-red-500 px-6 py-3">{flagError}</p>}
@@ -257,7 +288,7 @@ export default function TeamLeaderPage() {
           ) : (
             <div>
               {FACET_ORDER.map(facet => {
-                const items = activities.filter(a => a.facet === facet);
+                const items = visibleActivities.filter(a => a.facet === facet);
                 if (items.length === 0) return null;
                 return (
                   <div key={facet}>
