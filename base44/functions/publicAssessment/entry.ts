@@ -101,11 +101,18 @@ Deno.serve(async (req) => {
         });
       }
 
-      // Buyer report. No access_code, no team_token.
+      // Buyer report. No access_code, no team_token. Respondent statuses come
+      // along so the report can score completed submissions only, and say how
+      // many of its participants actually finished. No names — the report is
+      // an aggregate view and never identifies individuals.
       case "buyer": {
         const a = assessments.find((x) => x.buyer_token && x.buyer_token === token);
         if (!a) return notFound();
-        return Response.json({ assessment: shape(a) });
+        const respondents = await svc.Respondent.filter({ assessment_id: a.id });
+        return Response.json({
+          assessment: shape(a),
+          respondents: respondents.map((r) => ({ id: r.id, status: r.status })),
+        });
       }
 
       default:

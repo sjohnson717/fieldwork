@@ -325,7 +325,10 @@ export default function ReportPage() {
   const [activityStats, setActivityStats] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [respondentCount, setRespondentCount] = useState(0);
+  // Everyone who answered anything vs. only those who finished. The report
+  // scores the latter and reports both.
+  const [participantCount, setParticipantCount] = useState(0);
+  const [scoredCount, setScoredCount] = useState(0);
   const [filterLevel, setFilterLevel] = useState("problems"); // problems | critical | attention | all
   const [facetFilter, setFacetFilter] = useState(null); // null = all, or specific facet like "DEFINE"
   const [decisions, setDecisions] = useState([]);
@@ -362,12 +365,19 @@ export default function ReportPage() {
       ]);
 
       setActivities(acts);
-      // Derive participant count from distinct respondent_ids in responses
-      const uniqueRespondents = new Set(responses.map(r => r.respondent_id));
-      setRespondentCount(uniqueRespondents.size);
 
-      // Build stats per activity
-      const stats = computeActivityStats(acts, responses);
+      // Only completed submissions are scored. A half-finished set would
+      // otherwise shift every average it touches while being counted as a
+      // full participant.
+      const completedIds = new Set(
+        (result.respondents || []).filter(r => r.status === "completed").map(r => r.id)
+      );
+      const scoredResponses = responses.filter(r => completedIds.has(r.respondent_id));
+
+      setParticipantCount(new Set(responses.map(r => r.respondent_id)).size);
+      setScoredCount(new Set(scoredResponses.map(r => r.respondent_id)).size);
+
+      const stats = computeActivityStats(acts, scoredResponses);
       setActivityStats(stats);
 
       const withDecisions = discussionNotes.filter(n => n.decision?.trim());
@@ -401,7 +411,7 @@ export default function ReportPage() {
   }
 
   // Minimum-response gate
-  const threshold = Math.min(3, respondentCount);
+  const threshold = Math.min(3, scoredCount);
 
   const handleFacetClick = (facet, level) => {
     setFilterLevel(level);
@@ -424,13 +434,21 @@ export default function ReportPage() {
     </div>
   );
 
-  if (respondentCount === 0) {
+  if (participantCount === 0) {
     return gateCard("No team members have been added to this assessment yet.");
   }
 
-  if (respondentCount < threshold) {
+  // Started-but-unfinished responses are not scored, so say so rather than
+  // claiming nobody has responded.
+  if (scoredCount === 0) {
     return gateCard(
-      `Results will appear here once at least ${threshold} ${threshold === 1 ? "person has" : "people have"} responded — ${respondentCount} of ${threshold} so far.`
+      `Results will appear here once responses are completed — ${participantCount} ${participantCount === 1 ? "person has" : "people have"} started, none finished yet.`
+    );
+  }
+
+  if (scoredCount < threshold) {
+    return gateCard(
+      `Results will appear here once at least ${threshold} ${threshold === 1 ? "person has" : "people have"} completed the assessment — ${scoredCount} of ${threshold} so far.`
     );
   }
 
@@ -447,7 +465,7 @@ export default function ReportPage() {
     ? underperforming === 0
       ? `Your team rated ${importantOrCritical} of ${activities.length} activities as Important or Critical — and execution is keeping pace across all of them.`
       : `Your team rated ${importantOrCritical} of ${activities.length} activities as Important or Critical — and execution is falling short on ${underperforming} of them.`
-    : `Assessment data is available for ${activities.length} activities across ${respondentCount} respondents.`;
+    : `Assessment data is available for ${activities.length} activities across ${scoredCount} respondents.`;
 
   // ── Plain-English summary bullets ────────────────────────────────────────
   const summaryBullets = [];
@@ -554,7 +572,10 @@ export default function ReportPage() {
           {assessment.tagline && (
             <p className="text-base text-gray-400 italic mb-4">{assessment.tagline}</p>
           )}
-          <p className="text-sm text-gray-400">{dateStr} · {respondentCount} participant{respondentCount !== 1 ? "s" : ""}</p>
+          <p className="text-sm text-gray-400">
+            {dateStr} · {participantCount} participant{participantCount !== 1 ? "s" : ""}
+            {participantCount !== scoredCount && ` (${scoredCount} completed)`}
+          </p>
         </div>
 
         {/* ── Executive Summary ── */}
@@ -562,7 +583,7 @@ export default function ReportPage() {
           assessment={assessment}
           activities={activities}
           activityStats={activityStats}
-          respondentCount={respondentCount}
+          respondentCount={scoredCount}
           decisions={decisions}
         />
 
@@ -588,8 +609,8 @@ export default function ReportPage() {
               <span className="text-sm text-gray-500 ml-2">worth discussing</span>
             </div>
             <div>
-              <span className="text-3xl font-bold text-[#11CC77]">{respondentCount}</span>
-              <span className="text-sm text-gray-500 ml-2">{respondentCount === 1 ? "participant" : "participants"}</span>
+              <span className="text-3xl font-bold text-[#11CC77]">{scoredCount}</span>
+              <span className="text-sm text-gray-500 ml-2">{scoredCount === 1 ? "participant" : "participants"}</span>
             </div>
           </div>
         </div>
