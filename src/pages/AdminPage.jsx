@@ -9,6 +9,7 @@ import AssessmentDiscussion from "./admin/AssessmentDiscussion";
 import LibraryPage from "./admin/LibraryPage";
 import TeamPage from "./admin/TeamPage";
 import OrganizationsPage from "./admin/OrganizationsPage";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 const NAV_TABS = ["Overview", "Activities", "Ownership Roles", "Results", "Discussion"];
 
@@ -120,13 +121,17 @@ export default function AdminPage() {
   };
 
   const [deleting, setDeleting] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
 
-  const handleDeleteAssessment = async () => {
+  const handleDeleteAssessment = () => {
     if (!selected) return;
-    const confirmed = window.confirm(
-      `Delete "${selected.title}"? This permanently removes the assessment and all its respondents, responses, and discussion notes. This cannot be undone.`
-    );
-    if (!confirmed) return;
+    setDeleteError("");
+    setConfirmingDelete(true);
+  };
+
+  const performDeleteAssessment = async () => {
+    if (!selected) return;
     setDeleting(true);
     try {
       // The cascade runs in deleteAssessment, which checks authority once
@@ -142,8 +147,12 @@ export default function AdminPage() {
         if (next.length > 0) setSelectedSection("assessments");
         return next;
       });
+      setConfirmingDelete(false);
     } catch (e) {
-      alert(`Delete failed: ${e.message}. Please try again.`);
+      // Kept in the dialog rather than an alert(): the failure belongs next to
+      // the action that caused it, and alert() blocks the renderer the same
+      // way window.confirm() did.
+      setDeleteError(e?.message || "Something went wrong. Please try again.");
     }
     setDeleting(false);
   };
@@ -416,6 +425,21 @@ export default function AdminPage() {
           </>
         )}
       </div>
+
+      <ConfirmDialog
+        open={confirmingDelete}
+        destructive
+        title={`Delete "${selected?.title}"?`}
+        message={
+          deleteError
+            ? `Delete failed: ${deleteError}`
+            : "This permanently removes the assessment and all its respondents, responses, and discussion notes. This cannot be undone."
+        }
+        confirmLabel={deleting ? "Deleting…" : "Delete assessment"}
+        busy={deleting}
+        onConfirm={performDeleteAssessment}
+        onCancel={() => { setConfirmingDelete(false); setDeleteError(""); }}
+      />
     </div>
   );
 }
