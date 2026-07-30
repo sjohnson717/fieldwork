@@ -62,7 +62,6 @@ export default function TeamLeaderPage() {
 
   // Invite form
   const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
   const [role, setRole] = useState("user");
   const [submitting, setSubmitting] = useState(false);
   const [lastLink, setLastLink] = useState(null);
@@ -145,20 +144,17 @@ export default function TeamLeaderPage() {
   const handleInvite = async () => {
     setFormError("");
     if (!name.trim()) return setFormError("Please enter a name.");
-    if (!email.trim()) return setFormError("Please enter an email.");
     setSubmitting(true);
     const respondentToken = crypto.randomUUID();
     const created = await base44.entities.Respondent.create({
       assessment_id: assessment.id,
       name: name.trim(),
-      email: email.trim(),
       role,
       token: respondentToken,
       status: "invited",
     });
     setLastLink(personalLink(respondentToken));
     setName("");
-    setEmail("");
     setRole("user");
     setSubmitting(false);
     // Refresh roster through the same server-side view.
@@ -206,21 +202,14 @@ export default function TeamLeaderPage() {
         {/* Invite form */}
         <section className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
           <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-1">Invite a team member</h2>
-          <p className="text-xs text-gray-400 mb-4">Create a personal assessment link for each participant.</p>
+          <p className="text-xs text-gray-400 mb-4">Create a personal assessment link for each participant, then send it to them yourself.</p>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3 items-start">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3 items-start">
             <input
               type="text"
               placeholder="Full name"
               value={name}
               onChange={e => setName(e.target.value)}
-              className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
-            />
-            <input
-              type="email"
-              placeholder="Email address"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
               className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
             />
             <div>
@@ -272,7 +261,6 @@ export default function TeamLeaderPage() {
               <thead>
                 <tr className="text-xs text-gray-400 uppercase tracking-wide border-b border-gray-100 bg-gray-50">
                   <th className="text-left px-4 py-3 font-medium">Name</th>
-                  <th className="text-left px-4 py-3 font-medium">Email</th>
                   <th className="text-left px-4 py-3 font-medium w-28">Role</th>
                   <th className="text-left px-4 py-3 font-medium w-28">Status</th>
                   <th className="px-4 py-3 w-24" />
@@ -282,7 +270,6 @@ export default function TeamLeaderPage() {
                 {respondents.map(r => (
                   <tr key={r.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50/50">
                     <td className="px-4 py-3 font-medium text-gray-800">{r.name}</td>
-                    <td className="px-4 py-3 text-gray-500">{r.email || "—"}</td>
                     <td className="px-4 py-3 text-gray-500 text-xs">
                       {r.role === "team_leader" ? "Team leader" : "Team member"}
                     </td>

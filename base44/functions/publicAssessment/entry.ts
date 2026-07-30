@@ -93,6 +93,7 @@ Deno.serve(async (req) => {
             id: r.id,
             name: r.name,
             title: r.title || null,
+            role: r.role || "user",
             token: r.token,
             status: r.status,
             completed_date: r.completed_date || null,
