@@ -23,7 +23,14 @@
     },
     "org_id": {
       "type": "string",
-      "description": "Organization this user belongs to. Absent/null means the legacy no-org bucket."
+      "description": "Organization this user belongs to. Absent/null means the legacy no-org bucket.",
+      "rls": {
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     }
   },
   "required": [

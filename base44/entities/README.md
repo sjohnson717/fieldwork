@@ -73,27 +73,39 @@ after an admin demoted them.
 Role assignment is deliberately server-side — see the next section for why
 self-update is no longer permitted at all.
 
-## Why User.update is super-admin only
+## The built-in User entity ignores entity-level RLS
 
-Measured, not assumed. Base44 protects the `role` field itself: an attempt by a
-non-admin to change their own role — sideways or upward — is rejected with
-*"Only platform users can update user roles"*, whatever the RLS rule says.
+This one is measured, not assumed, and it is the opposite of what the rules
+imply. On `User` specifically:
 
-`org_id` gets no such protection. It is an ordinary custom field, so while
-`User.update` permitted self-update (`{"id": "{{user.id}}"}`), any user could
-rewrite their own organization in a single API call, then read and manage
-another tenant's data. That defeats org scoping entirely, including the
-`listUsers` and `updateTeamMember` functions, which both derive authority from
-the caller's stored `org_id`.
+| Protection | Enforced? |
+|---|---|
+| Entity-level `rls.update` | **No** |
+| Entity-level `rls.read` on list operations | **No** (confirmed by Base44 support) |
+| Per-field `properties.<field>.rls` | **Yes** |
+| Base44's own rule on the `role` field | **Yes**, always |
 
-`User.update` is therefore super-admin only. Nothing in the app needs a user to
-write to their own record; `acceptInvitation` and `updateTeamMember` both use
-the service role, which bypasses RLS.
+Setting `rls.update` to super-admin only did *not* stop a non-admin from
+rewriting their own record — the rule went live and the write still landed.
+Only the per-field rule on `org_id` actually blocked it:
 
-**Any org boundary keyed on `org_id` is only as strong as this rule.** If a
-self-service profile page is ever added, do not restore the blanket
-self-update clause — use per-field RLS inside `properties` so `org_id` stays
-protected.
+```
+You're not allowed to modify the following fields: data.org_id
+```
+
+`role` needs no rule of ours; Base44 rejects any non-admin attempt to change it
+with *"Only platform users can update user roles"*.
+
+**So `org_id`'s protection is the per-field rule inside `properties`, not the
+entity-level one.** Do not remove it. Every org boundary in the app rests on it:
+`listUsers` and `updateTeamMember` both derive authority from the caller's
+stored `org_id`, so a user who could rewrite that field could read and manage
+another tenant's data — and `updateTeamMember` writes as service role, which
+bypasses even Base44's own role protection.
+
+The entity-level `update` rule is kept as defence in depth, but it is not what
+is doing the work. Treat any *new* custom field on `User` as unprotected until
+it has a per-field rule, and verify with a probe rather than assuming.
 
 ## The no-org bucket
 
