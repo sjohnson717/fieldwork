@@ -46,12 +46,12 @@ Each facilitator only sees assessments they created themselves, plus any they've
 | **Dashboard** | Team leader status dashboard. Does not show individual responses. | Overview tab → Links to share |
 | **Report** | Client-facing report. Used during or after the assessment completion. Shows findings, gaps, and ownership analysis. After closing the assessment, also shows debrief decisions, if any. | Overview tab → Links to share |
 
-> **Who gets which link?** All participants get the Access link. Alternatively, you use the team leader's Status Dashboard to create links for each individual. Share the Dashboard and Report links only with team leaders. 
+> **Who gets which link?** All participants get the Access link. Alternatively, you use the Team Leader Dashboard to create links for each individual. Share the Dashboard and Report links only with team leaders.
 
 ## Distributing the Survey
 
-- For facilitators: Get a list of names and emails from the team leader. You can email the participants with the generic **Access** code or use the the **STATUS Dashboard** to get custom links to share.
-- For team leaders: Share the **STATUS Dashboard** link from the Overview tab. They can add names and emails for the assessments.
+- For facilitators: Get a list of names and emails from the team leader. You can email the participants with the generic **Access** code or use the the **Team Leader Dashboard** to get custom links to share.
+- For team leaders: Share the **Team Leader Dashboard** link from the Overview tab. They can add names and emails for the assessments.
 - Suggested message: *"Please take 15–20 minutes to complete this assessment before [DATE]. Your responses are anonymous. [LINK]"*
 - Set a deadline. Two business days is usually sufficient.
 

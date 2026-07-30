@@ -279,9 +279,9 @@ export default function AssessmentOverview({ assessment, onUpdate, onDelete, del
         <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-1">Links to share</h3>
         <p className="text-xs text-gray-400 mb-4">Copy or open links to the team leader pages.</p>
         <div className="space-y-3">
-          {/* Status link */}
+          {/* Team leader dashboard link */}
           <div className="flex items-center justify-between gap-4">
-            <span className="text-sm text-gray-700 font-medium w-56 shrink-0">STATUS Dashboard</span>
+            <span className="text-sm text-gray-700 font-medium w-56 shrink-0">Team Leader Dashboard</span>
             {assessment.team_token ? (
               <div className="flex items-center gap-2">
                 <button
