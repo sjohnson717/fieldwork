@@ -157,8 +157,12 @@ export const AuthProvider = ({ children }) => {
     setIsAuthenticated(false);
     
     if (shouldRedirect) {
-      // Use the SDK's logout method which handles token cleanup and redirect
-      base44.auth.logout(window.location.href);
+      // Return to the landing page, not window.location.href. Logging out
+      // happens from /admin, which is protected — coming back to it with no
+      // session means ProtectedRoute immediately fires navigateToLogin(), so
+      // signing out ricochets through a blank protected page into a redirect
+      // chain instead of simply landing somewhere public.
+      base44.auth.logout(`${window.location.origin}/`);
     } else {
       // Just remove the token without redirect
       base44.auth.logout();
