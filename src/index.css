@@ -90,3 +90,54 @@
     @apply bg-background text-foreground font-body;
   }
 }
+
+/* ── Print ───────────────────────────────────────────────────────────────────
+   Used by the respondent's "Save as PDF" action on the assessment review page,
+   which just calls window.print() — every OS print dialog offers Save as PDF,
+   so this needs no library and produces real selectable text rather than an
+   image of the page. */
+@media print {
+  /* Screen chrome that means nothing on paper: buttons, nav, decoration. */
+  .no-print {
+    display: none !important;
+  }
+
+  /* Blocks that only make sense on paper (title, attribution, date). */
+  .print-only {
+    display: block !important;
+  }
+
+  /* Badges carry meaning through colour, so keep it rather than letting the
+     browser drop backgrounds to save ink. */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Flat white page — the grey app background wastes toner and adds nothing. */
+  body,
+  .print-plain {
+    background: #fff !important;
+  }
+
+  /* Don't split an activity row or a facet's table across pages. */
+  tr,
+  img {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .print-keep-together {
+    break-inside: avoid-page;
+    page-break-inside: avoid;
+  }
+
+  @page {
+    margin: 16mm;
+  }
+}
+
+/* Hidden on screen; revealed by the print rule above. */
+.print-only {
+  display: none;
+}

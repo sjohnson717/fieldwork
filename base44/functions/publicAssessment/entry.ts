@@ -77,6 +77,9 @@ Deno.serve(async (req) => {
             name: r.name,
             title: r.title || null,
             status: r.status,
+            // Dates the printed copy of their answers, so it reads as a record
+            // of what they submitted and when.
+            completed_date: r.completed_date || null,
           },
         });
       }

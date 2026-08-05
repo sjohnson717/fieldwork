@@ -607,10 +607,30 @@ const handleNext = async () => {
     };
 
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 print-plain">
         <div className="max-w-3xl mx-auto px-4 py-10">
+          {/* Paper-only header: the on-screen one is conversational and has no
+              assessment name or date, which a saved PDF needs to be useful. */}
+          <div className="print-only mb-6">
+            <h1 className="text-xl font-bold text-gray-900">{assessment?.title}</h1>
+            {assessment?.company_name && (
+              <p className="text-sm text-gray-600">{assessment.company_name}</p>
+            )}
+            <p className="text-sm text-gray-600 mt-2">
+              {name}{title ? ` · ${title}` : ""}
+            </p>
+            {/* The submission date, not the print date — this is a record of
+                what they said and when. Revising re-stamps it, so a reprinted
+                copy always matches the answers shown on it. */}
+            <p className="text-xs text-gray-500">
+              Submitted {new Date(respondent?.completed_date || Date.now()).toLocaleDateString(undefined, {
+                year: "numeric", month: "long", day: "numeric"
+              })}
+            </p>
+          </div>
+
           {/* Header */}
-          <div className="flex items-center gap-3 mb-8">
+          <div className="flex items-center gap-3 mb-8 no-print">
             <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center shrink-0">
               <svg className="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -634,7 +654,7 @@ const handleNext = async () => {
           {availableFacets.map(facet => {
             const facetActs = activities.filter(a => a.facet === facet);
             return (
-              <div key={facet} className="mb-6">
+              <div key={facet} className="mb-6 print-keep-together">
                 <div className="text-xs font-bold uppercase tracking-widest text-blue-600 mb-2 px-1">{facet}</div>
                 <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
                   <table className="w-full text-sm">
@@ -677,7 +697,16 @@ const handleNext = async () => {
             );
           })}
 
-          <div className="flex justify-center gap-4 mt-8 mb-4">
+          <div className="flex flex-wrap justify-center gap-4 mt-8 mb-4 no-print">
+            {/* window.print() rather than a PDF library: every print dialog
+                offers "Save as PDF", and the result is real selectable text
+                instead of a screenshot. */}
+            <button
+              onClick={() => window.print()}
+              className="border border-gray-300 hover:border-gray-400 text-gray-600 hover:text-gray-800 font-medium px-6 py-2.5 rounded-lg transition-colors text-sm"
+            >
+              Save as PDF
+            </button>
             {/* A closed assessment is read-only, even to someone reviewing
                 their own submission. */}
             {assessment?.status !== "closed" && (
