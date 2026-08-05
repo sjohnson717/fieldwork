@@ -621,12 +621,24 @@ const handleNext = async () => {
             </p>
             {/* The submission date, not the print date — this is a record of
                 what they said and when. Revising re-stamps it, so a reprinted
-                copy always matches the answers shown on it. */}
-            <p className="text-xs text-gray-500">
-              Submitted {new Date(respondent?.completed_date || Date.now()).toLocaleDateString(undefined, {
-                year: "numeric", month: "long", day: "numeric"
-              })}
-            </p>
+                copy always matches the answers shown on it.
+                When someone has just submitted, "now" is the submission time.
+                When they're revisiting and the stored date is missing, print
+                no date at all: guessing today would date a week-old
+                submission as though it were made this morning. */}
+            {(() => {
+              const submitted = respondent?.completed_date
+                ? new Date(respondent.completed_date)
+                : returningCompleted ? null : new Date();
+              if (!submitted) return null;
+              return (
+                <p className="text-xs text-gray-500">
+                  Submitted {submitted.toLocaleDateString(undefined, {
+                    year: "numeric", month: "long", day: "numeric"
+                  })}
+                </p>
+              );
+            })()}
           </div>
 
           {/* Header */}
