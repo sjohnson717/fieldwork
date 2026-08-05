@@ -44,9 +44,14 @@ export default function AdminPage() {
 
   // One place to remember the selection, so creating, deleting and clicking a
   // row all persist it without each having to.
+  //
+  // Only ever writes. This effect also runs on mount, when selectedId is still
+  // null — clearing the key there would wipe the stored selection before
+  // loadAssessments got a chance to read it, which is exactly the bug this
+  // whole feature was meant to fix. A stale id left behind is harmless:
+  // loadAssessments ignores any id that isn't still in the user's list.
   useEffect(() => {
     if (selectedId) sessionStorage.setItem(SELECTED_ASSESSMENT_KEY, selectedId);
-    else sessionStorage.removeItem(SELECTED_ASSESSMENT_KEY);
   }, [selectedId]);
 
   const isAdmin = user?.role === "admin";
