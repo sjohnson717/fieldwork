@@ -51,6 +51,9 @@ function RatingButton({ options, value, onChange, colorMap }) {
 
 export default function AssessPage() {
   const [step, setStep] = useState("entry");
+  // True when this visit began with an already-completed submission, which
+  // changes the review page from "confirm and submit" to "look back".
+  const [returningCompleted, setReturningCompleted] = useState(false);
   const [code, setCode] = useState("");
   const [assessment, setAssessment] = useState(null);
   const [name, setName] = useState("");
@@ -79,6 +82,28 @@ export default function AssessPage() {
     }
   }, []);
 
+  // Activities, job titles and any answers this respondent already saved.
+  // Shared by the resume path and the review-after-completing path.
+  const loadSurveyData = async (a, respondentId) => {
+    const acts = await getAssignedActivities(a);
+    setActivities(acts);
+    const titles = await base44.entities.JobTitle.filter({ active: true }, "sort_order");
+    setAllTitles(titles.map(t => t.name));
+
+    const allResponses = await base44.entities.Response.list();
+    const saved = allResponses.filter(resp => resp.respondent_id === respondentId);
+    const rebuilt = {};
+    for (const resp of saved) {
+      rebuilt[resp.activity_id] = {
+        id: resp.id,
+        importance: resp.importance || "",
+        execution: resp.execution || "",
+        suggested_owner: resp.suggested_owner || ""
+      };
+    }
+    setResponses(rebuilt);
+  };
+
   const loadFromToken = async (t) => {
     setStep("loading");
     try {
@@ -91,21 +116,9 @@ export default function AssessPage() {
         return;
       }
       const r = session.respondent;
-
-      if (r.status === "completed") {
-        setName(r.name);
-        setStep("already-done");
-        return;
-      }
-
       const a = session.assessment;
       if (!a) {
         setError("This link is no longer valid.");
-        setStep("token-error");
-        return;
-      }
-      if (a.status === "closed") {
-        setError("This assessment is no longer accepting responses.");
         setStep("token-error");
         return;
       }
@@ -117,26 +130,29 @@ export default function AssessPage() {
       // created as "started", so there is no earlier state to promote from.
       setRespondent(r);
 
+      // Someone returning to their own link after finishing can look back at
+      // what they submitted. Their answers are loaded up front so the review
+      // page is one click away, and this deliberately sits above the "closed"
+      // check — once an assessment closes they can still see their own
+      // answers, they just can't change them.
+      if (r.status === "completed") {
+        setReturningCompleted(true);
+        if (r.title) setTitle(r.title);
+        await loadSurveyData(a, r.id);
+        setStep("already-done");
+        return;
+      }
+
+      if (a.status === "closed") {
+        setError("This assessment is no longer accepting responses.");
+        setStep("token-error");
+        return;
+      }
+
       if (r.title) {
         // Has title — go straight to rating
         setTitle(r.title);
-        const acts = await getAssignedActivities(a);
-        setActivities(acts);
-        const titles = await base44.entities.JobTitle.filter({ active: true }, "sort_order");
-        setAllTitles(titles.map(t => t.name));
-        // Pre-populate any previously saved answers
-        const allResponses = await base44.entities.Response.list();
-        const saved = allResponses.filter(resp => resp.respondent_id === r.id);
-        const rebuilt = {};
-        for (const resp of saved) {
-          rebuilt[resp.activity_id] = {
-            id: resp.id,
-            importance: resp.importance || "",
-            execution: resp.execution || "",
-            suggested_owner: resp.suggested_owner || ""
-          };
-        }
-        setResponses(rebuilt);
+        await loadSurveyData(a, r.id);
         setStep("rating");
       } else {
         // Needs title — show minimal intro
@@ -219,6 +235,9 @@ export default function AssessPage() {
   };
 
   const handleRevise = async () => {
+    // They're answering again, so the end of the flow should read as a fresh
+    // submission rather than a look-back.
+    setReturningCompleted(false);
     await base44.entities.Respondent.update(respondent.id, { status: "started" });
     await loadExistingResponses();
     setCurrentFacetIndex(0);
@@ -317,7 +336,13 @@ const handleNext = async () => {
             </svg>
           </div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">You're all done{name ? `, ${name.split(" ")[0]}` : ""}!</h1>
-          <p className="text-gray-500">You've already completed this assessment. Thanks!</p>
+          <p className="text-gray-500 mb-6">You've already completed this assessment. Thanks!</p>
+          <button
+            onClick={() => setStep("done")}
+            className="border border-gray-300 hover:border-gray-400 text-gray-600 hover:text-gray-800 font-medium px-6 py-2.5 rounded-lg transition-colors text-sm"
+          >
+            Review my responses
+          </button>
         </div>
       </div>
     </div>
@@ -592,8 +617,16 @@ const handleNext = async () => {
               </svg>
             </div>
             <div>
-              <h1 className="text-xl font-bold text-gray-900">Thank you, {name}!</h1>
-              <p className="text-sm text-gray-500">Your responses have been recorded. Here's a summary of what you submitted.</p>
+              <h1 className="text-xl font-bold text-gray-900">
+                {returningCompleted ? `Your responses, ${name}` : `Thank you, ${name}!`}
+              </h1>
+              <p className="text-sm text-gray-500">
+                {!returningCompleted
+                  ? "Your responses have been recorded. Here's a summary of what you submitted."
+                  : assessment?.status === "closed"
+                    ? "Here's what you submitted. This assessment is now closed, so your answers can't be changed."
+                    : "Here's what you submitted. You can still change any of it."}
+              </p>
             </div>
           </div>
 
@@ -645,20 +678,28 @@ const handleNext = async () => {
           })}
 
           <div className="flex justify-center gap-4 mt-8 mb-4">
+            {/* A closed assessment is read-only, even to someone reviewing
+                their own submission. */}
+            {assessment?.status !== "closed" && (
+              <button
+                onClick={handleRevise}
+                className="border border-gray-300 hover:border-gray-400 text-gray-600 hover:text-gray-800 font-medium px-6 py-2.5 rounded-lg transition-colors text-sm"
+              >
+                ← Revise my answers
+              </button>
+            )}
+            {/* Already submitted — "Submit" again would be meaningless, so
+                this just closes the review and returns to the confirmation. */}
             <button
-              onClick={handleRevise}
-              className="border border-gray-300 hover:border-gray-400 text-gray-600 hover:text-gray-800 font-medium px-6 py-2.5 rounded-lg transition-colors text-sm"
-            >
-              ← Revise my answers
-            </button>
-            <button
-              onClick={() => setStep("thankyou")}
+              onClick={() => setStep(returningCompleted ? "already-done" : "thankyou")}
               className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2.5 rounded-lg transition-colors text-sm"
             >
-              Submit
+              {returningCompleted ? "Close" : "Submit"}
               </button>
               </div>
-              <p className="text-center text-xs text-gray-400">Your feedback will help shape the team's professional development plan.</p>
+              {!returningCompleted && (
+                <p className="text-center text-xs text-gray-400">Your feedback will help shape the team's professional development plan.</p>
+              )}
         </div>
       </div>
     );
