@@ -13,6 +13,11 @@ import ConfirmDialog from "@/components/ConfirmDialog";
 
 const NAV_TABS = ["Overview", "Activities", "Ownership Roles", "Results", "Discussion"];
 
+// Which assessment was open, so leaving the admin page and coming back doesn't
+// dump you on a different one. Session-scoped on purpose: restoring a
+// selection from days ago would be more surprising than helpful.
+const SELECTED_ASSESSMENT_KEY = "qa_admin_selected_assessment";
+
 const STATUS_COLORS = {
   draft: "bg-gray-100 text-gray-500",
   active: "bg-green-100 text-green-700",
@@ -36,6 +41,13 @@ export default function AdminPage() {
   const [createError, setCreateError] = useState("");
 
   useEffect(() => { document.title = "Admin | Quartz Assessment"; }, []);
+
+  // One place to remember the selection, so creating, deleting and clicking a
+  // row all persist it without each having to.
+  useEffect(() => {
+    if (selectedId) sessionStorage.setItem(SELECTED_ASSESSMENT_KEY, selectedId);
+    else sessionStorage.removeItem(SELECTED_ASSESSMENT_KEY);
+  }, [selectedId]);
 
   const isAdmin = user?.role === "admin";
   const isOrgAdmin = user?.role === "org_admin";
@@ -65,9 +77,16 @@ export default function AdminPage() {
         : isOrgAdmin
           ? results.filter(a => sameOrg(a.org_id, user.org_id) || invitedTo(a))
           : results.filter(invitedTo);
-      setAssessments(scoped.reverse());
-      if (scoped.length > 0 && !selectedId) {
-        setSelectedId(scoped[scoped.length - 1].id); // pick most recent
+      // list() returns oldest first; the sidebar shows newest first.
+      const ordered = [...scoped].reverse();
+      setAssessments(ordered);
+      if (ordered.length > 0 && !selectedId) {
+        // Come back to whatever was open before navigating away. The stored id
+        // is only trusted if it's still in this user's list — it may have been
+        // deleted, or access to it withdrawn, since.
+        const remembered = sessionStorage.getItem(SELECTED_ASSESSMENT_KEY);
+        const stillVisible = remembered && ordered.some(a => a.id === remembered);
+        setSelectedId(stillVisible ? remembered : ordered[0].id);
       }
     } catch (e) {
       console.error("Failed to load assessments", e);
