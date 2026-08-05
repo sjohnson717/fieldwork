@@ -134,6 +134,12 @@
     display: table-header-group;
   }
 
+  /* Never leave a heading alone at the foot of a page. */
+  h1, h2, h3 {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+
   /* Zero page margins suppress the browser's own header and footer, which
      otherwise stamp the page URL onto every sheet — and this page's URL
      contains the respondent's private token, which would let anyone holding

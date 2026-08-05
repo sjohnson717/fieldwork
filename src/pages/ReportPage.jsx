@@ -549,10 +549,10 @@ export default function ReportPage() {
     : "";
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 print-plain">
 
       {/* ── Header ── */}
-      <header className="bg-white border-b border-gray-100 shadow-sm">
+      <header className="bg-white border-b border-gray-100 shadow-sm no-print">
         <div className="max-w-4xl mx-auto px-6 py-5 flex items-center justify-between">
           <img src={QUARTZ_LOGO} alt="Quartz Assessments" className="h-8 object-contain" />
           <div className="text-right">
@@ -565,7 +565,15 @@ export default function ReportPage() {
 
         {/* ── Title block ── */}
         <div className="mb-10">
-          <h1 className="text-3xl font-bold text-gray-900 mb-1">{assessment.title}</h1>
+          <div className="flex items-start justify-between gap-4">
+            <h1 className="text-3xl font-bold text-gray-900 mb-1">{assessment.title}</h1>
+            <button
+              onClick={() => window.print()}
+              className="no-print shrink-0 border border-gray-300 hover:border-gray-400 text-gray-600 hover:text-gray-800 font-medium px-4 py-2 rounded-lg transition-colors text-sm"
+            >
+              Save as PDF
+            </button>
+          </div>
           {assessment.company_name && (
             <p className="text-lg text-gray-500 mb-4">{assessment.company_name}</p>
           )}
@@ -643,7 +651,7 @@ export default function ReportPage() {
         </div>
 
         {/* ── Clickable filter chips ── */}
-        <div className="flex items-center gap-2 mb-8 flex-wrap">
+        <div className="flex items-center gap-2 mb-8 flex-wrap no-print">
           {[
             { key: "critical", color: "#FF3333", label: `Immediate attention`, count: criticalGaps },
             { key: "attention", color: "#FFCC00", label: `Worth discussing`, count: attentionGaps },
@@ -692,6 +700,20 @@ export default function ReportPage() {
             )}
           </span>
         </div>
+
+        {/* On paper the chips are gone, so say plainly which activities this
+            copy covers — otherwise a filtered report reads as the whole set. */}
+        <p className="print-only text-xs text-gray-500 mb-6">
+          {filterLevel === "all"
+            ? `All ${activities.length} activities.`
+            : filterLevel === "critical"
+            ? `Filtered to the ${criticalGaps} ${criticalGaps === 1 ? "activity" : "activities"} needing immediate attention.`
+            : filterLevel === "attention"
+            ? `Filtered to the ${attentionGaps} ${attentionGaps === 1 ? "activity" : "activities"} worth discussing.`
+            : filterLevel === "ontrack"
+            ? `Filtered to the ${onTrackCount} ${onTrackCount === 1 ? "activity" : "activities"} performing well.`
+            : `Filtered to the ${problemCount} of ${activities.length} activities needing attention.`}
+        </p>
 
         {/* ── Theme sections ── */}
         {THEME_GROUPS.map(group => (

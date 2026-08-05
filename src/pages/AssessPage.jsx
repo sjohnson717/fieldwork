@@ -717,7 +717,7 @@ const handleNext = async () => {
               onClick={() => window.print()}
               className="border border-gray-300 hover:border-gray-400 text-gray-600 hover:text-gray-800 font-medium px-6 py-2.5 rounded-lg transition-colors text-sm"
             >
-              Save as PDF
+              Print my responses
             </button>
             {/* A closed assessment is read-only, even to someone reviewing
                 their own submission. */}
