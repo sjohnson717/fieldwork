@@ -120,20 +120,32 @@
     background: #fff !important;
   }
 
-  /* Don't split an activity row or a facet's table across pages. */
+  /* Don't split an individual activity row across pages. Facet tables are
+     allowed to flow — forcing each onto its own page turned 26 activities
+     into five sparse pages. */
   tr,
   img {
     break-inside: avoid;
     page-break-inside: avoid;
   }
 
-  .print-keep-together {
-    break-inside: avoid-page;
-    page-break-inside: avoid;
+  /* Repeat column headers when a table continues onto the next page. */
+  thead {
+    display: table-header-group;
   }
 
+  /* Zero page margins suppress the browser's own header and footer, which
+     otherwise stamp the page URL onto every sheet — and this page's URL
+     contains the respondent's private token, which would let anyone holding
+     the PDF reopen and edit their answers. Margins come back as padding on
+     the printed container instead. The cost is losing the browser's page
+     numbering; leaking the token is the worse trade. */
   @page {
-    margin: 16mm;
+    margin: 0;
+  }
+
+  .print-plain {
+    padding: 14mm !important;
   }
 }
 
