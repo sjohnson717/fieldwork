@@ -197,9 +197,26 @@ build proves nothing about RLS.
 
 ## Two assessment types on one entity
 
-`Assessment.type` is `team_gap` or `personal`, and `Response` carries both sets
-of answer fields. Absent means `team_gap`, which is what every record predating
-the field is — nothing was backfilled, and nothing needs to be.
+`Assessment.assessment_type` is `team_gap` or `personal`, and `Response` carries
+both sets of answer fields. Absent means `team_gap`, which is what every record
+predating the field is — nothing was backfilled, and nothing needs to be.
+
+**It is not called `type`, and must not be.** It was, briefly, and the field
+silently vanished: `Assessment.create` accepted a payload containing
+`type: "personal"`, returned success, and stored a record with no `type` at
+all. No error, no validation failure, nothing in the response to indicate the
+field had been discarded. The name collides with the schema's own `type`
+keyword — every entity schema is `{"name": …, "type": "object", "properties":
+…}` — and Base44's validation layer drops the custom field rather than
+reporting the ambiguity.
+
+Two details worth keeping, because they made this hard to see. The bug is on
+the **SDK write path only**: a direct database `$set` of `type` persisted
+perfectly well, so the field looked writable when probed from the outside. And
+the symptom appeared far from the cause — a personal assessment rendered as a
+gap analysis, which reads like a UI bug in the type branch rather than a
+missing column. The general lesson: if a field never arrives and nothing
+errors, suspect the name before the logic.
 
 A second entity was the obvious alternative and would have been worse. The two
 types share the activity library, respondent self-registration, the access code,

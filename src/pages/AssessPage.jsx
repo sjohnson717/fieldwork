@@ -275,7 +275,7 @@ export default function AssessPage() {
   // Which questions this assessment asks. Everything else about the flow —
   // code entry, facet paging, resume, review, submission — is identical, so
   // this is the only thing the two types disagree about.
-  const isPersonal = assessment?.type === "personal";
+  const isPersonal = assessment?.assessment_type === "personal";
 
   // The team assessment is only ever reported in aggregate. A personal
   // assessment is the opposite — it is read per person, and promising

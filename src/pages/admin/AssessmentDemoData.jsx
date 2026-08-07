@@ -194,7 +194,7 @@ export default function AssessmentDemoData({ assessment }) {
       return;
     }
 
-    const isPersonal = assessment.type === "personal";
+    const isPersonal = assessment.assessment_type === "personal";
     const facets = [...new Set(activities.map(a => a.facet).filter(Boolean))];
 
     const count = Math.min(respondentCount, FAKE_RESPONDENTS.length);

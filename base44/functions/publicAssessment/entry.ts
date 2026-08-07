@@ -23,7 +23,7 @@ import { createClientFromRequest } from "npm:@base44/sdk@0.8.39";
 const PUBLIC_FIELDS = [
   "id",
   "title",
-  "type",
+  "assessment_type",
   "tagline",
   "company_name",
   "status",
@@ -145,7 +145,7 @@ Deno.serve(async (req) => {
           linked.push({
             id: rel.id,
             title: rel.title,
-            type: rel.type || "team_gap",
+            type: rel.assessment_type || "team_gap",
             status: rel.status,
             access_code: rel.access_code,
             respondents: relRespondents.map((r) => ({

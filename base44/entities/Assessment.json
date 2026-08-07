@@ -8,7 +8,7 @@
     "buyer_token": { "type": "string" },
     "team_token": { "type": "string" },
     "status": { "type": "string", "enum": ["draft", "active", "closed"], "default": "draft" },
-    "type": { "type": "string", "enum": ["team_gap", "personal"], "default": "team_gap" },
+    "assessment_type": { "type": "string", "enum": ["team_gap", "personal"], "default": "team_gap" },
     "parent_assessment_id": { "type": "string" },
     "roles": { "type": "array", "items": { "type": "string" } },
     "activity_ids": { "type": "array", "items": { "type": "string" }, "default": [] },

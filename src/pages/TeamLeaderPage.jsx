@@ -254,7 +254,7 @@ export default function TeamLeaderPage() {
         {linked.length > 0 && (
           <section className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {[
-              { id: assessment.id, type: assessment.type, rows: respondents },
+              { id: assessment.id, type: assessment.assessment_type, rows: respondents },
               ...linked.map(l => ({ id: l.id, type: l.type, rows: l.respondents })),
             ].map(entry => (
               <div key={entry.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm px-6 py-5">
@@ -277,7 +277,7 @@ export default function TeamLeaderPage() {
         <section className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5">
           <div>
             <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-1">
-              {linked.length > 0 ? `Send this to your team · ${typeLabel(assessment.type)}` : "Send this to your team"}
+              {linked.length > 0 ? `Send this to your team · ${typeLabel(assessment.assessment_type)}` : "Send this to your team"}
             </h2>
             <p className="text-xs text-gray-400 mb-3">
               One link for everyone. Each person enters their name and job title when they open it,
@@ -307,7 +307,7 @@ export default function TeamLeaderPage() {
         <section className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-100">
             <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
-              {linked.length > 0 ? `Participants · ${typeLabel(assessment.type)}` : "Participants"}
+              {linked.length > 0 ? `Participants · ${typeLabel(assessment.assessment_type)}` : "Participants"}
             </h2>
             <p className="text-xs text-gray-400 mt-0.5">
               {respondents.length} total · {receivedCount(respondents)} received

@@ -12,12 +12,18 @@ import TeamPage from "./admin/TeamPage";
 import OrganizationsPage from "./admin/OrganizationsPage";
 import ConfirmDialog from "@/components/ConfirmDialog";
 
+// The discriminator is `assessment_type`, not `type`. A custom entity field
+// named `type` is accepted by Assessment.create and then silently dropped —
+// no error, no field — because it collides with the schema's own `type`
+// keyword. Measured on 2026-08-07: the create payload carried type:"personal"
+// and the stored record came back with no type at all. Do not rename it back.
+//
 // A personal assessment never asks who should own an activity and produces no
 // team gap to discuss, so those two tabs would be empty rather than merely
 // unused. Everything else is common to both types.
 const TEAM_TABS = ["Overview", "Activities", "Ownership Roles", "Results", "Discussion"];
 const PERSONAL_TABS = ["Overview", "Activities", "Results"];
-const tabsFor = (assessment) => (assessment?.type === "personal" ? PERSONAL_TABS : TEAM_TABS);
+const tabsFor = (assessment) => (assessment?.assessment_type === "personal" ? PERSONAL_TABS : TEAM_TABS);
 
 // Which assessment was open, so leaving the admin page and coming back doesn't
 // dump you on a different one. Session-scoped on purpose: restoring a
@@ -131,7 +137,7 @@ export default function AdminPage() {
         access_code: code,
         buyer_token: buyerToken,
         status: "draft",
-        type: newType,
+        assessment_type: newType,
         roles: [],
         collaborator_ids: collaboratorIds,
         org_id: user.org_id || undefined,
@@ -333,7 +339,7 @@ export default function AdminPage() {
                       </span>
                     </div>
                     <div className="flex items-center gap-1.5 mt-0.5">
-                      {a.type === "personal" && (
+                      {a.assessment_type === "personal" && (
                         <span className="text-[10px] font-semibold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded shrink-0">Personal</span>
                       )}
                       {a.company_name && (
@@ -484,7 +490,7 @@ export default function AdminPage() {
                 />
               )}
               {effectiveTab === "Results" && (
-                selected.type === "personal"
+                selected.assessment_type === "personal"
                   ? <PersonalResults assessment={selected} />
                   : <AssessmentResults assessment={selected} />
               )}

@@ -36,7 +36,7 @@ export default function AssessmentOverview({ assessment, onUpdate, onDelete, del
   const [teamAssessments, setTeamAssessments] = useState([]);
   const [savingParent, setSavingParent] = useState(false);
 
-  const isPersonal = assessment.type === "personal";
+  const isPersonal = assessment.assessment_type === "personal";
 
   useEffect(() => {
     loadUsers();
@@ -47,7 +47,7 @@ export default function AssessmentOverview({ assessment, onUpdate, onDelete, del
   useEffect(() => {
     if (!isPersonal) return;
     base44.entities.Assessment.list("created_date")
-      .then(all => setTeamAssessments(all.filter(a => a.type !== "personal")))
+      .then(all => setTeamAssessments(all.filter(a => a.assessment_type !== "personal")))
       .catch(e => console.error("Failed to load team assessments", e));
   }, [isPersonal]);
 
