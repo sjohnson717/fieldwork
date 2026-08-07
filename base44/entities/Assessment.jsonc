@@ -29,6 +29,19 @@
       ],
       "default": "draft"
     },
+    "assessment_type": {
+      "type": "string",
+      "enum": [
+        "team_gap",
+        "personal"
+      ],
+      "default": "team_gap",
+      "description": "team_gap: importance/execution/ownership. personal: experience/skills/interest. Absent means team_gap."
+    },
+    "parent_assessment_id": {
+      "type": "string",
+      "description": "Personal assessments only, and optional. Links this personal assessment to a team gap assessment so the report can cross capability against the team's gaps."
+    },
     "roles": {
       "type": "array",
       "items": {
