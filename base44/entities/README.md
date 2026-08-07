@@ -201,22 +201,37 @@ build proves nothing about RLS.
 both sets of answer fields. Absent means `team_gap`, which is what every record
 predating the field is — nothing was backfilled, and nothing needs to be.
 
-**It is not called `type`, and must not be.** It was, briefly, and the field
-silently vanished: `Assessment.create` accepted a payload containing
-`type: "personal"`, returned success, and stored a record with no `type` at
-all. No error, no validation failure, nothing in the response to indicate the
-field had been discarded. The name collides with the schema's own `type`
-keyword — every entity schema is `{"name": …, "type": "object", "properties":
-…}` — and Base44's validation layer drops the custom field rather than
-reporting the ambiguity.
+The name is `assessment_type` rather than `type` purely to avoid reading like
+JSON Schema's own keyword. That is a preference, not a fix — see below for what
+was actually wrong.
 
-Two details worth keeping, because they made this hard to see. The bug is on
-the **SDK write path only**: a direct database `$set` of `type` persisted
-perfectly well, so the field looked writable when probed from the outside. And
-the symptom appeared far from the cause — a personal assessment rendered as a
-gap analysis, which reads like a UI bug in the type branch rather than a
-missing column. The general lesson: if a field never arrives and nothing
-errors, suspect the name before the logic.
+## `.jsonc` is the schema, `.json` is a decoy
+
+**This folder contains two files per entity, and only the `.jsonc` one is real.**
+`Assessment.jsonc` is what Base44 applies on publish. `Assessment.json` is a
+stale duplicate that exists in the git repo, is not read by anything, and has
+drifted years out of date — it was missing `activity_ids`, `team_token`,
+`tagline` and `org_id` long before anyone noticed. Several entities have no
+`.json` file at all. (Do not delete the `.json` files on that reasoning alone:
+removing them broke something in June 2026 that was never traced.)
+
+The failure this causes is nasty, because publishing is the thing that breaks
+it. Adding a field through the platform API works immediately: the schema
+updates, records accept the field, everything behaves. Then the next publish
+re-applies every entity schema from its `.jsonc` file, silently dropping any
+field the file doesn't mention. Writes then discard that field with no error —
+`create` succeeds and returns a record with the column simply absent.
+
+So the symptom arrives *after* a deploy that was supposed to fix things, and it
+looks like a frontend bug: a personal assessment rendering gap-analysis
+questions. Both `assessment_type` and `parent_assessment_id` were lost this way
+twice, along with `Response.experience`, `skills` and `interest`, before the
+pattern was spotted. The first diagnosis blamed the field name `type` and was
+wrong; renaming appeared to change nothing, because it changed nothing.
+
+**Adding a field means editing the `.jsonc` file.** Updating the schema through
+the API alone survives exactly until the next publish. If a field starts
+vanishing on write, check the `.jsonc` before suspecting anything else.
 
 A second entity was the obvious alternative and would have been worse. The two
 types share the activity library, respondent self-registration, the access code,

@@ -12,11 +12,10 @@ import TeamPage from "./admin/TeamPage";
 import OrganizationsPage from "./admin/OrganizationsPage";
 import ConfirmDialog from "@/components/ConfirmDialog";
 
-// The discriminator is `assessment_type`, not `type`. A custom entity field
-// named `type` is accepted by Assessment.create and then silently dropped —
-// no error, no field — because it collides with the schema's own `type`
-// keyword. Measured on 2026-08-07: the create payload carried type:"personal"
-// and the stored record came back with no type at all. Do not rename it back.
+// If assessment_type ever starts arriving as undefined on freshly created
+// assessments, the cause is almost certainly base44/entities/Assessment.jsonc
+// rather than anything here — a publish re-applies schemas from those files
+// and drops any field they don't declare. See that folder's README.
 //
 // A personal assessment never asks who should own an activity and produces no
 // team gap to discuss, so those two tabs would be empty rather than merely
