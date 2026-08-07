@@ -160,9 +160,12 @@ function generatePersonalResponse(activity, profile) {
   const facet = activity.facet || "DEFINE";
   const band = facet === profile.strong ? "strong" : facet === profile.weak ? "weak" : "middle";
 
-  // Weights run lowest → highest option on each scale.
+  // Weights run lowest → highest option on each scale. All three scales are
+  // four points, so all three weight arrays are length four — a mismatch here
+  // silently biases the generator toward the low end, since weightedRandom
+  // would never reach the options past the end of the array.
   const expWeights   = { strong: [0, 1, 3, 4], middle: [1, 3, 3, 1], weak: [4, 3, 1, 0] };
-  const skillWeights = { strong: [0, 0, 2, 3, 3], middle: [1, 2, 3, 2, 1], weak: [3, 4, 2, 1, 0] };
+  const skillWeights = { strong: [0, 1, 3, 4], middle: [1, 3, 3, 1], weak: [4, 3, 1, 0] };
   // Interest is drawn independently of ability on purpose: someone keen but
   // untrained is the finding the assessment exists to surface.
   const intWeights   = [1, 2, 3, 2];

@@ -8,12 +8,25 @@
 // The three scales, in the order they are asked and reported.
 // `label` is what is stored on the Response record; the numbers are display
 // only, so re-scoring an axis never requires touching stored data.
+//
+// All three are four points on the same 0/1/3/5 spacing. Skills was briefly
+// five points — None/Untrained/Good/Very good/Excellent scored 1–5 — and both
+// of those choices were wrong. Three positive grades gave self-raters a
+// comfortable middle to park in, and "Very good" versus "Excellent" is not a
+// distinction people can make reliably about themselves, so the extra point
+// bought noise rather than resolution. Starting at 1 also meant someone with
+// no capability at all read 0/0/1.
+//
+// "Untrained" went with it, and is not missed: the self-taught practitioner it
+// named is better found as Experience: Extensive crossed with Skills: Basic,
+// which is a sharper signal than any single checkbox and already shows up in
+// the Matrix view.
 export const EXPERIENCE_SCORE = { "None": 0, "Limited": 1, "Some": 3, "Extensive": 5 };
-export const SKILLS_SCORE     = { "None": 1, "Untrained": 2, "Good": 3, "Very good": 4, "Excellent": 5 };
+export const SKILLS_SCORE     = { "None": 0, "Basic": 1, "Good": 3, "Excellent": 5 };
 export const INTEREST_SCORE   = { "None": 0, "Limited": 1, "Moderate": 3, "Passionate": 5 };
 
 export const EXPERIENCE_OPTIONS = ["None", "Limited", "Some", "Extensive"];
-export const SKILLS_OPTIONS     = ["None", "Untrained", "Good", "Very good", "Excellent"];
+export const SKILLS_OPTIONS     = ["None", "Basic", "Good", "Excellent"];
 export const INTEREST_OPTIONS   = ["None", "Limited", "Moderate", "Passionate"];
 
 // The three axes as data, so the survey, the results grid and the report all
@@ -26,11 +39,12 @@ export const PERSONAL_AXES = [
 
 export const AXIS_BY_KEY = Object.fromEntries(PERSONAL_AXES.map(a => [a.key, a]));
 
-// Skills floors at 1 while experience and interest floor at 0, so raw scores
-// are not comparable across axes: someone with nothing at all reads 0/0/1, and
-// a naive average of the three is pulled up by an axis that cannot reach zero.
-// Every cross-axis number below is computed on this 0–1 normalisation instead,
-// which is why the floor mismatch is a display quirk here rather than a bias.
+// All three axes share a range today, so this is currently the identity
+// mapping onto 0–1. It stays because the alternative is that every cross-axis
+// number silently assumes they always will: capability averages experience
+// with skills, and the moment one scale gains a point or shifts its floor, raw
+// averages start favouring whichever axis reaches highest. Normalising first
+// makes that a non-event rather than a bias nobody notices.
 export const normalize = (axisKey, label) => {
   const axis = AXIS_BY_KEY[axisKey];
   if (!axis) return null;
