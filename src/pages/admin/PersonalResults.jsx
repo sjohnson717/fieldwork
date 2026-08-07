@@ -153,6 +153,18 @@ export default function PersonalResults({ assessment }) {
   const completedCount = respondents.filter(r => r.status === "completed").length;
   const answeredIds = new Set(responses.map(r => r.respondent_id));
 
+  // A personal profile stays editable after the assessment closes, by design —
+  // it belongs to the person, not to the engagement. The cost is that the
+  // aggregate can shift under a report already delivered, so surface it rather
+  // than let it be discovered in the room.
+  const revisedAfterClose = assessment.closed_date
+    ? [...new Set(
+        responses
+          .filter(r => r.updated_date && r.updated_date > assessment.closed_date)
+          .map(r => r.respondent_id)
+      )].length
+    : 0;
+
   return (
     <div className="p-8 space-y-8">
 
@@ -169,6 +181,13 @@ export default function PersonalResults({ assessment }) {
             Refresh
           </button>
         </div>
+        {revisedAfterClose > 0 && (
+          <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-4">
+            {revisedAfterClose} {revisedAfterClose === 1 ? "person has" : "people have"} changed answers since this
+            assessment closed on {new Date(assessment.closed_date).toLocaleDateString()}. The figures below include
+            those edits, so they may differ from anything you've already presented.
+          </p>
+        )}
         <table className="w-full text-sm">
           <thead>
             <tr className="text-xs text-gray-400 uppercase tracking-wide border-b border-gray-100">

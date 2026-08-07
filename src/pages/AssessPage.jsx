@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { getAssignedActivities } from "@/lib/activities";
 import { getAssessmentByCode, getRespondentSession } from "@/lib/public-assessment";
-import { PERSONAL_AXES } from "@/lib/personal-scoring";
+import { PERSONAL_AXES, QUADRANTS, computePersonProfile } from "@/lib/personal-scoring";
 
 const HERO_IMAGE = "https://media.base44.com/images/public/6a29ff3bc8effbeb3d637555/2ffc15b8c_curated-lifestyle-H3ZVdxBRIW0-unsplash.jpg";
 
@@ -169,11 +169,23 @@ export default function AssessPage() {
         setReturningCompleted(true);
         if (r.title) setTitle(r.title);
         await loadSurveyData(a, r.id);
-        setStep("already-done");
+        // Someone returning to a personal assessment came back for their
+        // profile, so hand it straight to them rather than making them click
+        // through a confirmation that tells them what they already know.
+        setStep(a.assessment_type === "personal" ? "done" : "already-done");
         return;
       }
 
-      if (a.status === "closed") {
+      // Closing a team assessment ends it for everyone — the aggregate has
+      // been reported and late answers would move numbers already presented.
+      //
+      // A personal assessment is not the facilitator's to close on someone's
+      // behalf. The profile is that person's own, they may well revise it
+      // after seeing it, and locking them out of their development plan
+      // because an engagement wrapped up would be the wrong default. Note
+      // this only protects people who already have a token: handleCodeSubmit
+      // still refuses *new* registrations once closed.
+      if (a.status === "closed" && a.assessment_type !== "personal") {
         setError("This assessment is no longer accepting responses.");
         setStep("token-error");
         return;
@@ -701,17 +713,68 @@ const handleNext = async () => {
             </div>
             <div>
               <h1 className="text-xl font-bold text-gray-900">
-                {returningCompleted ? `Your responses, ${name}` : `Thank you, ${name}!`}
+                {isPersonal
+                  ? `Your profile, ${name.split(" ")[0]}`
+                  : returningCompleted ? `Your responses, ${name}` : `Thank you, ${name}!`}
               </h1>
               <p className="text-sm text-gray-500">
-                {!returningCompleted
-                  ? "Your responses have been recorded. Here's a summary of what you submitted."
-                  : assessment?.status === "closed"
-                    ? "Here's what you submitted. This assessment is now closed, so your answers can't be changed."
-                    : "Here's what you submitted. You can still change any of it."}
+                {isPersonal
+                  // No mention of the assessment's status: this is theirs, and
+                  // it stays available and editable whatever the facilitator's
+                  // engagement is doing.
+                  ? "This is yours to keep. Save it as a PDF to share with your manager or a coach — and come back and change any answer whenever you like."
+                  : !returningCompleted
+                    ? "Your responses have been recorded. Here's a summary of what you submitted."
+                    : assessment?.status === "closed"
+                      ? "Here's what you submitted. This assessment is now closed, so your answers can't be changed."
+                      : "Here's what you submitted. You can still change any of it."}
               </p>
             </div>
           </div>
+
+          {/* The profile itself. This is the payoff for having answered, and
+              it sits above the raw answer table because almost nobody comes
+              back for it later — it has to land now, at submission, or not at
+              all. Quadrant wording here is the person-facing set; see
+              QUADRANTS in personal-scoring.js for why it differs from the
+              facilitator's. */}
+          {isPersonal && (() => {
+            // Local answer state is keyed by activity; computePersonProfile
+            // wants Response-shaped rows.
+            const rows = activities.map(act => ({
+              ...(responses[act.id] || {}),
+              activity_id: act.id,
+              respondent_id: respondent?.id,
+            }));
+            const profile = computePersonProfile(activities, rows, respondent?.id);
+            if (profile.answeredCount === 0) return null;
+
+            return (
+              <div className="mb-8 space-y-4">
+                {Object.entries(QUADRANTS).map(([key, q]) => {
+                  const bucket = profile.buckets[key];
+                  if (bucket.length === 0) return null;
+                  return (
+                    <section key={key} className="bg-white rounded-xl border border-gray-200 p-5 break-inside-avoid">
+                      <h2 className="text-base font-semibold text-gray-900">{q.selfLabel}</h2>
+                      <p className="text-xs text-gray-500 mt-1 mb-3 leading-relaxed">{q.selfHint}</p>
+                      <ul className="space-y-1.5">
+                        {bucket.map(row => (
+                          <li key={row.activity.id} className="flex items-baseline gap-2 text-sm">
+                            <span className="flex-1 text-gray-800 leading-snug">{row.activity.name}</span>
+                            <span className="text-[10px] text-gray-400 shrink-0">{row.activity.facet}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </section>
+                  );
+                })}
+                <p className="text-xs text-gray-400 px-1">
+                  Based on the {profile.answeredCount} {profile.answeredCount === 1 ? "activity" : "activities"} you rated. Your full answers are below.
+                </p>
+              </div>
+            );
+          })()}
 
           {/* Summary table grouped by facet */}
           {availableFacets.map(facet => {
@@ -778,13 +841,22 @@ const handleNext = async () => {
                 instead of a screenshot. */}
             <button
               onClick={() => window.print()}
-              className="border border-gray-300 hover:border-gray-400 text-gray-600 hover:text-gray-800 font-medium px-6 py-2.5 rounded-lg transition-colors text-sm"
+              className={`font-medium px-6 py-2.5 rounded-lg transition-colors text-sm ${
+                isPersonal
+                  // The share mechanism for a personal profile, so it leads.
+                  // Deliberately a PDF and not their link: the token permits
+                  // editing, so forwarding it would hand a manager write
+                  // access to someone's own self-assessment.
+                  ? "bg-blue-600 hover:bg-blue-700 text-white"
+                  : "border border-gray-300 hover:border-gray-400 text-gray-600 hover:text-gray-800"
+              }`}
             >
-              Save as PDF
+              {isPersonal ? "Save as PDF to share" : "Save as PDF"}
             </button>
-            {/* A closed assessment is read-only, even to someone reviewing
-                their own submission. */}
-            {assessment?.status !== "closed" && (
+            {/* A closed team assessment is read-only, even to someone
+                reviewing their own submission. A personal profile is never
+                read-only to the person it belongs to. */}
+            {(isPersonal || assessment?.status !== "closed") && (
               <button
                 onClick={handleRevise}
                 className="border border-gray-300 hover:border-gray-400 text-gray-600 hover:text-gray-800 font-medium px-6 py-2.5 rounded-lg transition-colors text-sm"
@@ -793,16 +865,29 @@ const handleNext = async () => {
               </button>
             )}
             {/* Already submitted — "Submit" again would be meaningless, so
-                this just closes the review and returns to the confirmation. */}
-            <button
-              onClick={() => setStep(returningCompleted ? "already-done" : "thankyou")}
-              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2.5 rounded-lg transition-colors text-sm"
-            >
-              {returningCompleted ? "Close" : "Submit"}
+                this just closes the review and returns to the confirmation.
+                Hidden for someone revisiting their own profile: this page is
+                their destination, so there is nothing to close it to. */}
+            {!(isPersonal && returningCompleted) && (
+              <button
+                onClick={() => setStep(returningCompleted ? "already-done" : "thankyou")}
+                className={`font-semibold px-6 py-2.5 rounded-lg transition-colors text-sm ${
+                  isPersonal
+                    ? "border border-gray-300 hover:border-gray-400 text-gray-600 hover:text-gray-800"
+                    : "bg-blue-600 hover:bg-blue-700 text-white"
+                }`}
+              >
+                {returningCompleted ? "Close" : "Submit"}
               </button>
+            )}
               </div>
-              {!returningCompleted && (
+              {!returningCompleted && !isPersonal && (
                 <p className="text-center text-xs text-gray-400">Your feedback will help shape the team's professional development plan.</p>
+              )}
+              {isPersonal && (
+                <p className="text-center text-xs text-gray-400">
+                  Keep this link to come back and update your profile at any time.
+                </p>
               )}
         </div>
       </div>

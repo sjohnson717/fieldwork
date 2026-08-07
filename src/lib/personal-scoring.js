@@ -61,11 +61,48 @@ export const capability = (resp) => {
 export const interestLevel = (resp) => normalize("interest", resp?.interest);
 
 // Capability × interest, at the midpoint of each normalised axis.
+//
+// Two vocabularies, deliberately. `label`/`hint` are the facilitator's, and
+// they are blunt because they are diagnostic notes for someone preparing a
+// coaching engagement. `selfLabel`/`selfHint` are what the person themselves
+// reads, and none of the facilitator's words survive the translation —
+// "Reluctant" and "Poor fit" are fair shorthand between consultants and
+// indefensible addressed to the individual they describe.
+//
+// The self-facing set files "capable but not energised" under strengths on
+// purpose. Both it and `strength` are things the person does well; the only
+// difference is what the work costs them. Filed anywhere else it reads as a
+// deficiency, which is both untrue and the fastest way to make people answer
+// the interest question dishonestly next time.
 export const QUADRANTS = {
-  strength:  { label: "Strength",   hint: "Capable and interested — hand this over",       color: "bg-emerald-100 text-emerald-800 border-emerald-200" },
-  develop:   { label: "Develop",    hint: "Interested but not yet capable — train here",   color: "bg-blue-100 text-blue-800 border-blue-200" },
-  sustain:   { label: "Reluctant",  hint: "Capable but not interested — a retention risk", color: "bg-amber-100 text-amber-800 border-amber-200" },
-  avoid:     { label: "Poor fit",   hint: "Neither capable nor interested — don't assign", color: "bg-gray-100 text-gray-600 border-gray-200" },
+  strength: {
+    label: "Strength",
+    hint: "Capable and interested — hand this over",
+    selfLabel: "Strengths that energize you",
+    selfHint: "You do this well, and it's the kind of work you'd choose more of.",
+    color: "bg-emerald-100 text-emerald-800 border-emerald-200",
+  },
+  develop: {
+    label: "Develop",
+    hint: "Interested but not yet capable — train here",
+    selfLabel: "Where you want to grow",
+    selfHint: "The pull is there ahead of the practice. This is where coaching pays off fastest.",
+    color: "bg-blue-100 text-blue-800 border-blue-200",
+  },
+  sustain: {
+    label: "Reluctant",
+    hint: "Capable but not interested — a retention risk",
+    selfLabel: "Strengths that don't energize you",
+    selfHint: "You have the skills to do this well. It just doesn't seem to be the kind of work that gives you energy, or that you'd choose to spend most of your time on.",
+    color: "bg-amber-100 text-amber-800 border-amber-200",
+  },
+  avoid: {
+    label: "Poor fit",
+    hint: "Neither capable nor interested — don't assign",
+    selfLabel: "Not your focus right now",
+    selfHint: "Neither the experience nor the pull is here yet. That's information, not a verdict.",
+    color: "bg-gray-100 text-gray-600 border-gray-200",
+  },
 };
 
 export const quadrant = (resp) => {

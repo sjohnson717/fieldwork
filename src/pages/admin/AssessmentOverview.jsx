@@ -91,7 +91,14 @@ export default function AssessmentOverview({ assessment, onUpdate, onDelete, del
   const handleStatusChange = async (newStatus) => {
     setUpdatingStatus(true);
     try {
-      const updated = await base44.entities.Assessment.update(assessment.id, { status: newStatus });
+      // Stamped on close so Results can spot answers revised afterwards.
+      // Personal assessments stay editable once closed, so the aggregate can
+      // legitimately move under a report that has already been presented —
+      // worth knowing about, not worth preventing.
+      const updated = await base44.entities.Assessment.update(assessment.id, {
+        status: newStatus,
+        ...(newStatus === "closed" ? { closed_date: new Date().toISOString() } : {}),
+      });
       onUpdate(updated);
     } catch (e) {
       console.error("Failed to update status", e);
