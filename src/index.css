@@ -151,6 +151,11 @@
   .print-section-break {
     break-before: page;
     page-break-before: always;
+    /* Sink the title below the top edge. A section opening a page needs more
+       air above it than the same heading would mid-flow, and the printer's own
+       margin isn't enough — without this the title sits almost against the
+       trim. Print-only, so the screen keeps its tighter rhythm. */
+    padding-top: 2.5rem;
   }
 
   /* Never leave a heading alone at the foot of a page. */
