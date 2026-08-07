@@ -2,7 +2,13 @@ import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { getAssignedActivities } from "@/lib/activities";
 import { getAssessmentByCode, getRespondentSession } from "@/lib/public-assessment";
-import { PERSONAL_AXES, QUADRANTS, computePersonProfile } from "@/lib/personal-scoring";
+import {
+  PERSONAL_AXES,
+  QUADRANTS,
+  computePersonProfile,
+  dominantBucket,
+  DOMINANT_SUMMARY,
+} from "@/lib/personal-scoring";
 
 const HERO_IMAGE = "https://media.base44.com/images/public/6a29ff3bc8effbeb3d637555/2ffc15b8c_curated-lifestyle-H3ZVdxBRIW0-unsplash.jpg";
 
@@ -748,15 +754,26 @@ const handleNext = async () => {
             }));
             const profile = computePersonProfile(activities, rows, respondent?.id);
             if (profile.answeredCount === 0) return null;
+            const dominant = dominantBucket(profile);
 
             return (
               <div className="mb-8 space-y-4">
+                {/* When one bucket holds two thirds of the answers, that shape
+                    is the finding — say it before the lists, or the person
+                    reads a long column as a tally of shortfalls. */}
+                {dominant && (
+                  <div className="bg-white rounded-xl border border-gray-200 p-5 break-inside-avoid">
+                    <p className="text-sm text-gray-700 leading-relaxed">
+                      {DOMINANT_SUMMARY[dominant.key](dominant.count, profile.answeredCount)}
+                    </p>
+                  </div>
+                )}
                 {Object.entries(QUADRANTS).map(([key, q]) => {
                   const bucket = profile.buckets[key];
                   if (bucket.length === 0) return null;
                   return (
-                    <section key={key} className="bg-white rounded-xl border border-gray-200 p-5 break-inside-avoid">
-                      <h2 className="text-base font-semibold text-gray-900">{q.selfLabel}</h2>
+                    <section key={key} className={`bg-white rounded-xl border border-gray-200 border-l-4 ${q.selfAccent} p-5 break-inside-avoid`}>
+                      <h2 className={`text-base font-semibold ${q.selfHeading}`}>{q.selfLabel}</h2>
                       <p className="text-xs text-gray-500 mt-1 mb-3 leading-relaxed">{q.selfHint}</p>
                       <ul className="space-y-1.5">
                         {bucket.map(row => (
@@ -788,7 +805,9 @@ const handleNext = async () => {
                       <tr className="border-b border-gray-100 bg-gray-50">
                         <th className="text-left px-4 py-2.5 text-xs font-semibold text-gray-500 w-2/5">Activity</th>
                         {isPersonal ? PERSONAL_AXES.map(axis => (
-                          <th key={axis.key} className="text-left px-3 py-2.5 text-xs font-semibold text-gray-500" style={{ width: '120px' }}>{axis.label}</th>
+                          // Centred to sit over the pills below rather than
+                          // hanging off their left edge.
+                          <th key={axis.key} className="text-center px-3 py-2.5 text-xs font-semibold text-gray-500" style={{ width: '120px' }}>{axis.label}</th>
                         )) : <>
                         <th className="text-left px-3 py-2.5 text-xs font-semibold text-gray-500" style={{ width: '120px' }}>Importance</th>
                         <th className="text-left px-3 py-2.5 text-xs font-semibold text-gray-500" style={{ width: '120px' }}>Execution</th>
@@ -805,9 +824,9 @@ const handleNext = async () => {
                           <tr key={activity.id} className={idx < facetActs.length - 1 ? "border-b border-gray-50" : ""}>
                             <td className="px-4 py-3 text-gray-800 font-medium align-middle">{activity.name}</td>
                             {isPersonal ? PERSONAL_AXES.map(axis => (
-                              <td key={axis.key} className="px-3 py-3 align-middle" style={{ width: '120px' }}>
+                              <td key={axis.key} className="px-3 py-3 align-middle text-center" style={{ width: '120px' }}>
                                 {r[axis.key]
-                                  ? <span className="inline-block whitespace-nowrap px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800" style={{ width: '110px', textAlign: 'center' }}>{r[axis.key]}</span>
+                                  ? <span className="inline-block whitespace-nowrap px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800" style={{ width: '104px', textAlign: 'center' }}>{r[axis.key]}</span>
                                   : <span className="text-gray-300 text-xs">—</span>}
                               </td>
                             )) : <>
