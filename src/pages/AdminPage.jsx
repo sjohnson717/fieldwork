@@ -49,6 +49,10 @@ export default function AdminPage() {
   const [newTitle, setNewTitle] = useState("");
   const [newCompany, setNewCompany] = useState("");
   const [newType, setNewType] = useState("team_gap");
+  const [tags, setTags] = useState([]);
+  // Narrows the sidebar list. Not persisted: a filter you set days ago and
+  // forgot looks exactly like an assessment that has gone missing.
+  const [tagFilter, setTagFilter] = useState(null);
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState("");
 
@@ -76,6 +80,9 @@ export default function AdminPage() {
     if (isAuthenticated && user) {
       if (!canAccessAdmin) return; // no access for plain "user" role
       loadAssessments();
+      base44.entities.Tag.list("name")
+        .then(setTags)
+        .catch(e => console.error("Failed to load tags", e));
     }
   }, [isAuthenticated, user]);
 
@@ -157,6 +164,10 @@ export default function AdminPage() {
 
   const handleAssessmentUpdate = (updated) => {
     setAssessments(prev => prev.map(a => a.id === updated.id ? updated : a));
+    // A tag created from the Overview picker is unknown to this list, so the
+    // sidebar row would carry an id it cannot render a name for. Cheap enough
+    // to just re-read on any assessment change.
+    base44.entities.Tag.list("name").then(setTags).catch(() => {});
   };
 
   const [deleting, setDeleting] = useState(false);
@@ -211,6 +222,13 @@ export default function AdminPage() {
       </div>
     );
   }
+
+  // The sidebar list, narrowed by the tag filter. The selected assessment is
+  // still resolved against the full list, so filtering never blanks the pane
+  // you are currently reading.
+  const visibleAssessments = tagFilter
+    ? assessments.filter(a => (a.tag_ids || []).includes(tagFilter))
+    : assessments;
 
   const selected = assessments.find(a => a.id === selectedId);
   const canDeleteSelected = !!selected && (isAdmin || selected.created_by_id === user?.id);
@@ -307,10 +325,35 @@ export default function AdminPage() {
             </button>
           )}
 
+          {/* Tag filter. Only shown once tags exist and there is enough in the
+              list for filtering to be the faster way to find something. */}
+          {tags.length > 0 && assessments.length > 3 && (
+            <div className="px-3 mb-2">
+              <select
+                value={tagFilter || ""}
+                onChange={e => setTagFilter(e.target.value || null)}
+                className="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-xs text-gray-600 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">All assessments</option>
+                {tags.map(t => (
+                  <option key={t.id} value={t.id}>{t.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
           {loading ? (
             <div className="flex items-center justify-center py-10">
               <div className="w-5 h-5 border-2 border-blue-200 border-t-blue-500 rounded-full animate-spin" />
             </div>
+          ) : visibleAssessments.length === 0 && tagFilter ? (
+            <p className="text-xs text-gray-400 text-center py-4 px-2">
+              Nothing tagged{" "}
+              <span className="font-medium">{tags.find(t => t.id === tagFilter)?.name}</span>.{" "}
+              <button onClick={() => setTagFilter(null)} className="text-blue-600 hover:underline">
+                Show all
+              </button>
+            </p>
           ) : assessments.length === 0 ? (
             <p className="text-xs text-gray-400 text-center py-4 px-2">
               {isAdmin
@@ -321,7 +364,7 @@ export default function AdminPage() {
             </p>
           ) : (
             <ul className="space-y-1">
-              {assessments.map(a => (
+              {visibleAssessments.map(a => (
                 <li key={a.id}>
                   <button
                     onClick={() => { setSelectedId(a.id); setSelectedSection("assessments"); setActiveTab("Overview"); }}
@@ -345,6 +388,21 @@ export default function AdminPage() {
                         <p className="text-xs text-gray-400 truncate">{a.company_name}</p>
                       )}
                     </div>
+                    {/* Tags on the row, so a group is visible without having
+                        to filter for it. Names only — resolved against the
+                        loaded tags, so a deleted tag simply stops appearing. */}
+                    {(a.tag_ids || []).length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {(a.tag_ids || [])
+                          .map(id => tags.find(t => t.id === id))
+                          .filter(Boolean)
+                          .map(t => (
+                            <span key={t.id} className="text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
+                              {t.name}
+                            </span>
+                          ))}
+                      </div>
+                    )}
                   </button>
                 </li>
               ))}

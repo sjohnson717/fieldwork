@@ -3,6 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
 import { roleLabel, NO_ACCESS_ROLE } from "@/lib/roles";
 import AssessmentDemoData from "./AssessmentDemoData";
+import TagPicker from "@/components/TagPicker";
 
 const STATUS_TRANSITIONS = {
   draft: ["active"],
@@ -35,6 +36,7 @@ export default function AssessmentOverview({ assessment, onUpdate, onDelete, del
   const [savingTitle, setSavingTitle] = useState(false);
   const [teamAssessments, setTeamAssessments] = useState([]);
   const [savingParent, setSavingParent] = useState(false);
+  const [tagError, setTagError] = useState("");
 
   const isPersonal = assessment.assessment_type === "personal";
 
@@ -251,6 +253,29 @@ export default function AssessmentOverview({ assessment, onUpdate, onDelete, del
             ? "Personal assessment — each person rates their own experience, skills and interest."
             : "Team gap assessment — importance, execution and ownership of each activity."}
         </p>
+      </section>
+
+      {/* Tags */}
+      <section className="bg-white rounded-xl border border-gray-200 p-6">
+        <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-1">Tags</h3>
+        <p className="text-xs text-gray-400 mb-4">
+          Group this with related assessments — a client, a cohort, a support group. An assessment can carry several, and tags are just for finding things; they don't affect who can see what.
+        </p>
+        <TagPicker
+          value={assessment.tag_ids || []}
+          orgId={assessment.org_id}
+          onChange={async (next) => {
+            setTagError("");
+            try {
+              const updated = await base44.entities.Assessment.update(assessment.id, { tag_ids: next });
+              onUpdate(updated);
+            } catch (e) {
+              console.error("Failed to save tags", e);
+              setTagError(e?.message || "Couldn't save that change.");
+            }
+          }}
+        />
+        {tagError && <p className="text-xs text-red-500 mt-2">{tagError}</p>}
       </section>
 
       {/* Linked team assessment — personal assessments only, and optional */}

@@ -269,6 +269,45 @@ account of their own skills — a leader needs to see that it arrived, not to be
 able to rewrite it. The primary roster still carries tokens, unchanged, because
 handing out those links is what that page is for.
 
+## Tags are flat on purpose
+
+`Assessment.tag_ids` groups assessments — a client, a cohort, a support group,
+people you know. Many per assessment, no hierarchy, no ordering.
+
+The design considered and rejected was a `Client → Engagement → Assessment`
+hierarchy, on the reasoning that an engagement is really several instruments
+(a VP survey, a director deep dive, the team's personal assessments) run for
+one company, with a refresh a year later. That is a fair description of the
+common case and a bad description of the others. Not every group is a company:
+a cohort of individuals from different employers weighing a career move is a
+real engagement with no client to hang it off, and forcing it to be a fake
+client is how a data model starts lying about the business.
+
+The hierarchy would also only have earned its keep by inferring things — which
+gap analysis a personal assessment crosses against, say. The facilitator
+already knows that, and `parent_assessment_id` states it explicitly. A
+structure that saves one dropdown at the cost of not fitting the third
+engagement is a bad trade.
+
+**Tags are records, not strings, and that is the whole point.** `company_name`
+is free text and has always been able to split "Alert Media" from "AlertMedia"
+silently, which is exactly what a grouping mechanism must not do. The picker
+offers a create option only when no existing tag matches, so a duplicate takes
+deliberate effort.
+
+Deleting a tag leaves its id behind on any assessment referencing it. That is
+tolerated rather than cascaded: the UI resolves ids against the tags it can
+read and drops the ones it can't, so a stale id renders as nothing. It also
+means a tag whose *read* rule excludes you is indistinguishable from a deleted
+one, which is the correct behaviour for a grouping that carries client names.
+
+Tags are org-scoped, and their read rule is deliberately looser than
+Assessment's — any facilitator in the org can read them, where assessments need
+per-record collaborator membership. The picker cannot work otherwise, and a tag
+name is a far smaller disclosure than an assessment's contents. Note this does
+mean tag names leak client names across an organization's facilitators; that is
+the intended trade, not an oversight.
+
 ## The no-org bucket
 
 Absent/null `org_id` is treated as its own shared bucket by `sameOrg()` in
