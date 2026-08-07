@@ -60,6 +60,14 @@
       },
       "default": []
     },
+    "tag_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "Free grouping \u2014 a client, a cohort, a support group. Flat and many-to-many on purpose; see this folder's README."
+    },
     "collaborator_ids": {
       "type": "array",
       "items": {
