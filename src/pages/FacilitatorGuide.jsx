@@ -13,10 +13,26 @@ const sections = [
 
 | Step | Action | Details |
 |------|--------|---------|
-| 1 | **Create the assessment** | Click **New Assessment** at the bottom of the navigation panel. Enter an assessment title and client company name. |
-| 2 | **Choose an activity preset** | Go to the **Setup** tab. Click a preset — Default (32), Extended (42), Brief (22), or Executive (6). Ownership roles are pre-populated automatically. |
-| 3 | **Review ownership roles** | Still in the **Setup** tab, check the **Ownership Roles** section. Add or remove roles to match the client's actual team structure. |
-| 4 | **Set status to Active** | In the Overview tab, set the assessment status to **Active**. Participants cannot access the survey until this is done. |
+| 1 | **Create the assessment** | Click **New Assessment** in the navigation panel. Enter a title and client company name, then choose the type — **Team gap** or **Personal**. |
+| 2 | **Choose an activity preset** | Go to the **Activities** tab. Click a preset — Default (32), Extended (42), Brief (22), or Executive (6). Ownership roles are pre-populated automatically. |
+| 3 | **Review ownership roles** | Open the **Ownership Roles** tab. Add or remove roles to match the client's actual team structure. Team gap assessments only. |
+| 4 | **Tag it** | In the **Overview** tab, add tags — the client, a cohort, whatever groups this with related work. |
+| 5 | **Set status to Active** | In the Overview tab, set the status to **Active**. Participants cannot access the survey until this is done. |
+
+> **Choose the type carefully — it can't be changed later.** The type decides which questions get asked, so switching it on an assessment that already has responses would relabel answers people gave to a different question.
+
+## Which type?
+
+| Type | Asks | Produces |
+|------|------|----------|
+| **Team gap** | How important is this activity, how well is it done today, and who should own it? | The gap analysis and the buyer report. Reported in aggregate — no individual is ever identified. |
+| **Personal** | How much experience, skill and interest do *you* have in this activity? | A development profile belonging to each person. Attributed, not anonymous. |
+
+## Tags
+
+Tags group related assessments — a client, a cohort, a support group. An assessment can carry several, and they're only for finding things: they don't affect who can see what. Once you have a few assessments, a tag filter appears above the list in the navigation panel.
+
+Pick an existing tag rather than typing a new one where you can. The picker only offers to create when nothing matches, which keeps "Alert Media" and "AlertMedia" from becoming two separate groups.
 
 ## Facilitators & Collaborators
 
@@ -46,7 +62,9 @@ Each facilitator only sees assessments they created themselves, plus any they've
 | **Dashboard** | Team leader status dashboard. Does not show individual responses. | Overview tab → Links to share |
 | **Report** | Client-facing report. Used during or after the assessment completion. Shows findings, gaps, and ownership analysis. After closing the assessment, also shows debrief decisions, if any. | Overview tab → Links to share |
 
-> **Who gets which link?** All participants get the Access link. Alternatively, you use the Team Leader Dashboard to create links for each individual. Share the Dashboard and Report links only with team leaders.
+> **Who gets which link?** All participants get the Access link. For a team gap assessment you can also hand out per-person links from the Team Leader Dashboard. Share the Dashboard and Report links only with team leaders.
+
+> **Personal assessments work differently here.** The dashboard shows who has responded but offers no per-person links, and there is no buyer report. A personal link reopens and *edits* that person's answers, so it stays with them — a team leader needs to know a response arrived, not to be able to rewrite it. If someone loses their link, they re-join with the access code and you remove the empty duplicate from the Results tab.
 
 ## Distributing the Survey
 
@@ -60,6 +78,58 @@ Each facilitator only sees assessments they created themselves, plus any they've
 Check the **Respondents table** in the Results tab. It shows each participant's name, title, status (completed or pending), response count, and completion date. This information is confidential. *Do not share this page with team leaders*.
 
 > **Minimum responses:** Aim for at least 4–5 completed responses before running the debrief. The report will not display until the minimum threshold is reached. Follow up with non-completers 24 hours before the deadline.`,
+  },
+  {
+    id: "personal",
+    title: "Personal assessments",
+    content: `A personal assessment asks each person about their own experience, skills and interest in the same activities the team rates. It produces a development profile for the individual and a capability picture for you.
+
+## Ordering
+
+Run the leadership gap analysis first where you can. It tells you which activities actually matter to this business, and it gives the personal results something to be measured against. A capability profile on its own says what people can do; crossed with the gap analysis it says whether that matches what the team needs.
+
+That said, a personal assessment stands alone perfectly well — a cohort weighing whether product management is for them has no team and no gap analysis, and seeing the true scope of the role is the whole value.
+
+## Linking
+
+On a personal assessment, the **Overview** tab has a **Linked team assessment** picker. Choose the gap analysis it belongs with. That link is what powers the Coverage view and what puts both rosters on one team leader dashboard.
+
+You can link at any time, including after responses are in.
+
+## Reading the results
+
+| View | Shows | Use it for |
+|------|-------|-----------|
+| **People** | One person's activities sorted into four quadrants, plus every answer | Preparing a one-to-one or a development conversation |
+| **Matrix** | Activity × person heatmap for any axis, or capability overall | Spotting where the team is thin, and who is strong where |
+| **Coverage** | Best-fit person per activity, against the linked gap analysis | Building the engagement case: important, badly executed, and nobody capable |
+
+The four quadrants come from capability (experience and skills combined) crossed with interest:
+
+| Quadrant | Meaning |
+|----------|---------|
+| **Strength** | Capable and interested. Hand it over. |
+| **Develop** | Interested but not yet capable. Coaching pays off fastest here. |
+| **Reluctant** | Capable but not interested. A retention risk worth talking about. |
+| **Poor fit** | Neither. Don't assign it. |
+
+> **These labels are yours, not theirs.** The person's own report never uses them — it says "strengths that energize you", "where you want to grow", "strengths that don't energize you", "not your focus right now". Keep it that way in what you write and say. The moment people believe a low interest rating is read as a verdict, the interest data stops being honest.
+
+## What each person gets
+
+The profile appears as soon as they submit — they don't have to come back for it. It shows their quadrants, all their answers, and a **Save as PDF to share** button. Sharing is the PDF, deliberately not their link.
+
+Nothing pushes a profile to a manager. The person decides whether to share theirs, and when. If a team leader asks you to tell them who won't cut it, the honest answer is to give each person their own results and let them bring the conversation.
+
+## Staying open
+
+A personal assessment ignores **Closed**. People keep access to their own profile and can revise it whenever — a development plan doesn't expire because your engagement did.
+
+The cost is that late edits move the numbers. Closing the assessment stamps the date, and the Results tab warns you if anyone has changed answers since — so you find out before you're in a room presenting figures that have shifted.
+
+## When one bucket dominates
+
+If two thirds of someone's activities land in one quadrant, their report opens with a sentence naming that shape rather than listing forty items. The one worth watching for is a profile that is nearly all "not your focus": that is a person and a role's scope pointing in different directions, and it usually is not a training problem.`,
   },
   {
     id: "facilitation",
