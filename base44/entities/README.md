@@ -5,6 +5,13 @@ Despite the extension, Base44 stores and regenerates them as plain JSON, so any
 comment risks the entity sync and would be stripped on the next round-trip
 anyway. This file is where the reasoning lives instead.
 
+**Every entity is one `.jsonc` file, and that file is the schema.** Base44
+re-applies all of them on publish. Adding a field through the platform API
+works immediately and then disappears at the next publish, because the publish
+overwrites the schema with whatever the file says — and the write path then
+discards the missing field silently, with `create` returning a record where the
+column simply isn't there. If a field vanishes with no error, this is why.
+
 ## The `data.` prefix rule
 
 Custom fields must be addressed with a `data.` prefix in RLS rules. Only
@@ -205,33 +212,30 @@ The name is `assessment_type` rather than `type` purely to avoid reading like
 JSON Schema's own keyword. That is a preference, not a fix — see below for what
 was actually wrong.
 
-## `.jsonc` is the schema, `.json` is a decoy
+## The duplicate `.json` files, and why they're gone
 
-**This folder contains two files per entity, and only the `.jsonc` one is real.**
-`Assessment.jsonc` is what Base44 applies on publish. `Assessment.json` is a
-stale duplicate that exists in the git repo, is not read by anything, and has
-drifted years out of date — it was missing `activity_ids`, `team_token`,
-`tagline` and `org_id` long before anyone noticed. Several entities have no
-`.json` file at all. (Do not delete the `.json` files on that reasoning alone:
-removing them broke something in June 2026 that was never traced.)
+Until August 2026 this folder held a second file for five of the entities —
+`Assessment.json` beside `Assessment.jsonc`, and the same for Activity,
+DiscussionNote, Respondent and Response. They were leftovers from before the
+format settled, and nothing read them. They have been deleted.
 
-The failure this causes is nasty, because publishing is the thing that breaks
-it. Adding a field through the platform API works immediately: the schema
-updates, records accept the field, everything behaves. Then the next publish
-re-applies every entity schema from its `.jsonc` file, silently dropping any
-field the file doesn't mention. Writes then discard that field with no error —
-`create` succeeds and returns a record with the column simply absent.
+They were worth deleting rather than ignoring, because they read exactly like
+the schema and are not. Adding `assessment_type` to `Assessment.json` had no
+effect at all, which cost several rounds of debugging: the field was added
+through the platform API, worked, and then vanished at the next publish when
+the schema was re-applied from the `.jsonc`. The `.json` copy had meanwhile
+drifted far enough to be missing `activity_ids`, `team_token`, `tagline` and
+`org_id`, and it carried no `rls` block whatsoever.
 
-So the symptom arrives *after* a deploy that was supposed to fix things, and it
-looks like a frontend bug: a personal assessment rendering gap-analysis
-questions. Both `assessment_type` and `parent_assessment_id` were lost this way
-twice, along with `Response.experience`, `skills` and `interest`, before the
-pattern was spotted. The first diagnosis blamed the field name `type` and was
-wrong; renaming appeared to change nothing, because it changed nothing.
+That missing `rls` is also the answer to the folklore around these files. The
+story was that deleting the `.json` files broke something in June 2026. The
+history says otherwise: `de16adf` "removed jsonc files" at 22:38 on 10 June,
+`c4b71fd` "reverted to jsonc files" at 22:40. It was the **`.jsonc`** files
+that were deleted, and the breakage was immediate and total — with only the
+`.json` copies left, every entity was re-applied with no RLS rules at all.
 
-**Adding a field means editing the `.jsonc` file.** Updating the schema through
-the API alone survives exactly until the next publish. If a field starts
-vanishing on write, check the `.jsonc` before suspecting anything else.
+So the two file types were never interchangeable, and the surviving `.jsonc`
+files are the ones that always mattered.
 
 A second entity was the obvious alternative and would have been worse. The two
 types share the activity library, respondent self-registration, the access code,
