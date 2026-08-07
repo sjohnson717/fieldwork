@@ -31,6 +31,37 @@
     },
     "suggested_owner": {
       "type": "string"
+    },
+    "experience": {
+      "type": "string",
+      "enum": [
+        "None",
+        "Limited",
+        "Some",
+        "Extensive"
+      ],
+      "description": "Personal assessments only. Scored 0/1/3/5 in src/lib/personal-scoring.js."
+    },
+    "skills": {
+      "type": "string",
+      "enum": [
+        "None",
+        "Untrained",
+        "Good",
+        "Very good",
+        "Excellent"
+      ],
+      "description": "Personal assessments only. Scored 1/2/3/4/5 in src/lib/personal-scoring.js."
+    },
+    "interest": {
+      "type": "string",
+      "enum": [
+        "None",
+        "Limited",
+        "Moderate",
+        "Passionate"
+      ],
+      "description": "Personal assessments only. Scored 0/1/3/5 in src/lib/personal-scoring.js."
     }
   },
   "required": [
@@ -43,16 +74,40 @@
     "read": {},
     "update": {
       "$or": [
-        { "user_condition": { "role": "admin" } },
-        { "user_condition": { "role": "org_admin" } },
-        { "user_condition": { "role": "facilitator" } }
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "org_admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "facilitator"
+          }
+        }
       ]
     },
     "delete": {
       "$or": [
-        { "user_condition": { "role": "admin" } },
-        { "user_condition": { "role": "org_admin" } },
-        { "user_condition": { "role": "facilitator" } }
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "org_admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "facilitator"
+          }
+        }
       ]
     }
   }
