@@ -160,13 +160,27 @@ Deno.serve(async (req) => {
           });
         }
 
+        // Per-respondent tokens are resume links: they reopen and edit that
+        // person's answers. Handing them to a team leader is the whole point
+        // of a gap-analysis dashboard, and exactly wrong for a personal one —
+        // a personal assessment is one individual's account of their own
+        // skills, and a leader needs to see that it arrived, not to be able to
+        // rewrite it.
+        //
+        // The rule is the assessment's type, not which side of a pairing it
+        // sits on. The sibling roster below withheld tokens from the start,
+        // but a leader holding the personal assessment's *own* team token came
+        // through this path and got the lot — the guard was keyed to the route
+        // rather than to the data, which is how it looked correct and wasn't.
+        const withholdTokens = (a.assessment_type || "team_gap") === "personal";
+
         return Response.json({
           assessment: shape(a, ["access_code"]),
           respondents: respondents.map((r) => ({
             id: r.id,
             name: r.name,
             title: r.title || null,
-            token: r.token,
+            ...(withholdTokens ? {} : { token: r.token }),
             status: r.status,
             answer_count: answers[r.id] || 0,
             completed_date: r.completed_date || null,

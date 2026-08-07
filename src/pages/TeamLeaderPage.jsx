@@ -313,7 +313,15 @@ export default function TeamLeaderPage() {
               {respondents.length} total · {receivedCount(respondents)} received
             </p>
           </div>
-          <RosterTable rows={respondents} linkFor={r => personalLink(r.token)} />
+          {/* No per-person links on a personal assessment — see the token
+              handling in publicAssessment. The server already withholds the
+              tokens, so this is presentation rather than protection: without
+              it the column would render a row of buttons producing links with
+              "undefined" in them. */}
+          <RosterTable
+            rows={respondents}
+            linkFor={assessment.assessment_type === "personal" ? null : (r => personalLink(r.token))}
+          />
         </section>
 
         {/* Paired assessments. Each has its own access code, so the leader
