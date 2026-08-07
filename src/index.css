@@ -134,6 +134,16 @@
     display: table-header-group;
   }
 
+  /* A facet label must never be the last thing on a page. Without this,
+     DEFINE sat alone at the foot of page one with its table overleaf, which
+     reads as a heading for whatever follows it — the wrong facet. Only the
+     heading is pinned to what comes next; the table itself still flows, so
+     this doesn't reintroduce the sparse-pages problem above. */
+  .facet-heading {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+
   /* Never leave a heading alone at the foot of a page. */
   h1, h2, h3 {
     break-after: avoid;

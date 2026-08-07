@@ -820,7 +820,7 @@ const handleNext = async () => {
             const facetActs = activities.filter(a => a.facet === facet);
             return (
               <div key={facet} className="mb-6">
-                <div className="text-xs font-bold uppercase tracking-widest text-blue-600 mb-2 px-1">{facet}</div>
+                <div className="facet-heading text-xs font-bold uppercase tracking-widest text-blue-600 mb-2 px-1">{facet}</div>
                 <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
                   <table className="w-full text-sm">
                     <thead>

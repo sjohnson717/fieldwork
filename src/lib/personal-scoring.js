@@ -99,6 +99,19 @@ export const interestLevel = (resp) => normalize("interest", resp?.interest);
 // weight, used as a left border and a heading tint rather than a fill. It also
 // has to survive greyscale printing, since the PDF is the share artefact —
 // which means colour can navigate but must never be the message.
+//
+// The first attempt at that was teal→sky→indigo→violet, which failed on its
+// own terms: four adjacent hues are a ramp, and the two purples were not
+// tellable apart in print. These are spread much wider.
+//
+// Slate on the last one is a deliberate reversal of the reasoning above, and
+// the distinction is narrow enough to be worth stating. Grey is damning as the
+// terminus of a green→amber→grey sequence, because the sequence is what says
+// "and this is the bad end". Grey as the one neutral among three unrelated
+// hues says only "neutral", which is what that quadrant honestly is — least
+// experience, least pull. It is also the only option that separates cleanly
+// from the other three without borrowing red, amber or green and dragging
+// their meanings along.
 export const QUADRANTS = {
   strength: {
     label: "Strength",
@@ -106,8 +119,8 @@ export const QUADRANTS = {
     selfLabel: "Strengths that energize you",
     selfHint: "You do this well, and it's the kind of work you'd choose more of.",
     color: "bg-emerald-100 text-emerald-800 border-emerald-200",
-    selfAccent: "border-l-teal-400",
-    selfHeading: "text-teal-900",
+    selfAccent: "border-l-teal-500",
+    selfHeading: "text-teal-800",
   },
   develop: {
     label: "Develop",
@@ -115,8 +128,8 @@ export const QUADRANTS = {
     selfLabel: "Where you want to grow",
     selfHint: "The pull is there ahead of the practice. This is where coaching pays off fastest.",
     color: "bg-blue-100 text-blue-800 border-blue-200",
-    selfAccent: "border-l-sky-400",
-    selfHeading: "text-sky-900",
+    selfAccent: "border-l-blue-500",
+    selfHeading: "text-blue-800",
   },
   sustain: {
     label: "Reluctant",
@@ -124,8 +137,8 @@ export const QUADRANTS = {
     selfLabel: "Strengths that don't energize you",
     selfHint: "You have the skills to do this well. It just doesn't seem to be the kind of work that gives you energy, or that you'd choose to spend most of your time on.",
     color: "bg-amber-100 text-amber-800 border-amber-200",
-    selfAccent: "border-l-indigo-400",
-    selfHeading: "text-indigo-900",
+    selfAccent: "border-l-violet-500",
+    selfHeading: "text-violet-800",
   },
   avoid: {
     label: "Poor fit",
@@ -133,8 +146,8 @@ export const QUADRANTS = {
     selfLabel: "Not your focus right now",
     selfHint: "Neither the experience nor the pull is here yet. That's information, not a verdict.",
     color: "bg-gray-100 text-gray-600 border-gray-200",
-    selfAccent: "border-l-violet-400",
-    selfHeading: "text-violet-900",
+    selfAccent: "border-l-slate-400",
+    selfHeading: "text-slate-700",
   },
 };
 
