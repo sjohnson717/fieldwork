@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { getAssignedActivities } from "@/lib/activities";
+import { EXPERIENCE_OPTIONS, SKILLS_OPTIONS, INTEREST_OPTIONS } from "@/lib/personal-scoring";
 
 const IMPORTANCE_OPTIONS = ["Not needed", "Nice to have", "Important", "Critical"];
 const EXECUTION_OPTIONS  = ["Not done", "Inconsistent", "Good", "Excellent"];
@@ -146,6 +147,33 @@ function generateResponse(activity, respondentTitle, assessmentRoles) {
   };
 }
 
+// Personal assessments. Uniform noise would put every activity in the same
+// quadrant for everyone, so each fake person gets a strong facet and a weak
+// one; that is what makes the Results tab show real strengths, real gaps, and
+// the occasional keen-but-untrained row worth talking about.
+function personalProfileFor(facets) {
+  const shuffled = [...facets].sort(() => Math.random() - 0.5);
+  return { strong: shuffled[0], weak: shuffled[shuffled.length - 1] };
+}
+
+function generatePersonalResponse(activity, profile) {
+  const facet = activity.facet || "DEFINE";
+  const band = facet === profile.strong ? "strong" : facet === profile.weak ? "weak" : "middle";
+
+  // Weights run lowest → highest option on each scale.
+  const expWeights   = { strong: [0, 1, 3, 4], middle: [1, 3, 3, 1], weak: [4, 3, 1, 0] };
+  const skillWeights = { strong: [0, 0, 2, 3, 3], middle: [1, 2, 3, 2, 1], weak: [3, 4, 2, 1, 0] };
+  // Interest is drawn independently of ability on purpose: someone keen but
+  // untrained is the finding the assessment exists to surface.
+  const intWeights   = [1, 2, 3, 2];
+
+  return {
+    experience: EXPERIENCE_OPTIONS[weightedRandom(expWeights[band])],
+    skills:     SKILLS_OPTIONS[weightedRandom(skillWeights[band])],
+    interest:   INTEREST_OPTIONS[weightedRandom(intWeights)],
+  };
+}
+
 export default function AssessmentDemoData({ assessment }) {
   const [respondentCount, setRespondentCount] = useState(6);
   const [generating, setGenerating] = useState(false);
@@ -166,6 +194,9 @@ export default function AssessmentDemoData({ assessment }) {
       return;
     }
 
+    const isPersonal = assessment.type === "personal";
+    const facets = [...new Set(activities.map(a => a.facet).filter(Boolean))];
+
     const count = Math.min(respondentCount, FAKE_RESPONDENTS.length);
     const pool = [...FAKE_RESPONDENTS].sort(() => Math.random() - 0.5).slice(0, count);
 
@@ -185,17 +216,16 @@ export default function AssessmentDemoData({ assessment }) {
         });
 
         setProgress(`Generating responses for ${name}…`);
+        const personalProfile = isPersonal ? personalProfileFor(facets) : null;
         for (const activity of activities) {
-          const { importance, execution, suggested_owner } = generateResponse(
-            activity, title, assessment.roles
-          );
+          const answers = isPersonal
+            ? generatePersonalResponse(activity, personalProfile)
+            : generateResponse(activity, title, assessment.roles);
           await base44.entities.Response.create({
             assessment_id: assessment.id,
             respondent_id: respondent.id,
             activity_id: activity.id,
-            importance,
-            execution,
-            suggested_owner,
+            ...answers,
           });
           await new Promise(r => setTimeout(r, 50));
         }

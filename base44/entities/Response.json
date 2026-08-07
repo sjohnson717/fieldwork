@@ -4,9 +4,12 @@
     "assessment_id": { "type": "string" },
     "respondent_id": { "type": "string" },
     "activity_id": { "type": "string" },
-    "importance": { "type": "string", "enum": ["", "Not needed", "Nice to have", "Important", "Critical"] },
-    "execution": { "type": "string", "enum": ["", "Not done", "Inconsistent", "Good", "Excellent"] },
-    "suggested_owner": { "type": "string" }
+    "importance": { "type": "string", "enum": ["Not needed", "Nice to have", "Important", "Critical"] },
+    "execution": { "type": "string", "enum": ["Not done", "Inconsistent", "Good", "Excellent"] },
+    "suggested_owner": { "type": "string" },
+    "experience": { "type": "string", "enum": ["None", "Limited", "Some", "Extensive"] },
+    "skills": { "type": "string", "enum": ["None", "Untrained", "Good", "Very good", "Excellent"] },
+    "interest": { "type": "string", "enum": ["None", "Limited", "Moderate", "Passionate"] }
   },
   "required": ["assessment_id", "respondent_id", "activity_id"]
 }

@@ -5,13 +5,19 @@ import AssessmentOverview from "./admin/AssessmentOverview";
 import AssessmentActivitiesTab from "./admin/AssessmentActivitiesTab";
 import AssessmentOwnershipRoles from "./admin/AssessmentOwnershipRoles";
 import AssessmentResults from "./admin/AssessmentResults";
+import PersonalResults from "./admin/PersonalResults";
 import AssessmentDiscussion from "./admin/AssessmentDiscussion";
 import LibraryPage from "./admin/LibraryPage";
 import TeamPage from "./admin/TeamPage";
 import OrganizationsPage from "./admin/OrganizationsPage";
 import ConfirmDialog from "@/components/ConfirmDialog";
 
-const NAV_TABS = ["Overview", "Activities", "Ownership Roles", "Results", "Discussion"];
+// A personal assessment never asks who should own an activity and produces no
+// team gap to discuss, so those two tabs would be empty rather than merely
+// unused. Everything else is common to both types.
+const TEAM_TABS = ["Overview", "Activities", "Ownership Roles", "Results", "Discussion"];
+const PERSONAL_TABS = ["Overview", "Activities", "Results"];
+const tabsFor = (assessment) => (assessment?.type === "personal" ? PERSONAL_TABS : TEAM_TABS);
 
 // Which assessment was open, so leaving the admin page and coming back doesn't
 // dump you on a different one. Session-scoped on purpose: restoring a
@@ -37,6 +43,7 @@ export default function AdminPage() {
   const [showNewForm, setShowNewForm] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [newCompany, setNewCompany] = useState("");
+  const [newType, setNewType] = useState("team_gap");
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState("");
 
@@ -124,6 +131,7 @@ export default function AdminPage() {
         access_code: code,
         buyer_token: buyerToken,
         status: "draft",
+        type: newType,
         roles: [],
         collaborator_ids: collaboratorIds,
         org_id: user.org_id || undefined,
@@ -133,6 +141,8 @@ export default function AdminPage() {
       setShowNewForm(false);
       setNewTitle("");
       setNewCompany("");
+      setNewType("team_gap");
+      setActiveTab("Overview");
     } catch (e) {
       console.error("Failed to create assessment", e);
       setCreateError(e?.message || "Failed to create assessment. Please try again.");
@@ -199,6 +209,10 @@ export default function AdminPage() {
 
   const selected = assessments.find(a => a.id === selectedId);
   const canDeleteSelected = !!selected && (isAdmin || selected.created_by_id === user?.id);
+  // Selecting a personal assessment while a team-only tab is active would
+  // otherwise render an empty pane. Falling back beats blanking.
+  const visibleTabs = tabsFor(selected);
+  const effectiveTab = visibleTabs.includes(activeTab) ? activeTab : "Overview";
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
@@ -235,6 +249,31 @@ export default function AdminPage() {
                 onKeyDown={e => e.key === "Enter" && handleCreate()}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
+              {/* Set at creation and not editable afterwards: the type decides
+                  which questions were asked, so changing it on an assessment
+                  that already has responses would relabel answers that were
+                  given to a different question. */}
+              <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
+                {[
+                  { value: "team_gap", label: "Team gap" },
+                  { value: "personal", label: "Personal" },
+                ].map(t => (
+                  <button
+                    key={t.value}
+                    onClick={() => setNewType(t.value)}
+                    className={`flex-1 px-2 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                      newType === t.value ? "bg-white shadow-sm text-gray-900" : "text-gray-500 hover:text-gray-700"
+                    }`}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+              <p className="text-[11px] text-gray-400 leading-snug">
+                {newType === "personal"
+                  ? "Each person rates their own experience, skills and interest in each activity."
+                  : "The team rates importance, execution and ownership of each activity."}
+              </p>
               <div className="flex gap-2">
                 <button
                   onClick={handleCreate}
@@ -244,7 +283,7 @@ export default function AdminPage() {
                   {creating ? "Creating…" : "Create"}
                 </button>
                 <button
-                  onClick={() => { setShowNewForm(false); setNewTitle(""); setNewCompany(""); setCreateError(""); }}
+                  onClick={() => { setShowNewForm(false); setNewTitle(""); setNewCompany(""); setNewType("team_gap"); setCreateError(""); }}
                   className="px-3 text-sm text-gray-400 hover:text-gray-600 transition-colors"
                 >
                   Cancel
@@ -293,9 +332,14 @@ export default function AdminPage() {
                         {a.status}
                       </span>
                     </div>
-                    {a.company_name && (
-                      <p className="text-xs text-gray-400 truncate mt-0.5">{a.company_name}</p>
-                    )}
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      {a.type === "personal" && (
+                        <span className="text-[10px] font-semibold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded shrink-0">Personal</span>
+                      )}
+                      {a.company_name && (
+                        <p className="text-xs text-gray-400 truncate">{a.company_name}</p>
+                      )}
+                    </div>
                   </button>
                 </li>
               ))}
@@ -398,12 +442,12 @@ export default function AdminPage() {
               </div>
               {/* Tabs */}
               <div className="flex gap-1">
-                {NAV_TABS.map(tab => (
+                {visibleTabs.map(tab => (
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
                     className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                      activeTab === tab
+                      effectiveTab === tab
                         ? "bg-blue-600 text-white"
                         : "text-gray-500 hover:text-gray-800 hover:bg-gray-100"
                     }`}
@@ -416,7 +460,7 @@ export default function AdminPage() {
 
             {/* Tab content */}
             <div className="flex-1 overflow-y-auto">
-              {activeTab === "Overview" && (
+              {effectiveTab === "Overview" && (
                 <AssessmentOverview
                   assessment={selected}
                   onUpdate={handleAssessmentUpdate}
@@ -427,22 +471,24 @@ export default function AdminPage() {
                   deleting={deleting}
                 />
               )}
-              {activeTab === "Activities" && (
+              {effectiveTab === "Activities" && (
                 <AssessmentActivitiesTab
                   assessment={selected}
                   onUpdate={handleAssessmentUpdate}
                 />
               )}
-              {activeTab === "Ownership Roles" && (
+              {effectiveTab === "Ownership Roles" && (
                 <AssessmentOwnershipRoles
                   assessment={selected}
                   onUpdate={handleAssessmentUpdate}
                 />
               )}
-              {activeTab === "Results" && (
-                <AssessmentResults assessment={selected} />
+              {effectiveTab === "Results" && (
+                selected.type === "personal"
+                  ? <PersonalResults assessment={selected} />
+                  : <AssessmentResults assessment={selected} />
               )}
-              {activeTab === "Discussion" && (
+              {effectiveTab === "Discussion" && (
                 <AssessmentDiscussion assessment={selected} />
               )}
             </div>

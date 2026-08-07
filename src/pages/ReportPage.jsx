@@ -355,6 +355,14 @@ export default function ReportPage() {
         return;
       }
       const a = result.assessment;
+      // This report is built entirely from importance and execution, which a
+      // personal assessment never collects. Every buyer token resolves, so
+      // without this the page would render a full report of empty bars.
+      if (a.type === "personal") {
+        setError("This link points to a personal assessment, which doesn't have a gap report.");
+        setLoading(false);
+        return;
+      }
       setAssessment(a);
 
       // Load activities, responses, and discussion notes in parallel

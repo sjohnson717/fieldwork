@@ -32,6 +32,57 @@ function statusBadge(status, answerCount = 0) {
   );
 }
 
+const typeLabel = (type) => (type === "personal" ? "Personal assessment" : "Gap analysis");
+
+const typeBlurb = (type) =>
+  type === "personal"
+    ? "Each person rates their own experience, skills and interest in each activity."
+    : "The team rates how important each activity is and how well it's being done today.";
+
+// Received = they pressed submit. Partial answers are visible in the roster
+// but are not a response the consultant can score yet, so the headline number
+// counts completions only.
+function receivedCount(rows) {
+  return rows.filter(r => r.status === "completed").length;
+}
+
+function RosterTable({ rows, linkFor }) {
+  if (rows.length === 0) {
+    return (
+      <p className="text-sm text-gray-400 text-center py-10">
+        No one has started yet. Send the link above to your team.
+      </p>
+    );
+  }
+  return (
+    <table className="w-full text-sm">
+      <thead>
+        <tr className="text-xs text-gray-400 uppercase tracking-wide border-b border-gray-100 bg-gray-50">
+          <th className="text-left px-4 py-3 font-medium">Name</th>
+          <th className="text-left px-4 py-3 font-medium w-28">Status</th>
+          {linkFor && <th className="px-4 py-3 w-24" />}
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map(r => (
+          <tr key={r.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50/50">
+            <td className="px-4 py-3 font-medium text-gray-800">
+              {r.name}
+              {r.title && <span className="text-xs text-gray-400 ml-2">{r.title}</span>}
+            </td>
+            <td className="px-4 py-3">{statusBadge(r.status, r.answer_count)}</td>
+            {linkFor && (
+              <td className="px-4 py-3 text-right">
+                <CopyButton text={linkFor(r)} />
+              </td>
+            )}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
 function CopyButton({ text }) {
   const [copied, setCopied] = useState(false);
   const handleCopy = () => {
@@ -53,6 +104,9 @@ export default function TeamLeaderPage() {
   const { token } = useParams();
   const [assessment, setAssessment] = useState(null);
   const [respondents, setRespondents] = useState([]);
+  // Assessments paired with this one — typically the personal assessment the
+  // team members answer while the leaders answer the gap analysis.
+  const [linked, setLinked] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -89,6 +143,7 @@ export default function TeamLeaderPage() {
         base44.entities.TeamLeaderFlag.filter({ assessment_id: found.id }),
       ]);
       setRespondents(view.respondents || []);
+      setLinked(view.linked || []);
       setActivities(acts);
       const flagMap = {}, noteMap = {};
       for (const f of flagList) {
@@ -186,16 +241,48 @@ export default function TeamLeaderPage() {
         {/* Title */}
         <div>
           <h1 className="text-2xl font-bold text-gray-900">{assessment.company_name || assessment.title}</h1>
-          <p className="text-sm text-gray-400 mt-1">Manage your team's participation in this assessment.</p>
+          <p className="text-sm text-gray-400 mt-1">
+            {linked.length > 0
+              ? "Manage your team's participation across both assessments."
+              : "Manage your team's participation in this assessment."}
+          </p>
         </div>
+
+        {/* Responses received. Only shown when there is more than one
+            assessment to track — with a single roster the table below already
+            says everything this would. */}
+        {linked.length > 0 && (
+          <section className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {[
+              { id: assessment.id, type: assessment.type, rows: respondents },
+              ...linked.map(l => ({ id: l.id, type: l.type, rows: l.respondents })),
+            ].map(entry => (
+              <div key={entry.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm px-6 py-5">
+                <p className="text-xs text-gray-400 uppercase tracking-wide">{typeLabel(entry.type)}</p>
+                <p className="text-3xl font-bold text-gray-900 mt-1">
+                  {receivedCount(entry.rows)}
+                  <span className="text-base font-medium text-gray-400"> / {entry.rows.length}</span>
+                </p>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  {entry.rows.length === 0
+                    ? "Nobody has started yet"
+                    : `${receivedCount(entry.rows)} of ${entry.rows.length} responses received`}
+                </p>
+              </div>
+            ))}
+          </section>
+        )}
 
         {/* Sharing */}
         <section className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5">
           <div>
-            <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-1">Send this to your team</h2>
+            <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-1">
+              {linked.length > 0 ? `Send this to your team · ${typeLabel(assessment.type)}` : "Send this to your team"}
+            </h2>
             <p className="text-xs text-gray-400 mb-3">
               One link for everyone. Each person enters their name and job title when they open it,
               and appears below as soon as they do.
+              {linked.length > 0 && " The paired assessment has its own link, further down."}
             </p>
             <div className="flex items-center gap-3 bg-[#eef2ff] border border-[#a3b8ff] rounded-lg px-4 py-3">
               <p className="text-xs text-[#2952CC] font-mono flex-1 truncate">{teamAssessmentLink}</p>
@@ -219,35 +306,53 @@ export default function TeamLeaderPage() {
         {/* Roster */}
         <section className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-100">
-            <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Participants</h2>
-            <p className="text-xs text-gray-400 mt-0.5">{respondents.length} total</p>
+            <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
+              {linked.length > 0 ? `Participants · ${typeLabel(assessment.type)}` : "Participants"}
+            </h2>
+            <p className="text-xs text-gray-400 mt-0.5">
+              {respondents.length} total · {receivedCount(respondents)} received
+            </p>
           </div>
-
-          {respondents.length === 0 ? (
-            <p className="text-sm text-gray-400 text-center py-10">No one has started yet. Send the link above to your team.</p>
-          ) : (
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-xs text-gray-400 uppercase tracking-wide border-b border-gray-100 bg-gray-50">
-                  <th className="text-left px-4 py-3 font-medium">Name</th>
-                  <th className="text-left px-4 py-3 font-medium w-28">Status</th>
-                  <th className="px-4 py-3 w-24" />
-                </tr>
-              </thead>
-              <tbody>
-                {respondents.map(r => (
-                  <tr key={r.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50/50">
-                    <td className="px-4 py-3 font-medium text-gray-800">{r.name}</td>
-                    <td className="px-4 py-3">{statusBadge(r.status, r.answer_count)}</td>
-                    <td className="px-4 py-3 text-right">
-                      <CopyButton text={personalLink(r.token)} />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
+          <RosterTable rows={respondents} linkFor={r => personalLink(r.token)} />
         </section>
+
+        {/* Paired assessments. Each has its own access code, so the leader
+            gets a second broadcast link here rather than a second dashboard.
+            No per-person links: those reopen and edit someone's answers, which
+            is not what "has it arrived?" needs. */}
+        {linked.map(l => (
+          <section key={l.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-100">
+              <div className="flex items-center gap-2">
+                <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
+                  Participants · {typeLabel(l.type)}
+                </h2>
+                {l.status === "closed" && (
+                  <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 border border-gray-200">
+                    Closed
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-gray-400 mt-0.5">
+                {l.respondents.length} total · {receivedCount(l.respondents)} received. {typeBlurb(l.type)}
+              </p>
+            </div>
+
+            {l.status !== "closed" && (
+              <div className="px-6 py-4 border-b border-gray-100">
+                <p className="text-xs text-gray-400 mb-2">Send this link to everyone taking it.</p>
+                <div className="flex items-center gap-3 bg-[#eef2ff] border border-[#a3b8ff] rounded-lg px-4 py-3">
+                  <p className="text-xs text-[#2952CC] font-mono flex-1 truncate">
+                    {`${window.location.origin}/assess?code=${l.access_code}`}
+                  </p>
+                  <CopyButton text={`${window.location.origin}/assess?code=${l.access_code}`} />
+                </div>
+              </div>
+            )}
+
+            <RosterTable rows={l.respondents} />
+          </section>
+        ))}
 
         {/* Activities under review */}
         <section className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">

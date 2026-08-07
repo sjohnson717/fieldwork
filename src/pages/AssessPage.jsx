@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { getAssignedActivities } from "@/lib/activities";
 import { getAssessmentByCode, getRespondentSession } from "@/lib/public-assessment";
+import { PERSONAL_AXES } from "@/lib/personal-scoring";
 
 const HERO_IMAGE = "https://media.base44.com/images/public/6a29ff3bc8effbeb3d637555/2ffc15b8c_curated-lifestyle-H3ZVdxBRIW0-unsplash.jpg";
 
@@ -22,6 +23,44 @@ const EXECUTION_COLORS = {
   "Good":         { border: "border-green-400",   bg: "bg-green-400",  text: "text-green-900" },
   "Excellent":    { border: "border-green-600",   bg: "bg-green-600",  text: "text-white" },
   "I don't know": { border: "border-gray-300",    bg: "bg-gray-200",   text: "text-gray-600" },
+};
+
+// Personal assessment. All three axes run none → most, so one ramp keyed by
+// position serves all of them and a new scale needs no new colour map.
+const PERSONAL_RAMP = [
+  { border: "border-gray-400",  bg: "bg-gray-400",  text: "text-gray-700" },
+  { border: "border-blue-200",  bg: "bg-blue-200",  text: "text-blue-900" },
+  { border: "border-blue-400",  bg: "bg-blue-400",  text: "text-white" },
+  { border: "border-blue-600",  bg: "bg-blue-600",  text: "text-white" },
+  { border: "border-blue-800",  bg: "bg-blue-800",  text: "text-white" },
+];
+
+const rampFor = (options) =>
+  Object.fromEntries(options.map((opt, i) => {
+    // Spread the ramp across however many options the scale has, so a
+    // four-point axis still ends on the darkest swatch.
+    const step = options.length === 1 ? 0 : i / (options.length - 1);
+    return [opt, PERSONAL_RAMP[Math.round(step * (PERSONAL_RAMP.length - 1))]];
+  }));
+
+const PERSONAL_COLORS = Object.fromEntries(
+  PERSONAL_AXES.map(axis => [axis.key, rampFor(axis.options)])
+);
+
+// Both assessment types load and save the same Response record, so state is
+// rebuilt for every field either type uses rather than branching here. The
+// unused half is empty strings, which never reach the server: handleNext sends
+// null for anything blank.
+const ANSWER_FIELDS = ["importance", "execution", "suggested_owner", ...PERSONAL_AXES.map(a => a.key)];
+
+const rebuildResponses = (saved) => {
+  const rebuilt = {};
+  for (const resp of saved) {
+    const entry = { id: resp.id };
+    for (const f of ANSWER_FIELDS) entry[f] = resp[f] || "";
+    rebuilt[resp.activity_id] = entry;
+  }
+  return rebuilt;
 };
 
 function RatingButton({ options, value, onChange, colorMap }) {
@@ -92,16 +131,7 @@ export default function AssessPage() {
 
     const allResponses = await base44.entities.Response.list();
     const saved = allResponses.filter(resp => resp.respondent_id === respondentId);
-    const rebuilt = {};
-    for (const resp of saved) {
-      rebuilt[resp.activity_id] = {
-        id: resp.id,
-        importance: resp.importance || "",
-        execution: resp.execution || "",
-        suggested_owner: resp.suggested_owner || ""
-      };
-    }
-    setResponses(rebuilt);
+    setResponses(rebuildResponses(saved));
   };
 
   const loadFromToken = async (t) => {
@@ -222,16 +252,7 @@ export default function AssessPage() {
   const loadExistingResponses = async () => {
     const allResponses = await base44.entities.Response.list();
     const saved = allResponses.filter(r => r.respondent_id === respondent.id);
-    const rebuilt = {};
-    for (const r of saved) {
-      rebuilt[r.activity_id] = {
-        id: r.id,
-        importance: r.importance || "",
-        execution: r.execution || "",
-        suggested_owner: r.suggested_owner || ""
-      };
-    }
-    setResponses(rebuilt);
+    setResponses(rebuildResponses(saved));
   };
 
   const handleRevise = async () => {
@@ -251,6 +272,18 @@ export default function AssessPage() {
     }));
   };
 
+  // Which questions this assessment asks. Everything else about the flow —
+  // code entry, facet paging, resume, review, submission — is identical, so
+  // this is the only thing the two types disagree about.
+  const isPersonal = assessment?.type === "personal";
+
+  // The team assessment is only ever reported in aggregate. A personal
+  // assessment is the opposite — it is read per person, and promising
+  // anonymity here would be a promise the report breaks.
+  const introBlurb = isPersonal
+    ? "Your answers describe your own experience, skills and interests. They're shared with your team leader to shape assignments and development plans."
+    : "Your responses are confidential and will only be seen in aggregate by your team leader.";
+
   const availableFacets = FACET_ORDER.filter(f => activities.some(a => a.facet === f));
   const currentFacet = availableFacets[currentFacetIndex];
   const facetActivities = activities.filter(a => a.facet === currentFacet);
@@ -261,11 +294,17 @@ const handleNext = async () => {
   try {
     for (const activity of facetActivities) {
       const r = responses[activity.id] || {};
-      const payload = {
-        importance: r.importance || null,
-        execution: r.execution || null,
-        suggested_owner: r.suggested_owner || null
-       };
+      // Only the fields this assessment type asks about are written. Sending
+      // the other type's fields as null would be harmless on a fresh record
+      // but would wipe real answers if an assessment's type were ever changed
+      // after responses existed.
+      const payload = isPersonal
+        ? Object.fromEntries(PERSONAL_AXES.map(a => [a.key, r[a.key] || null]))
+        : {
+            importance: r.importance || null,
+            execution: r.execution || null,
+            suggested_owner: r.suggested_owner || null
+          };
 
       const existingId = r.id; // use the id already in state, loaded at init
       if (existingId) {
@@ -358,7 +397,7 @@ const handleNext = async () => {
           <div className="mb-8">
             <img src="https://media.base44.com/images/public/6a29ff3bc8effbeb3d637555/9e97ff5e6_Quartzicon.png" alt="Quartz Assessments" className="h-10 w-10 mb-3 object-contain" />
             <h1 className="text-2xl font-bold text-gray-900">Before we begin</h1>
-            <p className="text-gray-500 mt-2">Your responses are confidential and will only be seen in aggregate by your team leader.</p>
+            <p className="text-gray-500 mt-2">{introBlurb}</p>
           </div>
           <div className="space-y-4 mb-6">
             <div>
@@ -432,7 +471,7 @@ const handleNext = async () => {
           <div className="mb-8">
             <img src="https://media.base44.com/images/public/6a29ff3bc8effbeb3d637555/9e97ff5e6_Quartzicon.png" alt="Quartz Assessments" className="h-10 w-10 mb-3 object-contain" />
             <h1 className="text-2xl font-bold text-gray-900">Before we begin</h1>
-            <p className="text-gray-500 mt-2">Your responses are confidential and will only be seen in aggregate by your team leader.</p>
+            <p className="text-gray-500 mt-2">{introBlurb}</p>
           </div>
           <div className="space-y-4 mb-6">
             <div>
@@ -496,6 +535,17 @@ const handleNext = async () => {
                   {activity.description && <p className="text-sm text-gray-500 mt-0.5">{activity.description}</p>}
                 </div>
                 <div className="space-y-3">
+                  {isPersonal ? PERSONAL_AXES.map(axis => (
+                    <div key={axis.key}>
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">{axis.label}</p>
+                      <RatingButton
+                        options={axis.options}
+                        value={r[axis.key]}
+                        onChange={val => handleRatingChange(activity.id, axis.key, val)}
+                        colorMap={PERSONAL_COLORS[axis.key]}
+                      />
+                    </div>
+                  )) : <>
                   <div>
                     <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Importance</p>
                     <RatingButton
@@ -556,6 +606,7 @@ const handleNext = async () => {
                       </div>
                     </div>
                   )}
+                  </>}
                 </div>
               </div>
             );
@@ -673,11 +724,15 @@ const handleNext = async () => {
                     <thead>
                       <tr className="border-b border-gray-100 bg-gray-50">
                         <th className="text-left px-4 py-2.5 text-xs font-semibold text-gray-500 w-2/5">Activity</th>
+                        {isPersonal ? PERSONAL_AXES.map(axis => (
+                          <th key={axis.key} className="text-left px-3 py-2.5 text-xs font-semibold text-gray-500" style={{ width: '120px' }}>{axis.label}</th>
+                        )) : <>
                         <th className="text-left px-3 py-2.5 text-xs font-semibold text-gray-500" style={{ width: '120px' }}>Importance</th>
                         <th className="text-left px-3 py-2.5 text-xs font-semibold text-gray-500" style={{ width: '120px' }}>Execution</th>
                         {assessment?.roles?.length > 0 && (
                           <th className="text-left px-3 py-2.5 text-xs font-semibold text-gray-500">Owner</th>
                         )}
+                        </>}
                       </tr>
                     </thead>
                     <tbody>
@@ -686,6 +741,13 @@ const handleNext = async () => {
                         return (
                           <tr key={activity.id} className={idx < facetActs.length - 1 ? "border-b border-gray-50" : ""}>
                             <td className="px-4 py-3 text-gray-800 font-medium align-middle">{activity.name}</td>
+                            {isPersonal ? PERSONAL_AXES.map(axis => (
+                              <td key={axis.key} className="px-3 py-3 align-middle" style={{ width: '120px' }}>
+                                {r[axis.key]
+                                  ? <span className="inline-block whitespace-nowrap px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800" style={{ width: '110px', textAlign: 'center' }}>{r[axis.key]}</span>
+                                  : <span className="text-gray-300 text-xs">—</span>}
+                              </td>
+                            )) : <>
                             <td className="px-3 py-3 align-middle" style={{ width: '120px' }}>
                               {r.importance
                                 ? <span className={`inline-block whitespace-nowrap px-2 py-0.5 rounded-full text-xs font-medium ${IMPORTANCE_BADGE[r.importance] || "bg-gray-100 text-gray-600"}`} style={{ width: '110px', textAlign: 'center' }}>{r.importance}</span>
@@ -699,6 +761,7 @@ const handleNext = async () => {
                             {assessment?.roles?.length > 0 && (
                               <td className="px-3 py-3 text-gray-600 text-xs align-middle">{r.suggested_owner || <span className="text-gray-300">—</span>}</td>
                             )}
+                            </>}
                           </tr>
                         );
                       })}

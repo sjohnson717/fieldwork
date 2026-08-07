@@ -195,6 +195,44 @@ is what governs a write's return value, not the read rule. Still worth walking
 one respondent through `/assess?code=…` after any change here, because a green
 build proves nothing about RLS.
 
+## Two assessment types on one entity
+
+`Assessment.type` is `team_gap` or `personal`, and `Response` carries both sets
+of answer fields. Absent means `team_gap`, which is what every record predating
+the field is — nothing was backfilled, and nothing needs to be.
+
+A second entity was the obvious alternative and would have been worse. The two
+types share the activity library, respondent self-registration, the access code,
+the token flows and the whole `/assess` journey; only the questions differ. A
+parallel `PersonalResponse` would have meant a second set of RLS rules to keep
+in step with this one, a second branch in `publicAssessment`, and a second
+cascade in `deleteAssessment` that would fail closed the day someone forgot it.
+
+The cost of one entity is that a Response has fields it never uses. `AssessPage`
+writes only the fields its type asks about, so a type change on an assessment
+that already has responses cannot silently blank the other half — though nothing
+offers to change type, and the create form deliberately doesn't let you.
+
+**`parent_assessment_id` is optional in both directions.** It links a personal
+assessment to a team gap assessment so the Results tab can cross capability
+against importance. RLS cannot enforce a join here any more than it can for
+Respondent, and it doesn't need to: a facilitator invited to the personal
+assessment but not the team one simply cannot read the parent, and
+`PersonalResults` catches that and drops the cross-analysis rather than the
+page. Failing to a narrower report is the right failure.
+
+The pairing also drives the team leader dashboard, because the common setup is
+that the leaders answer the gap analysis while their team answers the personal
+one. `publicAssessment`'s `team` mode follows the link in both directions and
+returns the sibling's roster alongside its own, so one dashboard link covers
+both. What it returns for the sibling is deliberately thinner than for the
+primary: title, status, access code and roster statuses, but **no
+per-respondent tokens**. A respondent token is a resume link that reopens and
+edits that person's answers, and a personal assessment is one individual's
+account of their own skills — a leader needs to see that it arrived, not to be
+able to rewrite it. The primary roster still carries tokens, unchanged, because
+handing out those links is what that page is for.
+
 ## The no-org bucket
 
 Absent/null `org_id` is treated as its own shared bucket by `sameOrg()` in

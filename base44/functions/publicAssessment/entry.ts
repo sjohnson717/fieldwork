@@ -23,6 +23,7 @@ import { createClientFromRequest } from "npm:@base44/sdk@0.8.39";
 const PUBLIC_FIELDS = [
   "id",
   "title",
+  "type",
   "tagline",
   "company_name",
   "status",
@@ -96,12 +97,69 @@ Deno.serve(async (req) => {
         // Answer counts distinguish "signed in but hasn't answered anything"
         // from "actually working through it". Derived rather than stored, so
         // it cannot drift out of step with the responses themselves.
-        const answers = {};
-        for (const r of responses) {
-          if (r.importance || r.execution || r.suggested_owner) {
-            answers[r.respondent_id] = (answers[r.respondent_id] || 0) + 1;
+        // Counts whichever fields this assessment's type asks about — a
+        // personal assessment stores nothing in importance/execution, so
+        // checking only those would report every respondent as untouched.
+        const ANSWER_FIELDS = ["importance", "execution", "suggested_owner", "experience", "skills", "interest"];
+        const countAnswers = (rows) => {
+          const out = {};
+          for (const r of rows) {
+            if (ANSWER_FIELDS.some((f) => r[f])) {
+              out[r.respondent_id] = (out[r.respondent_id] || 0) + 1;
+            }
           }
+          return out;
+        };
+        const answers = countAnswers(responses);
+
+        // A team leader typically runs two assessments at once: the leaders
+        // answer the gap analysis, the members answer the personal one. Those
+        // are separate records with separate access codes, so without this the
+        // leader would need two dashboard links and would see half the picture
+        // on each.
+        //
+        // Related in both directions — the link is stored on the personal
+        // record, but whichever of the pair the leader holds a token for
+        // should show the other. The pairing is set by a facilitator in admin,
+        // so surfacing a sibling is an intentional grant, not an escalation.
+        //
+        // Deliberately narrower than the primary roster: the sibling's
+        // broadcast access_code is here so the leader can invite people, but
+        // no per-respondent tokens. Those are resume links that open and edit
+        // someone's answers, and a personal assessment is one individual's
+        // account of their own skills — the leader needs to know it arrived,
+        // not to be able to rewrite it.
+        const related = assessments.filter((x) =>
+          x.id !== a.id &&
+          ((a.parent_assessment_id && x.id === a.parent_assessment_id) ||
+            (x.parent_assessment_id && x.parent_assessment_id === a.id))
+        );
+
+        const linked = [];
+        for (const rel of related) {
+          const [relRespondents, relResponses] = await Promise.all([
+            svc.Respondent.filter({ assessment_id: rel.id }),
+            svc.Response.filter({ assessment_id: rel.id }),
+          ]);
+          const relAnswers = countAnswers(relResponses);
+          linked.push({
+            id: rel.id,
+            title: rel.title,
+            type: rel.type || "team_gap",
+            status: rel.status,
+            access_code: rel.access_code,
+            respondents: relRespondents.map((r) => ({
+              id: r.id,
+              name: r.name,
+              title: r.title || null,
+              status: r.status,
+              answer_count: relAnswers[r.id] || 0,
+              completed_date: r.completed_date || null,
+              created_date: r.created_date,
+            })),
+          });
         }
+
         return Response.json({
           assessment: shape(a, ["access_code"]),
           respondents: respondents.map((r) => ({
@@ -114,6 +172,7 @@ Deno.serve(async (req) => {
             completed_date: r.completed_date || null,
             created_date: r.created_date,
           })),
+          linked,
         });
       }
 

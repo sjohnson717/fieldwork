@@ -33,10 +33,36 @@ export default function AssessmentOverview({ assessment, onUpdate, onDelete, del
   const [companyDraft, setCompanyDraft] = useState(assessment.company_name || "");
   const [taglineDraft, setTaglineDraft] = useState(assessment.tagline || "");
   const [savingTitle, setSavingTitle] = useState(false);
+  const [teamAssessments, setTeamAssessments] = useState([]);
+  const [savingParent, setSavingParent] = useState(false);
+
+  const isPersonal = assessment.type === "personal";
 
   useEffect(() => {
     loadUsers();
   }, []);
+
+  // Candidate parents for a personal assessment. RLS already limits this to
+  // assessments the caller may read, so no extra scoping is needed here.
+  useEffect(() => {
+    if (!isPersonal) return;
+    base44.entities.Assessment.list("created_date")
+      .then(all => setTeamAssessments(all.filter(a => a.type !== "personal")))
+      .catch(e => console.error("Failed to load team assessments", e));
+  }, [isPersonal]);
+
+  const handleParentChange = async (parentId) => {
+    setSavingParent(true);
+    try {
+      const updated = await base44.entities.Assessment.update(assessment.id, {
+        parent_assessment_id: parentId || null,
+      });
+      onUpdate(updated);
+    } catch (e) {
+      console.error("Failed to link team assessment", e);
+    }
+    setSavingParent(false);
+  };
 
   const loadUsers = async () => {
     setLoadingUsers(true);
@@ -213,7 +239,35 @@ export default function AssessmentOverview({ assessment, onUpdate, onDelete, del
             {assessment.tagline && <p className="text-xs text-gray-400">{assessment.tagline}</p>}
           </div>
         )}
+        <p className="text-xs text-gray-400 mt-3 pt-3 border-t border-gray-100">
+          {isPersonal
+            ? "Personal assessment — each person rates their own experience, skills and interest."
+            : "Team gap assessment — importance, execution and ownership of each activity."}
+        </p>
       </section>
+
+      {/* Linked team assessment — personal assessments only, and optional */}
+      {isPersonal && (
+        <section className="bg-white rounded-xl border border-gray-200 p-6">
+          <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-1">Linked team assessment</h3>
+          <p className="text-xs text-gray-400 mb-4">
+            Optional. Linking lets the Results tab cross what people can do against what the team said matters and where execution is weak. This assessment works on its own without it.
+          </p>
+          <select
+            value={assessment.parent_assessment_id || ""}
+            onChange={e => handleParentChange(e.target.value)}
+            disabled={savingParent}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white disabled:opacity-50"
+          >
+            <option value="">Not linked</option>
+            {teamAssessments.map(a => (
+              <option key={a.id} value={a.id}>
+                {a.title}{a.company_name ? ` · ${a.company_name}` : ""}
+              </option>
+            ))}
+          </select>
+        </section>
+      )}
 
       {/* Status */}
       <section className="bg-white rounded-xl border border-gray-200 p-6">
@@ -320,7 +374,11 @@ export default function AssessmentOverview({ assessment, onUpdate, onDelete, del
               </button>
             )}
           </div>
-          {/* Report link */}
+          {/* Report link. The buyer report is a gap analysis — importance,
+              execution and the priorities that fall out of them — none of
+              which a personal assessment collects, so it is withheld rather
+              than shown empty. Personal results live on the Results tab. */}
+          {!isPersonal && (
           <div className="flex items-center justify-between gap-4">
             <span className="text-sm text-gray-700 font-medium w-56 shrink-0">Report and Action Plan</span>
             {assessment.buyer_token ? (
@@ -346,6 +404,7 @@ export default function AssessmentOverview({ assessment, onUpdate, onDelete, del
               <span className="text-sm text-gray-400 italic">Not available</span>
             )}
           </div>
+          )}
         </div>
       </section>
 
