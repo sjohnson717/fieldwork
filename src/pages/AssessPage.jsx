@@ -111,6 +111,26 @@ export default function AssessPage() {
   const [saving, setSaving] = useState(false);
   const [allTitles, setAllTitles] = useState([]);
   const [arrivedWithCode, setArrivedWithCode] = useState(false);
+  // This person's own resume token. Held separately because the two entry
+  // paths learn it differently: the code path generates it here at
+  // registration, while the token path reads it from the URL — publicAssessment
+  // deliberately never sends it back, since a respondent lookup shouldn't
+  // return a credential the caller didn't already have.
+  const [myToken, setMyToken] = useState(null);
+  const [copiedLink, setCopiedLink] = useState(false);
+
+  // Swap ?code=… for ?t=… once we know who this is, so the address bar holds
+  // their personal link rather than the broadcast one. Without this, anyone
+  // bookmarking the page they registered on gets the shared code link back,
+  // which starts a brand new registration — the URL is the only credential in
+  // this design, so it has to actually be in the URL.
+  const rememberInUrl = (token) => {
+    setMyToken(token);
+    const url = new URL(window.location.href);
+    url.searchParams.delete("code");
+    url.searchParams.set("t", token);
+    window.history.replaceState({}, "", url);
+  };
 
   useEffect(() => { document.title = "Assess | Quartz Assessment"; }, []);
 
@@ -142,6 +162,7 @@ export default function AssessPage() {
 
   const loadFromToken = async (t) => {
     setStep("loading");
+    setMyToken(t);
     try {
       // The respondent token and its parent assessment are both resolved
       // server-side in one call.
@@ -257,6 +278,7 @@ export default function AssessPage() {
         status: "started"
       });
       setRespondent(r);
+      rememberInUrl(token);
       const acts = await getAssignedActivities(assessment);
       setActivities(acts);
       const titles = await base44.entities.JobTitle.filter({ active: true }, "sort_order");
@@ -903,10 +925,32 @@ const handleNext = async () => {
               {!returningCompleted && !isPersonal && (
                 <p className="text-center text-xs text-gray-400">Your feedback will help shape the team's professional development plan.</p>
               )}
-              {isPersonal && (
-                <p className="text-center text-xs text-gray-400">
-                  Keep this link to come back and update your profile at any time.
-                </p>
+              {/* Shown, not just implied by the address bar — the address bar
+                  is where the wrong link lived for a week and nobody noticed.
+                  no-print is deliberate: this link opens and edits their
+                  answers, and the PDF is the thing they hand to a manager. It
+                  must never be printed into the artefact they share. */}
+              {isPersonal && myToken && (
+                <div className="no-print max-w-lg mx-auto mt-2">
+                  <p className="text-xs text-gray-500 mb-1.5 text-center">
+                    Bookmark your own link to come back and update this at any time. It's yours — anyone with it can change your answers.
+                  </p>
+                  <div className="flex items-center gap-2 bg-gray-100 border border-gray-200 rounded-lg px-3 py-2">
+                    <p className="text-[11px] text-gray-500 font-mono flex-1 truncate">
+                      {`${window.location.origin}/assess?t=${myToken}`}
+                    </p>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(`${window.location.origin}/assess?t=${myToken}`);
+                        setCopiedLink(true);
+                        setTimeout(() => setCopiedLink(false), 2000);
+                      }}
+                      className="shrink-0 text-xs font-medium text-blue-600 hover:text-blue-800 border border-blue-200 hover:border-blue-300 px-2.5 py-1 rounded-lg transition-colors"
+                    >
+                      {copiedLink ? "Copied!" : "Copy"}
+                    </button>
+                  </div>
+                </div>
               )}
         </div>
       </div>
