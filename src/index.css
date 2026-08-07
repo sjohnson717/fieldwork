@@ -144,6 +144,15 @@
     page-break-after: avoid;
   }
 
+  /* Start a titled section on a fresh page. Used by the personal profile to
+     separate the interpretation from the raw answers behind it. Safe even if
+     the part above ever runs long: it means "the detail begins on its own
+     page", not "the detail begins on page two". */
+  .print-section-break {
+    break-before: page;
+    page-break-before: always;
+  }
+
   /* Never leave a heading alone at the foot of a page. */
   h1, h2, h3 {
     break-after: avoid;

@@ -697,6 +697,23 @@ const handleNext = async () => {
       "Excellent":    "bg-green-600 text-white",
     };
 
+    // Computed once here rather than inside the quadrant block, because the
+    // detail section's heading needs the same count.
+    const personalProfile = isPersonal
+      ? computePersonProfile(
+          activities,
+          // Local answer state is keyed by activity; computePersonProfile
+          // wants Response-shaped rows.
+          activities.map(act => ({
+            ...(responses[act.id] || {}),
+            activity_id: act.id,
+            respondent_id: respondent?.id,
+          })),
+          respondent?.id,
+        )
+      : null;
+    const hasProfile = (personalProfile?.answeredCount ?? 0) > 0;
+
     return (
       <div className="min-h-screen bg-gray-50 print-plain">
         <div className="max-w-3xl mx-auto px-4 py-10">
@@ -766,16 +783,8 @@ const handleNext = async () => {
               all. Quadrant wording here is the person-facing set; see
               QUADRANTS in personal-scoring.js for why it differs from the
               facilitator's. */}
-          {isPersonal && (() => {
-            // Local answer state is keyed by activity; computePersonProfile
-            // wants Response-shaped rows.
-            const rows = activities.map(act => ({
-              ...(responses[act.id] || {}),
-              activity_id: act.id,
-              respondent_id: respondent?.id,
-            }));
-            const profile = computePersonProfile(activities, rows, respondent?.id);
-            if (profile.answeredCount === 0) return null;
+          {hasProfile && (() => {
+            const profile = personalProfile;
             const dominant = dominantBucket(profile);
 
             return (
@@ -808,12 +817,25 @@ const handleNext = async () => {
                     </section>
                   );
                 })}
-                <p className="text-xs text-gray-400 px-1">
-                  Based on the {profile.answeredCount} {profile.answeredCount === 1 ? "activity" : "activities"} you rated. Your full answers are below.
-                </p>
               </div>
             );
           })()}
+
+          {/* The detail tables get their own titled section starting on a
+              fresh page. This used to be a one-line "your full answers are
+              below" tacked onto the end of the profile — which then sat at the
+              foot of page one introducing something overleaf, so page two
+              opened with a bare facet label and no idea what it belonged to.
+              print-section-break is print-only, so on screen this is just a
+              heading and the page keeps flowing. */}
+          {hasProfile && (
+            <div className="print-section-break mb-5 pt-1">
+              <h2 className="text-lg font-bold text-gray-900">Activities you rated</h2>
+              <p className="text-xs text-gray-500 mt-1">
+                All {personalProfile.answeredCount} {personalProfile.answeredCount === 1 ? "activity" : "activities"}, and how you rated each one.
+              </p>
+            </div>
+          )}
 
           {/* Summary table grouped by facet */}
           {availableFacets.map(facet => {
