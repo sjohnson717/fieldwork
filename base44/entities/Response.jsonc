@@ -46,12 +46,11 @@
       "type": "string",
       "enum": [
         "None",
-        "Untrained",
+        "Basic",
         "Good",
-        "Very good",
         "Excellent"
       ],
-      "description": "Personal assessments only. Scored 1/2/3/4/5 in src/lib/personal-scoring.js."
+      "description": "Personal assessments only. Scored 0/1/3/5 in src/lib/personal-scoring.js."
     },
     "interest": {
       "type": "string",
