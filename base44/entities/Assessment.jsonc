@@ -29,6 +29,11 @@
       ],
       "default": "draft"
     },
+    "closed_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Set when status moves to closed. Lets the results tab spot responses revised after the engagement was reported on \u2014 personal assessments stay editable after close, so the aggregate can move under a delivered report."
+    },
     "assessment_type": {
       "type": "string",
       "enum": [
