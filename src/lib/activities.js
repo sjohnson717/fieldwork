@@ -1,6 +1,5 @@
 import { base44 } from "@/api/base44Client";
-
-const FACET_ORDER = ["DEFINE", "COMMIT", "DESCRIBE", "CREATE", "PREPARE", "DELIVER"];
+import { facetRank } from "@/lib/scoring";
 
 /**
  * Returns the activities assigned to an assessment:
@@ -16,7 +15,7 @@ export async function getAssignedActivities(assessmentRecord) {
   const library = all.filter(a => !a.assessment_id && (!hasFilter || ids.includes(a.id)));
   const custom = all.filter(a => a.assessment_id === assessmentRecord.id);
   return [...library, ...custom].sort((a, b) => {
-    const facetDiff = (FACET_ORDER.indexOf(a.facet) ?? 99) - (FACET_ORDER.indexOf(b.facet) ?? 99);
+    const facetDiff = facetRank(a.facet) - facetRank(b.facet);
     if (facetDiff !== 0) return facetDiff;
     return (a.sort_order ?? 0) - (b.sort_order ?? 0);
   });

@@ -138,6 +138,13 @@ function ActivityRow({ activity, stats, themeColor }) {
   );
 }
 
+// A paired theme lists its facets ("PREPARE · DELIVER"); a standalone one would
+// just repeat its own name, so it shows the facet's subtitle instead.
+const facetCaption = (group) =>
+  group.standalone
+    ? FACET_SUBTITLES[group.facets[0]]
+    : group.facets.join(" · ");
+
 function ThemeSection({ group, activities, activityStats, filterLevel, facetFilter }) {
   const groupActivities = activities.filter(a => group.facets.includes(a.facet));
   if (groupActivities.length === 0) return null;
@@ -164,7 +171,7 @@ function ThemeSection({ group, activities, activityStats, filterLevel, facetFilt
             <div className="w-1 h-12 rounded-full shrink-0" style={{ backgroundColor: group.color }} />
             <div>
               <h2 className="text-lg font-bold text-gray-900">{group.label}</h2>
-              <p className="text-xs text-gray-400">{group.facets.join(" · ")}</p>
+              <p className="text-xs text-gray-400">{facetCaption(group)}</p>
             </div>
           </div>
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-4">
@@ -206,7 +213,7 @@ function ThemeSection({ group, activities, activityStats, filterLevel, facetFilt
         <div>
           <h2 className="text-lg font-bold text-gray-900">{group.label}</h2>
           <p className="text-xs text-gray-400">
-            {group.facets.join(" · ")}
+            {facetCaption(group)}
             {themeAvgGap !== null && (
               <span className="ml-3 font-semibold" style={{ color: gapColor(themeAvgGap) }}>
                 avg gap {fmt(themeAvgGap)}
@@ -222,14 +229,20 @@ function ThemeSection({ group, activities, activityStats, filterLevel, facetFilt
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         {byFacet.map(({ facet, subtitle, items }) => (
           <div key={facet}>
-            {/* Facet sub-header */}
-            <div id={facet} className="px-5 py-2.5 border-b border-gray-50"
-              style={{ backgroundColor: group.lightColor }}>
-              <span className="text-xs font-bold uppercase tracking-widest text-gray-900">
-                {facet}
-              </span>
-              <span className="text-xs text-gray-400 ml-2">{subtitle}</span>
-            </div>
+            {/* Facet sub-header. A standalone group keeps the anchor — the facet
+                wheel scrolls to it — but drops the bar, since the section header
+                immediately above already says the same word. */}
+            {group.standalone ? (
+              <div id={facet} />
+            ) : (
+              <div id={facet} className="px-5 py-2.5 border-b border-gray-50"
+                style={{ backgroundColor: group.lightColor }}>
+                <span className="text-xs font-bold uppercase tracking-widest text-gray-900">
+                  {facet}
+                </span>
+                <span className="text-xs text-gray-400 ml-2">{subtitle}</span>
+              </div>
+            )}
             {items.map(act => (
               <ActivityRow
                 key={act.id}
@@ -654,7 +667,7 @@ export default function ReportPage() {
 
         {/* ── Facet overview ── */}
         <div className="mb-10">
-          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-widest mb-4">Overview by Quartz phase</h2>
+          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-widest mb-4">Overview by Quartz facet</h2>
           <FacetWheel activityStats={activityStats} activities={activities} onFacetClick={handleFacetClick} />
         </div>
 

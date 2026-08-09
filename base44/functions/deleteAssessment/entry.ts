@@ -48,28 +48,54 @@ Deno.serve(async (req) => {
     if (!allowed) return Response.json({ error: "not_found" }, { status: 404 });
 
     const svc = base44.asServiceRole.entities;
-    const [responses, respondents, notes, flags] = await Promise.all([
-      svc.Response.filter({ assessment_id: assessmentId }),
-      svc.Respondent.filter({ assessment_id: assessmentId }),
-      svc.DiscussionNote.filter({ assessment_id: assessmentId }),
-      svc.TeamLeaderFlag.filter({ assessment_id: assessmentId }),
+
+    // Names the failing step in the thrown message. A bare cascade failure
+    // surfaced only as "Request failed with status code 500", which says
+    // nothing about which of five entities refused — and the one thing you
+    // need to know about a half-finished delete is how far it got.
+    const stage = async (name, fn) => {
+      try {
+        return await fn();
+      } catch (e) {
+        throw new Error(`${name} failed: ${e?.message || e}`);
+      }
+    };
+
+    const [responses, respondents, notes, flags, customActivities] = await Promise.all([
+      stage("reading responses",  () => svc.Response.filter({ assessment_id: assessmentId })),
+      stage("reading respondents", () => svc.Respondent.filter({ assessment_id: assessmentId })),
+      stage("reading notes",      () => svc.DiscussionNote.filter({ assessment_id: assessmentId })),
+      stage("reading flags",      () => svc.TeamLeaderFlag.filter({ assessment_id: assessmentId })),
+      stage("reading custom activities", () => svc.Activity.filter({ assessment_id: assessmentId })),
     ]);
 
     // Batched rather than one Promise.all over everything: an assessment with
     // a large team runs to hundreds of responses, and the platform is happier
     // with a bounded number of concurrent deletes.
-    const deleteAll = async (items, entity) => {
+    const deleteAll = async (label, items, entity) => {
       const BATCH = 10;
       for (let i = 0; i < items.length; i += BATCH) {
-        await Promise.all(items.slice(i, i + BATCH).map((item) => entity.delete(item.id)));
+        const chunk = items.slice(i, i + BATCH);
+        await stage(
+          `deleting ${label} ${i + 1}-${i + chunk.length} of ${items.length}`,
+          () => Promise.all(chunk.map((item) => entity.delete(item.id))),
+        );
       }
     };
 
-    await deleteAll(responses, svc.Response);
-    await deleteAll(respondents, svc.Respondent);
-    await deleteAll(notes, svc.DiscussionNote);
-    await deleteAll(flags, svc.TeamLeaderFlag);
-    await svc.Assessment.delete(assessmentId);
+    await deleteAll("responses", responses, svc.Response);
+    await deleteAll("respondents", respondents, svc.Respondent);
+    await deleteAll("notes", notes, svc.DiscussionNote);
+    await deleteAll("flags", flags, svc.TeamLeaderFlag);
+
+    // Custom activities name this assessment and are meaningless without it.
+    // They were previously left behind, so every assessment ever deleted has
+    // been leaking Activity rows whose assessment_id points at nothing — dead
+    // records that the library list hides (it filters on assessment_id) and
+    // nothing else ever reads.
+    await deleteAll("custom activities", customActivities, svc.Activity);
+
+    await stage("deleting the assessment", () => svc.Assessment.delete(assessmentId));
 
     return Response.json({
       deleted: {
@@ -77,9 +103,14 @@ Deno.serve(async (req) => {
         respondents: respondents.length,
         notes: notes.length,
         flags: flags.length,
+        customActivities: customActivities.length,
       },
     });
   } catch (error) {
-    return Response.json({ error: error.message }, { status: 500 });
+    // Also logged, because the message only reaches the caller if the client
+    // reads the response body — and the platform log is the record that
+    // survives whatever the browser did with it.
+    console.error("deleteAssessment", error);
+    return Response.json({ error: error?.message || String(error) }, { status: 500 });
   }
 });

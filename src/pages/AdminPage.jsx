@@ -11,6 +11,7 @@ import LibraryPage from "./admin/LibraryPage";
 import TeamPage from "./admin/TeamPage";
 import OrganizationsPage from "./admin/OrganizationsPage";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import { functionErrorMessage } from "@/lib/utils";
 
 // If assessment_type ever starts arriving as undefined on freshly created
 // assessments, the cause is almost certainly base44/entities/Assessment.jsonc
@@ -202,7 +203,8 @@ export default function AdminPage() {
       // Kept in the dialog rather than an alert(): the failure belongs next to
       // the action that caused it, and alert() blocks the renderer the same
       // way window.confirm() did.
-      setDeleteError(e?.message || "Something went wrong. Please try again.");
+      console.error("deleteAssessment failed", e?.response?.data ?? e);
+      setDeleteError(functionErrorMessage(e));
     }
     setDeleting(false);
   };

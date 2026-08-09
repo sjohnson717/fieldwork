@@ -6,7 +6,11 @@ export const EXECUTION_SCORE  = { "Not done": 0, "Inconsistent": 1, "Good": 2, "
 export const IMPORTANCE_LABEL = ["Not needed", "Nice to have", "Important", "Critical"];
 export const EXECUTION_LABEL  = ["Not done", "Inconsistent", "Good", "Excellent"];
 
-export const FACET_ORDER = ["DEFINE", "COMMIT", "DESCRIBE", "CREATE", "PREPARE", "DELIVER"];
+// The one canonical facet order. Everything that sorts, pages or groups by facet
+// imports this — AssessPage's paging, the library and assessment activity pickers,
+// getAssignedActivities. Keeping a local copy is how LEARN went missing from four
+// files at once while staying present in the entity enum.
+export const FACET_ORDER = ["DEFINE", "COMMIT", "DESCRIBE", "CREATE", "PREPARE", "DELIVER", "LEARN"];
 
 export const FACET_SUBTITLES = {
   DEFINE: "problems to solve",
@@ -15,8 +19,25 @@ export const FACET_SUBTITLES = {
   CREATE: "winning solutions",
   PREPARE: "the teams",
   DELIVER: "to market",
+  LEARN: "from outcomes",
 };
 
+// Sorts an unknown facet last rather than first. `indexOf` returns -1, not
+// undefined, so the obvious `indexOf(f) ?? 99` never fires its fallback and a
+// facet missing from FACET_ORDER silently jumps to the head of the list.
+export const facetRank = (facet) => {
+  const i = FACET_ORDER.indexOf(facet);
+  return i === -1 ? FACET_ORDER.length : i;
+};
+
+// The three paired themes tell the Plan → Build → Sell story, and each pair's two
+// facets are genuinely two halves of one job. LEARN is not half of anything: it
+// runs across the whole cycle rather than sitting at a point in it, so it gets a
+// standalone single-facet group rendered after the three pairs.
+//
+// `standalone` suppresses the per-facet sub-header inside the section — with one
+// facet the theme header already names it, and repeating "LEARN" twice in two
+// type sizes reads as a bug.
 export const THEME_GROUPS = [
   {
     label: "Plan the right things",
@@ -38,6 +59,14 @@ export const THEME_GROUPS = [
     color: "#11CC77",
     lightColor: "#ECFDF5",
     textColor: "#065F46",
+  },
+  {
+    label: "Learn what worked",
+    facets: ["LEARN"],
+    color: "#8855FF",
+    lightColor: "#F5F0FF",
+    textColor: "#5B21B6",
+    standalone: true,
   },
 ];
 

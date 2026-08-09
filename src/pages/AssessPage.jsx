@@ -9,12 +9,12 @@ import {
   dominantBucket,
   DOMINANT_SUMMARY,
 } from "@/lib/personal-scoring";
+import { FACET_ORDER } from "@/lib/scoring";
 
 const HERO_IMAGE = "https://media.base44.com/images/public/6a29ff3bc8effbeb3d637555/2ffc15b8c_curated-lifestyle-H3ZVdxBRIW0-unsplash.jpg";
 
 const IMPORTANCE_OPTIONS = ["Not needed", "Nice to have", "Important", "Critical"];
 const EXECUTION_OPTIONS = ["Not done", "Inconsistent", "Good", "Excellent", "I don't know"];
-const FACET_ORDER = ["DEFINE", "COMMIT", "DESCRIBE", "CREATE", "PREPARE", "DELIVER"];
 
 const IMPORTANCE_COLORS = {
   "Not needed":   { border: "border-gray-400",   bg: "bg-gray-400",   text: "text-gray-700" },

@@ -168,6 +168,27 @@ The general lesson: when one user action spans several entities, the permission
 that matters is the *whole action's*, and RLS can only answer one entity at a
 time. Put the check in a function before the first write.
 
+**The cascade includes custom activities.** An `Activity` with an
+`assessment_id` belongs to that one assessment and means nothing without it, but
+until August 2026 the cascade deleted the four obvious children and left those
+rows behind. The leak was invisible from the app — `LibraryPage` lists only
+rows with no `assessment_id`, and every other reader looks activities up *from*
+an assessment that no longer exists — so it surfaced only as stray records whose
+`assessment_id` pointed at nothing. Eight such orphans predate the fix and are
+still there; nothing reads them, and there is no UI that would.
+
+The lesson generalises past this function: "everything hanging off it" has to be
+enumerated from the schema, not from memory. Any new entity carrying an
+`assessment_id` needs adding to this cascade, and nothing enforces that.
+
+**Failures name their stage.** Each step is wrapped so the thrown message says
+which entity and which batch failed, because the alternative — one uniform 500 —
+tells you nothing about how far a half-finished delete got. Note the message
+only reaches the user if the caller reads the *response body*: the SDK rejects
+with an axios error whose `message` is always `"Request failed with status code
+500"`, so `e.message` silently discards it. Use `functionErrorMessage()` in
+`src/lib/utils.js` for any function call whose failure is shown to someone.
+
 ## Why Respondent reads go through a function
 
 `Respondent` holds team members' names and job titles. Together with

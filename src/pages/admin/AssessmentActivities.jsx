@@ -1,8 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import ConfirmDialog from "@/components/ConfirmDialog";
-
-const FACET_ORDER = ["DEFINE", "COMMIT", "DESCRIBE", "CREATE", "PREPARE", "DELIVER"];
+import { FACET_ORDER } from "@/lib/scoring";
 
 // ── OwnerTypeahead (same pattern as LibraryPage) ──────────────────────────────
 
