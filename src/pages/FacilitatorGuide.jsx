@@ -14,7 +14,7 @@ const sections = [
 | Step | Action | Details |
 |------|--------|---------|
 | 1 | **Create the assessment** | Click **New Assessment** in the navigation panel. Enter a title and client company name, then choose the type — **Team gap** or **Personal**. |
-| 2 | **Choose an activity preset** | Go to the **Activities** tab. Click a preset — Default (32), Extended (42), Brief (22), or Executive (6). Ownership roles are pre-populated automatically. |
+| 2 | **Choose an activity preset** | Go to the **Activities** tab. Click a preset — Default (36), Extended (65), Brief (22), or Executive (6). Each card says what the set is for. Ownership roles are pre-populated automatically. |
 | 3 | **Review ownership roles** | Open the **Ownership Roles** tab. Add or remove roles to match the client's actual team structure. Team gap assessments only. |
 | 4 | **Tag it** | In the **Overview** tab, add tags — the client, a cohort, whatever groups this with related work. |
 | 5 | **Set status to Active** | In the Overview tab, set the status to **Active**. Participants cannot access the survey until this is done. |
@@ -42,12 +42,30 @@ Each facilitator only sees assessments they created themselves, plus any they've
 
 | Preset | Activities | Best for |
 |--------|------------|----------|
-| Executive | 6 | C-suite or VP-level. Strategic outcomes only. ~5 min. |
+| Executive | 6 | C-suite or VP-level. One broad activity for each of the six cycle facets. ~5 min. |
 | Brief | 22 | Focused teams or short on time. Core activities. ~15 min. |
-| Default | 32 | Standard engagement. All six phases. ~20 min. |
-| Extended | 42 | Deep-dive diagnostic. Full activity library. ~30 min. |
+| Default | 36 | Standard engagement. All seven facets. ~25 min. |
+| Extended | 65 | Deep-dive diagnostic. The entire activity library. ~45 min. |
 
-> **Which preset should I use?** Default works well for most teams. Use Brief for time-constrained teams. Use Extended for a thorough diagnostic. Use Executive for leadership-only assessments focused on strategic outcomes.`,
+> **Which preset should I use?** Default works well for most teams. Use Brief for time-constrained teams. Use Executive for leadership-only assessments focused on strategic outcomes.
+
+> **Extended is now the whole library — budget for it.** At 65 activities it asks roughly half again as much of each respondent as it used to. Worth it for a deep-dive diagnostic; too much to send a busy team without warning them first.
+
+Presets are a starting point, not a cage. After applying one, tick and untick individual activities in the same tab, or add custom activities specific to this client.
+
+## The seven facets
+
+Six facets describe the product cycle in order, and each pair is a theme in the report:
+
+| Theme | Facets |
+|-------|--------|
+| Plan the right things | DEFINE · COMMIT |
+| Build what you plan | DESCRIBE · CREATE |
+| Sell what you build | PREPARE · DELIVER |
+
+**LEARN is the seventh, and it sits on its own.** The other six happen at a point in the cycle; learning runs across all of it — maintaining product knowledge, synthesising what the evidence says, checking outcomes against the assumptions that justified the work, and getting that back to the people who need it. In the report it appears as its own section after the three themes, with its own facet tile in the overview.
+
+LEARN is in **Default** and **Extended**. Executive and Brief deliberately leave it out — Executive covers the six cycle facets one activity at a time by design, and Brief is the shortest useful instrument. If learning is the reason for the engagement, use Default or add the four LEARN activities to whatever preset you start from.`,
   },
   {
     id: "fielding",
@@ -168,6 +186,9 @@ If two thirds of someone's activities land in one quadrant, their report opens w
 | Needs attention | "Is this a resource issue, a process issue, or a priority issue?" |
 | All on track in a theme | "Your team rates this whole area as strong. Is that consistent with what you see day to day?" |
 | Execution outpacing importance | "Your team rates execution here higher than importance. Are you over-investing in this area?" |
+| Gaps in LEARN | "You rate learning as important but it isn't happening. What would have to stop for someone to have time to look back at whether the last release did what you expected?" |
+
+> **LEARN gaps read differently.** A gap in DEFINE or CREATE usually means a capability or a process is missing. A gap in LEARN is almost always a time and priority problem — teams know they should review outcomes and rarely protect the space to do it. Expect "we never get to it" rather than "we don't know how", and steer the decision toward a specific commitment (who reviews what, when) rather than a training action.
 
 **Closing (5–10 min)** — Summarize decisions recorded in the Discussion tab. Confirm the team leader has them. Explain the report link will update once you close the assessment.
 

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { useSearchParams } from "react-router-dom";
 
 const sections = [
@@ -82,13 +83,20 @@ Built-in fields on every entity: \`id\`, \`created_date\`, \`updated_date\`, \`c
 
 | Module | Responsibility |
 |---|---|
-| \`src/lib/scoring.js\` | Gap analysis. Importance and execution are 0–3. |
+| \`src/lib/scoring.js\` | Gap analysis. Importance and execution are 0–3. **Also the single source of \`FACET_ORDER\`, \`FACET_SUBTITLES\` and \`THEME_GROUPS\`** — everything that sorts, pages or groups by facet imports from here. |
 | \`src/lib/personal-scoring.js\` | Personal assessment. All three axes are 0/1/3/5, normalised before any cross-axis maths. Owns the quadrants and both label vocabularies. |
 | \`src/lib/activities.js\` | Resolves which activities an assessment actually asks about. |
+| \`src/lib/activity-csv.js\` | Parses, validates and diffs the library CSV. No UI, no writes — the import dialog decides what to do with the diff. |
 | \`src/lib/public-assessment.js\` | Client wrapper over the \`publicAssessment\` function. |
 | \`src/lib/roles.js\` | Application roles and org comparison. |
 
 The two scoring modules are deliberately separate: a "3" does not mean the same thing in each, so nothing can be shared between them without introducing a bug that looks like a rounding error.
+
+## Facets
+
+Seven: \`DEFINE COMMIT DESCRIBE CREATE PREPARE DELIVER LEARN\`, in that order. The first six pair into the three \`THEME_GROUPS\` the report is built around; LEARN is a single-facet group flagged \`standalone\`, which renders it after the three pairs and suppresses the per-facet sub-header that would otherwise print its name twice.
+
+Adding a facet means \`FACET_ORDER\`, \`FACET_SUBTITLES\`, a \`THEME_GROUPS\` entry, and the entity enum in \`base44/entities/Activity.jsonc\`. Miss the enum and writes fail; miss \`THEME_GROUPS\` and the activities score correctly but render nowhere.
 
 ## Authentication
 
@@ -105,6 +113,12 @@ Facilitators have accounts. **Respondents, team leaders and buyers never do** �
 **RLS fails closed and quietly.** A custom field in a rule needs a \`data.\` prefix; without it the clause never matches and access silently disappears. A green build proves nothing here — walk a real respondent through \`/assess?code=…\` after any change.
 
 **The User entity ignores entity-level RLS.** Only per-field rules bind on it. Treat any new field on User as unprotected until it has one.
+
+**A copied constant goes stale in every copy at once.** \`FACET_ORDER\` lived in four files. \`LEARN\` was removed from the six code copies but never from the entity enum, so the backend accepted a LEARN activity and the UI then made it unreachable — unanswerable in \`AssessPage\`, invisible in every picker, absent from the report. All four now import from \`scoring.js\`.
+
+**\`indexOf\` returns \`-1\`, not \`undefined\`.** \`FACET_ORDER.indexOf(f) ?? 99\` never fires its fallback, so an unrecognised facet sorted *first* rather than last. Use \`facetRank()\`.
+
+**A function's error message never reaches the user by default.** The SDK rejects with an axios error whose \`message\` is always \`"Request failed with status code 500"\`; the reason the function returned is in \`e.response.data\`. Use \`functionErrorMessage()\` from \`src/lib/utils.js\` anywhere a function failure is shown to someone.
 
 ## Conventions
 
@@ -166,6 +180,10 @@ export default function ReadMe() {
         <div className="bg-white/5 border border-white/10 rounded-xl p-8">
           {current.content ? (
             <ReactMarkdown
+              // Without remark-gfm every table on this page rendered as literal
+              // pipe characters. The prose-th/prose-td styling below was written
+              // for tables that were never being parsed.
+              remarkPlugins={[remarkGfm]}
               className="prose prose-invert prose-sm max-w-none
                 prose-headings:font-bold prose-headings:text-white
                 prose-h2:text-lg prose-h2:mt-6 prose-h2:mb-3
