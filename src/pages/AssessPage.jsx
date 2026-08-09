@@ -767,7 +767,10 @@ const handleNext = async () => {
                   // No mention of the assessment's status: this is theirs, and
                   // it stays available and editable whatever the facilitator's
                   // engagement is doing.
-                  ? "This is yours to keep. Save it as a PDF to share with your manager or a coach — and come back and change any answer whenever you like."
+                  // Says "saved" explicitly because there is no Submit button on
+                  // this page. Without a final action to press, silence about
+                  // whether anything was recorded reads as an unfinished form.
+                  ? "Your answers are saved. This is yours to keep — save it as a PDF to share with your manager or a coach, and come back and change any answer whenever you like."
                   : !returningCompleted
                     ? "Your responses have been recorded. Here's a summary of what you submitted."
                     : assessment?.status === "closed"
@@ -929,16 +932,19 @@ const handleNext = async () => {
             )}
             {/* Already submitted — "Submit" again would be meaningless, so
                 this just closes the review and returns to the confirmation.
-                Hidden for someone revisiting their own profile: this page is
-                their destination, so there is nothing to close it to. */}
-            {!(isPersonal && returningCompleted) && (
+                Hidden for a personal assessment entirely: this page is their
+                destination, so there is nothing to close it to.
+
+                It used to be hidden only on a return visit, which left the
+                first pass — the one time the profile is guaranteed to be read —
+                showing a button labelled "Submit" that wrote nothing and
+                replaced the profile with a team-gap thank-you card. Completion
+                is already recorded on leaving the last facet page (see
+                handleNext), so there was never anything left to submit. */}
+            {!isPersonal && (
               <button
                 onClick={() => setStep(returningCompleted ? "already-done" : "thankyou")}
-                className={`font-semibold px-6 py-2.5 rounded-lg transition-colors text-sm ${
-                  isPersonal
-                    ? "border border-gray-300 hover:border-gray-400 text-gray-600 hover:text-gray-800"
-                    : "bg-blue-600 hover:bg-blue-700 text-white"
-                }`}
+                className="font-semibold px-6 py-2.5 rounded-lg transition-colors text-sm bg-blue-600 hover:bg-blue-700 text-white"
               >
                 {returningCompleted ? "Close" : "Submit"}
               </button>
