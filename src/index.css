@@ -142,6 +142,17 @@
   .facet-heading {
     break-after: avoid;
     page-break-after: avoid;
+
+    /* Give the label room when a break pushes it to the top of a page, without
+       spacing out the six or seven that don't move. Browsers drop a margin at a
+       page boundary but keep padding, so the two cancel mid-flow and only the
+       padding survives at the top of a page. Worst case — a renderer that keeps
+       the margin — is exactly today's layout, so this can only help.
+
+       Matches the 2.5rem `.print-section-break` uses, and for the same reason:
+       the printer's own margin alone leaves a heading almost against the trim. */
+    padding-top: 2.5rem;
+    margin-top: -2.5rem;
   }
 
   /* Start a titled section on a fresh page. Used by the personal profile to
