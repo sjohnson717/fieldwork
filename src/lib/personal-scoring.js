@@ -74,7 +74,28 @@ export const capability = (resp) => {
 
 export const interestLevel = (resp) => normalize("interest", resp?.interest);
 
-// Capability × interest, at the midpoint of each normalised axis.
+// Five categories, from all three axes at the midpoint of each normalised
+// scale. "High" is therefore Some/Good/Moderate and above.
+//
+// This deliberately does not use `capability()`. Averaging experience with
+// skills — which is what capability does, and defensibly, for staffing calls —
+// destroys the one distinction that matters most here: someone who has done a
+// lot of this work and still rates their own skill low. That person needs
+// coaching on an established practice, not exposure to a new one, and the
+// merged number cannot tell them apart from a beginner.
+//
+// So skill and interest choose the bucket, and experience only splits the two
+// development cases:
+//
+//   skill high, interest high                   -> enjoy
+//   skill high, interest low                    -> deemphasize
+//   skill low,  interest high, experience high  -> strengthen
+//   skill low,  interest high, experience low   -> develop
+//   skill low,  interest low                    -> lower
+//
+// Exhaustive and order-independent. `capability()` survives untouched for the
+// facilitator's Coverage view, where "who is the best fit" genuinely does want
+// one number; it just no longer appears anywhere the person themselves reads.
 //
 // Two vocabularies, deliberately. `label`/`hint` are the facilitator's, and
 // they are blunt because they are diagnostic notes for someone preparing a
@@ -91,14 +112,14 @@ export const interestLevel = (resp) => normalize("interest", resp?.interest);
 // `color` is the facilitator's and carries valence on purpose — amber on
 // "capable but not interested" is a real warning to someone staffing a team.
 //
-// `selfAccent` deliberately carries none. Four quadrants are categories, not a
-// ranking, and a green→amber→grey ramp asserts an order that doesn't exist:
-// grey reads as "dead" under a heading that says "that's information, not a
-// verdict", and colour wins that argument every time, because a swatch is
-// decoded before a sentence. So the person's report gets four hues of equal
-// weight, used as a left border and a heading tint rather than a fill. It also
-// has to survive greyscale printing, since the PDF is the share artefact —
-// which means colour can navigate but must never be the message.
+// `selfAccent` deliberately carries none. These are categories, not a ranking,
+// and a green→amber→grey ramp asserts an order that doesn't exist: grey reads
+// as "dead" under a heading that says "that's information, not a verdict", and
+// colour wins that argument every time, because a swatch is decoded before a
+// sentence. So the person's report gets five hues of equal weight, used as a
+// left border and a heading tint rather than a fill. It also has to survive
+// greyscale printing, since the PDF is the share artefact — which means colour
+// can navigate but must never be the message.
 //
 // The first attempt at that was teal→sky→indigo→violet, which failed on its
 // own terms: four adjacent hues are a ramp, and the two purples were not
@@ -112,39 +133,55 @@ export const interestLevel = (resp) => normalize("interest", resp?.interest);
 // experience, least pull. It is also the only option that separates cleanly
 // from the other three without borrowing red, amber or green and dragging
 // their meanings along.
-export const QUADRANTS = {
-  strength: {
+// Declaration order is report order, and it is not arbitrary: what you have,
+// then what you could build, then the two that are questions about your role
+// rather than your ability, then what isn't a priority. Ending on "lower
+// priority" also keeps the longest, least actionable list off the top of page
+// one.
+export const CATEGORIES = {
+  enjoy: {
     label: "Strength",
-    hint: "Capable and interested — hand this over",
-    selfLabel: "Strengths that energize you",
-    selfHint: "You do this well, and it's the kind of work you'd choose more of.",
+    hint: "Skilled and interested — hand this over",
+    selfLabel: "Strengths you enjoy using",
+    selfHint: "You report strong skills in this work and a high level of interest in doing it. These are activities you may want to continue using and developing.",
     color: "bg-emerald-100 text-emerald-800 border-emerald-200",
     selfAccent: "border-l-teal-500",
     selfHeading: "text-teal-800",
   },
   develop: {
     label: "Develop",
-    hint: "Interested but not yet capable — train here",
-    selfLabel: "Where you want to grow",
-    selfHint: "The pull is there ahead of the practice. This is where coaching pays off fastest.",
+    hint: "Wants it, hasn't done it — exposure and coaching",
+    selfLabel: "Development opportunities",
+    selfHint: "You're interested in this work but report less experience or skill. These may be good areas to explore, practice, or develop.",
     color: "bg-blue-100 text-blue-800 border-blue-200",
     selfAccent: "border-l-blue-500",
     selfHeading: "text-blue-800",
   },
-  sustain: {
+  deemphasize: {
     label: "Reluctant",
-    hint: "Capable but not interested — a retention risk",
-    selfLabel: "Strengths that don't energize you",
-    selfHint: "You have the skills to do this well. It just doesn't seem to be the kind of work that gives you energy, or that you'd choose to spend most of your time on.",
+    hint: "Skilled but disengaged — a retention risk",
+    selfLabel: "Strengths you may not want to emphasize",
+    selfHint: "You have the experience and skills to do this work well, but you report less interest in doing it. Consider whether you want these activities to remain part of your role or become a larger part of it.",
     color: "bg-amber-100 text-amber-800 border-amber-200",
     selfAccent: "border-l-violet-500",
     selfHeading: "text-violet-800",
   },
-  avoid: {
+  // The category the old four-bucket model could not express, and the reason
+  // this file stopped merging experience with skills.
+  strengthen: {
+    label: "Under-skilled",
+    hint: "Experienced and keen, but rates own skill low — sharpen an existing practice",
+    selfLabel: "Skills to strengthen",
+    selfHint: "You have experience with this work and an interest in doing it, but you rate your current skills lower. Focused learning, practice, or feedback may help turn experience into greater capability.",
+    color: "bg-orange-100 text-orange-800 border-orange-200",
+    selfAccent: "border-l-amber-500",
+    selfHeading: "text-amber-800",
+  },
+  lower: {
     label: "Poor fit",
-    hint: "Neither capable nor interested — don't assign",
-    selfLabel: "Not your focus right now",
-    selfHint: "Neither the experience nor the pull is here yet. That's information, not a verdict.",
+    hint: "Little experience, skill or interest — don't assign",
+    selfLabel: "Lower-priority development areas",
+    selfHint: "You report relatively little experience, skill, or interest in these activities. They may not be priorities for your development right now.",
     color: "bg-gray-100 text-gray-600 border-gray-200",
     selfAccent: "border-l-slate-400",
     selfHeading: "text-slate-700",
@@ -177,26 +214,37 @@ export const dominantBucket = (profile) => {
 const portion = (n, total) => (n === total ? `all ${total}` : `${n} of the ${total}`);
 
 export const DOMINANT_SUMMARY = {
-  strength: (n, total) =>
-    `You rated yourself capable and engaged across ${portion(n, total)} activities here. This scope fits you well — the useful conversation is probably about which of these you want to go deepest on, not which to shore up.`,
+  enjoy: (n, total) =>
+    `You rated yourself skilled and engaged across ${portion(n, total)} activities here. This scope fits you well — the useful conversation is probably about which of these you want to go deepest on, not which to shore up.`,
   develop: (n, total) =>
     `The pull is there ahead of the practice across ${portion(n, total)} activities here. That's an unusually clear development agenda: you know where you want to go, and the work is building the reps to get there.`,
-  sustain: (n, total) =>
-    `You rated yourself capable across ${portion(n, total)} activities here, but few of them are work you'd choose more of. Being good at something isn't the same as wanting it, and a profile shaped like this is worth talking about before it turns into quiet burnout.`,
-  avoid: (n, total) =>
-    `Most of this scope — ${portion(n, total)} activities — sits outside both your experience and your interest. That says more about the shape of this role than about you: the question worth asking is whether this scope is the work you actually want, and if not, which parts of it you'd keep.`,
+  deemphasize: (n, total) =>
+    `You rated yourself skilled across ${portion(n, total)} activities here, but few of them are work you'd choose more of. Being good at something isn't the same as wanting it, and a profile shaped like this is worth talking about before it turns into quiet burnout.`,
+  strengthen: (n, total) =>
+    `Across ${portion(n, total)} activities here you have both the experience and the appetite, and rate your own skill below either. That pattern is rarely a training gap in the usual sense — it more often means the practice was learned on the job without anyone ever showing you a better version of it.`,
+  lower: (n, total) =>
+    `Most of this scope — ${portion(n, total)} activities — sits outside your experience, skills and interest alike. That says more about the shape of this role than about you: the question worth asking is whether this scope is the work you actually want, and if not, which parts of it you'd keep.`,
 };
 
-export const quadrant = (resp) => {
-  const cap = capability(resp);
-  const int = interestLevel(resp);
-  if (cap === null || int === null) return null;
-  const capable = cap >= 0.5;
+// Skill and interest choose the bucket; experience only separates the two
+// low-skill/high-interest cases. See the block above CATEGORIES for why this
+// deliberately does not go through capability().
+//
+// Skills and interest must both be answered. Experience missing is survivable —
+// it falls to `develop`, the gentler of the two, rather than asserting an
+// established practice nobody reported.
+export const category = (resp) => {
+  const exp = normalize("experience", resp?.experience);
+  const skl = normalize("skills", resp?.skills);
+  const int = normalize("interest", resp?.interest);
+  if (skl === null || int === null) return null;
+
+  const skilled = skl >= 0.5;
   const keen = int >= 0.5;
-  if (capable && keen) return "strength";
-  if (!capable && keen) return "develop";
-  if (capable && !keen) return "sustain";
-  return "avoid";
+
+  if (skilled) return keen ? "enjoy" : "deemphasize";
+  if (!keen) return "lower";
+  return exp !== null && exp >= 0.5 ? "strengthen" : "develop";
 };
 
 // Heat for the results grid. One ramp shared by all three axes, fed the
@@ -251,7 +299,7 @@ export function computeActivityCapability(activities, responses, respondents = [
   return stats;
 }
 
-// Per person: their answers bucketed into the four quadrants, strongest first.
+// Per person: their answers bucketed into the five categories, strongest first.
 // This is the individual development plan, and the input to any staffing call.
 export function computePersonProfile(activities, responses, respondentId) {
   const mine = responses.filter(r => r.respondent_id === respondentId);
@@ -262,26 +310,82 @@ export function computePersonProfile(activities, responses, respondentId) {
     return {
       activity: act,
       response: resp || null,
-      capability: capability(resp),
+      // All three kept separate on the row. Anything that wants them merged can
+      // merge them; nothing that wants them apart can un-merge them afterwards.
+      experience: normalize("experience", resp?.experience),
+      skills: normalize("skills", resp?.skills),
       interest: interestLevel(resp),
-      quadrant: quadrant(resp),
+      capability: capability(resp),
+      category: category(resp),
     };
   });
 
-  const buckets = { strength: [], develop: [], sustain: [], avoid: [] };
-  for (const row of rows) if (row.quadrant) buckets[row.quadrant].push(row);
+  const buckets = Object.fromEntries(Object.keys(CATEGORIES).map(k => [k, []]));
+  for (const row of rows) if (row.category) buckets[row.category].push(row);
   for (const key of Object.keys(buckets)) {
-    buckets[key].sort((a, b) => (b.capability + b.interest) - (a.capability + a.interest));
+    buckets[key].sort((a, b) => ((b.skills ?? 0) + b.interest) - ((a.skills ?? 0) + a.interest));
   }
 
-  const answered = rows.filter(r => r.capability !== null);
+  // Answered means classifiable, which is what every count on the report is
+  // actually reporting — "all 7 activities, and how you rated each one".
+  const answered = rows.filter(r => r.category !== null);
   return {
     rows,
     buckets,
     answeredCount: answered.length,
-    avgCapability: avg(answered.map(r => r.capability)),
+    avgCapability: avg(answered.map(r => r.capability).filter(v => v !== null)),
     avgInterest: avg(rows.filter(r => r.interest !== null).map(r => r.interest)),
   };
+}
+
+// ── The Quartz profile: all three axes, per facet ──────────────────────────
+//
+// Deliberately three numbers per facet and no fourth combining them. A single
+// per-facet score is exactly the "73% Product Manager" grade this assessment
+// refuses to produce — and it would hide the finding that matters most, which
+// is where the three axes disagree with each other.
+export function computeFacetProfile(profile, facetOrder) {
+  return facetOrder
+    .map(facet => {
+      const rows = profile.rows.filter(r => r.activity.facet === facet && r.category !== null);
+      if (rows.length === 0) return null;
+      const axis = (key) => avg(rows.map(r => r[key]).filter(v => v !== null));
+      return {
+        facet,
+        count: rows.length,
+        experience: axis("experience"),
+        skills: axis("skills"),
+        interest: axis("interest"),
+      };
+    })
+    .filter(Boolean);
+}
+
+// ── Development opportunities ──────────────────────────────────────────────
+//
+// Drawn only from the two categories where the person has already said they
+// want the work. Recommending development someone has no appetite for is how a
+// report earns the reaction "this wasn't written for me" — and low interest is
+// a legitimate answer, not a deficit to be corrected.
+//
+// Ranked by interest first, then by how far skill trails it. Interest leads
+// because it is the thing the person controls least and predicts follow-through
+// most; the gap breaks ties by where effort would show up soonest.
+export function computeDevelopmentOpportunities(profile, limit = 5) {
+  const candidates = [...profile.buckets.strengthen, ...profile.buckets.develop];
+
+  return candidates
+    .map(row => ({
+      ...row,
+      gap: (row.interest ?? 0) - (row.skills ?? 0),
+      // Why this one, in the person's own terms. The two categories are
+      // different recommendations, not two grades of the same one.
+      reason: row.category === "strengthen"
+        ? "You already do this work and want to keep doing it, but rate your own skill below both. Sharpening an established practice usually pays off faster than starting a new one."
+        : "You want this work and have had little chance at it so far. The first move here is exposure — a real example to work on, with someone to learn from.",
+    }))
+    .sort((a, b) => (b.interest ?? 0) - (a.interest ?? 0) || b.gap - a.gap)
+    .slice(0, limit);
 }
 
 // ── Crossing a personal assessment against its parent team assessment ───────

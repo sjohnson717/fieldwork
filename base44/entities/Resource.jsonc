@@ -1,0 +1,73 @@
+{
+  "name": "Resource",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string"
+    },
+    "resource_type": {
+      "type": "string",
+      "enum": [
+        "free_article",
+        "external",
+        "quartz_book",
+        "quartz_course"
+      ],
+      "default": "external",
+      "description": "What kind of thing this is. Rendered as a label so a reader can tell a free article from a paid Quartz course before clicking, rather than after."
+    },
+    "source": {
+      "type": "string",
+      "description": "Author, publication, or book and chapter. Attribution belongs with the recommendation."
+    },
+    "url": {
+      "type": "string"
+    },
+    "note": {
+      "type": "string",
+      "description": "One line on why this is worth someone's time, in the context of the activity it is attached to."
+    },
+    "activity_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "Activities this resource is offered for. Many-to-many: one resource can serve several activities, and an activity can have several."
+    },
+    "sort_order": {
+      "type": "number"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "title"
+  ],
+  "rls": {
+    "create": {
+      "$or": [
+        { "user_condition": { "role": "admin" } },
+        { "user_condition": { "role": "org_admin" } },
+        { "user_condition": { "role": "facilitator" } }
+      ]
+    },
+    "read": {},
+    "update": {
+      "$or": [
+        { "user_condition": { "role": "admin" } },
+        { "user_condition": { "role": "org_admin" } },
+        { "user_condition": { "role": "facilitator" } }
+      ]
+    },
+    "delete": {
+      "$or": [
+        { "user_condition": { "role": "admin" } },
+        { "user_condition": { "role": "org_admin" } },
+        { "user_condition": { "role": "facilitator" } }
+      ]
+    }
+  }
+}

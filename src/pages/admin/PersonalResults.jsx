@@ -5,7 +5,7 @@ import { listRespondents } from "@/lib/public-assessment";
 import { FACET_ORDER, computeActivityStats, fmt as fmtTeam } from "@/lib/scoring";
 import {
   PERSONAL_AXES,
-  QUADRANTS,
+  CATEGORIES,
   computeActivityCapability,
   computePersonProfile,
   computeCoverage,
@@ -29,12 +29,15 @@ const MATRIX_MODES = [
   { key: "capability", label: "Capability" },
 ];
 
-function QuadrantBadge({ quadrant }) {
-  const q = QUADRANTS[quadrant];
-  if (!q) return <span className="text-xs text-gray-300">—</span>;
+// The facilitator's vocabulary, not the person's. `label`/`hint` are blunt on
+// purpose — they are diagnostic notes for someone preparing a coaching
+// engagement, and none of these words appear in what the person reads.
+function CategoryBadge({ category }) {
+  const c = CATEGORIES[category];
+  if (!c) return <span className="text-xs text-gray-300">—</span>;
   return (
-    <span className={`inline-block text-[11px] font-medium px-2 py-0.5 rounded-full border ${q.color}`} title={q.hint}>
-      {q.label}
+    <span className={`inline-block text-[11px] font-medium px-2 py-0.5 rounded-full border ${c.color}`} title={c.hint}>
+      {c.label}
     </span>
   );
 }
@@ -314,7 +317,7 @@ export default function PersonalResults({ assessment }) {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {Object.entries(QUADRANTS).map(([key, q]) => {
+                {Object.entries(CATEGORIES).map(([key, q]) => {
                   const rows = profile.buckets[key];
                   return (
                     <section key={key} className="bg-white rounded-xl border border-gray-200 p-5">
@@ -369,7 +372,7 @@ export default function PersonalResults({ assessment }) {
                             {row.response?.[a.key] || <span className="text-gray-300">—</span>}
                           </td>
                         ))}
-                        <td className="px-4 py-3"><QuadrantBadge quadrant={row.quadrant} /></td>
+                        <td className="px-4 py-3"><CategoryBadge category={row.category} /></td>
                       </tr>
                     ))}
                   </tbody>

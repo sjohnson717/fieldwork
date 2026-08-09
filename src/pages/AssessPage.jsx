@@ -2,14 +2,9 @@ import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { getAssignedActivities } from "@/lib/activities";
 import { getAssessmentByCode, getRespondentSession } from "@/lib/public-assessment";
-import {
-  PERSONAL_AXES,
-  QUADRANTS,
-  computePersonProfile,
-  dominantBucket,
-  DOMINANT_SUMMARY,
-} from "@/lib/personal-scoring";
+import { PERSONAL_AXES, computePersonProfile } from "@/lib/personal-scoring";
 import { FACET_ORDER } from "@/lib/scoring";
+import PersonalProfileReport from "@/components/PersonalProfileReport";
 
 const HERO_IMAGE = "https://media.base44.com/images/public/6a29ff3bc8effbeb3d637555/2ffc15b8c_curated-lifestyle-H3ZVdxBRIW0-unsplash.jpg";
 
@@ -118,6 +113,11 @@ export default function AssessPage() {
   // return a credential the caller didn't already have.
   const [myToken, setMyToken] = useState(null);
   const [copiedLink, setCopiedLink] = useState(false);
+  // Only the personal report uses these, and only once someone has finished, so
+  // they are fetched lazily rather than on every page of the survey. Failure is
+  // deliberately silent: an empty list drops the Suggested Resources section,
+  // which is a section quietly missing rather than a broken report.
+  const [resources, setResources] = useState([]);
 
   // Swap ?code=… for ?t=… once we know who this is, so the address bar holds
   // their personal link rather than the broadcast one. Without this, anyone
@@ -133,6 +133,15 @@ export default function AssessPage() {
   };
 
   useEffect(() => { document.title = "Assess | Quartz Assessment"; }, []);
+
+  const isPersonalAssessment = assessment?.assessment_type === "personal";
+  useEffect(() => {
+    if (!isPersonalAssessment || step !== "done") return;
+    base44.entities.Resource
+      .filter({ active: true }, "sort_order")
+      .then(setResources)
+      .catch(() => setResources([]));
+  }, [isPersonalAssessment, step]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -714,6 +723,36 @@ const handleNext = async () => {
       : null;
     const hasProfile = (personalProfile?.answeredCount ?? 0) > 0;
 
+    // The personal report is a five-part advisory document and lives in its own
+    // component. What follows below is the team gap confirmation, which is a
+    // different thing with a different job: confirm what you sent, then submit.
+    if (isPersonal && hasProfile) {
+      return (
+        <div className="min-h-screen bg-gray-50 print-plain">
+          <div className="max-w-3xl mx-auto px-4 py-10">
+            <PersonalProfileReport
+              profile={personalProfile}
+              activities={activities}
+              assessment={assessment}
+              respondent={respondent}
+              name={name}
+              title={title}
+              myToken={myToken}
+              returningCompleted={returningCompleted}
+              onRevise={handleRevise}
+              onCopyLink={() => {
+                navigator.clipboard.writeText(`${window.location.origin}/assess?t=${myToken}`);
+                setCopiedLink(true);
+                setTimeout(() => setCopiedLink(false), 2000);
+              }}
+              copiedLink={copiedLink}
+              resources={resources}
+            />
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="min-h-screen bg-gray-50 print-plain">
         <div className="max-w-3xl mx-auto px-4 py-10">
@@ -758,127 +797,17 @@ const handleNext = async () => {
             </div>
             <div>
               <h1 className="text-xl font-bold text-gray-900">
-                {isPersonal
-                  ? `Your profile, ${name.split(" ")[0]}`
-                  : returningCompleted ? `Your responses, ${name}` : `Thank you, ${name}!`}
+                {returningCompleted ? `Your responses, ${name}` : `Thank you, ${name}!`}
               </h1>
               <p className="text-sm text-gray-500">
-                {isPersonal
-                  // No mention of the assessment's status: this is theirs, and
-                  // it stays available and editable whatever the facilitator's
-                  // engagement is doing.
-                  // Says "saved" explicitly because there is no Submit button on
-                  // this page. Without a final action to press, silence about
-                  // whether anything was recorded reads as an unfinished form.
-                  ? "Your answers are saved. This is yours to keep — save it as a PDF to share with your manager or a coach, and come back and change any answer whenever you like."
-                  : !returningCompleted
-                    ? "Your responses have been recorded. Here's a summary of what you submitted."
-                    : assessment?.status === "closed"
-                      ? "Here's what you submitted. This assessment is now closed, so your answers can't be changed."
-                      : "Here's what you submitted. You can still change any of it."}
+                {!returningCompleted
+                  ? "Your responses have been recorded. Here's a summary of what you submitted."
+                  : assessment?.status === "closed"
+                    ? "Here's what you submitted. This assessment is now closed, so your answers can't be changed."
+                    : "Here's what you submitted. You can still change any of it."}
               </p>
             </div>
           </div>
-
-          {/* The profile itself. This is the payoff for having answered, and
-              it sits above the raw answer table because almost nobody comes
-              back for it later — it has to land now, at submission, or not at
-              all. Quadrant wording here is the person-facing set; see
-              QUADRANTS in personal-scoring.js for why it differs from the
-              facilitator's. */}
-          {hasProfile && (() => {
-            const profile = personalProfile;
-            const dominant = dominantBucket(profile);
-
-            return (
-              <div className="mb-8 space-y-4">
-                {/* When one bucket holds two thirds of the answers, that shape
-                    is the finding — say it before the lists, or the person
-                    reads a long column as a tally of shortfalls. */}
-                {dominant && (
-                  <div className="bg-white rounded-xl border border-gray-200 p-5 break-inside-avoid">
-                    <p className="text-sm text-gray-700 leading-relaxed">
-                      {DOMINANT_SUMMARY[dominant.key](dominant.count, profile.answeredCount)}
-                    </p>
-                  </div>
-                )}
-                {Object.entries(QUADRANTS).map(([key, q]) => {
-                  const bucket = profile.buckets[key];
-                  if (bucket.length === 0) return null;
-                  return (
-                    <section key={key} className={`bg-white rounded-xl border border-gray-200 border-l-4 ${q.selfAccent} p-5 break-inside-avoid`}>
-                      <h2 className={`text-base font-semibold ${q.selfHeading}`}>{q.selfLabel}</h2>
-                      <p className="text-xs text-gray-500 mt-1 mb-3 leading-relaxed">{q.selfHint}</p>
-                      <ul className="space-y-1.5">
-                        {bucket.map(row => (
-                          <li key={row.activity.id} className="flex items-baseline gap-2 text-sm">
-                            <span className="flex-1 text-gray-800 leading-snug">{row.activity.name}</span>
-                            <span className="text-[10px] text-gray-400 shrink-0">{row.activity.facet}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </section>
-                  );
-                })}
-              </div>
-            );
-          })()}
-
-          {/* Keeping the report's own actions with the report, above the answers
-              table rather than after it. They used to sit at the very bottom,
-              which on a 24-activity assessment put the PDF button and the resume
-              link below 24 rows of detail — so the two things this page exists to
-              hand over were the least findable things on it. */}
-          {isPersonal && (
-            <div className="no-print mb-8 space-y-3">
-              <div className="flex flex-wrap gap-3">
-                {/* window.print() rather than a PDF library: every print dialog
-                    offers "Save as PDF", and the result is real selectable text
-                    instead of a screenshot. Deliberately a PDF and not their
-                    link: the token permits editing, so forwarding it would hand
-                    a manager write access to someone's own self-assessment. */}
-                <button
-                  onClick={() => window.print()}
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-2.5 rounded-lg transition-colors text-sm"
-                >
-                  Save as PDF to share
-                </button>
-                <button
-                  onClick={handleRevise}
-                  className="border border-gray-300 hover:border-gray-400 text-gray-600 hover:text-gray-800 font-medium px-6 py-2.5 rounded-lg transition-colors text-sm"
-                >
-                  ← Revise my answers
-                </button>
-              </div>
-              {/* Shown, not just implied by the address bar — the address bar is
-                  where the wrong link lived for a week and nobody noticed.
-                  no-print is deliberate: this link opens and edits their answers,
-                  and the PDF is the thing they hand to a manager. It must never
-                  be printed into the artefact they share. */}
-              {myToken && (
-                <div>
-                  <p className="text-xs text-gray-500 mb-1.5">
-                    Bookmark your own link to come back to this and update it at any time. It's yours — anyone with it can change your answers.
-                  </p>
-                  <div className="flex items-center gap-2 bg-gray-100 border border-gray-200 rounded-lg px-3 py-2 max-w-lg">
-                    <p className="text-[11px] text-gray-500 font-mono flex-1 truncate">
-                      {`${window.location.origin}/assess?t=${myToken}`}
-                    </p>
-                    <button
-                      onClick={() => {
-                        navigator.clipboard.writeText(`${window.location.origin}/assess?t=${myToken}`);
-                        setCopiedLink(true);
-                        setTimeout(() => setCopiedLink(false), 2000);
-                      }}
-                      className="shrink-0 text-xs font-medium text-blue-600 hover:text-blue-800 border border-blue-200 hover:border-blue-300 px-2.5 py-1 rounded-lg transition-colors"
-                    >
-                      {copiedLink ? "Copied!" : "Copy"}
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
 
           {/* The detail tables get their own titled section starting on a
               fresh page. This used to be a one-line "your full answers are
@@ -887,14 +816,6 @@ const handleNext = async () => {
               opened with a bare facet label and no idea what it belonged to.
               print-section-break is print-only, so on screen this is just a
               heading and the page keeps flowing. */}
-          {hasProfile && (
-            <div className="print-section-break mb-5 pt-1">
-              <h2 className="text-lg font-bold text-gray-900">Activities you rated</h2>
-              <p className="text-xs text-gray-500 mt-1">
-                All {personalProfile.answeredCount} {personalProfile.answeredCount === 1 ? "activity" : "activities"}, and how you rated each one.
-              </p>
-            </div>
-          )}
 
           {/* Summary table grouped by facet */}
           {availableFacets.map(facet => {
