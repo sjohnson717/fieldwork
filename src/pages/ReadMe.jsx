@@ -37,6 +37,7 @@ The two are separate records that can be linked, so a report can cross what a te
 | **Organization** | The consulting org. The tenant boundary; \`org_id\` on other records points here. |
 | **Invitation** | Carries an application role until an invited user first signs in. |
 | **JobTitle** | The picklist of roles offered when suggesting an owner. |
+| **Resource** | Authored learning resources for the personal report. Typed (free article / external / Quartz book / course), attached to activities by \`activity_ids\`. Read is open — the personal report renders unauthenticated. |
 | **User** | Base44 built-in, extended with \`org_id\` and an application \`role\`. |
 
 Built-in fields on every entity: \`id\`, \`created_date\`, \`updated_date\`, \`created_by_id\`.`,
@@ -84,7 +85,7 @@ Built-in fields on every entity: \`id\`, \`created_date\`, \`updated_date\`, \`c
 | Module | Responsibility |
 |---|---|
 | \`src/lib/scoring.js\` | Gap analysis. Importance and execution are 0–3. **Also the single source of \`FACET_ORDER\`, \`FACET_SUBTITLES\` and \`THEME_GROUPS\`** — everything that sorts, pages or groups by facet imports from here. |
-| \`src/lib/personal-scoring.js\` | Personal assessment. All three axes are 0/1/3/5, normalised before any cross-axis maths. Owns the quadrants and both label vocabularies. |
+| \`src/lib/personal-scoring.js\` | Personal assessment. All three axes are 0/1/3/5, normalised before any cross-axis maths. Owns the five categories, both label vocabularies, and the per-facet and development-shortlist aggregations. |
 | \`src/lib/activities.js\` | Resolves which activities an assessment actually asks about. |
 | \`src/lib/activity-csv.js\` | Parses, validates and diffs the library CSV. No UI, no writes — the import dialog decides what to do with the diff. |
 | \`src/lib/public-assessment.js\` | Client wrapper over the \`publicAssessment\` function. |
@@ -120,10 +121,14 @@ Facilitators have accounts. **Respondents, team leaders and buyers never do** �
 
 **A function's error message never reaches the user by default.** The SDK rejects with an axios error whose \`message\` is always \`"Request failed with status code 500"\`; the reason the function returned is in \`e.response.data\`. Use \`functionErrorMessage()\` from \`src/lib/utils.js\` anywhere a function failure is shown to someone.
 
+**\`category()\` must not go back through \`capability()\`.** It looks like it could — capability is right there, and averaging experience with skills is one line shorter. That average is exactly what makes the \`strengthen\` category impossible: someone with long experience and low self-rated skill scores the same as a capable beginner, and they need opposite help. Skill and interest choose the bucket; experience only splits \`develop\` from \`strengthen\`. \`capability()\` is for the facilitator's Coverage view, which genuinely does want one number.
+
+**No overall personal score.** Not an oversight and not a missing feature. Three axes that deliberately measure different things cannot be averaged into a grade without destroying the findings the instrument exists to surface.
+
 ## Conventions
 
 - Response labels are stored as text, never numbers. Scoring maps them, so re-scoring an axis never touches stored data.
-- The facilitator's vocabulary and the respondent's are separate by design. \`Reluctant\` and \`Poor fit\` are diagnostic shorthand and must never reach the person they describe.
+- The facilitator's vocabulary and the respondent's are separate by design. \`Reluctant\`, \`Poor fit\` and \`Under-skilled\` are diagnostic shorthand and must never reach the person they describe. \`CATEGORIES\` carries both sets: \`label\`/\`hint\` are the facilitator's, \`selfLabel\`/\`selfHint\` are the person's.
 - A personal assessment ignores \`closed\`. The profile belongs to the person, so they can still revise it; \`closed_date\` lets Results flag answers changed after a report was delivered.
 - Sharing a profile means the PDF, never the link. The token permits editing.`,
   },

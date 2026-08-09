@@ -118,26 +118,57 @@ You can link at any time, including after responses are in.
 
 | View | Shows | Use it for |
 |------|-------|-----------|
-| **People** | One person's activities sorted into four quadrants, plus every answer | Preparing a one-to-one or a development conversation |
+| **People** | One person's activities sorted into the five categories, plus every answer | Preparing a one-to-one or a development conversation |
 | **Matrix** | Activity × person heatmap for any axis, or capability overall | Spotting where the team is thin, and who is strong where |
 | **Coverage** | Best-fit person per activity, against the linked gap analysis | Building the engagement case: important, badly executed, and nobody capable |
 
-The four quadrants come from capability (experience and skills combined) crossed with interest:
+The five categories come from all three axes read separately. Skill and interest decide the category; experience separates the two development cases:
 
-| Quadrant | Meaning |
-|----------|---------|
-| **Strength** | Capable and interested. Hand it over. |
-| **Develop** | Interested but not yet capable. Coaching pays off fastest here. |
-| **Reluctant** | Capable but not interested. A retention risk worth talking about. |
-| **Poor fit** | Neither. Don't assign it. |
+| Category | Experience | Skill | Interest | Meaning |
+|----------|------------|-------|----------|---------|
+| **Strength** | — | high | high | Skilled and interested. Hand it over. |
+| **Develop** | low | low | high | Wants it, hasn't done it. Exposure first, then coaching. |
+| **Under-skilled** | **high** | low | high | Has done it, wants it, rates own skill low. Sharpen an existing practice. |
+| **Reluctant** | — | high | low | Skilled but disengaged. A retention risk worth talking about. |
+| **Poor fit** | — | low | low | Little of any of it. Don't assign it. |
 
-> **These labels are yours, not theirs.** The person's own report never uses them — it says "strengths that energize you", "where you want to grow", "strengths that don't energize you", "not your focus right now". Keep it that way in what you write and say. The moment people believe a low interest rating is read as a verdict, the interest data stops being honest.
+> **Under-skilled is the one to look for.** It is the category the old four-quadrant model could not express, because that model averaged experience and skills into a single "capability" number — which cannot tell a beginner apart from someone who has done a job for years and never been shown a better way to do it. Those two people need completely different help, and only one of them needs training. Expect this category to appear most in self-taught practitioners and in teams that grew fast without anyone senior to learn from.
+
+> **These labels are yours, not theirs.** The person's own report never uses them — it says "strengths you enjoy using", "development opportunities", "skills to strengthen", "strengths you may not want to emphasize", "lower-priority development areas". Keep it that way in what you write and say. The moment people believe a low interest rating is read as a verdict, the interest data stops being honest.
+
+## No overall score, ever
+
+There is deliberately no "73% Product Manager" number, and there will not be one. A single score would be read as a grade, quoted without its context, and would require experience, skills and interest to mean the same kind of thing — which is exactly what this instrument exists to keep apart.
+
+If a client asks for one, the honest answer is that the three axes disagreeing with each other *is* the finding. High skill with low interest, or long experience with low self-rated skill, are the two most useful things this assessment produces, and both of them vanish into an average.
 
 ## What each person gets
 
-The profile appears as soon as they submit — they don't have to come back for it. It shows their quadrants, all their answers, and a **Save as PDF to share** button. Sharing is the PDF, deliberately not their link.
+The report appears as soon as they finish — they don't have to come back for it, and there is no "submit" step to press. It is a four-part document, and it is theirs:
+
+| Part | Contains |
+|------|----------|
+| **1 · Your product profile** | Their activities sorted into the five categories |
+| **2 · Your Quartz profile** | Experience, skills and interest per facet, as three separate bars |
+| **3 · Development opportunities** | A shortlist of up to five, each with the reason it was chosen, plus questions to take into a development conversation |
+| **4 · Suggested resources** | Reading and practice for those opportunities. Only appears if resources have been attached to the recommended activities |
+| **Appendix** | Every answer they gave |
+
+**Save as PDF to share** and their own bookmark link sit above the appendix, at the top of the report. Sharing is the PDF, deliberately not their link — the link permits editing, so forwarding it hands a manager write access to someone's own self-assessment.
+
+The development shortlist is drawn only from activities they said they're interested in. Low interest is a legitimate answer, not a gap to be corrected, so nothing is recommended on the strength of a low score alone. If someone's answers produce no shortlist at all, the report says so plainly rather than inventing one — and that is usually a conversation about scope, not about skills.
 
 Nothing pushes a profile to a manager. The person decides whether to share theirs, and when. If a team leader asks you to tell them who won't cut it, the honest answer is to give each person their own results and let them bring the conversation.
+
+## Suggested resources
+
+Resources are managed in **Library → Resources**. Each one is typed — free article, external resource, Quartz book, or course or workshop — and attached to the activities it serves. The type is shown to the reader, so they know what they're being sent before they click.
+
+Part four only lists resources attached to an activity that person was actually advised to develop. That's deliberate: a page listing everything available is a catalogue, and a catalogue is what makes a recommendation read as advertising.
+
+> **Training is one possible recommendation, not the automatic answer.** A report where every gap resolves to a Quartz course is a sales document, and people can tell. Attach a free article or an external book wherever one genuinely serves better — the section is only worth having if a reader trusts it.
+
+An activity with no resources attached simply doesn't appear in part four, and if nothing at all is attached the whole section is omitted rather than printing an empty promise.
 
 ## Staying open
 
@@ -147,7 +178,9 @@ The cost is that late edits move the numbers. Closing the assessment stamps the 
 
 ## When one bucket dominates
 
-If two thirds of someone's activities land in one quadrant, their report opens with a sentence naming that shape rather than listing forty items. The one worth watching for is a profile that is nearly all "not your focus": that is a person and a role's scope pointing in different directions, and it usually is not a training problem.`,
+If two thirds of someone's activities land in one category, their report opens with a sentence naming that shape rather than listing forty items. The one worth watching for is a profile that is nearly all "lower-priority": that is a person and a role's scope pointing in different directions, and it usually is not a training problem.
+
+The other shape worth naming is a profile heavy in **Under-skilled** — experience and appetite everywhere, self-rated skill below both. That pattern is rarely a training gap in the usual sense. It more often means someone learned the job by doing it, alone, and has never seen a better version of the practice to measure themselves against.`,
   },
   {
     id: "facilitation",
