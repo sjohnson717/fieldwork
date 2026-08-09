@@ -824,6 +824,62 @@ const handleNext = async () => {
             );
           })()}
 
+          {/* Keeping the report's own actions with the report, above the answers
+              table rather than after it. They used to sit at the very bottom,
+              which on a 24-activity assessment put the PDF button and the resume
+              link below 24 rows of detail — so the two things this page exists to
+              hand over were the least findable things on it. */}
+          {isPersonal && (
+            <div className="no-print mb-8 space-y-3">
+              <div className="flex flex-wrap gap-3">
+                {/* window.print() rather than a PDF library: every print dialog
+                    offers "Save as PDF", and the result is real selectable text
+                    instead of a screenshot. Deliberately a PDF and not their
+                    link: the token permits editing, so forwarding it would hand
+                    a manager write access to someone's own self-assessment. */}
+                <button
+                  onClick={() => window.print()}
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-2.5 rounded-lg transition-colors text-sm"
+                >
+                  Save as PDF to share
+                </button>
+                <button
+                  onClick={handleRevise}
+                  className="border border-gray-300 hover:border-gray-400 text-gray-600 hover:text-gray-800 font-medium px-6 py-2.5 rounded-lg transition-colors text-sm"
+                >
+                  ← Revise my answers
+                </button>
+              </div>
+              {/* Shown, not just implied by the address bar — the address bar is
+                  where the wrong link lived for a week and nobody noticed.
+                  no-print is deliberate: this link opens and edits their answers,
+                  and the PDF is the thing they hand to a manager. It must never
+                  be printed into the artefact they share. */}
+              {myToken && (
+                <div>
+                  <p className="text-xs text-gray-500 mb-1.5">
+                    Bookmark your own link to come back to this and update it at any time. It's yours — anyone with it can change your answers.
+                  </p>
+                  <div className="flex items-center gap-2 bg-gray-100 border border-gray-200 rounded-lg px-3 py-2 max-w-lg">
+                    <p className="text-[11px] text-gray-500 font-mono flex-1 truncate">
+                      {`${window.location.origin}/assess?t=${myToken}`}
+                    </p>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(`${window.location.origin}/assess?t=${myToken}`);
+                        setCopiedLink(true);
+                        setTimeout(() => setCopiedLink(false), 2000);
+                      }}
+                      className="shrink-0 text-xs font-medium text-blue-600 hover:text-blue-800 border border-blue-200 hover:border-blue-300 px-2.5 py-1 rounded-lg transition-colors"
+                    >
+                      {copiedLink ? "Copied!" : "Copy"}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* The detail tables get their own titled section starting on a
               fresh page. This used to be a one-line "your full answers are
               below" tacked onto the end of the profile — which then sat at the
@@ -901,85 +957,44 @@ const handleNext = async () => {
             );
           })}
 
-          <div className="flex flex-wrap justify-center gap-4 mt-8 mb-4 no-print">
-            {/* window.print() rather than a PDF library: every print dialog
-                offers "Save as PDF", and the result is real selectable text
-                instead of a screenshot. */}
-            <button
-              onClick={() => window.print()}
-              className={`font-medium px-6 py-2.5 rounded-lg transition-colors text-sm ${
-                isPersonal
-                  // The share mechanism for a personal profile, so it leads.
-                  // Deliberately a PDF and not their link: the token permits
-                  // editing, so forwarding it would hand a manager write
-                  // access to someone's own self-assessment.
-                  ? "bg-blue-600 hover:bg-blue-700 text-white"
-                  : "border border-gray-300 hover:border-gray-400 text-gray-600 hover:text-gray-800"
-              }`}
-            >
-              {isPersonal ? "Save as PDF to share" : "Save as PDF"}
-            </button>
-            {/* A closed team assessment is read-only, even to someone
-                reviewing their own submission. A personal profile is never
-                read-only to the person it belongs to. */}
-            {(isPersonal || assessment?.status !== "closed") && (
-              <button
-                onClick={handleRevise}
-                className="border border-gray-300 hover:border-gray-400 text-gray-600 hover:text-gray-800 font-medium px-6 py-2.5 rounded-lg transition-colors text-sm"
-              >
-                ← Revise my answers
-              </button>
-            )}
-            {/* Already submitted — "Submit" again would be meaningless, so
-                this just closes the review and returns to the confirmation.
-                Hidden for a personal assessment entirely: this page is their
-                destination, so there is nothing to close it to.
-
-                It used to be hidden only on a return visit, which left the
-                first pass — the one time the profile is guaranteed to be read —
-                showing a button labelled "Submit" that wrote nothing and
-                replaced the profile with a team-gap thank-you card. Completion
-                is already recorded on leaving the last facet page (see
-                handleNext), so there was never anything left to submit. */}
-            {!isPersonal && (
-              <button
-                onClick={() => setStep(returningCompleted ? "already-done" : "thankyou")}
-                className="font-semibold px-6 py-2.5 rounded-lg transition-colors text-sm bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                {returningCompleted ? "Close" : "Submit"}
-              </button>
-            )}
+          {/* Team gap only. A personal assessment carries its actions above the
+              answers table instead, and duplicating them here would put two
+              copies of the resume link on one page — the one control on this
+              page that hands over write access to someone's answers. */}
+          {!isPersonal && (
+            <>
+              <div className="flex flex-wrap justify-center gap-4 mt-8 mb-4 no-print">
+                {/* window.print() rather than a PDF library: every print dialog
+                    offers "Save as PDF", and the result is real selectable text
+                    instead of a screenshot. */}
+                <button
+                  onClick={() => window.print()}
+                  className="font-medium px-6 py-2.5 rounded-lg transition-colors text-sm border border-gray-300 hover:border-gray-400 text-gray-600 hover:text-gray-800"
+                >
+                  Save as PDF
+                </button>
+                {/* A closed team assessment is read-only, even to someone
+                    reviewing their own submission. */}
+                {assessment?.status !== "closed" && (
+                  <button
+                    onClick={handleRevise}
+                    className="border border-gray-300 hover:border-gray-400 text-gray-600 hover:text-gray-800 font-medium px-6 py-2.5 rounded-lg transition-colors text-sm"
+                  >
+                    ← Revise my answers
+                  </button>
+                )}
+                <button
+                  onClick={() => setStep(returningCompleted ? "already-done" : "thankyou")}
+                  className="font-semibold px-6 py-2.5 rounded-lg transition-colors text-sm bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  {returningCompleted ? "Close" : "Submit"}
+                </button>
               </div>
-              {!returningCompleted && !isPersonal && (
+              {!returningCompleted && (
                 <p className="text-center text-xs text-gray-400">Your feedback will help shape the team's professional development plan.</p>
               )}
-              {/* Shown, not just implied by the address bar — the address bar
-                  is where the wrong link lived for a week and nobody noticed.
-                  no-print is deliberate: this link opens and edits their
-                  answers, and the PDF is the thing they hand to a manager. It
-                  must never be printed into the artefact they share. */}
-              {isPersonal && myToken && (
-                <div className="no-print max-w-lg mx-auto mt-2">
-                  <p className="text-xs text-gray-500 mb-1.5 text-center">
-                    Bookmark your own link to come back and update this at any time. It's yours — anyone with it can change your answers.
-                  </p>
-                  <div className="flex items-center gap-2 bg-gray-100 border border-gray-200 rounded-lg px-3 py-2">
-                    <p className="text-[11px] text-gray-500 font-mono flex-1 truncate">
-                      {`${window.location.origin}/assess?t=${myToken}`}
-                    </p>
-                    <button
-                      onClick={() => {
-                        navigator.clipboard.writeText(`${window.location.origin}/assess?t=${myToken}`);
-                        setCopiedLink(true);
-                        setTimeout(() => setCopiedLink(false), 2000);
-                      }}
-                      className="shrink-0 text-xs font-medium text-blue-600 hover:text-blue-800 border border-blue-200 hover:border-blue-300 px-2.5 py-1 rounded-lg transition-colors"
-                    >
-                      {copiedLink ? "Copied!" : "Copy"}
-                    </button>
-                  </div>
-                </div>
-              )}
+            </>
+          )}
         </div>
       </div>
     );
