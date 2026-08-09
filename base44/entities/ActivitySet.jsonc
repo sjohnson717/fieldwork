@@ -5,6 +5,10 @@
     "name": {
       "type": "string"
     },
+    "description": {
+      "type": "string",
+      "description": "What this set is for, shown wherever a facilitator picks a preset. A name alone does not say what \"Brief\" covers or when to reach for it."
+    },
     "activity_ids": {
       "type": "array",
       "items": {

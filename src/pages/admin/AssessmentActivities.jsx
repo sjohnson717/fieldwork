@@ -259,15 +259,22 @@ export default function AssessmentActivities({ assessment, onUpdate }) {
       {activitySets.length > 0 && (
         <div>
           <p className="text-xs font-medium text-gray-500 mb-2">Apply a preset</p>
-          <div className="flex flex-wrap gap-2">
+          {/* Cards rather than pills: the point of a preset is choosing the right
+              one, and a name plus a count never said what a set was for or when
+              to reach for it. Sets with no description still read fine — the
+              card just carries the name and count as before. */}
+          <div className="grid sm:grid-cols-2 gap-2">
             {activitySets.map(set => (
               <button
                 key={set.id}
                 onClick={() => activityIds.length > 0 ? setPendingPreset(set) : handleApplyPreset(set)}
-                className="text-sm font-medium px-3 py-1.5 rounded-lg border border-[#a3b8ff] text-[#3366FF] hover:bg-[#eef2ff] transition-colors"
+                className="text-left px-3 py-2.5 rounded-lg border border-[#a3b8ff] hover:bg-[#eef2ff] transition-colors"
               >
-                {set.name}
+                <span className="text-sm font-medium text-[#3366FF]">{set.name}</span>
                 <span className="ml-1.5 text-xs text-[#4d80ff]">({(set.activity_ids || []).length})</span>
+                {set.description && (
+                  <span className="block text-xs text-gray-500 mt-0.5 leading-snug">{set.description}</span>
+                )}
               </button>
             ))}
           </div>

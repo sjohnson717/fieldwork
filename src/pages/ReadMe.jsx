@@ -27,7 +27,7 @@ The two are separate records that can be linked, so a report can cross what a te
 |---|---|
 | **Assessment** | One instrument. \`assessment_type\` is \`team_gap\` or \`personal\`; \`parent_assessment_id\` optionally links a personal assessment to a gap analysis; \`tag_ids\` group related assessments. Carries the access code and the buyer/team tokens. |
 | **Activity** | The library. Each belongs to a facet: the six Quartz facets (DEFINE, COMMIT, DESCRIBE, CREATE, PREPARE, DELIVER) plus LEARN, which runs across the whole cycle and reports as its own standalone section. Library activities have no \`assessment_id\`; custom ones name their assessment. |
-| **ActivitySet** | Named presets of activities for quick assessment setup. |
+| **ActivitySet** | Named presets of activities for quick assessment setup. \`description\` says what the set is for, and shows wherever a preset is picked. |
 | **Respondent** | One person answering one assessment. Self-registering; \`token\` is their credential. |
 | **Response** | One person's answer for one activity. Carries both question sets — importance/execution/suggested_owner, or experience/skills/interest — and only the fields its assessment type asks about are written. |
 | **DiscussionNote** | Facilitator's debrief notes and recorded decisions per activity. |

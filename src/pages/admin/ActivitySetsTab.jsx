@@ -97,10 +97,12 @@ export default function ActivitySetsTab() {
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState(null);
   const [editName, setEditName] = useState("");
+  const [editDescription, setEditDescription] = useState("");
   const [saving, setSaving] = useState(false);
   const [expandedId, setExpandedId] = useState(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [newName, setNewName] = useState("");
+  const [newDescription, setNewDescription] = useState("");
   const [adding, setAdding] = useState(false);
 
   useEffect(() => { loadData(); }, []);
@@ -131,7 +133,10 @@ export default function ActivitySetsTab() {
     if (!editName.trim()) return;
     setSaving(true);
     try {
-      const updated = await base44.entities.ActivitySet.update(id, { name: editName.trim() });
+      const updated = await base44.entities.ActivitySet.update(id, {
+        name: editName.trim(),
+        description: editDescription.trim(),
+      });
       setSets(prev => prev.map(s => s.id === id ? updated : s));
       setEditingId(null);
     } catch (e) { console.error(e); }
@@ -163,12 +168,14 @@ export default function ActivitySetsTab() {
       const maxOrder = sets.length > 0 ? Math.max(...sets.map(s => s.sort_order ?? 0)) : -1;
       const created = await base44.entities.ActivitySet.create({
         name: newName.trim(),
+        description: newDescription.trim(),
         activity_ids: [],
         sort_order: maxOrder + 1,
         active: true,
       });
       setSets(prev => [...prev, created]);
       setNewName("");
+      setNewDescription("");
       setShowAddForm(false);
     } catch (e) { console.error(e); }
     setAdding(false);
@@ -203,22 +210,34 @@ export default function ActivitySetsTab() {
           return (
             <div className={`bg-white rounded-xl border ${set.active ? "border-gray-200" : "border-gray-100 opacity-60"}`}>
               {editingId === set.id ? (
-                <div className="flex items-center gap-3 px-4 py-3">
+                <div className="px-4 py-3 space-y-2">
                   <input
                     autoFocus
                     value={editName}
                     onChange={e => setEditName(e.target.value)}
                     onKeyDown={e => { if (e.key === "Enter") handleSaveEdit(set.id); if (e.key === "Escape") setEditingId(null); }}
-                    className="flex-1 border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
                   />
-                  <button
-                    onClick={() => handleSaveEdit(set.id)}
-                    disabled={saving || !editName.trim()}
-                    className="bg-[#3366FF] hover:bg-[#2952CC] disabled:opacity-50 text-white text-sm font-medium px-3 py-1.5 rounded-lg transition-colors"
-                  >
-                    {saving ? "…" : "Save"}
-                  </button>
-                  <button onClick={() => setEditingId(null)} className="text-sm text-gray-400 hover:text-gray-600">Cancel</button>
+                  {/* Enter saves from the name field but inserts a newline here,
+                      so Escape stays the only keyboard dismissal for both. */}
+                  <textarea
+                    rows={2}
+                    placeholder="What is this set for? Shown when picking a preset."
+                    value={editDescription}
+                    onChange={e => setEditDescription(e.target.value)}
+                    onKeyDown={e => { if (e.key === "Escape") setEditingId(null); }}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#3366FF] resize-none"
+                  />
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => handleSaveEdit(set.id)}
+                      disabled={saving || !editName.trim()}
+                      className="bg-[#3366FF] hover:bg-[#2952CC] disabled:opacity-50 text-white text-sm font-medium px-3 py-1.5 rounded-lg transition-colors"
+                    >
+                      {saving ? "…" : "Save"}
+                    </button>
+                    <button onClick={() => setEditingId(null)} className="text-sm text-gray-400 hover:text-gray-600">Cancel</button>
+                  </div>
                 </div>
               ) : (
                 <>
@@ -243,13 +262,18 @@ export default function ActivitySetsTab() {
                       <span className="ml-2 text-xs text-gray-400">
                         {selectedCount} of {activities.length} activities
                       </span>
+                      {set.description && (
+                        <span className="block text-xs text-gray-500 mt-0.5 leading-snug truncate">
+                          {set.description}
+                        </span>
+                      )}
                     </button>
 
                     {/* Expand chevron + actions */}
                     <div className="flex items-center gap-2 shrink-0">
                       <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
-                          onClick={() => { setEditingId(set.id); setEditName(set.name); }}
+                          onClick={() => { setEditingId(set.id); setEditName(set.name); setEditDescription(set.description || ""); }}
                           className="text-xs text-gray-400 hover:text-[#3366FF] font-medium transition-colors"
                         >
                           Edit
@@ -295,23 +319,33 @@ export default function ActivitySetsTab() {
 
       {/* Add form */}
       {showAddForm ? (
-        <div className="flex items-center gap-3 bg-white rounded-xl border border-[#a3b8ff] px-4 py-3">
+        <div className="bg-white rounded-xl border border-[#a3b8ff] px-4 py-3 space-y-2">
           <input
             autoFocus
             placeholder="Activity set name"
             value={newName}
             onChange={e => setNewName(e.target.value)}
-            onKeyDown={e => { if (e.key === "Enter") handleAdd(); if (e.key === "Escape") { setShowAddForm(false); setNewName(""); } }}
-            className="flex-1 border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
+            onKeyDown={e => { if (e.key === "Enter") handleAdd(); if (e.key === "Escape") { setShowAddForm(false); setNewName(""); setNewDescription(""); } }}
+            className="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
           />
-          <button
-            onClick={handleAdd}
-            disabled={adding || !newName.trim()}
-            className="bg-[#3366FF] hover:bg-[#2952CC] disabled:opacity-50 text-white text-sm font-medium px-4 py-1.5 rounded-lg transition-colors"
-          >
-            {adding ? "Adding…" : "Add"}
-          </button>
-          <button onClick={() => { setShowAddForm(false); setNewName(""); }} className="text-sm text-gray-400 hover:text-gray-600">Cancel</button>
+          <textarea
+            rows={2}
+            placeholder="What is this set for? Shown when picking a preset."
+            value={newDescription}
+            onChange={e => setNewDescription(e.target.value)}
+            onKeyDown={e => { if (e.key === "Escape") { setShowAddForm(false); setNewName(""); setNewDescription(""); } }}
+            className="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#3366FF] resize-none"
+          />
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleAdd}
+              disabled={adding || !newName.trim()}
+              className="bg-[#3366FF] hover:bg-[#2952CC] disabled:opacity-50 text-white text-sm font-medium px-4 py-1.5 rounded-lg transition-colors"
+            >
+              {adding ? "Adding…" : "Add"}
+            </button>
+            <button onClick={() => { setShowAddForm(false); setNewName(""); setNewDescription(""); }} className="text-sm text-gray-400 hover:text-gray-600">Cancel</button>
+          </div>
         </div>
       ) : (
         <button
