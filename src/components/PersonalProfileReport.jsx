@@ -83,7 +83,6 @@ export default function PersonalProfileReport({
   // Only resources attached to something actually recommended. A page of
   // everything in the library would be a catalogue, and a catalogue is the thing
   // that makes a recommendation read as advertising.
-  const opportunityIds = new Set(opportunities.map(o => o.activity.id));
   const resourcesByActivity = opportunities
     .map(o => ({
       activity: o.activity,
@@ -209,12 +208,10 @@ export default function PersonalProfileReport({
       />
 
       <div className="bg-white rounded-xl border border-gray-200 p-5 mb-4">
-        <div className="flex items-center gap-4 mb-4 text-[11px] text-gray-500">
-          {PERSONAL_AXES.map(axis => (
-            <span key={axis.key} className="font-semibold uppercase tracking-widest">{axis.label}</span>
-          ))}
-          <span className="ml-auto normal-case tracking-normal text-gray-400">Longer bar = higher self-rating</span>
-        </div>
+        {/* No axis legend here. The bars are stacked rows and each carries its
+            own label, so a row of the three axis names at the top read as column
+            headings for a table that doesn't exist. */}
+        <div className="mb-4 text-[11px] text-gray-400">Longer bar = higher self-rating</div>
         <div className="space-y-4">
           {facetRows.map(row => (
             <div key={row.facet} className="break-inside-avoid">
