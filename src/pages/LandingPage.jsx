@@ -10,6 +10,15 @@ export default function LandingPage() {
   const { user, isAuthenticated, isLoadingAuth, authChecked } = useAuth();
   const navigate = useNavigate();
 
+  // The instrument is named in full here, unlike every other page. Restore the
+  // document default on the way out, since /login and /register set no title of
+  // their own and would otherwise inherit this one.
+  useEffect(() => {
+    const previous = document.title;
+    document.title = "Roles & Responsibilities Assessment | Quartz";
+    return () => { document.title = previous; };
+  }, []);
+
   // Auto-redirect anyone with admin-side access to /admin (org admins were
   // previously left on the landing page)
   useEffect(() => {
