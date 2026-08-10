@@ -8,7 +8,7 @@ const sections = [
     id: "overview",
     group: null,
     title: "Overview",
-    content: `Quartz Fieldwork runs two kinds of assessment over one shared library of product-team activities.
+    content: `Quartz Assessments runs two kinds of assessment over one shared library of product-team activities.
 
 **Team gap analysis** — a team rates each activity on *importance* and *current execution*, and suggests who should own it. The gap between importance and execution is the finding, and it drives the consulting engagement.
 
