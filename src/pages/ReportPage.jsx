@@ -575,7 +575,7 @@ export default function ReportPage() {
       {/* ── Header ── */}
       <header className="bg-white border-b border-gray-100 shadow-sm no-print">
         <div className="max-w-4xl mx-auto px-6 py-5 flex items-center justify-between">
-          <img src={QUARTZ_LOGO} alt="Quartz Assessments" className="h-8 object-contain" />
+          <img src={QUARTZ_LOGO} alt="Quartz Assessment" className="h-8 object-contain" />
           <div className="text-right">
             <p className="text-xs text-gray-400 uppercase tracking-widest">Quartz Assessment</p>
           </div>
@@ -839,7 +839,7 @@ export default function ReportPage() {
 
         {/* ── Footer ── */}
         <footer className="mt-16 pt-8 border-t border-gray-100 flex items-center justify-between">
-          <img src={QUARTZ_LOGO} alt="Quartz Assessments" className="h-6 object-contain opacity-40" />
+          <img src={QUARTZ_LOGO} alt="Quartz Assessment" className="h-6 object-contain opacity-40" />
           <p className="text-xs text-gray-300">© Quartz Assessment</p>
         </footer>
 

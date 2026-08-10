@@ -10,15 +10,6 @@ export default function LandingPage() {
   const { user, isAuthenticated, isLoadingAuth, authChecked } = useAuth();
   const navigate = useNavigate();
 
-  // The instrument is named in full here, unlike every other page. Restore the
-  // document default on the way out, since /login and /register set no title of
-  // their own and would otherwise inherit this one.
-  useEffect(() => {
-    const previous = document.title;
-    document.title = "Roles & Responsibilities Assessment | Quartz";
-    return () => { document.title = previous; };
-  }, []);
-
   // Auto-redirect anyone with admin-side access to /admin (org admins were
   // previously left on the landing page)
   useEffect(() => {
@@ -53,7 +44,7 @@ export default function LandingPage() {
           {/* Marketing copy — second on mobile, so a respondent with a code
               reaches the buttons without scrolling past the pitch */}
           <div className="text-white order-2 lg:order-1">
-            <img src={QUARTZ_ICON} alt="Quartz Assessments" className="h-12 w-12 mb-6 object-contain" />
+            <img src={QUARTZ_ICON} alt="Quartz Assessment" className="h-12 w-12 mb-6 object-contain" />
             <p className="text-xs font-semibold tracking-widest uppercase text-white/60 mb-3">
               Product team capability assessment
             </p>

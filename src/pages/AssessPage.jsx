@@ -404,7 +404,7 @@ const handleNext = async () => {
       <div className="absolute inset-0" style={{ backgroundColor: "rgba(15, 40, 80, 0.35)" }} />
       <div className="relative z-10 w-full flex items-center justify-center p-4">
         <div className="bg-white/90 backdrop-blur-md border border-gray-200/60 rounded-2xl shadow-sm p-8 w-full max-w-md text-center">
-          <img src="https://media.base44.com/images/public/6a29ff3bc8effbeb3d637555/9e97ff5e6_Quartzicon.png" alt="Quartz Assessments" className="h-10 w-10 mx-auto mb-4 object-contain" />
+          <img src="https://media.base44.com/images/public/6a29ff3bc8effbeb3d637555/9e97ff5e6_Quartzicon.png" alt="Quartz Assessment" className="h-10 w-10 mx-auto mb-4 object-contain" />
           <p className="text-gray-500">{error}</p>
         </div>
       </div>
@@ -444,7 +444,7 @@ const handleNext = async () => {
       <div className="relative z-10 w-full flex items-center justify-center p-4">
         <div className="bg-white/90 backdrop-blur-md border border-gray-200/60 rounded-2xl shadow-sm p-8 w-full max-w-md">
           <div className="mb-8">
-            <img src="https://media.base44.com/images/public/6a29ff3bc8effbeb3d637555/9e97ff5e6_Quartzicon.png" alt="Quartz Assessments" className="h-10 w-10 mb-3 object-contain" />
+            <img src="https://media.base44.com/images/public/6a29ff3bc8effbeb3d637555/9e97ff5e6_Quartzicon.png" alt="Quartz Assessment" className="h-10 w-10 mb-3 object-contain" />
             <h1 className="text-2xl font-bold text-gray-900">Before we begin</h1>
             <p className="text-gray-500 mt-2">{introBlurb}</p>
           </div>
@@ -486,8 +486,8 @@ const handleNext = async () => {
       <div className="relative z-10 w-full flex items-center justify-center p-4">
         <div className="bg-white/90 backdrop-blur-md border border-gray-200/60 rounded-2xl shadow-sm p-8 w-full max-w-md">
           <div className="mb-8">
-            <img src="https://media.base44.com/images/public/6a29ff3bc8effbeb3d637555/9e97ff5e6_Quartzicon.png" alt="Quartz Assessments" className="h-10 w-10 mb-3 object-contain" />
-            <h1 className="text-2xl font-bold text-gray-900">Quartz Assessments</h1>
+            <img src="https://media.base44.com/images/public/6a29ff3bc8effbeb3d637555/9e97ff5e6_Quartzicon.png" alt="Quartz Assessment" className="h-10 w-10 mb-3 object-contain" />
+            <h1 className="text-2xl font-bold text-gray-900">Quartz Assessment</h1>
             <p className="text-gray-500 mt-2">{arrivedWithCode ? "Press continue to begin." : "Enter the code you received to begin."}</p>
           </div>
           <input
@@ -518,7 +518,7 @@ const handleNext = async () => {
       <div className="relative z-10 w-full flex items-center justify-center p-4">
         <div className="bg-white/90 backdrop-blur-md border border-gray-200/60 rounded-2xl shadow-sm p-8 w-full max-w-md">
           <div className="mb-8">
-            <img src="https://media.base44.com/images/public/6a29ff3bc8effbeb3d637555/9e97ff5e6_Quartzicon.png" alt="Quartz Assessments" className="h-10 w-10 mb-3 object-contain" />
+            <img src="https://media.base44.com/images/public/6a29ff3bc8effbeb3d637555/9e97ff5e6_Quartzicon.png" alt="Quartz Assessment" className="h-10 w-10 mb-3 object-contain" />
             <h1 className="text-2xl font-bold text-gray-900">Before we begin</h1>
             <p className="text-gray-500 mt-2">{introBlurb}</p>
           </div>
@@ -927,7 +927,7 @@ const handleNext = async () => {
       <div className="absolute inset-0" style={{ backgroundColor: "rgba(15, 40, 80, 0.35)" }} />
       <div className="relative z-10 w-full flex items-center justify-center p-4">
         <div className="bg-white/90 backdrop-blur-md border border-gray-200/60 rounded-2xl shadow-sm p-10 w-full max-w-md text-center">
-          <img src="https://media.base44.com/images/public/6a29ff3bc8effbeb3d637555/9e97ff5e6_Quartzicon.png" alt="Quartz Assessments" className="h-10 w-10 mx-auto mb-6 object-contain" />
+          <img src="https://media.base44.com/images/public/6a29ff3bc8effbeb3d637555/9e97ff5e6_Quartzicon.png" alt="Quartz Assessment" className="h-10 w-10 mx-auto mb-6 object-contain" />
           <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-5">
             <svg className="w-8 h-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />

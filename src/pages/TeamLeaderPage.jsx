@@ -123,7 +123,7 @@ export default function TeamLeaderPage() {
     if (token) loadPage();
   }, [token]);
 
-  useEffect(() => { document.title = "Team | Quartz Assessments"; }, []);
+  useEffect(() => { document.title = "Team | Quartz Assessment"; }, []);
 
   const loadPage = async () => {
     setLoading(true);
