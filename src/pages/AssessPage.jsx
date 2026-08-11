@@ -702,7 +702,12 @@ const handleNext = async () => {
             disabled={saving}
             className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold px-8 py-3 rounded-lg transition-colors"
           >
-            {saving ? "Saving..." : currentFacetIndex < availableFacets.length - 1 ? "Next →" : "Preview your responses"}
+            {/* "Finish and review" rather than "Preview your responses": answers
+                are saved as they are given in both flows, so nothing here is a
+                preview of something not yet committed. It also has to fit two
+                different destinations — the personal profile report and the team
+                gap answer table — so it names the moment rather than the page. */}
+            {saving ? "Saving..." : currentFacetIndex < availableFacets.length - 1 ? "Next →" : "Finish and review"}
           </button>
         </div>
       </div>
