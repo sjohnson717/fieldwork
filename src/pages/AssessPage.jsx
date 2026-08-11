@@ -105,7 +105,6 @@ export default function AssessPage() {
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [allTitles, setAllTitles] = useState([]);
-  const [arrivedWithCode, setArrivedWithCode] = useState(false);
   // This person's own resume token. Held separately because the two entry
   // paths learn it differently: the code path generates it here at
   // registration, while the token path reads it from the URL — publicAssessment
@@ -151,8 +150,13 @@ export default function AssessPage() {
     if (urlToken) {
       loadFromToken(urlToken);
     } else if (urlCode) {
-      setCode(urlCode.toUpperCase());
-      setArrivedWithCode(true);
+      // The code is the only thing the entry card collects, so a link that
+      // carries one has nothing left to ask: validate it and go straight to
+      // name and title.
+      const normalized = urlCode.toUpperCase();
+      setCode(normalized);
+      setStep("loading");
+      handleCodeSubmit(normalized);
     }
   }, []);
 
@@ -178,14 +182,14 @@ export default function AssessPage() {
       const session = await getRespondentSession(t);
       if (!session?.respondent) {
         setError("This link is no longer valid.");
-        setStep("token-error");
+        setStep("dead-end");
         return;
       }
       const r = session.respondent;
       const a = session.assessment;
       if (!a) {
         setError("This link is no longer valid.");
-        setStep("token-error");
+        setStep("dead-end");
         return;
       }
 
@@ -223,7 +227,7 @@ export default function AssessPage() {
       // still refuses *new* registrations once closed.
       if (a.status === "closed" && a.assessment_type !== "personal") {
         setError("This assessment is no longer accepting responses.");
-        setStep("token-error");
+        setStep("dead-end");
         return;
       }
 
@@ -238,7 +242,7 @@ export default function AssessPage() {
       }
     } catch (e) {
       setError("Something went wrong. Please try again.");
-      setStep("token-error");
+      setStep("dead-end");
     }
   };
 
@@ -258,18 +262,30 @@ export default function AssessPage() {
     }
   };
 
-  const handleCodeSubmit = async () => {
+  // Takes the code explicitly so the URL path can submit one before the state
+  // update lands. A code they can fix by retyping sends them back to the entry
+  // card; a closed assessment is a dead end, since the code was right and
+  // trying it again changes nothing.
+  const handleCodeSubmit = async (submitted = code) => {
     setError("");
-    if (!code.trim()) return setError("Please enter an assessment code.");
+    const retry = (message) => {
+      setError(message);
+      setStep("entry");
+    };
+    const deadEnd = (message) => {
+      setError(message);
+      setStep("dead-end");
+    };
+    if (!submitted.trim()) return retry("Please enter an assessment code.");
     try {
-      const result = await getAssessmentByCode(code);
+      const result = await getAssessmentByCode(submitted);
       const found = result?.assessment;
-      if (!found) return setError("Code not found. Please check and try again.");
-      if (found.status === "closed") return setError("This assessment is no longer accepting responses.");
+      if (!found) return retry("Code not found. Please check and try again.");
+      if (found.status === "closed") return deadEnd("This assessment is no longer accepting responses.");
       setAssessment(found);
       setStep("intro");
     } catch (e) {
-      setError("Something went wrong. Please try again.");
+      retry("Something went wrong. Please try again.");
     }
   };
 
@@ -397,8 +413,10 @@ const handleNext = async () => {
     </div>
   );
 
-  // ── Token error ───────────────────────────────────────────────────────────
-  if (step === "token-error") return (
+  // ── Dead end (bad token, or a closed assessment) ──────────────────────────
+  // Message-only, with nothing to retry: whatever brought them here won't work
+  // on a second attempt.
+  if (step === "dead-end") return (
     <div className="relative min-h-screen flex items-center justify-center p-4">
       <img src={HERO_IMAGE} alt="" className="absolute inset-0 w-full h-full object-cover object-center" />
       <div className="absolute inset-0" style={{ backgroundColor: "rgba(15, 40, 80, 0.35)" }} />
@@ -488,7 +506,7 @@ const handleNext = async () => {
           <div className="mb-8">
             <img src="https://media.base44.com/images/public/6a29ff3bc8effbeb3d637555/9e97ff5e6_Quartzicon.png" alt="Quartz Assessment" className="h-10 w-10 mb-3 object-contain" />
             <h1 className="text-2xl font-bold text-gray-900">Quartz Assessment</h1>
-            <p className="text-gray-500 mt-2">{arrivedWithCode ? "Press continue to begin." : "Enter the code you received to begin."}</p>
+            <p className="text-gray-500 mt-2">Enter the code you received to begin.</p>
           </div>
           <input
             type="text"
@@ -500,7 +518,7 @@ const handleNext = async () => {
           />
           {error && <p className="text-red-600 text-sm mb-4">{error}</p>}
           <button
-            onClick={handleCodeSubmit}
+            onClick={() => handleCodeSubmit()}
             className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition-colors"
           >
             Continue
