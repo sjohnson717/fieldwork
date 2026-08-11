@@ -341,8 +341,11 @@ export default function AssessmentResults({ assessment }) {
                   <th className="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wide">Importance</th>
                   <th className="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wide">Execution</th>
                   <th className="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wide">Gap ↓</th>
+                  {/* "Most suggested", not "Top Owner": this is a tally of what
+                      respondents proposed, and nothing in the assessment
+                      assigns ownership to anyone. */}
                   {assessment.roles?.length > 0 && (
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Top Owner</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Most suggested</th>
                   )}
                 </tr>
               </thead>
