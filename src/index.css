@@ -165,6 +165,11 @@
   .print-section {
     break-after: avoid;
     page-break-after: avoid;
+    /* And never split the heading block itself: the eyebrow, title and blurb
+       are one unit, and a break between them left "APPENDIX" alone at the foot
+       of a page with "Your responses" overleaf. */
+    break-inside: avoid;
+    page-break-inside: avoid;
     padding-top: 1rem;
   }
 
@@ -187,9 +192,26 @@
   /* The title block gets the first sheet to itself. This is the one forced
      break worth keeping: it means a report left on a desk or handed across a
      table shows a name and a title rather than someone's answers. */
+  /* The cover fills its sheet so the credit can sit at the foot of it rather
+     than floating under the date. 14mm is the container's top padding, which
+     applies once at the start of the document — the only page it affects is
+     this one. */
   .print-cover {
+    display: flex !important;
+    flex-direction: column;
+    /* A page less its top padding and a bottom margin of its own. Sized to the
+       page exactly — 100vh minus the 14mm padding — it overflowed onto a second
+       sheet on sub-pixel rounding, so the 14mm of slack is both the safety
+       margin and the trim the credit needs to sit above. */
+    height: calc(100vh - 28mm);
+    margin-bottom: 0 !important;
     break-after: page;
     page-break-after: always;
+  }
+
+  .print-cover .print-footer {
+    margin-top: auto;
+    margin-bottom: 0;
   }
 
   /* Sits at the end of the document rather than repeating on every sheet. A

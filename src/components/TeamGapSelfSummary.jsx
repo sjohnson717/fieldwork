@@ -26,9 +26,8 @@ function SectionHeading({ eyebrow, title, blurb }) {
   );
 }
 
-export default function TeamGapSelfSummary({ profile, showOwners }) {
-  const { buckets, facets, unknowns, rows } = profile;
-  const owned = rows.filter(r => r.importance || r.execution);
+export default function TeamGapSelfSummary({ profile }) {
+  const { buckets, facets, unknowns } = profile;
 
   return (
     <>
@@ -44,7 +43,11 @@ export default function TeamGapSelfSummary({ profile, showOwners }) {
           const bucket = buckets[key];
           if (!bucket || bucket.length === 0) return null;
           return (
-            <div key={key} className={`bg-white rounded-xl border border-gray-200 border-l-4 ${b.accent} p-5 break-inside-avoid`}>
+            /* No break-inside-avoid: a fifteen-row bucket that cannot fit in
+               what's left of a page jumped to the next one whole, leaving 40%
+               of a sheet blank. Splitting mid-bucket costs nothing — the
+               heading is pinned to the rows that follow it. */
+            <div key={key} className={`bg-white rounded-xl border border-gray-200 border-l-4 ${b.accent} p-5`}>
               <h3 className={`text-base font-bold ${b.heading}`}>{b.label} · {bucket.length}</h3>
               <p className="text-xs text-gray-500 mt-1 mb-3 leading-relaxed">{b.hint}</p>
               <div className="space-y-1.5">
@@ -111,16 +114,6 @@ export default function TeamGapSelfSummary({ profile, showOwners }) {
       />
 
       <div className="bg-white rounded-xl border border-gray-200 p-5 mb-6">
-        <div className="flex gap-4 mb-4 text-[11px] text-gray-500">
-          <span className="flex items-center gap-1.5">
-            <span className="inline-block w-2.5 h-2.5 rounded-sm bg-[#3366FF]" />
-            How much it matters
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="inline-block w-2.5 h-2.5 rounded-sm bg-[#7C8B9E]" />
-            How well it's done
-          </span>
-        </div>
         <div className="space-y-4">
           {facets.map(row => (
             <div key={row.facet} className="break-inside-avoid">
@@ -150,35 +143,6 @@ export default function TeamGapSelfSummary({ profile, showOwners }) {
         </div>
       </div>
 
-      {/* ── 3. Who you'd hand it to ── */}
-      {showOwners && owned.some(r => r.suggested_owner) && (
-        <>
-          <SectionHeading
-            eyebrow="Part three"
-            title="Who you'd hand it to"
-            blurb="The owner you named for each activity. Where the team disagrees with you is the most useful conversation in the room, and this is your half of it."
-          />
-          <div className="bg-white rounded-xl border border-gray-200 p-5 mb-6">
-            {owned.map((row, i) => (
-              <div
-                key={row.activity.id}
-                className={`flex items-baseline gap-3 py-1.5 ${i < owned.length - 1 ? "border-b border-gray-50" : ""}`}
-              >
-                <span className="text-sm text-gray-800 flex-1">{row.activity.name}</span>
-                {row.suggested_owner ? (
-                  <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-[#eef2ff] text-[#1a2e7a] shrink-0">
-                    {row.suggested_owner}
-                  </span>
-                ) : (
-                  <span className="text-[11px] px-2 py-0.5 rounded-full border border-dashed border-gray-300 text-gray-400 shrink-0">
-                    You didn't name one
-                  </span>
-                )}
-              </div>
-            ))}
-          </div>
-        </>
-      )}
     </>
   );
 }

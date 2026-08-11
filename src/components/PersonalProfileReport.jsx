@@ -9,6 +9,8 @@ import {
 import { FACET_ORDER, FACET_SUBTITLES } from "@/lib/scoring";
 import PrintCredit from "@/components/PrintCredit";
 
+const QUARTZ_ICON = "https://media.base44.com/images/public/6a29ff3bc8effbeb3d637555/9e97ff5e6_Quartzicon.png";
+
 // The person's own report. Advisory first: the interpretation is the document,
 // and the raw answers are an appendix behind it.
 //
@@ -105,6 +107,7 @@ export default function PersonalProfileReport({
       {/* Paper-only header: the on-screen one is conversational and carries no
           assessment name or date, which a saved PDF needs to be useful. */}
       <div className="print-only print-cover mb-6">
+        <img src={QUARTZ_ICON} alt="" className="h-8 w-8 mb-4 object-contain" />
         <h1 className="text-xl font-bold text-gray-900">{assessment?.title}</h1>
         {assessment?.company_name && <p className="text-sm text-gray-600">{assessment.company_name}</p>}
         <p className="text-sm text-gray-600 mt-2">{name}{title ? ` · ${title}` : ""}</p>
@@ -122,6 +125,7 @@ export default function PersonalProfileReport({
             </p>
           );
         })()}
+        <PrintCredit />
       </div>
 
       <div className="flex items-center gap-3 mb-8 no-print">

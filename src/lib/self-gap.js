@@ -77,8 +77,16 @@ export function computeSelfGapProfile(activities, responses, facetOrder) {
   for (const row of rows) if (row.bucket) buckets[row.bucket].push(row);
   // Widest gap first, then by how much they said it matters — the same order the
   // facilitator's "top improvement opportunities" list uses.
+  //
+  // Except in the two buckets that aren't gaps. Sorting those by gap puts every
+  // "Good" above every "Excellent", because a gap of 0 outranks one of -1 — so
+  // the one bucket carrying good news led with its weakest examples and buried
+  // Critical · Excellent at the bottom. There, importance leads and execution
+  // breaks the tie.
+  const byGap = (a, b) => (b.gap - a.gap) || (b.imp - a.imp);
+  const byStanding = (a, b) => (b.imp - a.imp) || (b.exec - a.exec);
   for (const key of Object.keys(buckets)) {
-    buckets[key].sort((a, b) => (b.gap - a.gap) || (b.imp - a.imp));
+    buckets[key].sort(key === "critical" || key === "watch" ? byGap : byStanding);
   }
 
   const facets = facetOrder

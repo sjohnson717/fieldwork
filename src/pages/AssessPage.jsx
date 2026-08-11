@@ -9,6 +9,7 @@ import TeamGapSelfSummary from "@/components/TeamGapSelfSummary";
 import PrintCredit from "@/components/PrintCredit";
 import { computeSelfGapProfile } from "@/lib/self-gap";
 
+const QUARTZ_ICON = "https://media.base44.com/images/public/6a29ff3bc8effbeb3d637555/9e97ff5e6_Quartzicon.png";
 const HERO_IMAGE = "https://media.base44.com/images/public/6a29ff3bc8effbeb3d637555/2ffc15b8c_curated-lifestyle-H3ZVdxBRIW0-unsplash.jpg";
 
 const IMPORTANCE_OPTIONS = ["Not needed", "Nice to have", "Important", "Critical"];
@@ -782,6 +783,7 @@ const handleNext = async () => {
           {/* Paper-only header: the on-screen one is conversational and has no
               assessment name or date, which a saved PDF needs to be useful. */}
           <div className="print-only print-cover mb-6">
+            <img src={QUARTZ_ICON} alt="" className="h-8 w-8 mb-4 object-contain" />
             <h1 className="text-xl font-bold text-gray-900">{assessment?.title}</h1>
             {assessment?.company_name && (
               <p className="text-sm text-gray-600">{assessment.company_name}</p>
@@ -809,6 +811,7 @@ const handleNext = async () => {
                 </p>
               );
             })()}
+            <PrintCredit />
           </div>
 
           {/* Header */}
@@ -837,10 +840,7 @@ const handleNext = async () => {
               classifiable, which leaves the page as the plain confirmation it
               used to be rather than a run of empty sections. */}
           {selfGapProfile?.answeredCount > 0 && (
-            <TeamGapSelfSummary
-              profile={selfGapProfile}
-              showOwners={assessment?.roles?.length > 0}
-            />
+            <TeamGapSelfSummary profile={selfGapProfile} />
           )}
 
           {/* The detail tables get their own titled section. It used to be a
@@ -907,7 +907,7 @@ const handleNext = async () => {
                                 : <span className="text-gray-300 text-xs">—</span>}
                             </td>
                             {assessment?.roles?.length > 0 && (
-                              <td className="px-3 py-3 text-gray-600 text-xs align-middle">{r.suggested_owner || <span className="text-gray-300">—</span>}</td>
+                              <td className="px-3 py-3 text-gray-600 text-xs align-middle whitespace-nowrap">{r.suggested_owner || <span className="text-gray-300">—</span>}</td>
                             )}
                             </>}
                           </tr>
