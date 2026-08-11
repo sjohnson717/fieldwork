@@ -83,12 +83,21 @@ export default function PersonalProfileReport({
   // Only resources attached to something actually recommended. A page of
   // everything in the library would be a catalogue, and a catalogue is the thing
   // that makes a recommendation read as advertising.
-  const resourcesByActivity = opportunities
-    .map(o => ({
-      activity: o.activity,
-      items: resources.filter(r => (r.activity_ids || []).includes(o.activity.id)),
-    }))
-    .filter(r => r.items.length > 0);
+  //
+  // Listed once each, under the highest-ranked opportunity that claims them: a
+  // third of the library serves several activities, so without this the same
+  // article can appear three times on one page and the section starts to read as
+  // padding rather than a shortlist.
+  const resourcesByActivity = [];
+  const alreadyListed = new Set();
+  for (const o of opportunities) {
+    const items = resources.filter(
+      r => (r.activity_ids || []).includes(o.activity.id) && !alreadyListed.has(r.id)
+    );
+    if (items.length === 0) continue;
+    items.forEach(r => alreadyListed.add(r.id));
+    resourcesByActivity.push({ activity: o.activity, items });
+  }
 
   return (
     <>
@@ -299,7 +308,7 @@ export default function PersonalProfileReport({
           <SectionHeading
             eyebrow="Part four"
             title="Suggested resources"
-            blurb="Reading and practice for the opportunities above. Most of these are free, and none of them is a prerequisite — a course is one option among several, not the answer to every gap."
+            blurb="Reading for the opportunities above — mostly free articles, plus a few books worth owning. None of it is a prerequisite: the tips above are the part you can act on this week."
           />
           <div className="space-y-4 mb-4">
             {resourcesByActivity.map(({ activity, items }) => (
@@ -319,12 +328,19 @@ export default function PersonalProfileReport({
                         </div>
                         {r.note && <p className="text-xs text-gray-500 mt-1 leading-relaxed">{r.note}</p>}
                         {r.url && (
-                          <p className="text-[11px] text-blue-600 mt-0.5 break-all">
-                            {/* Printed as text, not a link: in a PDF an
-                                underlined phrase with no visible address is
-                                unusable on paper. */}
+                          /* A link whose visible text is the address itself. The
+                             address has to be readable on paper, where a link is
+                             just underlined words — but showing it as plain text
+                             left someone reading on screen retyping an article
+                             URL by hand. This prints the same and clicks. */
+                          <a
+                            href={r.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="block text-[11px] text-blue-600 hover:text-blue-800 hover:underline mt-0.5 break-all"
+                          >
                             {r.url}
-                          </p>
+                          </a>
                         )}
                       </div>
                     );
@@ -337,10 +353,21 @@ export default function PersonalProfileReport({
       )}
 
       {/* ── Appendix ── */}
+      {/* Counted from the rows the table actually prints, not from
+          answeredCount — that excludes anything left unrated, so a person who
+          skipped an activity was told "all 6 activities" above a table of 7 and
+          had to wonder which answer had gone missing. Skipped rows are still
+          shown, as a dash, so the count has to include them. */}
       <SectionHeading
         eyebrow="Appendix"
         title="Your responses"
-        blurb={`All ${profile.answeredCount} ${profile.answeredCount === 1 ? "activity" : "activities"}, and how you rated each one.`}
+        blurb={
+          activities.length === profile.answeredCount
+            ? `All ${activities.length} ${activities.length === 1 ? "activity" : "activities"}, and how you rated each one.`
+            : activities.length - profile.answeredCount === 1
+              ? `All ${activities.length} activities. The one you didn't rate shows as a dash.`
+              : `All ${activities.length} activities. The ${activities.length - profile.answeredCount} you didn't rate show as a dash.`
+        }
       />
       {FACET_ORDER.filter(f => activities.some(a => a.facet === f)).map(facet => {
         const facetActs = activities.filter(a => a.facet === facet);
