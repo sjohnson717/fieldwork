@@ -3,7 +3,7 @@ import { FACET_ORDER } from "@/lib/scoring";
 // Import/export format for the library activity list. The columns are exactly
 // what LibraryPage's "Export CSV" emits, so a round-trip through a spreadsheet
 // is lossless and an exported file can be re-imported unchanged.
-export const CSV_COLUMNS = ["Facet", "Activity", "Description", "Recommended Owner", "Active"];
+export const CSV_COLUMNS = ["Facet", "Activity", "Description", "Recommended Owner", "Try This", "Active"];
 
 /**
  * Parses CSV text into an array of row objects keyed by header name.
@@ -94,6 +94,11 @@ export function toActivities({ headers, records }) {
       facet,
       description: r["Description"] || "",
       preferred_owner: r["Recommended Owner"] || "",
+      // Left undefined when the column is absent, which is how a file exported
+      // before this column existed re-imports without erasing every tip. The
+      // diff skips undefined fields; an empty cell in a file that *has* the
+      // column is still a deliberate clear.
+      ...(headers.includes("Try This") ? { try_this: r["Try This"] || "" } : {}),
       // A missing Active column means active; only an explicit falsy value turns
       // an activity off, so a two-column file is still a valid import.
       active: r["Active"] === undefined || r["Active"] === "" ? true : truthy(r["Active"]),
@@ -104,7 +109,7 @@ export function toActivities({ headers, records }) {
   return { activities, errors };
 }
 
-const FIELDS = ["facet", "description", "preferred_owner", "active", "sort_order"];
+const FIELDS = ["facet", "description", "preferred_owner", "try_this", "active", "sort_order"];
 
 /**
  * Diffs incoming activities against the existing library, matched on name
@@ -129,6 +134,10 @@ export function diffActivities(incoming, existing) {
     const changes = {};
     if (match.name !== inc.name) changes.name = inc.name;
     for (const f of FIELDS) {
+      // A field the file does not carry at all is not a change to it. Without
+      // this, adding a column to the export would make every older file look
+      // like an instruction to blank that column library-wide.
+      if (inc[f] === undefined) continue;
       const before = f === "active" ? match[f] !== false : (match[f] ?? (f === "sort_order" ? 0 : ""));
       if (before !== inc[f]) changes[f] = inc[f];
     }

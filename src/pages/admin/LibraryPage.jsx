@@ -6,6 +6,7 @@ import { FACET_ORDER } from "@/lib/scoring";
 import DraggableList from "@/components/DraggableList";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import ActivityImportDialog from "./ActivityImportDialog";
+import { CSV_COLUMNS } from "@/lib/activity-csv";
 
 // ── Typeahead owner input ─────────────────────────────────────────────────────
 
@@ -63,7 +64,7 @@ function ActivitiesTab() {
   const [editDraft, setEditDraft] = useState({});
   const [saving, setSaving] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
-  const [newItem, setNewItem] = useState({ name: "", description: "", facet: "DEFINE", preferred_owner: "" });
+  const [newItem, setNewItem] = useState({ name: "", description: "", facet: "DEFINE", preferred_owner: "", try_this: "" });
   const [adding, setAdding] = useState(false);
   const [selectedFacet, setSelectedFacet] = useState("ALL");
   const [showImport, setShowImport] = useState(false);
@@ -99,6 +100,7 @@ function ActivitiesTab() {
       description: activity.description || "",
       facet: activity.facet,
       preferred_owner: activity.preferred_owner || "",
+      try_this: activity.try_this || "",
     });
   };
 
@@ -139,11 +141,12 @@ function ActivitiesTab() {
         name: newItem.name.trim(),
         description: newItem.description.trim(),
         preferred_owner: newItem.preferred_owner.trim(),
+        try_this: newItem.try_this.trim(),
         sort_order: maxOrder + 1,
         active: true,
       });
       setActivities(prev => [...prev, created]);
-      setNewItem({ name: "", description: "", facet: "DEFINE", preferred_owner: "" });
+      setNewItem({ name: "", description: "", facet: "DEFINE", preferred_owner: "", try_this: "" });
       setShowAddForm(false);
     } catch (e) { console.error(e); }
     setAdding(false);
@@ -154,12 +157,13 @@ function ActivitiesTab() {
 
   const handleExportCSV = () => {
     const rows = [
-      ["Facet", "Activity", "Description", "Recommended Owner", "Active"],
+      CSV_COLUMNS,
       ...activities.map(a => [
         a.facet,
         a.name,
         a.description || "",
         a.preferred_owner || "",
+        a.try_this || "",
         a.active ? "Yes" : "No",
       ]),
     ];
@@ -290,6 +294,16 @@ function ActivitiesTab() {
                       jobTitleNames={jobTitleNames}
                     />
                   </div>
+                  <div className="col-span-2">
+                    <label className="block text-xs font-medium text-gray-500 mb-1">Try this</label>
+                    <textarea
+                      rows={2}
+                      value={editDraft.try_this}
+                      onChange={e => setEditDraft(d => ({ ...d, try_this: e.target.value }))}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
+                      placeholder="One concrete thing to do this week. Shown on a personal report when this activity comes up as a development opportunity."
+                    />
+                  </div>
                 </div>
                 <div className="flex gap-2">
                   <button onClick={() => handleSaveEdit(activity.id)} disabled={saving || !editDraft.name.trim()}
@@ -392,13 +406,22 @@ function ActivitiesTab() {
                 placeholder="Recommended owner (optional)"
               />
             </div>
+            <div className="col-span-2">
+              <textarea
+                rows={2}
+                placeholder="Try this — one concrete thing to do this week (optional)"
+                value={newItem.try_this}
+                onChange={e => setNewItem(d => ({ ...d, try_this: e.target.value }))}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
+              />
+            </div>
           </div>
           <div className="flex gap-2">
             <button onClick={handleAdd} disabled={adding || !newItem.name.trim()}
               className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-medium px-4 py-1.5 rounded-lg transition-colors">
               {adding ? "Adding…" : "Add activity"}
             </button>
-            <button onClick={() => { setShowAddForm(false); setNewItem({ name: "", description: "", facet: "DEFINE", preferred_owner: "" }); }}
+            <button onClick={() => { setShowAddForm(false); setNewItem({ name: "", description: "", facet: "DEFINE", preferred_owner: "", try_this: "" }); }}
               className="text-sm text-gray-400 hover:text-gray-600 px-2">Cancel</button>
           </div>
         </div>

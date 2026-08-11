@@ -139,7 +139,7 @@ export default function ActivityImportDialog({ open, existing, onClose, onImport
         <div className="px-6 pt-6 pb-4 border-b border-gray-100">
           <h2 id="import-dialog-title" className="text-base font-semibold text-gray-900">Import activities from CSV</h2>
           <p className="text-sm text-gray-500 mt-1">
-            Columns: <span className="font-mono text-xs">Facet, Activity, Description, Recommended Owner, Active</span>.
+            Columns: <span className="font-mono text-xs">Facet, Activity, Description, Recommended Owner, Try This, Active</span>.
             Activities are matched by name; row order sets the library order.
           </p>
         </div>
