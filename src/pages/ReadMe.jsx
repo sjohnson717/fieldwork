@@ -27,7 +27,7 @@ The two are separate records that can be linked, so a report can cross what a te
 | Entity | Holds |
 |---|---|
 | **Assessment** | One instrument. \`assessment_type\` is \`team_gap\` or \`personal\`; \`parent_assessment_id\` optionally links a personal assessment to a gap analysis; \`tag_ids\` group related assessments. Carries the access code and the buyer/team tokens. |
-| **Activity** | The library. Each belongs to a facet: the six Quartz facets (DEFINE, COMMIT, DESCRIBE, CREATE, PREPARE, DELIVER) plus LEARN, which runs across the whole cycle and reports as its own standalone section. Library activities have no \`assessment_id\`; custom ones name their assessment. |
+| **Activity** | The library. Carries \`try_this\`, the one-line step shown on a personal report's development opportunity. Each belongs to a facet: the six Quartz facets (DEFINE, COMMIT, DESCRIBE, CREATE, PREPARE, DELIVER) plus LEARN, which runs across the whole cycle and reports as its own standalone section. Library activities have no \`assessment_id\`; custom ones name their assessment. |
 | **ActivitySet** | Named presets of activities for quick assessment setup. \`description\` says what the set is for, and shows wherever a preset is picked. |
 | **Respondent** | One person answering one assessment. Self-registering; \`token\` is their credential. |
 | **Response** | One person's answer for one activity. Carries both question sets — importance/execution/suggested_owner, or experience/skills/interest — and only the fields its assessment type asks about are written. |
@@ -86,6 +86,7 @@ Built-in fields on every entity: \`id\`, \`created_date\`, \`updated_date\`, \`c
 |---|---|
 | \`src/lib/scoring.js\` | Gap analysis. Importance and execution are 0–3. **Also the single source of \`FACET_ORDER\`, \`FACET_SUBTITLES\` and \`THEME_GROUPS\`** — everything that sorts, pages or groups by facet imports from here. |
 | \`src/lib/personal-scoring.js\` | Personal assessment. All three axes are 0/1/3/5, normalised before any cross-axis maths. Owns the five categories, both label vocabularies, and the per-facet and development-shortlist aggregations. |
+| \`src/lib/self-gap.js\` | One respondent's own gap analysis, for the summary they see after submitting. Deliberately not \`computeActivityStats\` with a single response fed in — every field that function returns is a claim about a group. |
 | \`src/lib/activities.js\` | Resolves which activities an assessment actually asks about. |
 | \`src/lib/activity-csv.js\` | Parses, validates and diffs the library CSV. No UI, no writes — the import dialog decides what to do with the diff. |
 | \`src/lib/public-assessment.js\` | Client wrapper over the \`publicAssessment\` function. |
@@ -123,14 +124,29 @@ Facilitators have accounts. **Respondents, team leaders and buyers never do** �
 
 **\`category()\` must not go back through \`capability()\`.** It looks like it could — capability is right there, and averaging experience with skills is one line shorter. That average is exactly what makes the \`strengthen\` category impossible: someone with long experience and low self-rated skill scores the same as a capable beginner, and they need opposite help. Skill and interest choose the bucket; experience only splits \`develop\` from \`strengthen\`. \`capability()\` is for the facilitator's Coverage view, which genuinely does want one number.
 
+**Adding a column to the activity CSV can blank that column library-wide.** \`diffActivities\` compares every field it knows about, so a file exported *before* a column existed looked like an instruction to empty it on every row. The diff now skips fields the incoming file does not carry at all; an empty cell in a file that *has* the column is still a deliberate clear.
+
 **No overall personal score.** Not an oversight and not a missing feature. Three axes that deliberately measure different things cannot be averaged into a grade without destroying the findings the instrument exists to surface.
+
+## Print is a separate surface, and only visible in a PDF
+
+Both summaries are read as PDFs at least as often as on screen, and every print rule is invisible in the browser. **Render the page to check it** — the defects below were each found in a rendered file and in no other way.
+
+**Forcing a page break per section wastes sheets.** \`break-before: page\` on every heading turned a 25-activity report into eight pages, three of them nearly empty and one carrying a single table row. Only the cover forces a break now (\`.print-cover\`); \`.print-section\` keeps a heading with its content and nothing more. The same rule applies one level down: a long card with \`break-inside-avoid\` jumps to the next sheet whole rather than splitting.
+
+**\`100vh\` is exactly the page, which is one rounding error too many.** Sizing the cover to \`calc(100vh - 14mm)\` spilled its footer onto a blank second sheet. It is \`- 28mm\` now: the top padding plus a real bottom margin.
+
+**Trailing padding makes a blank page.** Bottom padding at the end of the document buys nothing — it does not affect the pages between — and it was enough to push a credit onto a sheet of its own.
+
+**Print an address as a link, never as text.** A PDF viewer's auto-detector read plain-text \`productgrowthleaders.com\` as \`http://ctgrowthleaders.com\`, five characters short, and offered it as the destination. An \`<a>\` whose visible text is the address prints identically and puts a real URI annotation in the file.
 
 ## Conventions
 
 - Response labels are stored as text, never numbers. Scoring maps them, so re-scoring an axis never touches stored data.
 - The facilitator's vocabulary and the respondent's are separate by design. \`Reluctant\`, \`Poor fit\` and \`Under-skilled\` are diagnostic shorthand and must never reach the person they describe. \`CATEGORIES\` carries both sets: \`label\`/\`hint\` are the facilitator's, \`selfLabel\`/\`selfHint\` are the person's.
 - A personal assessment ignores \`closed\`. The profile belongs to the person, so they can still revise it; \`closed_date\` lets Results flag answers changed after a report was delivered.
-- Sharing a profile means the PDF, never the link. The token permits editing.`,
+- Sharing a profile means the PDF, never the link. The token permits editing.
+- Nothing in the app calls a suggested owner an owner. The field is \`suggested_owner\`, the respondent's column reads **Suggested owner**, and the team tally reads **Most suggested** — a respondent proposes a role, and no part of the assessment assigns one.`,
   },
 ];
 

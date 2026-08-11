@@ -76,7 +76,7 @@ LEARN is in **Default** and **Extended**. Executive and Brief deliberately leave
 
 | Link | What the recipient sees | Where to find it |
 |------|------------------------|------------------|
-| **Access** | Participant confidential input. No summary provided. | Overview tab → Access |
+| **Access** | Participant confidential input. Ends on a summary of that person's own answers — see **What participants see**. | Overview tab → Access |
 | **Dashboard** | Team leader status dashboard. Does not show individual responses. | Overview tab → Links to share |
 | **Report** | Client-facing report. Used during or after the assessment completion. Shows findings, gaps, and ownership analysis. After closing the assessment, also shows debrief decisions, if any. | Overview tab → Links to share |
 
@@ -96,6 +96,42 @@ LEARN is in **Default** and **Extended**. Executive and Brief deliberately leave
 Check the **Respondents table** in the Results tab. It shows each participant's name, title, status (completed or pending), response count, and completion date. This information is confidential. *Do not share this page with team leaders*.
 
 > **Minimum responses:** Aim for at least 4–5 completed responses before running the debrief. The report will not display until the minimum threshold is reached. Follow up with non-completers 24 hours before the deadline.`,
+  },
+  {
+    id: "participants",
+    title: "What participants see",
+    content: `Both assessment types now end on a summary of what that person said. It replaces the thank-you dialog, and it is the same idea in both instruments: report someone's own answers back to them, organised, and say nothing about whether they are right.
+
+That last part matters. A summary that graded anyone would make the next answer less honest, and it would pre-empt the debrief — **discrepancies between people are the room's work, not the report's**.
+
+## The two summaries
+
+| | Personal | Team gap |
+|---|---|---|
+| **Part one** | *Your product profile* — activities sorted into the five categories | *Where you'd focus first* — activities bucketed by the distance between how much they matter and how well they're done |
+| **Part two** | *Your Quartz profile* — experience, skills and interest per facet, three separate bars | *Your view by phase* — importance and execution per facet, two bars |
+| **Part three** | *Development opportunities* — up to five, each with a **Try this** step | — |
+| **Part four** | *Suggested resources* for those opportunities | — |
+| **Also carries** | Questions to take into a development conversation | Anything they marked **"I don't know"**, named as a sightline rather than a gap |
+| **Appendix** | Every answer they gave | Every answer they gave |
+
+Neither ever combines its axes into one number. On the team gap side the distance between "this matters" and "this is being done" *is* the finding, and a single score would hide it — the same reason the personal report has no overall grade.
+
+> **The team gap summary carries one thing the client report cannot.** An activity someone called important and marked "I don't know" on is a fact about that person's sightlines. Averaged across a team it disappears into a smaller sample. On an individual summary it is worth raising out loud, and it is usually closed in one sentence by someone else in the room.
+
+## Nothing is submitted at the end
+
+Answers are saved as they are given, in both instruments. The last page of the survey says **Finish and review** rather than "Preview your responses", and the button below the team gap summary says **Done** rather than "Submit" — by then the submission has already happened, and a button promising otherwise implied that closing the tab would lose the work.
+
+Respondents can still revise. Their own link reopens their answers until the assessment closes; on a personal assessment, indefinitely.
+
+## Saving it as a PDF
+
+Both summaries print. The first sheet is a cover — assessment title, client, the person's name and title, the date they submitted — so **a report left on a desk or handed across a table shows a name rather than someone's answers**. Every page after that is the summary and then the full answer table.
+
+The foot of the first and last pages reads *Prepared for you by Product Growth Leaders*, with the address as a real link. The cover carries the Quartz mark, not a PGL logo: this is the respondent's document, and a consultancy's letterhead over someone's own self-assessment reads as a sales piece rather than a deliverable.
+
+> **What to tell a team leader who asks for everyone's summary.** The same thing as for personal profiles: each person has their own, sharing is theirs to do, and the aggregate view — which is what a leader actually needs — is the client report. A per-person link permits editing, so forwarding it hands over write access to someone's answers.`,
   },
   {
     id: "personal",
@@ -150,7 +186,7 @@ The report appears as soon as they finish — they don't have to come back for i
 |------|----------|
 | **1 · Your product profile** | Their activities sorted into the five categories |
 | **2 · Your Quartz profile** | Experience, skills and interest per facet, as three separate bars |
-| **3 · Development opportunities** | A shortlist of up to five, each with the reason it was chosen, plus questions to take into a development conversation |
+| **3 · Development opportunities** | A shortlist of up to five, each with the reason it was chosen and one concrete **Try this** step, plus questions to take into a development conversation |
 | **4 · Suggested resources** | Reading and practice for those opportunities. Only appears if resources have been attached to the recommended activities |
 | **Appendix** | Every answer they gave |
 
@@ -163,6 +199,16 @@ Nothing pushes a profile to a manager. The person decides whether to share their
 ## Suggested resources
 
 Resources are managed in **Library → Resources**. Each one is typed — free article, external resource, Quartz book, or course or workshop — and attached to the activities it serves. The type is shown to the reader, so they know what they're being sent before they click.
+
+**The library is loaded.** All 65 activities carry a resource: 35 Product Growth Leaders articles and 10 third-party books, attached to the activities they serve. One activity — Staff Promotional Events — deliberately has none, and shows only its Try this step. A resource serving several activities is listed **once**, under the highest-ranked opportunity that claims it, so a shortlist doesn't repeat the same article three times.
+
+## Try this
+
+Every activity also carries a one-line **Try this** step: something a person could do this week. It appears inside each development opportunity, next to the reason that opportunity was offered, so five opportunities read as a plan rather than sixty-five reading as homework.
+
+Edit them in **Library → Activities**, in the same form as the name and description, and they round-trip through the activity CSV as a **Try This** column. A CSV exported before that column existed imports safely — a file that doesn't carry the column leaves every tip alone.
+
+> **Try this is deliberately absent from the team gap summary.** A personal development gap is that person's own to close; a team gap frequently belongs to someone else entirely, and handing an individual a to-do for work they don't own misreads the instrument.
 
 Part four only lists resources attached to an activity that person was actually advised to develop. That's deliberate: a page listing everything available is a catalogue, and a catalogue is what makes a recommendation read as advertising.
 
@@ -195,6 +241,8 @@ The other shape worth naming is a profile heavy in **Under-skilled** — experie
 - Prepare 1–2 open questions per flagged activity.
 
 > **Pre-session framing:** The goal is not to critique execution — it's to surface where expectations and reality diverge, and to agree on who owns what. The data is a conversation starter, not a verdict.
+
+> **Everyone in the room has already seen their own answers summarised.** They arrive knowing where *they* said the gaps are, which changes the debrief: less time explaining what was asked, more time on why two people who do the same work answered differently. Expect people to arrive with a position. That is the point — the discrepancies are what the session exists to surface, and nobody's summary told them they were right.
 
 ## Running the Session
 
