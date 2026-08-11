@@ -23,6 +23,10 @@
     "preferred_owner": {
       "type": "string"
     },
+    "try_this": {
+      "type": "string",
+      "description": "One concrete thing a person could do this week to build this activity. Sits on the activity rather than on a Resource because it is advice, not a link, and every activity has exactly one."
+    },
     "sort_order": {
       "type": "number"
     },

@@ -261,6 +261,16 @@ export default function PersonalProfileReport({
               {o.activity.description && (
                 <p className="text-xs text-gray-400 leading-relaxed pl-6 mt-1.5">{o.activity.description}</p>
               )}
+              {/* Attached to the opportunity rather than collected into a list of
+                  its own: a tip is only useful next to the reason it was offered,
+                  and five of these read as a plan where sixty-five would read as
+                  homework. */}
+              {o.activity.try_this && (
+                <p className="text-xs text-gray-700 leading-relaxed pl-6 mt-2.5">
+                  <span className="font-semibold text-gray-900">Try this: </span>
+                  {o.activity.try_this}
+                </p>
+              )}
             </div>
           ))}
         </div>
