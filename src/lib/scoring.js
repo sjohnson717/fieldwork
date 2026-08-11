@@ -6,6 +6,25 @@ export const EXECUTION_SCORE  = { "Not done": 0, "Inconsistent": 1, "Good": 2, "
 export const IMPORTANCE_LABEL = ["Not needed", "Nice to have", "Important", "Critical"];
 export const EXECUTION_LABEL  = ["Not done", "Inconsistent", "Good", "Excellent"];
 
+// Pill styling for a single answer. Shared so a respondent's summary and the
+// answer table below it colour the same label the same way — they sit on one
+// page, and two treatments of "Inconsistent" read as two different answers.
+export const BADGE_FALLBACK = "bg-gray-100 text-gray-600";
+
+export const IMPORTANCE_BADGE = {
+  "Not needed":   "bg-gray-100 text-gray-600",
+  "Nice to have": "bg-blue-100 text-blue-700",
+  "Important":    "bg-blue-500 text-white",
+  "Critical":     "bg-blue-800 text-white",
+};
+
+export const EXECUTION_BADGE = {
+  "Not done":     "bg-rose-100 text-rose-700",
+  "Inconsistent": "bg-amber-100 text-amber-800",
+  "Good":         "bg-green-100 text-green-700",
+  "Excellent":    "bg-green-600 text-white",
+};
+
 // The one canonical facet order. Everything that sorts, pages or groups by facet
 // imports this — AssessPage's paging, the library and assessment activity pickers,
 // getAssignedActivities. Keeping a local copy is how LEARN went missing from four

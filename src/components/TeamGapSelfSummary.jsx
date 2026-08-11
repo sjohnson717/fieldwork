@@ -1,5 +1,5 @@
 import { SELF_BUCKETS } from "@/lib/self-gap";
-import { FACET_SUBTITLES } from "@/lib/scoring";
+import { FACET_SUBTITLES, IMPORTANCE_BADGE, EXECUTION_BADGE, BADGE_FALLBACK } from "@/lib/scoring";
 
 // What one respondent said, summarized, above the answer table they already had.
 //
@@ -48,11 +48,24 @@ export default function TeamGapSelfSummary({ profile, showOwners }) {
               <h3 className={`text-base font-bold ${b.heading}`}>{b.label} · {bucket.length}</h3>
               <p className="text-xs text-gray-500 mt-1 mb-3 leading-relaxed">{b.hint}</p>
               <div className="space-y-1.5">
+                {/* The same pills, at the same width, as the answer table in the
+                    appendix. As free text the two labels floated in a column
+                    that was only as wide as its longest word, so no two rows
+                    lined up and the eye couldn't run down either answer. */}
                 {bucket.map(row => (
-                  <div key={row.activity.id} className="flex items-baseline justify-between gap-4">
-                    <span className="text-sm text-gray-800">{row.activity.name}</span>
-                    <span className="text-xs text-gray-500 shrink-0">
-                      {row.importance} <span className="text-gray-300">·</span> {row.execution}
+                  <div key={row.activity.id} className="flex items-center gap-3">
+                    <span className="text-sm text-gray-800 flex-1 min-w-0">{row.activity.name}</span>
+                    <span
+                      className={`inline-block shrink-0 whitespace-nowrap px-2 py-0.5 rounded-full text-xs font-medium text-center ${IMPORTANCE_BADGE[row.importance] || BADGE_FALLBACK}`}
+                      style={{ width: "110px" }}
+                    >
+                      {row.importance}
+                    </span>
+                    <span
+                      className={`inline-block shrink-0 whitespace-nowrap px-2 py-0.5 rounded-full text-xs font-medium text-center ${EXECUTION_BADGE[row.execution] || BADGE_FALLBACK}`}
+                      style={{ width: "110px" }}
+                    >
+                      {row.execution}
                     </span>
                     <span className="text-[10px] uppercase tracking-widest text-gray-400 shrink-0 w-16 text-right">
                       {row.activity.facet}

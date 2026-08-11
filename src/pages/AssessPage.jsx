@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { getAssignedActivities } from "@/lib/activities";
 import { getAssessmentByCode, getRespondentSession } from "@/lib/public-assessment";
 import { PERSONAL_AXES, computePersonProfile } from "@/lib/personal-scoring";
-import { FACET_ORDER } from "@/lib/scoring";
+import { FACET_ORDER, IMPORTANCE_BADGE, EXECUTION_BADGE, BADGE_FALLBACK } from "@/lib/scoring";
 import PersonalProfileReport from "@/components/PersonalProfileReport";
 import TeamGapSelfSummary from "@/components/TeamGapSelfSummary";
 import PrintCredit from "@/components/PrintCredit";
@@ -719,19 +719,6 @@ const handleNext = async () => {
 
   // ── Done ──────────────────────────────────────────────────────────────────
   if (step === "done") {
-    const IMPORTANCE_BADGE = {
-      "Not needed":   "bg-gray-100 text-gray-600",
-      "Nice to have": "bg-blue-100 text-blue-700",
-      "Important":    "bg-blue-500 text-white",
-      "Critical":     "bg-blue-800 text-white",
-    };
-    const EXECUTION_BADGE = {
-      "Not done":     "bg-rose-100 text-rose-700",
-      "Inconsistent": "bg-amber-100 text-amber-800",
-      "Good":         "bg-green-100 text-green-700",
-      "Excellent":    "bg-green-600 text-white",
-    };
-
     // Computed once here rather than inside the quadrant block, because the
     // detail section's heading needs the same count.
     const personalProfile = isPersonal
@@ -911,12 +898,12 @@ const handleNext = async () => {
                             )) : <>
                             <td className="px-3 py-3 align-middle" style={{ width: '120px' }}>
                               {r.importance
-                                ? <span className={`inline-block whitespace-nowrap px-2 py-0.5 rounded-full text-xs font-medium ${IMPORTANCE_BADGE[r.importance] || "bg-gray-100 text-gray-600"}`} style={{ width: '110px', textAlign: 'center' }}>{r.importance}</span>
+                                ? <span className={`inline-block whitespace-nowrap px-2 py-0.5 rounded-full text-xs font-medium ${IMPORTANCE_BADGE[r.importance] || BADGE_FALLBACK}`} style={{ width: '110px', textAlign: 'center' }}>{r.importance}</span>
                                 : <span className="text-gray-300 text-xs">—</span>}
                             </td>
                             <td className="px-3 py-3 align-middle" style={{ width: '120px' }}>
                               {r.execution
-                                ? <span className={`inline-flex items-center whitespace-nowrap px-2 py-0.5 rounded-full text-xs font-medium ${EXECUTION_BADGE[r.execution] || "bg-gray-100 text-gray-600"}`} style={{ width: '110px', justifyContent: 'center' }}>{r.execution}</span>
+                                ? <span className={`inline-flex items-center whitespace-nowrap px-2 py-0.5 rounded-full text-xs font-medium ${EXECUTION_BADGE[r.execution] || BADGE_FALLBACK}`} style={{ width: '110px', justifyContent: 'center' }}>{r.execution}</span>
                                 : <span className="text-gray-300 text-xs">—</span>}
                             </td>
                             {assessment?.roles?.length > 0 && (
