@@ -927,11 +927,17 @@ const handleNext = async () => {
                     ← Revise my answers
                   </button>
                 )}
+                {/* "Done", not "Submit": submission already happened on the last
+                    facet page, which wrote the responses and stamped the
+                    respondent completed. This button only advances the screen, so
+                    naming it after a write implies answers are lost by closing
+                    the tab here — and the neighbouring Revise button is the one
+                    that actually writes. */}
                 <button
                   onClick={() => setStep(returningCompleted ? "already-done" : "thankyou")}
                   className="font-semibold px-6 py-2.5 rounded-lg transition-colors text-sm bg-blue-600 hover:bg-blue-700 text-white"
                 >
-                  {returningCompleted ? "Close" : "Submit"}
+                  {returningCompleted ? "Close" : "Done"}
                 </button>
               </div>
               {!returningCompleted && (
