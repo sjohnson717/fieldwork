@@ -18,7 +18,7 @@ const pct = (v) => (v === null || v === undefined ? 0 : Math.round((v / 3) * 100
 
 function SectionHeading({ eyebrow, title, blurb }) {
   return (
-    <div className="print-section-break mb-5 pt-1">
+    <div className="print-section mb-5 pt-1">
       <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1">{eyebrow}</p>
       <h2 className="text-lg font-bold text-gray-900">{title}</h2>
       {blurb && <p className="text-sm text-gray-500 mt-1 leading-relaxed">{blurb}</p>}

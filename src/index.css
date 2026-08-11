@@ -147,26 +147,25 @@
        spacing out the six or seven that don't move. Browsers drop a margin at a
        page boundary but keep padding, so the two cancel mid-flow and only the
        padding survives at the top of a page. Worst case — a renderer that keeps
-       the margin — is exactly today's layout, so this can only help.
-
-       Matches the 2.5rem `.print-section-break` uses, and for the same reason:
-       the printer's own margin alone leaves a heading almost against the trim. */
+       the margin — is exactly today's layout, so this can only help. The
+       printer's own margin alone leaves a heading almost against the trim. */
     padding-top: 2.5rem;
     margin-top: -2.5rem;
   }
 
-  /* Start a titled section on a fresh page. Used by the personal profile to
-     separate the interpretation from the raw answers behind it. Safe even if
-     the part above ever runs long: it means "the detail begins on its own
-     page", not "the detail begins on page two". */
-  .print-section-break {
-    break-before: page;
-    page-break-before: always;
-    /* Sink the title below the top edge. A section opening a page needs more
-       air above it than the same heading would mid-flow, and the printer's own
-       margin isn't enough — without this the title sits almost against the
-       trim. Print-only, so the screen keeps its tighter rhythm. */
-    padding-top: 2.5rem;
+  /* Section headings flow rather than each claiming a fresh page.
+     `break-before: page` here turned a 25-activity report into eight sheets,
+     three of them nearly empty and one carrying a single table row — the same
+     sparse-pages failure the facet tables above were fixed for, reintroduced a
+     heading level up. Paper is cheap to fill and expensive to waste.
+
+     What's kept is the part that was actually doing work: the heading stays
+     with the section it introduces, so a title never sits alone at the foot of
+     a page above someone else's content. */
+  .print-section {
+    break-after: avoid;
+    page-break-after: avoid;
+    padding-top: 1rem;
   }
 
   /* Never leave a heading alone at the foot of a page. */

@@ -855,15 +855,14 @@ const handleNext = async () => {
             />
           )}
 
-          {/* The detail tables get their own titled section starting on a
-              fresh page. This used to be a one-line "your full answers are
-              below" tacked onto the end of the profile — which then sat at the
-              foot of page one introducing something overleaf, so page two
-              opened with a bare facet label and no idea what it belonged to.
-              print-section-break is print-only, so on screen this is just a
-              heading and the page keeps flowing. */}
+          {/* The detail tables get their own titled section. It used to be a
+              one-line "your full answers are below" tacked onto the end of the
+              profile — which then sat at the foot of a page introducing
+              something overleaf, so the next page opened with a bare facet
+              label and no idea what it belonged to. A real heading pinned to
+              what follows fixes that without a forced page break. */}
           {selfGapProfile?.answeredCount > 0 && (
-            <div className="print-section-break mb-5 pt-1">
+            <div className="print-section mb-5 pt-1">
               <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1">Appendix</p>
               <h2 className="text-lg font-bold text-gray-900">Your responses</h2>
               <p className="text-sm text-gray-500 mt-1 leading-relaxed">
