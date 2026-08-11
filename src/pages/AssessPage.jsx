@@ -5,6 +5,8 @@ import { getAssessmentByCode, getRespondentSession } from "@/lib/public-assessme
 import { PERSONAL_AXES, computePersonProfile } from "@/lib/personal-scoring";
 import { FACET_ORDER } from "@/lib/scoring";
 import PersonalProfileReport from "@/components/PersonalProfileReport";
+import TeamGapSelfSummary from "@/components/TeamGapSelfSummary";
+import { computeSelfGapProfile } from "@/lib/self-gap";
 
 const HERO_IMAGE = "https://media.base44.com/images/public/6a29ff3bc8effbeb3d637555/2ffc15b8c_curated-lifestyle-H3ZVdxBRIW0-unsplash.jpg";
 
@@ -746,6 +748,16 @@ const handleNext = async () => {
       : null;
     const hasProfile = (personalProfile?.answeredCount ?? 0) > 0;
 
+    // Same trick for the team gap side: local answer state keyed by activity,
+    // reshaped into the Response rows the profile wants.
+    const selfGapProfile = !isPersonal
+      ? computeSelfGapProfile(
+          activities,
+          activities.map(act => ({ ...(responses[act.id] || {}), activity_id: act.id })),
+          availableFacets,
+        )
+      : null;
+
     // The personal report is a five-part advisory document and lives in its own
     // component. What follows below is the team gap confirmation, which is a
     // different thing with a different job: confirm what you sent, then submit.
@@ -832,6 +844,17 @@ const handleNext = async () => {
             </div>
           </div>
 
+          {/* The summary of what they said, above the answers themselves —
+              the same order as the personal report. Suppressed when nothing is
+              classifiable, which leaves the page as the plain confirmation it
+              used to be rather than a run of empty sections. */}
+          {selfGapProfile?.answeredCount > 0 && (
+            <TeamGapSelfSummary
+              profile={selfGapProfile}
+              showOwners={assessment?.roles?.length > 0}
+            />
+          )}
+
           {/* The detail tables get their own titled section starting on a
               fresh page. This used to be a one-line "your full answers are
               below" tacked onto the end of the profile — which then sat at the
@@ -839,6 +862,15 @@ const handleNext = async () => {
               opened with a bare facet label and no idea what it belonged to.
               print-section-break is print-only, so on screen this is just a
               heading and the page keeps flowing. */}
+          {selfGapProfile?.answeredCount > 0 && (
+            <div className="print-section-break mb-5 pt-1">
+              <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1">Appendix</p>
+              <h2 className="text-lg font-bold text-gray-900">Your responses</h2>
+              <p className="text-sm text-gray-500 mt-1 leading-relaxed">
+                All {activities.length} {activities.length === 1 ? "activity" : "activities"}, and how you rated each one.
+              </p>
+            </div>
+          )}
 
           {/* Summary table grouped by facet */}
           {availableFacets.map(facet => {
