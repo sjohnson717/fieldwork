@@ -61,6 +61,16 @@ export default function LandingPage() {
                 do—giving leaders a fact-based starting point for clearer roles, better development
                 plans, and a stronger product team.
               </p>
+              <p className="mt-4">
+                Don't have a code? Email{" "}
+                <a
+                  href="mailto:growth@productgrowthleaders.com"
+                  className="font-medium text-white underline underline-offset-2 hover:text-white/80"
+                >
+                  growth@productgrowthleaders.com
+                </a>{" "}
+                to get started.
+              </p>
             </div>
           </div>
 
