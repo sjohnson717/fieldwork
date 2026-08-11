@@ -878,7 +878,7 @@ const handleNext = async () => {
                         <th className="text-left px-3 py-2.5 text-xs font-semibold text-gray-500" style={{ width: '120px' }}>Importance</th>
                         <th className="text-left px-3 py-2.5 text-xs font-semibold text-gray-500" style={{ width: '120px' }}>Execution</th>
                         {assessment?.roles?.length > 0 && (
-                          <th className="text-left px-3 py-2.5 text-xs font-semibold text-gray-500">Owner</th>
+                          <th className="text-left px-3 py-2.5 text-xs font-semibold text-gray-500">Suggested owner</th>
                         )}
                         </>}
                       </tr>
