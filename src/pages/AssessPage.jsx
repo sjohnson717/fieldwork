@@ -6,6 +6,7 @@ import { PERSONAL_AXES, computePersonProfile } from "@/lib/personal-scoring";
 import { FACET_ORDER } from "@/lib/scoring";
 import PersonalProfileReport from "@/components/PersonalProfileReport";
 import TeamGapSelfSummary from "@/components/TeamGapSelfSummary";
+import PrintCredit from "@/components/PrintCredit";
 import { computeSelfGapProfile } from "@/lib/self-gap";
 
 const HERO_IMAGE = "https://media.base44.com/images/public/6a29ff3bc8effbeb3d637555/2ffc15b8c_curated-lifestyle-H3ZVdxBRIW0-unsplash.jpg";
@@ -793,7 +794,7 @@ const handleNext = async () => {
         <div className="max-w-3xl mx-auto px-4 py-10">
           {/* Paper-only header: the on-screen one is conversational and has no
               assessment name or date, which a saved PDF needs to be useful. */}
-          <div className="print-only mb-6">
+          <div className="print-only print-cover mb-6">
             <h1 className="text-xl font-bold text-gray-900">{assessment?.title}</h1>
             {assessment?.company_name && (
               <p className="text-sm text-gray-600">{assessment.company_name}</p>
@@ -931,6 +932,10 @@ const handleNext = async () => {
               </div>
             );
           })}
+
+          {/* Team gap only: the personal report closes itself, inside its own
+              component, after the same tables. */}
+          {!isPersonal && <PrintCredit />}
 
           {/* Team gap only. A personal assessment carries its actions above the
               answers table instead, and duplicating them here would put two

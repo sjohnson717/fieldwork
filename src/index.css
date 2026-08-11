@@ -184,8 +184,38 @@
     margin: 0;
   }
 
+  /* The title block gets the first sheet to itself. This is the one forced
+     break worth keeping: it means a report left on a desk or handed across a
+     table shows a name and a title rather than someone's answers. */
+  .print-cover {
+    break-after: page;
+    page-break-after: always;
+  }
+
+  /* Sits at the end of the document rather than repeating on every sheet. A
+     footer on each page would need `position: fixed`, and with no reserved
+     space in the flow it lands on top of whatever the last row happens to be —
+     a credit that damages the report it's crediting. */
+  .print-footer {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    margin-top: 3rem;
+    padding-top: 1rem;
+    border-top: 1px solid #E5E7EB;
+    text-align: center;
+  }
+
+  /* Bottom padding is dropped, on the container and its immediate child. It
+     buys nothing — padding at the end of the document does not affect the
+     pages in between — and it cost a sheet: the credit sat near the foot of
+     the last page, and the leftover padding spilled onto a blank page of its
+     own, which reads as a printing fault rather than a margin. */
   .print-plain {
-    padding: 14mm !important;
+    padding: 14mm 14mm 0 !important;
+  }
+
+  .print-plain > * {
+    padding-bottom: 0 !important;
   }
 }
 

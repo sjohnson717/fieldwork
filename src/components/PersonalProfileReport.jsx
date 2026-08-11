@@ -7,6 +7,7 @@ import {
   DOMINANT_SUMMARY,
 } from "@/lib/personal-scoring";
 import { FACET_ORDER, FACET_SUBTITLES } from "@/lib/scoring";
+import PrintCredit from "@/components/PrintCredit";
 
 // The person's own report. Advisory first: the interpretation is the document,
 // and the raw answers are an appendix behind it.
@@ -103,7 +104,7 @@ export default function PersonalProfileReport({
     <>
       {/* Paper-only header: the on-screen one is conversational and carries no
           assessment name or date, which a saved PDF needs to be useful. */}
-      <div className="print-only mb-6">
+      <div className="print-only print-cover mb-6">
         <h1 className="text-xl font-bold text-gray-900">{assessment?.title}</h1>
         {assessment?.company_name && <p className="text-sm text-gray-600">{assessment.company_name}</p>}
         <p className="text-sm text-gray-600 mt-2">{name}{title ? ` · ${title}` : ""}</p>
@@ -411,6 +412,8 @@ export default function PersonalProfileReport({
           </div>
         );
       })}
+
+      <PrintCredit />
     </>
   );
 }
