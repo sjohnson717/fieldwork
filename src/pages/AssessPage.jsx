@@ -349,8 +349,21 @@ export default function AssessPage() {
   // The team assessment is only ever reported in aggregate. A personal
   // assessment is the opposite — it is read per person, and promising
   // anonymity here would be a promise the report breaks.
+  //
+  // It does not follow that the answers go to a manager, which is what this
+  // line used to claim. Nothing pushes a profile anywhere: the team leader
+  // dashboard shows a personal roster with names and status only, never answers
+  // or resume tokens, and the report tells the person the PDF is theirs to
+  // share. The intro was the one screen contradicting both.
+  //
+  // It also names no recipient. The same code fields the open lead-gen
+  // assessments, where plenty of takers have no engagement behind them and no
+  // manager they would want reading this, and suggesting one on the screen that
+  // asks for the answers reads as a hint about who is watching. The report
+  // still suggests a manager or a coach, once the profile exists and the choice
+  // is concrete.
   const introBlurb = isPersonal
-    ? "Your answers describe your own experience, skills and interests. They're shared with your team leader to shape assignments and development plans."
+    ? "Your answers describe your own experience, skills and interests. The profile is yours to keep, and sharing it is your call."
     : "Your responses are confidential and will only be seen in aggregate by your team leader.";
 
   const availableFacets = FACET_ORDER.filter(f => activities.some(a => a.facet === f));
