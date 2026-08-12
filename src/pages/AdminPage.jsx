@@ -36,6 +36,27 @@ const STATUS_COLORS = {
   closed: "bg-red-100 text-red-600",
 };
 
+// Every assessment says which kind it is. Only "Personal" used to be labelled,
+// on the reasoning that team gap is the default and the default needs no badge
+// — but a missing badge is not a statement, it's an absence, and the reader has
+// to know the rule to decode it. A list where one row is tagged and the next is
+// bare reads as "this one is special", not "these are two kinds".
+//
+// The type also decides which questions get asked and which results view opens,
+// so it is worth reading at a glance from the list rather than after a click.
+//
+// Rounded-md and bottom-left, against the status pill's rounded-full top-right:
+// shape and position carry the distinction, so the two never trade places even
+// when teal sits near the green of "active".
+const TYPE_BADGE = {
+  team_gap: { label: "Team",     tone: "text-teal-700 bg-teal-50" },
+  personal: { label: "Personal", tone: "text-indigo-600 bg-indigo-50" },
+};
+
+// Absent means team_gap — the field was added after the first assessments
+// existed, and the Assessment schema documents the same default.
+const assessmentType = (a) => (a.assessment_type === "personal" ? "personal" : "team_gap");
+
 export default function AdminPage() {
   const { user, isAuthenticated, logout } = useAuth();
   const [assessments, setAssessments] = useState([]);
@@ -383,9 +404,9 @@ export default function AdminPage() {
                       </span>
                     </div>
                     <div className="flex items-center gap-1.5 mt-0.5">
-                      {a.assessment_type === "personal" && (
-                        <span className="text-[10px] font-semibold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded shrink-0">Personal</span>
-                      )}
+                      <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded shrink-0 ${TYPE_BADGE[assessmentType(a)].tone}`}>
+                        {TYPE_BADGE[assessmentType(a)].label}
+                      </span>
                       {a.company_name && (
                         <p className="text-xs text-gray-400 truncate">{a.company_name}</p>
                       )}
