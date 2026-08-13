@@ -136,7 +136,15 @@ export default function AssessPage() {
     window.history.replaceState({}, "", url);
   };
 
-  useEffect(() => { document.title = "Assess | Quartz Assessment"; }, []);
+  // Same reasoning as the buyer report: this page's summary is saved as a PDF,
+  // and the browser names that file after the tab title. The assessment's own
+  // name is what makes it findable later; the cover inside already carries the
+  // person's, so it stays out of the filename.
+  useEffect(() => {
+    document.title = assessment?.title
+      ? `${assessment.title} | Quartz Assessment`
+      : "Assess | Quartz Assessment";
+  }, [assessment?.title]);
 
   const isPersonalAssessment = assessment?.assessment_type === "personal";
   useEffect(() => {

@@ -355,7 +355,17 @@ export default function ReportPage() {
     loadReport();
   }, [token]);
 
-  useEffect(() => { document.title = "Report | Quartz Assessment"; }, []);
+  // Carries the assessment's own name once it loads. Every browser offers the
+  // tab title as the filename when you Save as PDF, so a constant here meant
+  // every report anyone ever saved was called "Report | Quartz Assessment" —
+  // and a file named after the app rather than the engagement is no use in a
+  // folder of client work. Re-runs when the title changes, so a renamed
+  // assessment names its next download correctly.
+  useEffect(() => {
+    document.title = assessment?.title
+      ? `${assessment.title} | Quartz Assessment`
+      : "Report | Quartz Assessment";
+  }, [assessment?.title]);
 
   const loadReport = async () => {
     setLoading(true);
