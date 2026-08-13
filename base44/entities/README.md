@@ -369,6 +369,26 @@ read and drops the ones it can't, so a stale id renders as nothing. It also
 means a tag whose *read* rule excludes you is indistinguishable from a deleted
 one, which is the correct behaviour for a grouping that carries client names.
 
+**Which is why the Tags settings page only deletes unused ones.** That tolerance
+is what makes a bad delete quiet: the grouping vanishes from every assessment
+carrying it, the chips simply stop rendering, and nothing anywhere says it ever
+existed. `deleteTag` refuses while any assessment references the tag, and
+`listTags` supplies the usage counts the page shows.
+
+**Both count as service role, across assessments the caller cannot read.** This
+is the point of the pair existing rather than the page calling `Tag.list()` and
+counting for itself. `Assessment`'s read rule scopes a facilitator to their own
+engagements, so a browser-side count of a tag used only by another consultant's
+client comes back zero — and zero is exactly the number that offers a Delete
+button. The count is a number and never a list of titles: which engagements use
+a grouping is another organization's business, and the page is reachable by every
+org admin.
+
+Removing a tag from an assessment (the `×` in `TagPicker`) writes to
+`Assessment.tag_ids` and leaves the `Tag` alone, which is why the picker's list
+only ever grew before this page existed. The two actions live in different
+places on purpose — they are different sizes of destructive.
+
 Tags are org-scoped, and their read rule is deliberately looser than
 Assessment's — any facilitator in the org can read them, where assessments need
 per-record collaborator membership. The picker cannot work otherwise, and a tag

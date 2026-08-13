@@ -10,6 +10,7 @@ import AssessmentDiscussion from "./admin/AssessmentDiscussion";
 import LibraryPage from "./admin/LibraryPage";
 import TeamPage from "./admin/TeamPage";
 import OrganizationsPage from "./admin/OrganizationsPage";
+import TagsPage from "./admin/TagsPage";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { functionErrorMessage } from "@/lib/utils";
 
@@ -61,7 +62,7 @@ export default function AdminPage() {
   const { user, isAuthenticated, logout } = useAuth();
   const [assessments, setAssessments] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
-  const [selectedSection, setSelectedSection] = useState("assessments"); // assessments | library | organizations | team
+  const [selectedSection, setSelectedSection] = useState("assessments"); // assessments | library | tags | organizations | team
   // Super-admin only: when set, the team page is narrowed to one organization
   // (set by following an org's "View team" link on the Organizations page).
   const [teamOrgFilter, setTeamOrgFilter] = useState(null);
@@ -448,6 +449,19 @@ export default function AdminPage() {
                   Library
                 </button>
               )}
+              {/* Tags, unlike the rest of Settings, is open to org admins too:
+                  Tag's own rules let them manage their organization's tags, and
+                  listTags scopes the page to those. */}
+              <button
+                onClick={() => setSelectedSection("tags")}
+                className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors text-sm font-medium ${
+                  selectedSection === "tags"
+                    ? "bg-blue-50 text-blue-900"
+                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                }`}
+              >
+                Tags
+              </button>
               {isAdmin && (
                 <button
                   onClick={() => setSelectedSection("organizations")}
@@ -506,6 +520,8 @@ export default function AdminPage() {
           />
         ) : selectedSection === "library" ? (
           <LibraryPage />
+        ) : selectedSection === "tags" ? (
+          <TagsPage />
         ) : selectedSection === "team" ? (
           <TeamPage
             orgFilter={teamOrgFilter}
