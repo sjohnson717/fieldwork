@@ -3,6 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
 import { roleLabel, assignableRoles, sameOrg, NO_ACCESS_ROLE } from "@/lib/roles";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import { functionErrorMessage } from "@/lib/utils";
 
 export default function TeamPage({ orgFilter = null, onClearOrgFilter, onBackToOrganizations }) {
   const { user: currentUser } = useAuth();
@@ -154,6 +155,7 @@ export default function TeamPage({ orgFilter = null, onClearOrgFilter, onBackToO
 
   const [revokingUser, setRevokingUser] = useState(null);
   const [revokingInvite, setRevokingInvite] = useState(null);
+  const [deletingUser, setDeletingUser] = useState(null);
 
   const handleRevokeAccess = async (user) => {
     if (user.id === currentUser.id) return;
@@ -162,10 +164,36 @@ export default function TeamPage({ orgFilter = null, onClearOrgFilter, onBackToO
     setLoadError("");
     try {
       const updated = await updateMember(user.id, { role: NO_ACCESS_ROLE });
-      setUsers(prev => prev.filter(u => u.id !== updated.id));
+      // The row stays, now on No access. It used to disappear until the next
+      // load and then come back — nothing deletes a user here, so hiding it
+      // only made the list disagree with itself. Keeping it also puts Delete
+      // in reach immediately, which is the step most revokes are the start of.
+      setUsers(prev => prev.map(u => u.id === updated.id ? updated : u));
     } catch (e) {
       console.error("Failed to revoke access", e);
       setLoadError(e?.response?.data?.error || e?.message || "Failed to revoke access.");
+    }
+    setRemovingId(null);
+  };
+
+  // Clearing a no-access row out of the list for good. Super-admin only, and
+  // only for rows already on No access — see base44/functions/deleteTeamMember.
+  const handleDeleteUser = async (user) => {
+    if (user.id === currentUser.id) return;
+    setDeletingUser(null);
+    setRemovingId(user.id);
+    setLoadError("");
+    try {
+      const res = await base44.functions.invoke("deleteTeamMember", { userId: user.id });
+      const error = res?.data?.error;
+      if (error) throw new Error(error);
+      setUsers(prev => prev.filter(u => u.id !== user.id));
+      setInvitations(prev => prev.filter(i => (i.email || "").toLowerCase() !== (user.email || "").toLowerCase()));
+    } catch (e) {
+      console.error("Failed to delete account", e);
+      // The refusal sentence lives in the response body; the axios error's own
+      // message is just the status code. See functionErrorMessage.
+      setLoadError(functionErrorMessage(e, "Failed to delete the account."));
     }
     setRemovingId(null);
   };
@@ -200,6 +228,10 @@ export default function TeamPage({ orgFilter = null, onClearOrgFilter, onBackToO
 
   const acceptedCount = visibleUsers.length;
   const pendingCount = visibleInvitations.length;
+  // Counted separately in the header: these are the rows that make the list
+  // look busier than the team actually is, and the number is the prompt to
+  // clear them out.
+  const noAccessCount = visibleUsers.filter(u => u.role === NO_ACCESS_ROLE).length;
 
   return (
     <div className="p-8 max-w-5xl space-y-8">
@@ -259,6 +291,7 @@ export default function TeamPage({ orgFilter = null, onClearOrgFilter, onBackToO
             </h3>
             <p className="text-xs text-gray-400 mt-0.5">
               {acceptedCount} accepted
+              {noAccessCount > 0 && <span className="ml-2">· {noAccessCount} with no access</span>}
               {pendingCount > 0 && <span className="ml-2 text-amber-500 font-medium">· {pendingCount} pending invite{pendingCount !== 1 ? "s" : ""}</span>}
             </p>
           </div>
@@ -354,15 +387,29 @@ export default function TeamPage({ orgFilter = null, onClearOrgFilter, onBackToO
                     <td className="px-4 py-3">
                       <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-green-50 text-green-600 border border-green-200">Accepted</span>
                     </td>
+                    {/* One action per row, chosen by whether there is any
+                        access left to take away. Offering Revoke on a row that
+                        already has no access is a no-op dressed as a control,
+                        and it hid the only thing left worth doing with it. */}
                     <td className="px-4 py-3 text-right">
                       {!isSelf && (
-                        <button
-                          onClick={() => setRevokingUser(u)}
-                          disabled={isRemoving}
-                          className="text-xs text-gray-300 hover:text-red-400 disabled:opacity-40 transition-colors font-medium"
-                        >
-                          {isRemoving ? "…" : "Revoke"}
-                        </button>
+                        isAdmin && u.role === NO_ACCESS_ROLE ? (
+                          <button
+                            onClick={() => setDeletingUser(u)}
+                            disabled={isRemoving}
+                            className="text-xs text-gray-300 hover:text-red-400 disabled:opacity-40 transition-colors font-medium"
+                          >
+                            {isRemoving ? "…" : "Delete"}
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => setRevokingUser(u)}
+                            disabled={isRemoving}
+                            className="text-xs text-gray-300 hover:text-red-400 disabled:opacity-40 transition-colors font-medium"
+                          >
+                            {isRemoving ? "…" : "Revoke"}
+                          </button>
+                        )
                       )}
                     </td>
                   </tr>
@@ -408,6 +455,16 @@ export default function TeamPage({ orgFilter = null, onClearOrgFilter, onBackToO
         confirmLabel="Revoke access"
         onConfirm={() => handleRevokeAccess(revokingUser)}
         onCancel={() => setRevokingUser(null)}
+      />
+
+      <ConfirmDialog
+        open={!!deletingUser}
+        destructive
+        title="Delete this account?"
+        message={`${deletingUser?.full_name || deletingUser?.email} already has no access, and this removes their row from this list for good. It does not delete their login: if they sign in again a fresh no-access account appears. Any assessment they created or collaborate on blocks the delete.`}
+        confirmLabel="Delete account"
+        onConfirm={() => handleDeleteUser(deletingUser)}
+        onCancel={() => setDeletingUser(null)}
       />
 
       <ConfirmDialog

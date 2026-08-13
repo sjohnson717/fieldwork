@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { roleLabel } from "@/lib/roles";
+import ConfirmDialog from "@/components/ConfirmDialog";
+import { functionErrorMessage } from "@/lib/utils";
 
 export default function OrganizationsPage({ onViewTeam }) {
   const [orgs, setOrgs] = useState([]);
@@ -51,6 +53,34 @@ export default function OrganizationsPage({ onViewTeam }) {
 
   const membersFor = (orgId) => users.filter(u => u.org_id === orgId);
 
+  const [deletingOrg, setDeletingOrg] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
+  const [deleteError, setDeleteError] = useState("");
+
+  // Goes through the backend function rather than Organization.delete, which
+  // RLS would happily allow: the assessments and pending invitations that also
+  // reference this org are invisible from here, and deleting around them
+  // leaves them pointing at nothing. See base44/functions/deleteOrganization.
+  const handleDelete = async (org) => {
+    setDeletingOrg(null);
+    setDeletingId(org.id);
+    setDeleteError("");
+    try {
+      const res = await base44.functions.invoke("deleteOrganization", { orgId: org.id });
+      const error = res?.data?.error;
+      if (error) throw new Error(error);
+      setOrgs(prev => prev.filter(o => o.id !== org.id));
+    } catch (e) {
+      console.error("Failed to delete organization", e);
+      // functionErrorMessage, not e.message: a refusal from the function
+      // arrives as an axios error whose own message is only "Request failed
+      // with status code 409" — the sentence naming what still references this
+      // org is in the response body, and that is the whole point of it.
+      setDeleteError(functionErrorMessage(e, "Failed to delete the organization."));
+    }
+    setDeletingId(null);
+  };
+
   return (
     <div className="p-8 max-w-3xl space-y-8">
 
@@ -91,6 +121,9 @@ export default function OrganizationsPage({ onViewTeam }) {
         {loadError && (
           <p className="text-xs text-red-500 px-6 py-3">{loadError}</p>
         )}
+        {deleteError && (
+          <p className="text-xs text-red-500 px-6 py-3">{deleteError}</p>
+        )}
 
         {loading ? (
           <div className="flex justify-center py-12">
@@ -104,7 +137,7 @@ export default function OrganizationsPage({ onViewTeam }) {
               <tr className="text-xs text-gray-400 uppercase tracking-wide border-b border-gray-100 bg-gray-50">
                 <th className="text-left px-4 py-3 font-medium">Organization</th>
                 <th className="text-left px-4 py-3 font-medium">Members</th>
-                <th className="px-4 py-3 w-28" />
+                <th className="px-4 py-3 w-36" />
               </tr>
             </thead>
             <tbody>
@@ -126,7 +159,21 @@ export default function OrganizationsPage({ onViewTeam }) {
                         </span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-right">
+                    <td className="px-4 py-3 text-right whitespace-nowrap">
+                      {/* Delete is offered only on an empty organization. The
+                          function refuses a populated one anyway — it can see
+                          the assessments and invitations this page can't — but
+                          a control that only ever explains why it won't work is
+                          worse than no control on that row. */}
+                      {members.length === 0 && (
+                        <button
+                          onClick={() => setDeletingOrg(org)}
+                          disabled={deletingId === org.id}
+                          className="text-xs font-medium text-gray-300 hover:text-red-400 disabled:opacity-40 transition-colors mr-3"
+                        >
+                          {deletingId === org.id ? "…" : "Delete"}
+                        </button>
+                      )}
                       <button
                         onClick={() => onViewTeam?.(org.id)}
                         className="text-xs font-medium text-[#3366FF] hover:text-[#2952CC] transition-colors"
@@ -141,6 +188,16 @@ export default function OrganizationsPage({ onViewTeam }) {
           </table>
         )}
       </section>
+
+      <ConfirmDialog
+        open={!!deletingOrg}
+        destructive
+        title="Delete this organization?"
+        message={`${deletingOrg?.name} has no members, and deleting it can't be undone. If an assessment or a pending invitation still names it, the delete is refused rather than leaving them pointing at nothing.`}
+        confirmLabel="Delete organization"
+        onConfirm={() => handleDelete(deletingOrg)}
+        onCancel={() => setDeletingOrg(null)}
+      />
     </div>
   );
 }

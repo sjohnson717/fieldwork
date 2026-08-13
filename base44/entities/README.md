@@ -189,6 +189,40 @@ with an axios error whose `message` is always `"Request failed with status code
 500"`, so `e.message` silently discards it. Use `functionErrorMessage()` in
 `src/lib/utils.js` for any function call whose failure is shown to someone.
 
+## Deleting an organization or an account refuses rather than cascades
+
+`deleteAssessment` cascades because its children are meaningless without it. The
+two admin-list deletes added in August 2026 — `deleteOrganization` and
+`deleteTeamMember` — do the opposite: they read what still references the row
+and refuse if anything does. An assessment is not meaningless without its
+organization, and neither is somebody else's engagement without the account that
+happens to have created it.
+
+**Nothing enforces these references.** `User.org_id`, `Assessment.org_id`,
+`Invitation.org_id`, `Assessment.created_by_id` and `Assessment.collaborator_ids`
+are plain strings holding ids. Delete the row they name and they keep the id: an
+org name renders as `—`, an org admin's own assessment stops matching the org
+condition that let them see it, an invitation assigns a new joiner to a ghost,
+and an assessment whose `created_by_id` points at nothing can only ever be
+deleted by a super-admin. So the check is the function's whole reason to exist —
+`Organization.delete` is already permitted from the browser by RLS.
+
+**Both refusals name every blocker at once**, not the first one found. Told one
+at a time, an operator clears it, clicks again, and is refused for the next.
+
+**`deleteTeamMember` only touches `user` (No access) rows**, which is what makes
+it safe to be blunt: revoking is the reversible step, and it already showed the
+operator what was being taken away. `User.jsonc` sets `"delete": null`, so the
+service role is the only path that can do this at all. It is also super-admin
+only — revoking clears `org_id`, so a no-access row is never inside any
+organization for an org admin to be scoped to.
+
+**It does not delete the login.** Base44 owns the auth account; this deletes the
+application's record. Signing in again recreates a row on the default `user`
+role — no access to anything, which is the state that was deleted, so the
+outcome is a re-created row rather than a re-created problem. The dialog says
+so, because a delete the other party can undo is not what an operator assumes.
+
 ## Why Respondent reads go through a function
 
 `Respondent` holds team members' names and job titles. Together with
