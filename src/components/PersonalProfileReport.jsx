@@ -8,6 +8,7 @@ import {
 } from "@/lib/personal-scoring";
 import { FACET_ORDER, FACET_SUBTITLES } from "@/lib/scoring";
 import PrintCredit from "@/components/PrintCredit";
+import ChaosAssessmentPlug from "@/components/ChaosAssessmentPlug";
 
 const QUARTZ_ICON = "https://media.base44.com/images/public/6a29ff3bc8effbeb3d637555/9e97ff5e6_Quartzicon.png";
 
@@ -417,6 +418,7 @@ export default function PersonalProfileReport({
         );
       })}
 
+      <ChaosAssessmentPlug />
       <PrintCredit />
     </>
   );

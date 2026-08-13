@@ -7,6 +7,7 @@ import { FACET_ORDER, IMPORTANCE_BADGE, EXECUTION_BADGE, BADGE_FALLBACK } from "
 import PersonalProfileReport from "@/components/PersonalProfileReport";
 import TeamGapSelfSummary from "@/components/TeamGapSelfSummary";
 import PrintCredit from "@/components/PrintCredit";
+import ChaosAssessmentPlug from "@/components/ChaosAssessmentPlug";
 import { computeSelfGapProfile } from "@/lib/self-gap";
 
 const QUARTZ_ICON = "https://media.base44.com/images/public/6a29ff3bc8effbeb3d637555/9e97ff5e6_Quartzicon.png";
@@ -935,6 +936,7 @@ const handleNext = async () => {
 
           {/* Team gap only: the personal report closes itself, inside its own
               component, after the same tables. */}
+          {!isPersonal && <ChaosAssessmentPlug />}
           {!isPersonal && <PrintCredit />}
 
           {/* Team gap only. A personal assessment carries its actions above the

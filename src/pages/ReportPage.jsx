@@ -4,6 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { getAssignedActivities } from "@/lib/activities";
 import { getBuyerReport } from "@/lib/public-assessment";
 import ExecSummary from "@/components/ExecSummary";
+import ChaosAssessmentPlug from "@/components/ChaosAssessmentPlug";
 import {
   THEME_GROUPS,
   FACET_SUBTITLES,
@@ -836,6 +837,8 @@ export default function ReportPage() {
             </section>
           );
         })()}
+
+        <ChaosAssessmentPlug />
 
         {/* ── Footer ── */}
         <footer className="mt-16 pt-8 border-t border-gray-100 flex items-center justify-between">

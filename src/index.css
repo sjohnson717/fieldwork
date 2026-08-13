@@ -227,6 +227,25 @@
     text-align: center;
   }
 
+  /* Never split the closing pointer, and never let it be the last thing on a
+     page with the credit stranded overleaf — the two are one block. */
+  .report-outro {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+
+  /* The closing block gets a single rule above it, not one per line: the
+     pointer carries the separator, so the credit that follows drops its own
+     and tucks underneath. */
+
+  .report-outro + .print-footer {
+    margin-top: 0.75rem;
+    padding-top: 0;
+    border-top: none;
+  }
+
   /* Bottom padding is dropped, on the container and its immediate child. It
      buys nothing — padding at the end of the document does not affect the
      pages in between — and it cost a sheet: the credit sat near the foot of
@@ -244,4 +263,23 @@
 /* Hidden on screen; revealed by the print rule above. */
 .print-only {
   display: none;
+}
+
+/* The Chaos Assessment pointer shows on screen too, where it needs its own
+   separator: on paper the credit follows it, but on screen it is the last
+   thing in the document and would otherwise run straight on from the report. */
+.report-outro {
+  margin-top: 3rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #E5E7EB;
+  text-align: center;
+}
+
+/* One rule closes the report, not two. The team report ends with its own
+   bordered footer, so when the pointer sits directly above it the footer keeps
+   its logo row and gives up its separator. */
+.report-outro + footer {
+  margin-top: 1.5rem;
+  padding-top: 0;
+  border-top: none;
 }
