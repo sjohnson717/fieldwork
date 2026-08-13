@@ -128,6 +128,10 @@ Facilitators have accounts. **Respondents, team leaders and buyers never do** �
 
 **No overall personal score.** Not an oversight and not a missing feature. Three axes that deliberately measure different things cannot be averaged into a grade without destroying the findings the instrument exists to surface.
 
+**A field with a documented default is absent on the oldest records, not set to it.** \`assessment_type\` was added after assessments already existed, so \`team_gap\` is what the schema *means* by an empty column, never what it stores there. Any \`=== "team_gap"\` test therefore misses exactly the earliest records — they fall through to whatever the else branch does. Testing for \`personal\` has always been safe, which is why nothing had tripped on this until the sidebar needed a positive test for team gap; written the obvious way it would have left the oldest assessments unbadged, the very gap the badge was added to close. Normalise first (\`assessment_type === "personal" ? "personal" : "team_gap"\`) and branch on the result. The same applies to \`org_id\`, whose absence means the legacy no-org bucket.
+
+**A missing badge is not a label.** The sidebar tagged only \`Personal\`, on the reasoning that team gap is the default and a default needs no marker. But absence carries no meaning to anyone who does not already know the rule — a list where one row is tagged and the next is bare reads as *this one is special*, not *these are two kinds*. Both types are labelled now. The rule generalises: when a distinction changes what the software does — and this one picks the question set, the results view and the report — every value in it gets said out loud.
+
 ## Print is a separate surface, and only visible in a PDF
 
 Both summaries are read as PDFs at least as often as on screen, and every print rule is invisible in the browser. **Render the page to check it** — the defects below were each found in a rendered file and in no other way.
@@ -146,6 +150,8 @@ Both summaries are read as PDFs at least as often as on screen, and every print 
 - The facilitator's vocabulary and the respondent's are separate by design. \`Reluctant\`, \`Poor fit\` and \`Under-skilled\` are diagnostic shorthand and must never reach the person they describe. \`CATEGORIES\` carries both sets: \`label\`/\`hint\` are the facilitator's, \`selfLabel\`/\`selfHint\` are the person's.
 - A personal assessment ignores \`closed\`. The profile belongs to the person, so they can still revise it; \`closed_date\` lets Results flag answers changed after a report was delivered.
 - Sharing a profile means the PDF, never the link. The token permits editing.
+- Nothing pushes a personal profile to a manager, and no screen implies otherwise. The team leader dashboard withholds answers and per-person tokens on a personal assessment, the buyer report is aggregate and nameless, and the survey intro names no recipient at all — the same code fields the open lead-gen assessments, where a taker may have no manager they would want reading this. The report suggests a manager or a coach later, once the profile exists and the choice is concrete.
+- \`[n]\` in an assessment title is its activity count, and it is internal. It belongs in the admin list and on the assessment; it is left off landing pages, where it reads as a version number. The three public assessments draw from named activity sets — Quick Review [7] from **Executive**, Team Effectiveness [25] from **Core**, Self-Assessment [40] from **Standard** — so a count that stops matching its set means one of the two was edited alone.
 - Nothing in the app calls a suggested owner an owner. The field is \`suggested_owner\`, the respondent's column reads **Suggested owner**, and the team tally reads **Most suggested** — a respondent proposes a role, and no part of the assessment assigns one.`,
   },
 ];

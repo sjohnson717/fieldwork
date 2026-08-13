@@ -229,6 +229,16 @@ build proves nothing about RLS.
 both sets of answer fields. Absent means `team_gap`, which is what every record
 predating the field is — nothing was backfilled, and nothing needs to be.
 
+Not backfilling is cheap on the write side and a standing trap on the read
+side. `team_gap` is the value the schema *means* by an empty column and never
+the value stored in one, so `assessment_type === "team_gap"` is false for
+precisely the oldest records — they fall to the else branch and take the
+personal path. Read it as `=== "personal"` and let everything else be team, or
+normalise once before branching. Adding the sidebar's `Team` badge was the
+first place that wanted the positive test for team gap, and the obvious
+`=== "team_gap"` would have left exactly the oldest assessments unbadged — the
+same silent gap the badge existed to close.
+
 The name is `assessment_type` rather than `type` purely to avoid reading like
 JSON Schema's own keyword. That is a preference, not a fix — see below for what
 was actually wrong.

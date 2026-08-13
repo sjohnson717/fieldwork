@@ -196,6 +196,8 @@ The development shortlist is drawn only from activities they said they're intere
 
 Nothing pushes a profile to a manager. The person decides whether to share theirs, and when. If a team leader asks you to tell them who won't cut it, the honest answer is to give each person their own results and let them bring the conversation.
 
+The survey says the same thing before anyone answers: *"The profile is yours to keep, and sharing it is your call."* Use that wording when someone asks who sees this — it is what they were told, and it is what the software does. It deliberately names no recipient, not even a manager as a suggestion, because the same screen fields the open assessments taken by people with no engagement behind them. What you must not say is that the answers go to their leader. They do not, and a participant who believes they do will answer accordingly.
+
 ## Suggested resources
 
 Resources are managed in **Library → Resources**. Each one is typed — free article, external resource, Quartz book, or course or workshop — and attached to the activities it serves. The type is shown to the reader, so they know what they're being sent before they click.
