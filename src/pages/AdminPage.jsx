@@ -413,7 +413,11 @@ export default function AdminPage() {
                     }`}
                   >
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-sm font-medium truncate">{a.title}</span>
+                      {/* Hovering shows the full name. The sidebar is narrow
+                          enough that a title ending in an activity count —
+                          "Product Team Quick Review [7]" — loses the part that
+                          distinguishes it from its neighbour. */}
+                      <span className="text-sm font-medium truncate" title={a.title}>{a.title}</span>
                       <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full shrink-0 ${STATUS_COLORS[a.status] || STATUS_COLORS.draft}`}>
                         {a.status}
                       </span>
