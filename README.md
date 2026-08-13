@@ -1,39 +1,95 @@
-**Welcome to your Base44 project** 
+# Quartz Assessment
 
-**About**
+Two kinds of product-team assessment over one shared library of activities.
 
-View and Edit  your app on [Base44.com](http://Base44.com) 
+**Team gap analysis** — a team rates each activity on *importance* and *current
+execution*, and suggests who should own it. The distance between importance and
+execution is the finding, and it drives the consulting engagement.
 
-This project contains everything you need to run your app locally.
+**Personal assessment** — an individual rates their own *experience*, *skills*
+and *interest* in the same activities. The output is a development profile
+belonging to that person.
 
-**Edit the code in your local development environment**
+The two are separate records that can be linked, so a report can cross what a
+team needs against what its people can actually do. Neither produces a single
+overall score: the axes deliberately measure different things, and averaging
+them destroys the findings the instrument exists to surface.
 
-Any change pushed to the repo will also be reflected in the Base44 Builder.
+Built on [Base44](https://base44.com) — React, Vite and Tailwind against a
+backend-as-a-service providing entities, auth and row-level security.
 
-**Prerequisites:** 
+## Documentation
 
-1. Clone the repository using the project's Git URL 
-2. Navigate to the project directory
-3. Install dependencies: `npm install`
-4. Create an `.env.local` file and set the right environment variables
+Most of what you need is inside the running app:
+
+| Where | What |
+|---|---|
+| `/readme` | Architecture, entities, pages, and developer notes — things that have already bitten |
+| `/facilitator-guide` | Running an engagement: setup, fielding, delivery, and what to tell participants |
+| `base44/entities/README.md` | The data model and its security rules. **Read this before changing any entity** |
+
+## Local development
+
+```bash
+npm install
+npm run dev
+```
+
+`.env.local` needs the app ID and backend URL:
 
 ```
 VITE_BASE44_APP_ID=your_app_id
-VITE_BASE44_APP_BASE_URL=your_backend_url
-
-e.g.
-VITE_BASE44_APP_ID=cbef744a8545c389ef439ea6
-VITE_BASE44_APP_BASE_URL=https://my-to-do-list-81bfaad7.base44.app
+VITE_BASE44_APP_BASE_URL=https://your-app.base44.app
 ```
 
-Run the app: `npm run dev`
+Local dev runs against the live backend, so entity records you create or edit
+are real. `/admin` requires a facilitator account and redirects to Base44 for
+sign-in, which may not resolve back to `localhost` — expect to verify admin
+work in the published app. The token-authenticated pages need no such thing:
+`/assess?code=…` and a `/report/…` or `/team/…` link work locally as they do in
+production, which makes them the fastest way to check a change end to end.
 
-**Publish your changes**
+| Script | |
+|---|---|
+| `npm run dev` | Vite dev server on :5173 |
+| `npm run build` | Production build |
+| `npm run lint` | ESLint (`lint:fix` to apply) |
+| `npm run typecheck` | `tsc` over `jsconfig.json` |
 
-Open [Base44.com](http://Base44.com) and click on Publish.
+## Publishing
 
-**Docs & Support**
+Pushing to this repo reflects the code into the Base44 Builder; publishing from
+[Base44](https://base44.com) deploys it.
 
-Documentation: [https://docs.base44.com/Integrations/Using-GitHub](https://docs.base44.com/Integrations/Using-GitHub)
+**Publishing also re-applies every entity schema from `base44/entities/*.jsonc`.**
+Those files are the source of truth. A field added through the platform API
+works right up until the next publish and then vanishes — `create` succeeds and
+returns a record with the column simply absent. If a field disappears with no
+error, check the `.jsonc` first.
 
-Support: [https://app.base44.com/support](https://app.base44.com/support)
+## Layout
+
+```
+base44/
+  entities/     Entity schemas (.jsonc) — the source of truth, plus their README
+  functions/    Backend functions: token resolution, invitations, admin listing
+src/
+  pages/        Routed pages, with admin/ for the facilitator's tabs
+  components/   Shared UI, including the two report documents
+  lib/          Scoring, activity handling, auth context, token lookups
+```
+
+Scoring lives in two files that must not be merged: `scoring.js` (team gap,
+0–3) and `personal-scoring.js` (personal, 0–5 with non-linear spacing). A `3`
+does not mean the same thing in the two.
+
+## Accounts and access
+
+Facilitators have accounts. **Respondents, team leaders and buyers never do** —
+an unguessable URL is the credential. Tokens are `crypto.randomUUID()`; the
+access code on `/assess?code=…` is short and shoutable but only permits joining,
+never reading anyone's data.
+
+Row-level security fails closed and quietly, and a green build proves nothing
+about it. Walk a real respondent through `/assess?code=…` after any change to an
+entity's rules.
