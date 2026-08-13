@@ -103,11 +103,25 @@ export default function AdminPage() {
     if (isAuthenticated && user) {
       if (!canAccessAdmin) return; // no access for plain "user" role
       loadAssessments();
-      base44.entities.Tag.list("name")
-        .then(setTags)
-        .catch(e => console.error("Failed to load tags", e));
+      loadTags();
     }
   }, [isAuthenticated, user]);
+
+  // Named rather than inline in the effect because the Tags settings page has
+  // to be able to re-run it. Deleting a tag there used to leave this list
+  // holding the tags that existed when the page was first opened, so a tag
+  // deleted a moment ago went on being offered in the sidebar filter until the
+  // browser was reloaded — which looked like the delete hadn't worked.
+  const loadTags = () =>
+    base44.entities.Tag.list("name")
+      .then(fresh => {
+        setTags(fresh);
+        // And drop the sidebar filter if it named one of the tags that just
+        // went. Left set, it matches nothing, so the list reads as "no
+        // assessments" — under a heading naming a tag that no longer exists.
+        setTagFilter(prev => (prev && !fresh.some(t => t.id === prev) ? null : prev));
+      })
+      .catch(e => console.error("Failed to load tags", e));
 
   const loadAssessments = async () => {
     setLoading(true);
@@ -521,7 +535,7 @@ export default function AdminPage() {
         ) : selectedSection === "library" ? (
           <LibraryPage />
         ) : selectedSection === "tags" ? (
-          <TagsPage />
+          <TagsPage onTagsChanged={loadTags} />
         ) : selectedSection === "team" ? (
           <TeamPage
             orgFilter={teamOrgFilter}

@@ -14,7 +14,7 @@ import ConfirmDialog from "@/components/ConfirmDialog";
 // Deliberately not in the picker. Deleting a shared grouping and un-tagging one
 // assessment are different sizes of action, and putting them a few pixels apart
 // invites the second click to do the first thing.
-export default function TagsPage() {
+export default function TagsPage({ onTagsChanged }) {
   const [tags, setTags] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
@@ -52,6 +52,10 @@ export default function TagsPage() {
       const error = res?.data?.error;
       if (error) throw new Error(error);
       setTags(prev => prev.filter(t => t.id !== tag.id));
+      // The sidebar's tag list and filter are loaded once, when the admin page
+      // mounts. Without this the deleted tag stays in the filter dropdown until
+      // the browser is reloaded, which reads as the delete having failed.
+      onTagsChanged?.();
     } catch (e) {
       console.error("Failed to delete tag", e);
       // The refusal names how many assessments still carry the tag, and it
