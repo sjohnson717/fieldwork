@@ -93,3 +93,21 @@ never reading anyone's data.
 Row-level security fails closed and quietly, and a green build proves nothing
 about it. Walk a real respondent through `/assess?code=…` after any change to an
 entity's rules.
+
+## Maintenance belongs in the app
+
+Everything that accumulates is removable from `/admin` — organizations,
+accounts, tags, library activities, activity sets, resources, job titles — and
+each delete is guarded. Reaching for the Base44 Builder's data view instead is a
+sign of a missing feature, not a workaround: the Builder has no reference checks,
+and the references here are plain id strings that nothing enforces, so deleting a
+row something still points at fails *silently*. Readers resolve ids against live
+rows and drop what they cannot find, which means a bad delete removes a question
+from every assessment using it and leaves nothing behind to say so.
+
+The pattern for a new one: check authority and count references in a function,
+refuse while anything references the row, name every blocker in one sentence, and
+only show the control on rows that can actually go. Cascade only where the
+children are meaningless without the parent, as `deleteAssessment` does. Counts
+are taken as service role, because a count limited to what the caller can read
+reports another consultant's data as unused.

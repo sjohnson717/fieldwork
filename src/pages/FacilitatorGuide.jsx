@@ -34,6 +34,8 @@ Tags group related assessments — a client, a cohort, a support group. An asses
 
 Pick an existing tag rather than typing a new one where you can. The picker only offers to create when nothing matches, which keeps "Alert Media" and "AlertMedia" from becoming two separate groups.
 
+Removing a tag from an assessment leaves the tag itself alone — it's still offered to everyone else, which is the point of a shared grouping. To take a tag off the list entirely, use **Settings → Tags**, which shows how many assessments use each one and only offers **Delete** on the ones nothing uses. A tag another facilitator's client relies on can't be deleted from under them; the count includes assessments you can't see.
+
 ## Facilitators & Collaborators
 
 Each facilitator only sees assessments they created themselves, plus any they've been explicitly added to as a collaborator — admins see every assessment across every client. If another facilitator or admin needs to help run this specific engagement (for example, a colleague co-leading the debrief), add them from the **Overview** tab → **Collaborators** section. Collaborators can fully manage the assessment (Setup, Results, Discussion) the same as the original creator, but can't delete it.

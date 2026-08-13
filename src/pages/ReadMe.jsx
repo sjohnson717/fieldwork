@@ -52,7 +52,7 @@ Built-in fields on every entity: \`id\`, \`created_date\`, \`updated_date\`, \`c
 
 | Route | Purpose |
 |---|---|
-| \`/admin\` | Everything the facilitator does. Assessment list, setup, results, discussion, library, organizations, team. The only route behind \`ProtectedRoute\`. |
+| \`/admin\` | Everything the facilitator does. Assessment list, setup, results, discussion, library, tags, organizations, facilitators. The only route behind \`ProtectedRoute\`. |
 
 ## Token-authenticated — no account needed
 
@@ -69,7 +69,7 @@ Built-in fields on every entity: \`id\`, \`created_date\`, \`updated_date\`, \`c
 
 ## Backend functions
 
-\`publicAssessment\` resolves every public token server-side and returns only the fields that flow needs · \`listRespondents\` and \`listUsers\` read as service role where RLS cannot express the rule · \`deleteAssessment\` cascades a delete after one authority check · \`deleteOrganization\`, \`deleteTeamMember\`, \`deleteTag\` and \`deleteLibraryActivity\` do the reverse, refusing while anything still references the row · \`listTags\` and \`listLibraryActivityUsage\` count usage across records the caller cannot read, so a Delete is only offered where it can work ·\`acceptInvitation\` and \`updateTeamMember\` manage roles server-side.`,
+\`publicAssessment\` resolves every public token server-side and returns only the fields that flow needs · \`listRespondents\` and \`listUsers\` read as service role where RLS cannot express the rule · \`deleteAssessment\` cascades a delete after one authority check · \`deleteOrganization\`, \`deleteTeamMember\`, \`deleteTag\` and \`deleteLibraryActivity\` do the reverse, refusing while anything still references the row · \`listTags\` and \`listLibraryActivityUsage\` count usage across records the caller cannot read, so a Delete is only offered where it can work · \`acceptInvitation\` and \`updateTeamMember\` manage roles server-side.`,
   },
   {
     id: "architecture",
@@ -130,6 +130,14 @@ Facilitators have accounts. **Respondents, team leaders and buyers never do** �
 
 **A field with a documented default is absent on the oldest records, not set to it.** \`assessment_type\` was added after assessments already existed, so \`team_gap\` is what the schema *means* by an empty column, never what it stores there. Any \`=== "team_gap"\` test therefore misses exactly the earliest records — they fall through to whatever the else branch does. Testing for \`personal\` has always been safe, which is why nothing had tripped on this until the sidebar needed a positive test for team gap; written the obvious way it would have left the oldest assessments unbadged, the very gap the badge was added to close. Normalise first (\`assessment_type === "personal" ? "personal" : "team_gap"\`) and branch on the result. The same applies to \`org_id\`, whose absence means the legacy no-org bucket.
 
+**A delete the schema permits can still be the wrong delete.** Every id-holding field here is a plain string that nothing enforces — \`Assessment.activity_ids\`, \`tag_ids\`, \`org_id\`, \`created_by_id\`, \`ActivitySet.activity_ids\`. Delete the row an id names and the id stays, and because every reader resolves ids against live rows and drops what it cannot find, the damage is *silent*: a library activity deleted in August 2026 would have vanished from every assessment using it, answered ones included, leaving report lines that simply stop appearing. RLS cannot see any of this — it answers for one entity at a time. So a delete that spans entities goes through a function that counts references first and refuses, naming every blocker at once. Cascade only where the children are meaningless alone (\`deleteAssessment\`).
+
+**An unknown count must never read as "unused".** The counts that decide whether a Delete appears come from a function, and a failed call returns nothing at all. Defaulting that to zero would offer a Delete on every row in the library simultaneously. Distinguish *loaded and empty* from *not loaded* — \`usage === null\` hides the control; \`usage[id]\` being absent shows it.
+
+**Deactivate is usually what "delete" meant.** \`active\` exists on activities, sets and job titles, and it does the thing an operator actually wants — out of new assessments, existing data untouched. A refusal that only says no is worse than one that names the alternative.
+
+**A list loaded once on mount goes stale the moment another page writes to it.** \`AdminPage\` loads tags when it mounts; the Tags settings page deleted one and updated only its own state, so the sidebar filter kept offering a tag that no longer existed and the delete looked like it had failed. Any page that mutates a collection another page loaded has to say so — \`TagsPage\` calls \`onTagsChanged\`. Clear derived selections too: a filter naming a deleted tag matches nothing and reads as "no assessments".
+
 **A missing badge is not a label.** The sidebar tagged only \`Personal\`, on the reasoning that team gap is the default and a default needs no marker. But absence carries no meaning to anyone who does not already know the rule — a list where one row is tagged and the next is bare reads as *this one is special*, not *these are two kinds*. Both types are labelled now. The rule generalises: when a distinction changes what the software does — and this one picks the question set, the results view and the report — every value in it gets said out loud.
 
 ## Print is a separate surface, and only visible in a PDF
@@ -142,6 +150,8 @@ Both summaries are read as PDFs at least as often as on screen, and every print 
 
 **Trailing padding makes a blank page.** Bottom padding at the end of the document buys nothing — it does not affect the pages between — and it was enough to push a credit onto a sheet of its own.
 
+**The tab title becomes the filename.** Every browser offers \`document.title\` as the name when you Save as PDF, so a constant one meant every report ever saved was called "Report | Quartz Assessment" — useless in a folder of client work. Both printable pages set it from the assessment's own title, keyed on that title so a rename is picked up.
+
 **Print an address as a link, never as text.** A PDF viewer's auto-detector read plain-text \`productgrowthleaders.com\` as \`http://ctgrowthleaders.com\`, five characters short, and offered it as the destination. An \`<a>\` whose visible text is the address prints identically and puts a real URI annotation in the file.
 
 ## Conventions
@@ -152,6 +162,9 @@ Both summaries are read as PDFs at least as often as on screen, and every print 
 - Sharing a profile means the PDF, never the link. The token permits editing.
 - Nothing pushes a personal profile to a manager, and no screen implies otherwise. The team leader dashboard withholds answers and per-person tokens on a personal assessment, the buyer report is aggregate and nameless, and the survey intro names no recipient at all — the same code fields the open lead-gen assessments, where a taker may have no manager they would want reading this. The report suggests a manager or a coach later, once the profile exists and the choice is concrete.
 - \`[n]\` in an assessment title is its activity count, and it is internal. It belongs in the admin list and on the assessment; it is left off landing pages, where it reads as a version number. The three public assessments draw from named activity sets — Quick Review [7] from **Executive**, Team Effectiveness [25] from **Core**, Self-Assessment [40] from **Standard** — so a count that stops matching its set means one of the two was edited alone.
+- The app is maintainable from the app. Anything that accumulates — organizations, accounts, tags, library activities, sets, resources, job titles — is removable in \`/admin\`, guarded. "Delete it in the Base44 Builder's data view" is not an answer: the Builder is a developer surface with no reference checks, so it both risks the silent damage above and leaves the app unable to describe its own state. When adding anything that creates records, the delete is part of the feature.
+- A control that can only fail should not be there. A Delete appears on the rows that can actually go; the rest show what they are instead — \`In use\`, or nothing. The function still refuses independently, because the page's counts can be a moment out of date.
+- Every function failure shown to someone goes through \`functionErrorMessage()\`. A refusal's whole value is the sentence naming what is in the way, and that sentence is in the response body — \`catch (e) { console.error(e) }\` makes a refused write look exactly like one that worked.
 - Nothing in the app calls a suggested owner an owner. The field is \`suggested_owner\`, the respondent's column reads **Suggested owner**, and the team tally reads **Most suggested** — a respondent proposes a role, and no part of the assessment assigns one.`,
   },
 ];
