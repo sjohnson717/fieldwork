@@ -213,7 +213,10 @@ at a time, an operator clears it, clicks again, and is refused for the next.
 **`deleteTeamMember` only touches `user` (No access) rows**, which is what makes
 it safe to be blunt: revoking is the reversible step, and it already showed the
 operator what was being taken away. `User.jsonc` sets `"delete": null`, so the
-service role is the only path that can do this at all. It is also super-admin
+service role is the only path that can do this at all — and unlike `User`'s
+*read* rule, which the platform ignores for list operations, the delete does go
+through as service role. Verified against the live app in August 2026 by
+deleting a real no-access row. It is also super-admin
 only — revoking clears `org_id`, so a no-access row is never inside any
 organization for an org admin to be scoped to.
 
