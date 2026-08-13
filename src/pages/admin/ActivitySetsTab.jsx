@@ -3,6 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { FACET_ORDER } from "@/lib/scoring";
 import DraggableList from "@/components/DraggableList";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import { functionErrorMessage } from "@/lib/utils";
 
 // ── Activity checklist inside an expanded set ─────────────────────────────────
 
@@ -104,6 +105,7 @@ export default function ActivitySetsTab() {
   const [newName, setNewName] = useState("");
   const [newDescription, setNewDescription] = useState("");
   const [adding, setAdding] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => { loadData(); }, []);
 
@@ -152,13 +154,22 @@ export default function ActivitySetsTab() {
 
   const [deletingSet, setDeletingSet] = useState(null);
 
+  // No reference check needed: nothing stores a set id. Creating an assessment
+  // from a set copies its activity_ids onto the assessment, so a set is a
+  // starting point that is read once and never looked at again. What deleting
+  // one does destroy is the curated membership, which is slow to rebuild by
+  // hand — hence the count in the dialog.
   const handleDelete = async (id) => {
     setDeletingSet(null);
+    setError("");
     try {
       await base44.entities.ActivitySet.delete(id);
       setSets(prev => prev.filter(s => s.id !== id));
       if (expandedId === id) setExpandedId(null);
-    } catch (e) { console.error(e); }
+    } catch (e) {
+      console.error("Failed to delete activity set", e);
+      setError(functionErrorMessage(e, "Failed to delete the activity set."));
+    }
   };
 
   const handleAdd = async () => {
@@ -199,6 +210,8 @@ export default function ActivitySetsTab() {
       <p className="text-xs text-gray-400">
         {sets.filter(s => s.active).length} active sets · drag to reorder · click a set to manage its activities
       </p>
+
+      {error && <p className="text-xs text-red-500">{error}</p>}
 
       <DraggableList
         items={sets}
@@ -363,7 +376,7 @@ export default function ActivitySetsTab() {
         open={!!deletingSet}
         destructive
         title="Delete this activity set?"
-        message={`"${deletingSet?.name}" will no longer be offered as a preset. Assessments already using it keep their activities. This cannot be undone.`}
+        message={`"${deletingSet?.name}" will no longer be offered as a preset, and its list of ${(deletingSet?.activity_ids || []).length} activities is lost — the activities themselves stay in the library, and assessments built from this set keep the activities they copied. This cannot be undone.`}
         confirmLabel="Delete"
         onConfirm={() => handleDelete(deletingSet.id)}
         onCancel={() => setDeletingSet(null)}

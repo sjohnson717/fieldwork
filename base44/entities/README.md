@@ -189,6 +189,43 @@ with an axios error whose `message` is always `"Request failed with status code
 500"`, so `e.message` silently discards it. Use `functionErrorMessage()` in
 `src/lib/utils.js` for any function call whose failure is shown to someone.
 
+## Deleting a library activity is the app's most dangerous delete
+
+`getAssignedActivities()` in `src/lib/activities.js` resolves an assessment's
+`activity_ids` against the *live* `Activity` rows. So deleting a library activity
+does not leave assessments holding their own copy of anything, which is what the
+Library's confirmation dialog used to claim. It removes that question from every
+assessment referencing it at once — including ones in flight, and ones already
+submitted, whose `Response` rows keep an `activity_id` pointing at nothing and
+whose report lines simply stop appearing. Until August 2026 this was a bare
+`Activity.delete()` in the browser whose only failure handling was
+`console.error`.
+
+`deleteLibraryActivity` refuses while any assessment, activity set, response,
+discussion note or team-leader flag references the activity, and points at the
+`active` flag instead — deactivating keeps it out of new assessments and leaves
+existing data whole, which is what "delete" almost always meant here.
+`listLibraryActivityUsage` supplies the counts so the tab shows *In use* rather
+than a Delete that can only fail. It scans `Response` as service role, which no
+browser call should attempt: it is the largest table in the system, and a count
+that came back short would put a Delete on a question people have answered.
+
+**Resources are the one thing cleaned rather than blocked on.**
+`Resource.activity_ids` points *outwards* — "here is some reading for that
+activity" — so those rows are updated to drop the id. Refusing on them would
+block a delete over a link the operator cannot see from the Activities tab.
+
+**The other three Library tabs need no reference check, for reasons worth
+stating.** Nothing anywhere stores an `ActivitySet` id: creating an assessment
+copies the set's `activity_ids` onto the assessment, so a set is read once and
+never consulted again. Nothing stores a `Resource` id either; reports resolve
+resources *from* the activity. And `JobTitle` is referenced by **name** —
+`Assessment.roles`, `Activity.preferred_owner` and `Respondent.title` all hold
+the text — so deleting the row removes it from the pickers and changes nothing
+that already names it. It is a controlled vocabulary, not the owner of the data.
+All three did, however, swallow their errors into `console.error`, which made a
+refused delete look exactly like one that worked until the page was reloaded.
+
 ## Deleting an organization or an account refuses rather than cascades
 
 `deleteAssessment` cascades because its children are meaningless without it. The

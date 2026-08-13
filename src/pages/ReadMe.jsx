@@ -69,7 +69,7 @@ Built-in fields on every entity: \`id\`, \`created_date\`, \`updated_date\`, \`c
 
 ## Backend functions
 
-\`publicAssessment\` resolves every public token server-side and returns only the fields that flow needs · \`listRespondents\` and \`listUsers\` read as service role where RLS cannot express the rule · \`deleteAssessment\` cascades a delete after one authority check · \`deleteOrganization\`, \`deleteTeamMember\` and \`deleteTag\` do the reverse, refusing while anything still references the row · \`listTags\` counts tag usage across assessments the caller cannot read ·\`acceptInvitation\` and \`updateTeamMember\` manage roles server-side.`,
+\`publicAssessment\` resolves every public token server-side and returns only the fields that flow needs · \`listRespondents\` and \`listUsers\` read as service role where RLS cannot express the rule · \`deleteAssessment\` cascades a delete after one authority check · \`deleteOrganization\`, \`deleteTeamMember\`, \`deleteTag\` and \`deleteLibraryActivity\` do the reverse, refusing while anything still references the row · \`listTags\` and \`listLibraryActivityUsage\` count usage across records the caller cannot read, so a Delete is only offered where it can work ·\`acceptInvitation\` and \`updateTeamMember\` manage roles server-side.`,
   },
   {
     id: "architecture",

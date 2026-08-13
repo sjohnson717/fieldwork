@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { FACET_ORDER } from "@/lib/scoring";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import { functionErrorMessage } from "@/lib/utils";
 
 // Learning resources offered on a personal report, against the activities
 // someone was actually advised to develop.
@@ -130,6 +131,7 @@ export default function ResourcesTab() {
   const [saving, setSaving] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
   const [deleting, setDeleting] = useState(null);
+  const [error, setError] = useState("");
 
   useEffect(() => { load(); }, []);
 
@@ -184,12 +186,20 @@ export default function ResourcesTab() {
     } catch (e) { console.error(e); }
   };
 
+  // No reference check: nothing points at a resource. Resource.activity_ids
+  // points outwards, at the activities this reading is offered for, so deleting
+  // one removes an offer and breaks nothing. Reports resolve resources from the
+  // activity, never the other way round.
   const handleDelete = async (id) => {
     setDeleting(null);
+    setError("");
     try {
       await base44.entities.Resource.delete(id);
       setResources(prev => prev.filter(r => r.id !== id));
-    } catch (e) { console.error(e); }
+    } catch (e) {
+      console.error("Failed to delete resource", e);
+      setError(functionErrorMessage(e, "Failed to delete the resource."));
+    }
   };
 
   const activityName = (id) => activities.find(a => a.id === id)?.name;
@@ -205,6 +215,8 @@ export default function ResourcesTab() {
       <p className="text-xs text-gray-400">
         Offered on a personal report against the activities someone was advised to develop. Only resources attached to a recommended activity appear, so a person sees a short relevant list rather than a catalogue.
       </p>
+
+      {error && <p className="text-xs text-red-500">{error}</p>}
 
       <div className="space-y-2">
         {resources.map(r => (

@@ -5,6 +5,7 @@ import ResourcesTab from "./ResourcesTab";
 import { FACET_ORDER } from "@/lib/scoring";
 import DraggableList from "@/components/DraggableList";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import { functionErrorMessage } from "@/lib/utils";
 import ActivityImportDialog from "./ActivityImportDialog";
 import { CSV_COLUMNS } from "@/lib/activity-csv";
 
@@ -68,21 +69,45 @@ function ActivitiesTab() {
   const [adding, setAdding] = useState(false);
   const [selectedFacet, setSelectedFacet] = useState("ALL");
   const [showImport, setShowImport] = useState(false);
+  // null until listLibraryActivityUsage answers; see canDelete below.
+  const [usage, setUsage] = useState(null);
+  const [error, setError] = useState("");
 
   useEffect(() => { loadActivities(); }, []);
 
   const loadActivities = async () => {
     setLoading(true);
+    setError("");
     try {
-      const [all, titles] = await Promise.all([
+      const [all, titles, usageRes] = await Promise.all([
         base44.entities.Activity.list("sort_order").then(all => all.filter(a => !a.assessment_id)),
         base44.entities.JobTitle.list("sort_order"),
+        // Counted server-side across every assessment, set and response — see
+        // listLibraryActivityUsage. Counting here would mean listing every
+        // Response in the system, and a count that came back short would put a
+        // Delete button on an activity people have already answered.
+        base44.functions.invoke("listLibraryActivityUsage", {}),
       ]);
       setActivities(all);
       setJobTitleNames(new Set(titles.map(t => t.name)));
-    } catch (e) { console.error(e); }
+      setUsage(usageRes?.data?.usage || {});
+    } catch (e) {
+      console.error("Failed to load the activity library", e);
+      setError(functionErrorMessage(e, "Failed to load the activity library."));
+    }
     setLoading(false);
   };
+
+  // Absent from a loaded map means nothing references it. But an *unloaded* map
+  // means we don't know, and the two must not collapse into the same answer: if
+  // the usage call failed, treating every activity as unused would put a Delete
+  // on the whole library at once. So the control needs `usage` to have arrived.
+  const usageTotal = (id) => {
+    const u = usage?.[id];
+    if (!u) return 0;
+    return u.assessments + u.sets + u.responses + u.notes + u.flags;
+  };
+  const canDelete = (activity) => usage !== null && usageTotal(activity.id) === 0;
 
   const persistOrder = async (reordered) => {
     setActivities(reordered);
@@ -123,12 +148,24 @@ function ActivitiesTab() {
 
   const [deletingActivity, setDeletingActivity] = useState(null);
 
+  // Via deleteLibraryActivity, not Activity.delete. The entity rule permits the
+  // delete; what it cannot do is notice that assessments resolve their
+  // activity_ids against these very rows, so deleting one silently removes a
+  // question from every assessment using it — including ones already answered.
   const handleDelete = async (id) => {
     setDeletingActivity(null);
+    setError("");
     try {
-      await base44.entities.Activity.delete(id);
+      const res = await base44.functions.invoke("deleteLibraryActivity", { activityId: id });
+      const err = res?.data?.error;
+      if (err) throw new Error(err);
       setActivities(prev => prev.filter(a => a.id !== id));
-    } catch (e) { console.error(e); }
+    } catch (e) {
+      console.error("Failed to delete activity", e);
+      // The refusal names what uses it and suggests deactivating instead; it
+      // arrives in the response body, not in the axios error's own message.
+      setError(functionErrorMessage(e, "Failed to delete the activity."));
+    }
   };
 
   const handleAdd = async () => {
@@ -201,6 +238,10 @@ function ActivitiesTab() {
           </button>
         ))}
       </div>
+
+      {/* Failures used to go to console.error only, so a refused delete looked
+          exactly like a delete that worked until the page was reloaded. */}
+      {error && <p className="text-xs text-red-500">{error}</p>}
 
       <div className="flex items-center justify-between">
         <p className="text-xs text-gray-400">Drag rows to reorder. Order is shared across all assessments.</p>
@@ -356,10 +397,25 @@ function ActivitiesTab() {
                     className="text-xs text-gray-400 hover:text-gray-700 transition-colors">
                     {activity.active ? "Disable" : "Enable"}
                   </button>
-                  <button onClick={() => setDeletingActivity(activity)}
-                    className="text-xs text-gray-300 hover:text-red-400 transition-colors">
-                    Delete
-                  </button>
+                  {/* Delete only where nothing references the activity. On the
+                      rest, Disable above is the action that was always meant:
+                      it keeps the activity out of new assessments and leaves
+                      the ones that already asked the question intact. */}
+                  {canDelete(activity) ? (
+                    <button onClick={() => setDeletingActivity(activity)}
+                      className="text-xs text-gray-300 hover:text-red-400 transition-colors">
+                      Delete
+                    </button>
+                  ) : (
+                    <span
+                      title={usage === null
+                        ? "Usage is still loading"
+                        : `In use — ${usageTotal(activity.id)} reference${usageTotal(activity.id) === 1 ? "" : "s"} across assessments, sets and answers`}
+                      className="text-xs text-gray-200 cursor-default"
+                    >
+                      In use
+                    </span>
+                  )}
                 </div>
               </div>
             )}
@@ -435,11 +491,15 @@ function ActivitiesTab() {
         </button>
       )}
 
+      {/* The old copy said assessments "keep their own copy of the selection",
+          which was wrong in the direction that matters: they keep the id, not
+          the activity, and getAssignedActivities resolves against the live row.
+          Nothing references this one, which is why it can go at all. */}
       <ConfirmDialog
         open={!!deletingActivity}
         destructive
         title="Delete this activity?"
-        message={`"${deletingActivity?.name}" will be removed from the library. Assessments that already reference it keep their own copy of the selection. This cannot be undone.`}
+        message={`"${deletingActivity?.name}" will be removed from the library. Nothing references it — no assessment, activity set, or submitted answer — so nothing else changes. Any resource offered for it stops listing it. This cannot be undone.`}
         confirmLabel="Delete"
         onConfirm={() => handleDelete(deletingActivity.id)}
         onCancel={() => setDeletingActivity(null)}
@@ -459,6 +519,7 @@ function JobTitlesTab() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [newName, setNewName] = useState("");
   const [adding, setAdding] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => { loadTitles(); }, []);
 
@@ -500,12 +561,21 @@ function JobTitlesTab() {
 
   const [deletingTitle, setDeletingTitle] = useState(null);
 
+  // No reference check, and deliberately so: a job title is referenced by *name*
+  // wherever it is used — Assessment.roles, Activity.preferred_owner,
+  // Respondent.title all hold the text, not this row's id. Deleting the row
+  // takes it out of the pickers and changes nothing that already names it. The
+  // list is a controlled vocabulary, not the owner of the data.
   const handleDelete = async (id) => {
     setDeletingTitle(null);
+    setError("");
     try {
       await base44.entities.JobTitle.delete(id);
       setTitles(prev => prev.filter(t => t.id !== id));
-    } catch (e) { console.error(e); }
+    } catch (e) {
+      console.error("Failed to delete job title", e);
+      setError(functionErrorMessage(e, "Failed to delete the job title."));
+    }
   };
 
   const handleAdd = async () => {
@@ -536,6 +606,8 @@ function JobTitlesTab() {
       <p className="text-xs text-gray-400">
         {titles.filter(t => t.active).length} active titles · drag to reorder · disabled titles won't appear in assessments
       </p>
+
+      {error && <p className="text-xs text-red-500">{error}</p>}
 
       <DraggableList
         items={titles}
@@ -620,7 +692,7 @@ function JobTitlesTab() {
         open={!!deletingTitle}
         destructive
         title="Delete this job title?"
-        message={`"${deletingTitle?.name}" will be removed from the list. Activities that name it as their recommended owner will show as having an unknown owner. This cannot be undone.`}
+        message={`"${deletingTitle?.name}" will be removed from the list, so it stops being offered when picking an owner. Anything that already names it keeps the text — activities show it flagged as an unknown owner, and assessment roles and respondent titles are unchanged. This cannot be undone.`}
         confirmLabel="Delete"
         onConfirm={() => handleDelete(deletingTitle.id)}
         onCancel={() => setDeletingTitle(null)}
