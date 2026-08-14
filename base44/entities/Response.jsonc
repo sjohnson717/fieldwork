@@ -70,7 +70,41 @@
   ],
   "rls": {
     "create": {},
-    "read": {},
+    // Read is staff-only, and matches update and delete below. It was open to
+    // the world, which meant a single unauthenticated list returned every
+    // answer every respondent had ever given, across every assessment and
+    // every client in the app — the "confidential, only seen in aggregate"
+    // promise the survey makes on its own intro screen.
+    //
+    // The two unauthenticated flows that legitimately read answers now get
+    // them from publicAssessment, scoped to the token presented: a respondent
+    // receives only their own rows, and a buyer report only the rows for the
+    // assessment its token names. Both are grants that come with a credential,
+    // rather than a rule that requires none.
+    //
+    // Create stays open because respondents have no accounts at all
+    // (saveResponses writes as the service role, but a client cannot be relied
+    // on to be the only writer here). The plain "user" role is excluded
+    // deliberately: the admin area is closed to it too.
+    "read": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "org_admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "facilitator"
+          }
+        }
+      ]
+    },
     "update": {
       "$or": [
         {

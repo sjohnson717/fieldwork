@@ -179,15 +179,19 @@ export default function AssessPage() {
 
   // Activities, job titles and any answers this respondent already saved.
   // Shared by the resume path and the review-after-completing path.
-  const loadSurveyData = async (a, respondentId) => {
+  //
+  // The answers arrive with the session rather than being fetched here. This
+  // used to be Response.list() — every answer in the app — narrowed to one
+  // respondent in the browser, which is a filter, not a permission: it needed
+  // Response.read open to the world, and anyone who asked got the lot.
+  // publicAssessment now returns only the rows belonging to the presented
+  // token.
+  const loadSurveyData = async (a, saved) => {
     const acts = await getAssignedActivities(a);
     setActivities(acts);
     const titles = await base44.entities.JobTitle.filter({ active: true }, "sort_order");
     setAllTitles(titles.map(t => t.name));
-
-    const allResponses = await base44.entities.Response.list();
-    const saved = allResponses.filter(resp => resp.respondent_id === respondentId);
-    setResponses(rebuildResponses(saved));
+    setResponses(rebuildResponses(saved || []));
   };
 
   const loadFromToken = async (t) => {
@@ -225,7 +229,7 @@ export default function AssessPage() {
       if (r.status === "completed") {
         setReturningCompleted(true);
         if (r.title) setTitle(r.title);
-        await loadSurveyData(a, r.id);
+        await loadSurveyData(a, session.responses);
         // Someone returning to a personal assessment came back for their
         // profile, so hand it straight to them rather than making them click
         // through a confirmation that tells them what they already know.
@@ -251,7 +255,7 @@ export default function AssessPage() {
       if (r.title) {
         // Has title — go straight to rating
         setTitle(r.title);
-        await loadSurveyData(a, r.id);
+        await loadSurveyData(a, session.responses);
         setStep("rating");
       } else {
         // Needs title — show minimal intro
@@ -340,10 +344,13 @@ export default function AssessPage() {
     }
   });
 
+  // Re-read this respondent's own answers from the session, for the revise
+  // path. State already holds them, but a resumed tab can be looking at a
+  // submission that was edited elsewhere since, and starting a revision from
+  // stale answers would quietly re-save the old ones over the new.
   const loadExistingResponses = async () => {
-    const allResponses = await base44.entities.Response.list();
-    const saved = allResponses.filter(r => r.respondent_id === respondent.id);
-    setResponses(rebuildResponses(saved));
+    const session = await getRespondentSession(myToken);
+    setResponses(rebuildResponses(session?.responses || []));
   };
 
   const handleRevise = async () => {

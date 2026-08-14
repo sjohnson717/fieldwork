@@ -32,6 +32,20 @@ const PUBLIC_FIELDS = [
   "created_date",
 ];
 
+// Every field an answer can carry: the team gap's three, then the personal
+// assessment's three. Shared by the respondent payload below and the team
+// dashboard's answer counts — a personal assessment stores nothing in
+// importance/execution, so a list covering only those reports every respondent
+// on it as untouched.
+const ANSWER_FIELDS = [
+  "importance",
+  "execution",
+  "suggested_owner",
+  "experience",
+  "skills",
+  "interest",
+];
+
 const shape = (assessment, extraFields = []) => {
   const out = {};
   for (const f of [...PUBLIC_FIELDS, ...extraFields]) out[f] = assessment[f] ?? null;
@@ -100,8 +114,21 @@ Deno.serve(async (req) => {
         if (!r) return notFound();
         const a = assessments.find((x) => x.id === r.assessment_id);
         if (!a) return notFound();
+        // Their own answers, so a resumed survey comes back filled in and the
+        // review screen can render what they submitted. The survey used to read
+        // these with Response.list() from the browser, which required
+        // Response.read to stay open to the world — and that returned every
+        // answer every respondent in the app had ever given to anyone who
+        // asked. Scoped to this token's respondent here, and no row ids: the
+        // browser has no use for one now that saveResponses upserts by
+        // activity.
+        const own = await svc.Response.filter({ respondent_id: r.id }, null, 5000);
         return Response.json({
           assessment: await shapeWithOrg(svc, a),
+          responses: own.map((row) => ({
+            activity_id: row.activity_id,
+            ...Object.fromEntries(ANSWER_FIELDS.map((f) => [f, row[f] ?? null])),
+          })),
           respondent: {
             id: r.id,
             name: r.name,
@@ -125,11 +152,9 @@ Deno.serve(async (req) => {
         ]);
         // Answer counts distinguish "signed in but hasn't answered anything"
         // from "actually working through it". Derived rather than stored, so
-        // it cannot drift out of step with the responses themselves.
-        // Counts whichever fields this assessment's type asks about — a
-        // personal assessment stores nothing in importance/execution, so
-        // checking only those would report every respondent as untouched.
-        const ANSWER_FIELDS = ["importance", "execution", "suggested_owner", "experience", "skills", "interest"];
+        // it cannot drift out of step with the responses themselves, and
+        // counting whichever fields this assessment's type asks about — see
+        // ANSWER_FIELDS above.
         const countAnswers = (rows) => {
           const out = {};
           for (const r of rows) {
@@ -226,10 +251,31 @@ Deno.serve(async (req) => {
       case "buyer": {
         const a = assessments.find((x) => x.buyer_token && x.buyer_token === token);
         if (!a) return notFound();
-        const respondents = await svc.Respondent.filter({ assessment_id: a.id });
+        const [respondents, responses] = await Promise.all([
+          svc.Respondent.filter({ assessment_id: a.id }),
+          svc.Response.filter({ assessment_id: a.id }, null, 5000),
+        ]);
         return Response.json({
           assessment: await shapeWithOrg(svc, a),
           respondents: respondents.map((r) => ({ id: r.id, status: r.status })),
+          // The answers this report is built from, scoped to this assessment.
+          // The page read them with Response.filter from the browser, which is
+          // one of the two reasons Response.read had to stay open — and an open
+          // read on that entity hands over every answer in the app, not just
+          // the ones behind the token being presented.
+          //
+          // respondent_id comes along because the report scores completed
+          // submissions only and counts distinct participants; it is an id, not
+          // a name, and this payload deliberately carries no names at all. Only
+          // the team gap's three fields: a buyer token for a personal
+          // assessment is refused by the page before it scores anything.
+          responses: responses.map((row) => ({
+            respondent_id: row.respondent_id,
+            activity_id: row.activity_id,
+            importance: row.importance ?? null,
+            execution: row.execution ?? null,
+            suggested_owner: row.suggested_owner ?? null,
+          })),
         });
       }
 

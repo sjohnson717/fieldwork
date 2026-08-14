@@ -392,10 +392,15 @@ export default function ReportPage() {
       }
       setAssessment(a);
 
-      // Load activities, responses, and discussion notes in parallel
-      const [acts, responses, discussionNotes] = await Promise.all([
+      // The answers come back with the token lookup rather than being read
+      // from the browser: Response.read is no longer open to the world, and an
+      // open read there returned every answer in the app to anyone who asked,
+      // not merely the ones behind this buyer token.
+      const responses = result.responses || [];
+
+      // Load activities and discussion notes in parallel
+      const [acts, discussionNotes] = await Promise.all([
         getAssignedActivities(a),
-        base44.entities.Response.filter({ assessment_id: a.id }),
         base44.entities.DiscussionNote.filter({ assessment_id: a.id }),
       ]);
 
