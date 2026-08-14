@@ -850,10 +850,29 @@ export default function ReportPage() {
 
         <ChaosAssessmentPlug />
 
-        {/* ── Footer ── */}
-        <footer className="mt-16 pt-8 border-t border-gray-100 flex items-center justify-between">
-          <img src={QUARTZ_LOGO} alt="Quartz Assessment" className="h-6 object-contain opacity-40" />
-          <p className="text-xs text-gray-300">© Quartz Assessment</p>
+        {/* ── Footer ──
+            The notice names Product Growth Leaders rather than the app: what is
+            authored here is the instrument — the activity library, the facets,
+            the thresholds these findings are read against — and Quartz is the
+            software it is delivered through.
+
+            Scoped, like the respondent report's, but scoped differently. That
+            one reassures a person that their own answers aren't being claimed;
+            this one goes to the organisation that commissioned the work, whose
+            half is the data and what it says about them. Deliberately no
+            "prepared by" line to match: an assessment can be run by another
+            firm's facilitator through this app, and the framework being
+            authored here doesn't make them the author of the engagement. */}
+        <footer className="mt-16 pt-8 border-t border-gray-100 flex items-center justify-between gap-6">
+          <img src={QUARTZ_LOGO} alt="Quartz Assessment" className="h-6 object-contain opacity-40 shrink-0" />
+          {/* Set small and right-aligned so it stays on the logo's line: the
+              notice it replaced was four words, and at the printed column width
+              this one wrapped underneath, leaving the mark stranded on a line
+              of its own. */}
+          <p className="text-[10px] text-gray-300 text-right">
+            Assessment framework © {new Date().getFullYear()} Product Growth Leaders.
+            Responses and findings belong to your organization.
+          </p>
         </footer>
 
       </main>

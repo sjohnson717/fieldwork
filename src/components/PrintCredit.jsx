@@ -26,6 +26,19 @@ export default function PrintCredit({ plug = false }) {
         </a>
       </p>
       {plug && <ChaosAssessmentPlug compact />}
+      {/* Scoped on purpose. What Product Growth Leaders owns is the framework —
+          the activity library, the facets, the interpretation. What it does not
+          own is the answers, and this page tells the reader in plain words that
+          the report is theirs to keep. A bare notice under that sentence would
+          read as a claim over their own data on a document that just asked them
+          to be candid about their weaknesses.
+
+          The year is derived rather than typed, so a report printed years from
+          now doesn't carry a stale one. */}
+      <p className="text-[10px] text-gray-400 mt-2">
+        Assessment framework © {new Date().getFullYear()} Product Growth Leaders.
+        Your responses are your own.
+      </p>
     </div>
   );
 }
