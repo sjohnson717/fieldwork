@@ -140,8 +140,13 @@ export default function PersonalProfileReport({
         </div>
         <div>
           <h1 className="text-xl font-bold text-gray-900">Your profile, {name.split(" ")[0]}</h1>
+          {/* Same reasoning as the team gap report: the invitation to come
+              back and change an answer belongs to the person whose answers
+              they are, not to a facilitator reading over their shoulder. */}
           <p className="text-sm text-gray-500">
-            Your answers are saved. This is yours to keep — save it as a PDF to share with your manager or a coach, and come back and change any answer whenever you like.
+            {readOnly
+              ? "Their answers are saved, and this is the report they can keep."
+              : "Your answers are saved. This is yours to keep — save it as a PDF to share with your manager or a coach, and come back and change any answer whenever you like."}
           </p>
         </div>
       </div>

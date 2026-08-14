@@ -88,12 +88,18 @@ export default function TeamGapSelfReport({
           <h1 className="text-xl font-bold text-gray-900">
             {returningCompleted ? `Your responses, ${name}` : `Thank you, ${name}!`}
           </h1>
+          {/* What follows the first sentence is addressed to the person who
+              can act on it. In the facilitator's preview that reader is
+              someone else, and telling them the answers can still be changed
+              describes a power the preview deliberately doesn't give them. */}
           <p className="text-sm text-gray-500">
-            {!returningCompleted
-              ? "Your responses have been recorded. Here's a summary of what you submitted."
-              : assessment?.status === "closed"
-                ? "Here's what you submitted. This assessment is now closed, so your answers can't be changed."
-                : "Here's what you submitted. You can still change any of it."}
+            {readOnly
+              ? "Here's what you submitted."
+              : !returningCompleted
+                ? "Your responses have been recorded. Here's a summary of what you submitted."
+                : assessment?.status === "closed"
+                  ? "Here's what you submitted. This assessment is now closed, so your answers can't be changed."
+                  : "Here's what you submitted. You can still change any of it."}
           </p>
         </div>
       </div>
