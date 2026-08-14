@@ -139,6 +139,15 @@ the point: a team leader never receives the buyer's report token, a buyer never
 receives the access code, and a respondent receives no tokens at all. Failures
 return a uniform `not_found` so a caller cannot probe which tokens exist.
 
+One derived field travels with the assessment: `org_name`, the firm the printed
+report names. It is resolved here because these pages are unauthenticated and
+cannot read `Organization` for themselves, and it looks in two places —
+`Assessment.org_id`, then the creator's own `org_id`, since assessments
+predating organizations carry none. A name, never an id: attribution rather than
+a handle onto anything, so it widens nothing a token already exposes. It returns
+null rather than throwing, because a footer that cannot name the firm is a line
+short while a lookup that throws is a broken deliverable.
+
 Respondents are **self-registering**: the team leader broadcasts one
 `/assess?code=…` link, and a Respondent row is created when each person enters
 their name and job title. Nobody is pre-added, so there is no "invited" state —

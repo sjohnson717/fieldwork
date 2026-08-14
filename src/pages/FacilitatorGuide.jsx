@@ -97,6 +97,16 @@ LEARN is in **Default** and **Extended**. Executive and Brief deliberately leave
 
 Check the **Respondents table** in the Results tab. It shows each participant's name, title, status (completed or pending), response count, and completion date. This information is confidential. *Do not share this page with team leaders*.
 
+## Reading one person's answers
+
+Each row in the Respondents table carries two links, for super-admins.
+
+**Answers** opens that person's raw responses in the results view — the same table the Individual Answers tab shows, with them already selected.
+
+**Preview** opens their own report exactly as they see it: their summary, their answers, their cover. It is read-only, and it is built from data already on the page — it never fetches or displays their personal link, which is a resume credential rather than a viewing key. Anyone holding that link can rewrite the answers it opens, so it stays with them.
+
+You can print from the preview, which is how to get a copy of someone's report without asking them to send one.
+
 > **Minimum responses:** Aim for at least 4–5 completed responses before running the debrief. The report will not display until the minimum threshold is reached. Follow up with non-completers 24 hours before the deadline.`,
   },
   {
@@ -131,9 +141,13 @@ Respondents can still revise. Their own link reopens their answers until the ass
 
 Both summaries print. The first sheet is a cover — assessment title, client, the person's name and title, the date they submitted — so **a report left on a desk or handed across a table shows a name rather than someone's answers**. Every page after that is the summary and then the full answer table.
 
-Just above the closing credit, every report ends with a line pointing to the Chaos Assessment at productgrowthleaders.com/assess. It shows on screen as well as on paper — on screen it is a live link, which is where most people finish reading — and it sits at the very end rather than alongside anyone's answers.
+On screen, every report closes with a live link to the Chaos Assessment at productgrowthleaders.com/assess. **It is not on the printed copy.** On paper it would be a pitch travelling inside a document about someone's own answers — forwarded to their manager, or handed to a client — so the PDF ends on its last table instead.
 
-The foot of the first and last pages reads *Prepared for you by Product Growth Leaders*, with the address as a real link. The cover carries the Quartz mark, not a PGL logo: this is the respondent's document, and a consultancy's letterhead over someone's own self-assessment reads as a sales piece rather than a deliverable.
+The cover footer carries two lines: *Prepared for you by* the organization running the assessment, and a scoped notice reading *Assessment framework © Product Growth Leaders. Your responses are your own.* The firm comes from your account's organization, not from a constant, because an assessment can be run by another firm's facilitator through this app. **If your reports name the wrong firm, or you have just added a consultancy, check Admin → Team → the org column.**
+
+The notice is scoped deliberately. The framework is authored here; the answers are not, and a bare copyright line on a page that has just told someone the report is theirs to keep would read as a claim over their own data.
+
+The cover carries the Quartz mark, not a PGL logo: this is the respondent's document, and a consultancy's letterhead over someone's own self-assessment reads as a sales piece rather than a deliverable.
 
 > **What to tell a team leader who asks for everyone's summary.** The same thing as for personal profiles: each person has their own, sharing is theirs to do, and the aggregate view — which is what a leader actually needs — is the client report. A per-person link permits editing, so forwarding it hands over write access to someone's answers.`,
   },

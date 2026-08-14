@@ -75,7 +75,8 @@ base44/
   functions/    Backend functions: token resolution, invitations, admin listing
 src/
   pages/        Routed pages, with admin/ for the facilitator's tabs
-  components/   Shared UI, including the two report documents
+  components/   Shared UI, including the report documents and the
+                facilitator's read-only preview of a respondent's
   lib/          Scoring, activity handling, auth context, token lookups
 ```
 
