@@ -79,6 +79,9 @@ export default function PersonalProfileReport({
   onCopyLink,
   copiedLink,
   resources = [],
+  // Set by the facilitator's preview, which renders someone else's profile:
+  // revising is theirs to do, and the resume link is theirs to hold.
+  readOnly = false,
 }) {
   const facetRows = computeFacetProfile(profile, FACET_ORDER);
   const opportunities = computeDevelopmentOpportunities(profile);
@@ -151,12 +154,14 @@ export default function PersonalProfileReport({
           >
             Save as PDF to share
           </button>
-          <button
-            onClick={onRevise}
-            className="border border-gray-300 hover:border-gray-400 text-gray-600 hover:text-gray-800 font-medium px-6 py-2.5 rounded-lg transition-colors text-sm"
-          >
-            ← Revise my answers
-          </button>
+          {!readOnly && (
+            <button
+              onClick={onRevise}
+              className="border border-gray-300 hover:border-gray-400 text-gray-600 hover:text-gray-800 font-medium px-6 py-2.5 rounded-lg transition-colors text-sm"
+            >
+              ← Revise my answers
+            </button>
+          )}
         </div>
         {myToken && (
           <div>

@@ -4,6 +4,7 @@ import { getAssignedActivities } from "@/lib/activities";
 import { listRespondents } from "@/lib/public-assessment";
 import { FACET_ORDER, IMPORTANCE_SCORE, EXECUTION_SCORE, avg, fmt } from "@/lib/scoring";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import RespondentPreview from "@/components/RespondentPreview";
 
 // Gap = high importance, low execution = most actionable
 const gapScore = (imp, exec) => {
@@ -58,6 +59,7 @@ export default function AssessmentResults({ assessment }) {
   }, [assessment.id]);
 
   const [removingRespondent, setRemovingRespondent] = useState(null);
+  const [previewRespondent, setPreviewRespondent] = useState(null);
 
   const handleDeleteRespondent = async (id) => {
     setRemovingRespondent(null);
@@ -236,12 +238,21 @@ export default function AssessmentResults({ assessment }) {
                       {/* Same gate as the Individual Answers tab: this is one
                           person's raw answers, not an aggregate. */}
                       {isSuperAdmin && !isEmpty && (
-                        <button
-                          onClick={() => { setSelectedRespondentId(r.id); setView("individual"); }}
-                          className="text-xs text-gray-400 hover:text-blue-600 transition-colors"
-                        >
-                          Answers
-                        </button>
+                        <>
+                          <button
+                            onClick={() => { setSelectedRespondentId(r.id); setView("individual"); }}
+                            className="text-xs text-gray-400 hover:text-blue-600 transition-colors"
+                          >
+                            Answers
+                          </button>
+                          <button
+                            onClick={() => setPreviewRespondent(r)}
+                            title="See this person's own summary page, read-only"
+                            className="text-xs text-gray-400 hover:text-blue-600 transition-colors"
+                          >
+                            Preview
+                          </button>
+                        </>
                       )}
                       <button
                         onClick={() => setRemovingRespondent(r)}
@@ -591,6 +602,18 @@ export default function AssessmentResults({ assessment }) {
           </div>
         );
       })()}
+
+      {/* Gated twice on purpose: the row link is only rendered for a super
+          admin, and the overlay only mounts for one. */}
+      {previewRespondent && isSuperAdmin && (
+        <RespondentPreview
+          assessment={assessment}
+          respondent={previewRespondent}
+          activities={activities}
+          responses={responses}
+          onClose={() => setPreviewRespondent(null)}
+        />
+      )}
 
       <ConfirmDialog
         open={!!removingRespondent}

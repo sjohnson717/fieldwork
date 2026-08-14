@@ -16,6 +16,7 @@ import {
   pct,
 } from "@/lib/personal-scoring";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import RespondentPreview from "@/components/RespondentPreview";
 
 const VIEWS = [
   { key: "people", label: "People" },
@@ -54,6 +55,13 @@ export default function PersonalResults({ assessment }) {
   const [selectedFacet, setSelectedFacet] = useState("ALL");
   const [selectedRespondentId, setSelectedRespondentId] = useState(null);
   const [removingRespondent, setRemovingRespondent] = useState(null);
+  const [previewRespondent, setPreviewRespondent] = useState(null);
+  // Same gate as the team page's preview: this is one person's own report.
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+
+  useEffect(() => {
+    base44.auth.me().then(u => setIsSuperAdmin(u?.role === "admin")).catch(() => {});
+  }, []);
 
   useEffect(() => { loadData(); }, [assessment.id, assessment.parent_assessment_id]);
 
@@ -219,7 +227,16 @@ export default function PersonalResults({ assessment }) {
                   </td>
                   <td className="py-2.5 text-xs font-semibold text-gray-600">{pct(profile.avgCapability)}</td>
                   <td className="py-2.5 text-xs font-semibold text-gray-600">{pct(profile.avgInterest)}</td>
-                  <td className="py-2.5 pl-2 text-right">
+                  <td className="py-2.5 pl-2 text-right flex items-center justify-end gap-3">
+                    {isSuperAdmin && !isEmpty && (
+                      <button
+                        onClick={() => setPreviewRespondent(r)}
+                        title="See this person's own profile report, read-only"
+                        className="text-xs text-gray-400 hover:text-blue-600 transition-colors"
+                      >
+                        Preview
+                      </button>
+                    )}
                     <button
                       onClick={() => setRemovingRespondent(r)}
                       className={`text-xs transition-colors ${isEmpty ? "text-red-300 hover:text-red-500 font-medium" : "text-gray-300 hover:text-red-400"}`}
@@ -550,6 +567,16 @@ export default function PersonalResults({ assessment }) {
           </div>
         );
       })()}
+
+      {previewRespondent && isSuperAdmin && (
+        <RespondentPreview
+          assessment={assessment}
+          respondent={previewRespondent}
+          activities={activities}
+          responses={responses}
+          onClose={() => setPreviewRespondent(null)}
+        />
+      )}
 
       <ConfirmDialog
         open={!!removingRespondent}
