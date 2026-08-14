@@ -420,7 +420,7 @@ export default function PersonalProfileReport({
                                  deficiency — marking it as failure inverts the
                                  axis the report is built on. Shade says more or
                                  less, which is all these answers claim. */
-                              <span className={`inline-block text-xs px-2.5 py-1 rounded-full ${heatClass(normalize(axis.key, resp[axis.key]))}`}>
+                              <span className={`inline-block text-xs font-medium px-2.5 py-1 rounded-full ${heatClass(normalize(axis.key, resp[axis.key]))}`}>
                                 {resp[axis.key]}
                               </span>
                             ) : (

@@ -247,15 +247,27 @@ export const category = (resp) => {
   return exp !== null && exp >= 0.5 ? "strengthen" : "develop";
 };
 
-// Heat for the results grid. One ramp shared by all three axes, fed the
-// normalised value so the bands mean the same thing on each.
+// Heat for the results grid, and for the answer pills in the person's own
+// report. One ramp shared by all three axes, fed the normalised value so the
+// bands mean the same thing on each.
+//
+// Every pair carries at least AA contrast (4.5:1) at the sizes these are set
+// in. Two used to fall short, measured on the rendered pills:
+//
+//   gray-500 on gray-100 was 4.39 — the only pair that actually failed, now
+//   gray-600 at 6.8.
+//
+//   White on #3366FF was 4.68, scraping past. Letters could not fix that one:
+//   the navy that carries the paler blues drops to 3.1 on it, worse than white.
+//   Darkening the band to #2952CC takes white to 6.55 and widens the gap to the
+//   band below, which read as much the same weight before.
 export const heatClass = (norm) => {
   if (norm === null || norm === undefined) return "bg-gray-50 text-gray-300";
-  if (norm >= 0.8) return "bg-[#3366FF] text-white";
+  if (norm >= 0.8) return "bg-[#2952CC] text-white";
   if (norm >= 0.6) return "bg-[#7f9dff] text-[#12235c]";
   if (norm >= 0.4) return "bg-[#c3d1ff] text-[#12235c]";
   if (norm >= 0.2) return "bg-[#e6ecff] text-[#2952CC]";
-  return "bg-gray-100 text-gray-500";
+  return "bg-gray-100 text-gray-600";
 };
 
 // ── Aggregation ────────────────────────────────────────────────────────────
