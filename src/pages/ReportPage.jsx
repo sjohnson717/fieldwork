@@ -848,7 +848,10 @@ export default function ReportPage() {
           );
         })()}
 
-        <ChaosAssessmentPlug />
+        {/* Screen only, as on the respondent reports: the pointer is worth
+            having where it can be clicked, and a printed deliverable handed to
+            a client should close on its findings rather than a pitch. */}
+        <div className="no-print"><ChaosAssessmentPlug /></div>
 
         {/* ── Footer ──
             The notice names Product Growth Leaders rather than the app: what is

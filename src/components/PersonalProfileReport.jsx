@@ -131,7 +131,7 @@ export default function PersonalProfileReport({
             </p>
           );
         })()}
-        <PrintCredit plug />
+        <PrintCredit orgName={assessment?.org_name} />
       </div>
 
       <div className="flex items-center gap-3 mb-8 no-print">

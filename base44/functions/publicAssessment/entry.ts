@@ -38,6 +38,35 @@ const shape = (assessment, extraFields = []) => {
   return out;
 };
 
+// Who the printed report says prepared it. Resolved here because the pages
+// that render it are unauthenticated and cannot read Organization for
+// themselves, and because org_id alone is not enough: assessments predating
+// organisations carry none, so the creator's own org is the second place to
+// look. A name, never an id — attribution, not a handle onto anything.
+//
+// Returns null rather than throwing. A footer that cannot name the firm is a
+// footer with one line fewer; a report that fails to load because a lookup
+// missed is a broken deliverable.
+const orgNameFor = async (svc, assessment) => {
+  try {
+    let orgId = assessment.org_id || null;
+    if (!orgId && assessment.created_by_id) {
+      const users = await svc.User.filter({ id: assessment.created_by_id });
+      orgId = users?.[0]?.org_id || null;
+    }
+    if (!orgId) return null;
+    const orgs = await svc.Organization.filter({ id: orgId });
+    return orgs?.[0]?.name || null;
+  } catch {
+    return null;
+  }
+};
+
+const shapeWithOrg = async (svc, assessment, extraFields = []) => ({
+  ...shape(assessment, extraFields),
+  org_name: await orgNameFor(svc, assessment),
+});
+
 const notFound = () =>
   // Deliberately uniform: never reveal whether a token exists but is the wrong
   // kind, or belongs to a closed assessment.
@@ -61,7 +90,7 @@ Deno.serve(async (req) => {
         const wanted = token.trim().toUpperCase();
         const a = assessments.find((x) => (x.access_code || "").toUpperCase() === wanted);
         if (!a) return notFound();
-        return Response.json({ assessment: shape(a) });
+        return Response.json({ assessment: await shapeWithOrg(svc, a) });
       }
 
       // Respondent returning via their personal ?t= link.
@@ -72,7 +101,7 @@ Deno.serve(async (req) => {
         const a = assessments.find((x) => x.id === r.assessment_id);
         if (!a) return notFound();
         return Response.json({
-          assessment: shape(a),
+          assessment: await shapeWithOrg(svc, a),
           respondent: {
             id: r.id,
             name: r.name,
@@ -175,7 +204,7 @@ Deno.serve(async (req) => {
         const withholdTokens = (a.assessment_type || "team_gap") === "personal";
 
         return Response.json({
-          assessment: shape(a, ["access_code"]),
+          assessment: await shapeWithOrg(svc, a, ["access_code"]),
           respondents: respondents.map((r) => ({
             id: r.id,
             name: r.name,
@@ -199,7 +228,7 @@ Deno.serve(async (req) => {
         if (!a) return notFound();
         const respondents = await svc.Respondent.filter({ assessment_id: a.id });
         return Response.json({
-          assessment: shape(a),
+          assessment: await shapeWithOrg(svc, a),
           respondents: respondents.map((r) => ({ id: r.id, status: r.status })),
         });
       }

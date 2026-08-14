@@ -14,8 +14,13 @@ import { createClientFromRequest } from "npm:@base44/sdk@0.8.39";
 //                         may only grant "facilitator" or "org_admin", and
 //                         may never change anyone's org_id.
 //
-// Nobody may edit their own record here (self-demotion/escalation loops);
-// the UI blocks it too.
+// Nobody may change their own role here (self-demotion/escalation loops); the
+// UI blocks that too. Organisation is the one exception, and only for the
+// super-admin: their access does not derive from org membership, so setting it
+// escalates nothing — while an org_admin, who may never change anyone's org,
+// still may not change their own. The exception exists because the super-admin
+// was the one account that could not be given an org at all, and the printed
+// reports name the organisation that prepared them.
 
 const sameOrg = (a, b) => (a || null) === (b || null);
 
@@ -33,7 +38,10 @@ Deno.serve(async (req) => {
       return Response.json({ error: "userId is required" }, { status: 400 });
     }
     if (userId === actor.id) {
-      return Response.json({ error: "You cannot change your own access." }, { status: 403 });
+      const orgOnly = role === undefined && orgId !== undefined;
+      if (!(actor.role === "admin" && orgOnly)) {
+        return Response.json({ error: "You cannot change your own access." }, { status: 403 });
+      }
     }
 
     const target = await base44.asServiceRole.entities.User.get(userId);

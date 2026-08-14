@@ -83,7 +83,7 @@ export default function TeamGapSelfReport({
             </p>
           );
         })()}
-        <PrintCredit plug />
+        <PrintCredit orgName={assessment?.org_name} />
       </div>
 
       {/* Header */}

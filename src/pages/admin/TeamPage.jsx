@@ -139,8 +139,10 @@ export default function TeamPage({ orgFilter = null, onClearOrgFilter, onBackToO
     setUpdatingId(null);
   };
 
+  // Self is allowed here, unlike the role selector beside it: a super-admin's
+  // access does not come from their organisation, so setting their own is not
+  // an escalation. updateTeamMember enforces the same rule server-side.
   const handleOrgChange = async (user, newOrgId) => {
-    if (user.id === currentUser.id) return;
     setUpdatingId(user.id);
     setLoadError("");
     try {
@@ -369,19 +371,15 @@ export default function TeamPage({ orgFilter = null, onClearOrgFilter, onBackToO
                     </td>
                     {isAdmin && (
                       <td className="px-4 py-3">
-                        {isSelf ? (
-                          <span className="text-xs text-gray-500">{orgName(u.org_id)}</span>
-                        ) : (
-                          <select
-                            value={u.org_id || ""}
-                            disabled={isUpdating}
-                            onChange={e => handleOrgChange(u, e.target.value)}
-                            className="text-xs font-medium border border-gray-200 rounded-lg px-2.5 py-1 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#3366FF] disabled:opacity-50 cursor-pointer"
-                          >
-                            <option value="">No organization</option>
-                            {orgs.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
-                          </select>
-                        )}
+                        <select
+                          value={u.org_id || ""}
+                          disabled={isUpdating}
+                          onChange={e => handleOrgChange(u, e.target.value)}
+                          className="text-xs font-medium border border-gray-200 rounded-lg px-2.5 py-1 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#3366FF] disabled:opacity-50 cursor-pointer"
+                        >
+                          <option value="">No organization</option>
+                          {orgs.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
+                        </select>
                       </td>
                     )}
                     <td className="px-4 py-3">

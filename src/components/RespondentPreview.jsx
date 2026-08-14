@@ -20,6 +20,19 @@ import TeamGapSelfReport from "@/components/TeamGapSelfReport";
 export default function RespondentPreview({ assessment, respondent, activities, responses, onClose }) {
   const isPersonal = assessment?.assessment_type === "personal";
   const [resources, setResources] = useState([]);
+  // The respondent's own page gets org_name resolved server-side by
+  // publicAssessment; the admin side loads the Assessment record itself, which
+  // carries org_id and no name. Resolved here so the preview credits the same
+  // firm the respondent's copy does rather than falling back to the app owner.
+  const [orgName, setOrgName] = useState(null);
+
+  useEffect(() => {
+    if (!assessment?.org_id) return;
+    base44.entities.Organization
+      .filter({ id: assessment.org_id })
+      .then(rows => setOrgName(rows?.[0]?.name || null))
+      .catch(() => setOrgName(null));
+  }, [assessment?.org_id]);
 
   // Same lazy fetch, and same silent failure, as the respondent's page: an
   // empty list drops the Suggested Resources section rather than breaking the
@@ -39,6 +52,10 @@ export default function RespondentPreview({ assessment, respondent, activities, 
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
+
+  // The children read org_name off the assessment, as the respondent's page
+  // does, so the resolved name is merged in rather than threaded separately.
+  const withOrg = orgName ? { ...assessment, org_name: orgName } : assessment;
 
   const mine = responses.filter(r => r.respondent_id === respondent.id);
   const keyed = rebuildResponses(mine);
@@ -86,7 +103,7 @@ export default function RespondentPreview({ assessment, respondent, activities, 
             <PersonalProfileReport
               profile={profile}
               activities={activities}
-              assessment={assessment}
+              assessment={withOrg}
               respondent={respondent}
               name={respondent.name}
               title={respondent.title}
@@ -98,7 +115,7 @@ export default function RespondentPreview({ assessment, respondent, activities, 
         </div>
       ) : (
         <TeamGapSelfReport
-          assessment={assessment}
+          assessment={withOrg}
           respondent={respondent}
           name={respondent.name}
           title={respondent.title}
