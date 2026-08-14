@@ -11,11 +11,16 @@ export default function LandingPage() {
   const navigate = useNavigate();
 
   // Auto-redirect anyone with admin-side access to /admin (org admins were
-  // previously left on the landing page)
+  // previously left on the landing page).
+  //
+  // A signed-in account *without* access goes to /no-access rather than being
+  // left here. This is where Google sign-in returns to, so it is where an
+  // invited facilitator whose address did not match would otherwise land — on
+  // marketing copy, next to a "Facilitator sign-in" button that loops them
+  // straight back to the same place.
   useEffect(() => {
-    if (authChecked && isAuthenticated && canAccessAdmin(user)) {
-      navigate("/admin", { replace: true });
-    }
+    if (!authChecked || !isAuthenticated) return;
+    navigate(canAccessAdmin(user) ? "/admin" : "/no-access", { replace: true });
   }, [authChecked, isAuthenticated, user, navigate]);
 
   if (isLoadingAuth) {

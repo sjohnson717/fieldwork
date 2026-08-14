@@ -17,6 +17,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
+import NoAccess from './pages/NoAccess';
 
 function App() {
   return (
@@ -30,6 +31,10 @@ function App() {
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/assess" element={<AssessPage />} />
+            {/* Where a signed-in account with no role lands. Anything that used
+                to send such an account to /assess sends it here instead: the
+                respondent survey is not a permissions message. */}
+            <Route path="/no-access" element={<NoAccess />} />
             <Route element={<ProtectedRoute />}>
               <Route path="/admin" element={<AdminPage />} />
             </Route>

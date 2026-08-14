@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Navigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
 import AssessmentOverview from "./admin/AssessmentOverview";
@@ -245,21 +246,10 @@ export default function AdminPage() {
     setDeleting(false);
   };
 
-  if (!canAccessAdmin) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-10 text-center max-w-sm">
-          <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-6 h-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M12 3a9 9 0 100 18A9 9 0 0012 3z" />
-            </svg>
-          </div>
-          <h2 className="text-lg font-semibold text-gray-900 mb-1">Access denied</h2>
-          <p className="text-sm text-gray-500">This page is only available to admins.</p>
-        </div>
-      </div>
-    );
-  }
+  // One explanation of this state, on one page, rather than three screens that
+  // each say "denied" and none of which say why. /no-access names the address
+  // they are signed in as, which is the fact that resolves it nearly every time.
+  if (!canAccessAdmin) return <Navigate to="/no-access" replace />;
 
   // The sidebar list, narrowed by the tag filter. The selected assessment is
   // still resolved against the full list, so filtering never blanks the pane

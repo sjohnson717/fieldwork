@@ -87,7 +87,35 @@ Deno.serve(async (req) => {
     }
 
     const updated = await base44.asServiceRole.entities.User.update(userId, updates);
+
+    // Revoking access has to retire their pending invitations too, or it only
+    // holds until their next sign-in.
+    //
+    // acceptInvitation applies a pending invitation whenever the account has no
+    // application role — which is exactly the state a revoke leaves behind. So a
+    // live invitation for that address (an accidental re-invite, an older one
+    // that was never accepted) would re-grant the role the moment they logged
+    // in, while the roster went on showing No access. The revoke looked done and
+    // wasn't.
+    //
+    // Service role because Invitation's own rules would let an org_admin edit
+    // invitations outside their org; here the write is scoped to the address of
+    // the user this call has already been authorised to revoke.
+    let invitationsRevoked = 0;
+    if (updates.role === "user") {
+      const email = (updated.email || "").toLowerCase();
+      if (email) {
+        const pending = await base44.asServiceRole.entities.Invitation.filter({ status: "pending" }, null, 5000);
+        for (const invitation of pending) {
+          if ((invitation.email || "").toLowerCase() !== email) continue;
+          await base44.asServiceRole.entities.Invitation.update(invitation.id, { status: "revoked" });
+          invitationsRevoked++;
+        }
+      }
+    }
+
     return Response.json({
+      invitationsRevoked,
       user: {
         id: updated.id,
         full_name: updated.full_name,

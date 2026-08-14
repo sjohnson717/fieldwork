@@ -29,7 +29,10 @@ export default function Login() {
       // acceptInvitation, so me() still reports the default "user" here and the
       // invited facilitator would be routed to /assess with no way back.
       const user = await checkUserAuth();
-      navigate(canAccessAdmin(user) ? "/admin" : "/assess", { replace: true });
+      // Never /assess. Someone who just signed in holds an account, and an
+      // account with no role is a permissions problem — sending them to the
+      // respondent survey answered it with the wrong screen entirely.
+      navigate(canAccessAdmin(user) ? "/admin" : "/no-access", { replace: true });
     } catch (err) {
       setError(err.message || "Invalid email or password");
     } finally {
