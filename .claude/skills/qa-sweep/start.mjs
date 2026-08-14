@@ -67,6 +67,7 @@ export default defineConfig({
   resolve: {
     alias: [
       { find: '@/api/base44Client', replacement: DIR + '/stub-base44.js' },
+      { find: '@/lib/AuthContext', replacement: DIR + '/stub-auth.jsx' },
       { find: '@', replacement: REPO + '/src' },
     ],
   },

@@ -6,6 +6,12 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import AssessPage from '@/pages/AssessPage'
 import ReportPage from '@/pages/ReportPage'
 import TeamLeaderPage from '@/pages/TeamLeaderPage'
+import NoAccess from '@/pages/NoAccess'
+import LandingPage from '@/pages/LandingPage'
+import AdminPage from '@/pages/AdminPage'
+// The stub, via the alias in vite.config.js. Staff pages read useAuth(), so the
+// provider has to wrap the routes exactly as App.jsx wraps them.
+import { AuthProvider } from '@/lib/AuthContext'
 
 // Every route a respondent, team leader or buyer can reach, mounted against the
 // stub. Deliberately the real page components — a harness that renders its own
@@ -26,11 +32,13 @@ function Missing() {
       <li><a href="/assess?t=TOKEN-PERSONAL">/assess?t=TOKEN-PERSONAL</a> — personal profile report</li>
       <li><a href="/report/TOKEN-BUYER">/report/TOKEN-BUYER</a> — buyer report</li>
       <li><a href="/team/TOKEN-TEAM">/team/TOKEN-TEAM</a> — team leader dashboard</li>
+      <li><a href="/no-access">/no-access</a> — signed in, no role (set window.__qaUser first)</li>
     </ul>
   </div>
 }
 
 ReactDOM.createRoot(document.getElementById('root')).render(
+  <AuthProvider>
   <BrowserRouter>
     <Routes>
       <Route path="/assess" element={<AssessPage />} />
@@ -40,8 +48,14 @@ ReactDOM.createRoot(document.getElementById('root')).render(
       <Route path="/report" element={<ReportPage />} />
       <Route path="/team/:token" element={<TeamLeaderPage />} />
       <Route path="/team" element={<TeamLeaderPage />} />
+      {/* Staff screens. window.__qaUser decides who is signed in — see
+          stub-auth.jsx. */}
+      <Route path="/no-access" element={<NoAccess />} />
+      <Route path="/landing" element={<LandingPage />} />
+      <Route path="/admin" element={<AdminPage />} />
       <Route path="/" element={<Missing />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   </BrowserRouter>
+  </AuthProvider>
 )
