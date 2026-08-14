@@ -1,5 +1,5 @@
 import { FACET_ORDER, IMPORTANCE_BADGE, EXECUTION_BADGE, BADGE_FALLBACK } from "@/lib/scoring";
-import { PERSONAL_AXES } from "@/lib/personal-scoring";
+import { PERSONAL_AXES, heatClass, normalize } from "@/lib/personal-scoring";
 import { computeSelfGapProfile } from "@/lib/self-gap";
 import TeamGapSelfSummary from "@/components/TeamGapSelfSummary";
 import PrintCredit from "@/components/PrintCredit";
@@ -173,7 +173,10 @@ export default function TeamGapSelfReport({
                         {isPersonal ? PERSONAL_AXES.map(axis => (
                           <td key={axis.key} className="px-3 py-3 align-middle text-center" style={{ width: '120px' }}>
                             {r[axis.key]
-                              ? <span className="inline-block whitespace-nowrap px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800" style={{ width: '104px', textAlign: 'center' }}>{r[axis.key]}</span>
+                              /* Same ramp as the personal report proper — this
+                                 table is the fallback that renders when there
+                                 is no classifiable profile to lead with. */
+                              ? <span className={`inline-block whitespace-nowrap px-2 py-0.5 rounded-full text-xs font-medium ${heatClass(normalize(axis.key, r[axis.key]))}`} style={{ width: '104px', textAlign: 'center' }}>{r[axis.key]}</span>
                               : <span className="text-gray-300 text-xs">—</span>}
                           </td>
                         )) : <>

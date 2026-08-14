@@ -5,6 +5,8 @@ import {
   computeDevelopmentOpportunities,
   dominantBucket,
   DOMINANT_SUMMARY,
+  heatClass,
+  normalize,
 } from "@/lib/personal-scoring";
 import { FACET_ORDER, FACET_SUBTITLES } from "@/lib/scoring";
 import PrintCredit from "@/components/PrintCredit";
@@ -410,7 +412,15 @@ export default function PersonalProfileReport({
                         {PERSONAL_AXES.map(axis => (
                           <td key={axis.key} className="px-3 py-2.5 text-center">
                             {resp[axis.key] ? (
-                              <span className="inline-block text-xs px-2.5 py-1 rounded-full bg-blue-50 text-blue-700">
+                              /* One intensity ramp, not a good/bad palette, and
+                                 the same one the facilitator's matrix uses. Red
+                                 for a low answer would be wrong twice over: this
+                                 is a document its owner hands to a manager, and
+                                 on Interest a low answer is a preference, not a
+                                 deficiency — marking it as failure inverts the
+                                 axis the report is built on. Shade says more or
+                                 less, which is all these answers claim. */
+                              <span className={`inline-block text-xs px-2.5 py-1 rounded-full ${heatClass(normalize(axis.key, resp[axis.key]))}`}>
                                 {resp[axis.key]}
                               </span>
                             ) : (
