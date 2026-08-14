@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { getAssignedActivities } from "@/lib/activities";
 import { getBuyerReport } from "@/lib/public-assessment";
+import { usePrintSafeUrl } from "@/lib/print-safe-url";
 import ExecSummary from "@/components/ExecSummary";
 import ChaosAssessmentPlug from "@/components/ChaosAssessmentPlug";
 import {
@@ -334,6 +335,8 @@ function FacetWheel({ activityStats, activities, onFacetClick }) {
 
 export default function ReportPage() {
   const { token } = useParams();
+  // The URL is the credential on this page; keep it out of the printed header.
+  usePrintSafeUrl();
   const [assessment, setAssessment] = useState(null);
   const [activities, setActivities] = useState([]);
   const [activityStats, setActivityStats] = useState({});

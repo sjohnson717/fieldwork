@@ -4,6 +4,7 @@ import { getAssignedActivities } from "@/lib/activities";
 import { getAssessmentByCode, getRespondentSession } from "@/lib/public-assessment";
 import { PERSONAL_AXES, computePersonProfile } from "@/lib/personal-scoring";
 import { rebuildResponses } from "@/lib/responses";
+import { usePrintSafeUrl } from "@/lib/print-safe-url";
 import { FACET_ORDER } from "@/lib/scoring";
 import PersonalProfileReport from "@/components/PersonalProfileReport";
 import TeamGapSelfReport from "@/components/TeamGapSelfReport";
@@ -77,6 +78,8 @@ function RatingButton({ options, value, onChange, colorMap }) {
 
 export default function AssessPage() {
   const [step, setStep] = useState("entry");
+  // The URL is the credential on this page; keep it out of the printed header.
+  usePrintSafeUrl();
   // True when this visit began with an already-completed submission, which
   // changes the review page from "confirm and submit" to "look back".
   const [returningCompleted, setReturningCompleted] = useState(false);

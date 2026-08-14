@@ -4,6 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { getAssignedActivities } from "@/lib/activities";
 import { getTeamLeaderView } from "@/lib/public-assessment";
 import { FACET_ORDER, FACET_SUBTITLES } from "@/lib/scoring";
+import { usePrintSafeUrl } from "@/lib/print-safe-url";
 
 const PGL_LOGO = "https://static.wixstatic.com/media/739bca_d49790dff653441fae7d036110019dc2~mv2.png";
 
@@ -102,6 +103,8 @@ function CopyButton({ text }) {
 
 export default function TeamLeaderPage() {
   const { token } = useParams();
+  // The URL is the credential on this page; keep it out of the printed header.
+  usePrintSafeUrl();
   const [assessment, setAssessment] = useState(null);
   const [respondents, setRespondents] = useState([]);
   // Assessments paired with this one — typically the personal assessment the

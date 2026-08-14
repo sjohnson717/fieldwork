@@ -209,8 +209,16 @@
        So: 11in of paper, less the container's 14mm top padding, less the
        column's own 2.5rem, less 14mm of bottom trim to match the top. A4 is
        taller than Letter, so sizing to the shorter sheet can only leave the
-       credit a little high — never overflow, and never a blank page. */
-    height: calc(11in - 28mm - 2.5rem);
+       credit a little high — never overflow, and never a blank page.
+
+       The last 22mm is for browsers that reserve page margins of their own.
+       Chrome honours `@page { margin: 0 }` and gives the whole sheet; Safari
+       does not, and prints a header and footer band besides, so the cover ran
+       past the shorter printable area and split the credit across two pages —
+       the second line stranded alone overleaf. Sized for the browser that
+       gives the least room: on Chrome the credit sits low rather than flush,
+       which is the cost of it holding together everywhere. */
+    height: calc(11in - 28mm - 2.5rem - 22mm);
     margin-bottom: 0 !important;
     break-after: page;
     page-break-after: always;
