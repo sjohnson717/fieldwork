@@ -199,11 +199,18 @@
   .print-cover {
     display: flex !important;
     flex-direction: column;
-    /* A page less its top padding and a bottom margin of its own. Sized to the
-       page exactly — 100vh minus the 14mm padding — it overflowed onto a second
-       sheet on sub-pixel rounding, so the 14mm of slack is both the safety
-       margin and the trim the credit needs to sit above. */
-    height: calc(100vh - 28mm);
+    /* Sized off the paper, not the window. This was `100vh` minus the padding,
+       which is only the page height if the engine resolves viewport units
+       against the page box. Chrome's headless PDF does; a browser printing from
+       a tall window does not, and there 100vh is the window — 317mm from a
+       1200px-high window against a 279mm sheet. The cover then ran 35mm past
+       the trim and pushed the credit onto a second sheet, alone.
+
+       So: 11in of paper, less the container's 14mm top padding, less the
+       column's own 2.5rem, less 14mm of bottom trim to match the top. A4 is
+       taller than Letter, so sizing to the shorter sheet can only leave the
+       credit a little high — never overflow, and never a blank page. */
+    height: calc(11in - 28mm - 2.5rem);
     margin-bottom: 0 !important;
     break-after: page;
     page-break-after: always;

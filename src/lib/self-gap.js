@@ -13,7 +13,10 @@ import { IMPORTANCE_SCORE, EXECUTION_SCORE, avg } from "@/lib/scoring";
 export const SELF_BUCKETS = {
   critical: {
     label: "Immediate attention",
-    hint: "You rated these important and said execution is falling well short. These are what you'd bring to the workshop.",
+    // "a workshop", not "the workshop": this page is shown to everyone who
+    // answers, and plenty of them have had no workshop scheduled or even
+    // mentioned. The definite article promises a session that may not exist.
+    hint: "You rated these important and said execution is falling well short. These are what you'd bring to a workshop.",
     accent: "border-l-[#E02424]",
     heading: "text-[#E02424]",
   },

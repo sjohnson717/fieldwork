@@ -90,7 +90,7 @@ export default function TeamGapSelfSummary({ profile }) {
             {unknowns.length === 1 ? "One thing you couldn't answer" : `${unknowns.length} things you couldn't answer`}
           </h3>
           <p className="text-xs text-[#1a2e7a]/70 mb-3 leading-relaxed">
-            You marked execution as "I don't know" here. That isn't a gap, it's a sightline — and it's worth raising in the workshop, because someone in the room can probably close it in a sentence.
+            You marked execution as "I don't know" here. That isn't a gap, it's a sightline — and it's worth raising in a workshop, because someone in the room can probably close it in a sentence.
           </p>
           <ul className="space-y-1.5">
             {unknowns.map(row => (
