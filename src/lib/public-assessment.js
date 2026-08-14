@@ -24,6 +24,21 @@ export const listRespondents = async (assessmentId) => {
   return res?.data?.respondents ?? [];
 };
 
+// A respondent's own answers, written server-side against their token.
+//
+// Not entity writes from the browser: Response.rls.update permits only admin,
+// org_admin and facilitator, and a respondent is none of those — so the second
+// save of any page (Back and forward, a resumed link, Revise) was refused while
+// the first, a create, went through. See base44/functions/saveResponses.
+//
+// `answers` is [{ activity_id, ...fields }]; the function upserts by activity,
+// so no row ids travel to the browser or back. `complete` marks the respondent
+// finished in the same call as their last page of answers.
+export const saveRespondentAnswers = async (token, answers, { complete = false } = {}) => {
+  const res = await base44.functions.invoke('saveResponses', { token, answers, complete });
+  return res?.data ?? null;
+};
+
 export const getAssessmentByCode = (code) => resolve('code', code);
 export const getRespondentSession = (token) => resolve('respondent', token);
 export const getTeamLeaderView = (teamToken) => resolve('team', teamToken);
