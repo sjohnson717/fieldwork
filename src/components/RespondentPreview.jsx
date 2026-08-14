@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { base44 } from "@/api/base44Client";
 import { computePersonProfile } from "@/lib/personal-scoring";
 import { rebuildResponses } from "@/lib/responses";
@@ -17,6 +18,13 @@ import TeamGapSelfReport from "@/components/TeamGapSelfReport";
 // Consequently nothing here can write. The children are passed readOnly, which
 // drops Revise, Done, and the resume link; what remains is the summary, the
 // answers, and Save as PDF.
+//
+// Rendered through a portal to <body>, which is about printing rather than
+// layout. A fixed overlay inside the admin tree paints on every printed sheet
+// while the page underneath goes on flowing into its own, so Save as PDF from
+// here produced the cover repeated on each page with the admin sidebar bleeding
+// across the top of it. As a sibling of #root it can be printed alone: the
+// print rules hide #root and let this flow normally.
 export default function RespondentPreview({ assessment, respondent, activities, responses, onClose }) {
   const isPersonal = assessment?.assessment_type === "personal";
   const [resources, setResources] = useState([]);
@@ -53,6 +61,22 @@ export default function RespondentPreview({ assessment, respondent, activities, 
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
+  // Marks the body while the overlay is up, which is what the print rules key
+  // on, and names the tab after the assessment for the same reason the report
+  // pages do: every browser offers the tab title as the filename when you Save
+  // as PDF, and printing from admin was producing "Admin | Quartz Assessment"
+  // — the app's name on a document about one person's answers. Both are undone
+  // on close, so the admin page gets its own title back.
+  useEffect(() => {
+    const previousTitle = document.title;
+    document.body.classList.add("preview-open");
+    if (assessment?.title) document.title = `${assessment.title} | Quartz Assessment`;
+    return () => {
+      document.body.classList.remove("preview-open");
+      document.title = previousTitle;
+    };
+  }, [assessment?.title]);
+
   // The children read org_name off the assessment, as the respondent's page
   // does, so the resolved name is merged in rather than threaded separately.
   const withOrg = orgName ? { ...assessment, org_name: orgName } : assessment;
@@ -73,8 +97,8 @@ export default function RespondentPreview({ assessment, respondent, activities, 
     : null;
   const hasProfile = (profile?.answeredCount ?? 0) > 0;
 
-  return (
-    <div className="fixed inset-0 z-50 bg-gray-50 overflow-y-auto">
+  return createPortal(
+    <div className="respondent-preview fixed inset-0 z-50 bg-gray-50 overflow-y-auto">
       {/* The banner is the facilitator's, not the respondent's, so it is
           no-print: a saved PDF should be the page the respondent could have
           saved, not a screenshot of an admin tool looking at it. */}
@@ -126,6 +150,7 @@ export default function RespondentPreview({ assessment, respondent, activities, 
           readOnly
         />
       )}
-    </div>
+    </div>,
+    document.body,
   );
 }

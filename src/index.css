@@ -243,6 +243,25 @@
     page-break-after: avoid;
   }
 
+  /* The facilitator's preview of a respondent's report. It is a fixed overlay,
+     and a fixed element prints on every sheet — the cover repeated on each page
+     while the admin screen underneath went on flowing into its own, sidebar and
+     all, across the top. Printing from it is worth having: it is how a
+     facilitator gets a copy of someone's report without asking for the link
+     that would let them edit it.
+
+     So while it is open, the admin app is not printed at all and the overlay
+     stops being an overlay. It is portalled to <body>, which is what makes
+     #root a clean thing to hide. */
+  body.preview-open #root {
+    display: none !important;
+  }
+
+  body.preview-open .respondent-preview {
+    position: static !important;
+    overflow: visible !important;
+  }
+
   /* Bottom padding is dropped, on the container and its immediate child. It
      buys nothing — padding at the end of the document does not affect the
      pages in between — and it cost a sheet: the credit sat near the foot of
