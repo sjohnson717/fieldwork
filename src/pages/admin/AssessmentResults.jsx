@@ -233,6 +233,16 @@ export default function AssessmentResults({ assessment }) {
                       {new Date(r.created_date).toLocaleDateString()}
                     </td>
                     <td className="py-2.5 pl-2 text-right flex items-center justify-end gap-3">
+                      {/* Same gate as the Individual Answers tab: this is one
+                          person's raw answers, not an aggregate. */}
+                      {isSuperAdmin && !isEmpty && (
+                        <button
+                          onClick={() => { setSelectedRespondentId(r.id); setView("individual"); }}
+                          className="text-xs text-gray-400 hover:text-blue-600 transition-colors"
+                        >
+                          Answers
+                        </button>
+                      )}
                       <button
                         onClick={() => setRemovingRespondent(r)}
                         className={`text-xs transition-colors ${isEmpty ? "text-red-300 hover:text-red-500 font-medium" : "text-gray-300 hover:text-red-400"}`}
