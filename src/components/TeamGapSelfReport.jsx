@@ -31,6 +31,15 @@ export default function TeamGapSelfReport({
 }) {
   const availableFacets = FACET_ORDER.filter(f => activities.some(a => a.facet === f));
 
+  // The owner question is optional, and skipping it is common — the survey asks
+  // it on every activity whenever the assessment defines roles, and a
+  // respondent who answered none leaves a column of dashes running the length
+  // of the appendix. Roles existing is what makes the question askable; an
+  // answer to it is what makes the column worth printing.
+  const hasOwners = !isPersonal
+    && assessment?.roles?.length > 0
+    && activities.some(a => responses[a.id]?.suggested_owner);
+
   // Local answer state is keyed by activity; the profile wants Response rows.
   const selfGapProfile = !isPersonal
     ? computeSelfGapProfile(
@@ -146,7 +155,7 @@ export default function TeamGapSelfReport({
                     )) : <>
                     <th className="text-left px-3 py-2.5 text-xs font-semibold text-gray-500" style={{ width: '120px' }}>Importance</th>
                     <th className="text-left px-3 py-2.5 text-xs font-semibold text-gray-500" style={{ width: '120px' }}>Execution</th>
-                    {assessment?.roles?.length > 0 && (
+                    {hasOwners && (
                       <th className="text-left px-3 py-2.5 text-xs font-semibold text-gray-500">Suggested owner</th>
                     )}
                     </>}
@@ -175,7 +184,7 @@ export default function TeamGapSelfReport({
                             ? <span className={`inline-flex items-center whitespace-nowrap px-2 py-0.5 rounded-full text-xs font-medium ${EXECUTION_BADGE[r.execution] || BADGE_FALLBACK}`} style={{ width: '110px', justifyContent: 'center' }}>{r.execution}</span>
                             : <span className="text-gray-300 text-xs">—</span>}
                         </td>
-                        {assessment?.roles?.length > 0 && (
+                        {hasOwners && (
                           <td className="px-3 py-3 text-gray-600 text-xs align-middle whitespace-nowrap">{r.suggested_owner || <span className="text-gray-300">—</span>}</td>
                         )}
                         </>}
@@ -237,7 +246,10 @@ export default function TeamGapSelfReport({
             )}
           </div>
           {!readOnly && !returningCompleted && (
-            <p className="text-center text-xs text-gray-400">Your feedback will help shape the team's professional development plan.</p>
+            /* Screen chrome, and marked as such: without no-print this closing
+               nudge printed underneath the credit, splitting the one block on
+               the page that is meant to close it. */
+            <p className="no-print text-center text-xs text-gray-400">Your feedback will help shape the team's professional development plan.</p>
           )}
         </>
       )}
