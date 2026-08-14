@@ -243,16 +243,6 @@
     page-break-after: avoid;
   }
 
-  /* The closing block gets a single rule above it, not one per line: the
-     pointer carries the separator, so the credit that follows drops its own
-     and tucks underneath. */
-
-  .report-outro + .print-footer {
-    margin-top: 0.75rem;
-    padding-top: 0;
-    border-top: none;
-  }
-
   /* Bottom padding is dropped, on the container and its immediate child. It
      buys nothing — padding at the end of the document does not affect the
      pages in between — and it cost a sheet: the credit sat near the foot of

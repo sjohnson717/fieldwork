@@ -83,7 +83,7 @@ export default function TeamGapSelfReport({
             </p>
           );
         })()}
-        <PrintCredit />
+        <PrintCredit plug />
       </div>
 
       {/* Header */}
@@ -153,10 +153,13 @@ export default function TeamGapSelfReport({
                       // hanging off their left edge.
                       <th key={axis.key} className="text-center px-3 py-2.5 text-xs font-semibold text-gray-500" style={{ width: '120px' }}>{axis.label}</th>
                     )) : <>
-                    <th className="text-left px-3 py-2.5 text-xs font-semibold text-gray-500" style={{ width: '120px' }}>Importance</th>
-                    <th className="text-left px-3 py-2.5 text-xs font-semibold text-gray-500" style={{ width: '120px' }}>Execution</th>
+                    {/* Centred over the pills below, like the personal axes
+                        above: the pills are fixed-width and sat mid-column
+                        while the headings hung off their left edge. */}
+                    <th className="text-center px-3 py-2.5 text-xs font-semibold text-gray-500" style={{ width: '120px' }}>Importance</th>
+                    <th className="text-center px-3 py-2.5 text-xs font-semibold text-gray-500" style={{ width: '120px' }}>Execution</th>
                     {hasOwners && (
-                      <th className="text-left px-3 py-2.5 text-xs font-semibold text-gray-500">Suggested owner</th>
+                      <th className="text-center px-3 py-2.5 text-xs font-semibold text-gray-500">Suggested owner</th>
                     )}
                     </>}
                   </tr>
@@ -174,18 +177,18 @@ export default function TeamGapSelfReport({
                               : <span className="text-gray-300 text-xs">—</span>}
                           </td>
                         )) : <>
-                        <td className="px-3 py-3 align-middle" style={{ width: '120px' }}>
+                        <td className="px-3 py-3 align-middle text-center" style={{ width: '120px' }}>
                           {r.importance
                             ? <span className={`inline-block whitespace-nowrap px-2 py-0.5 rounded-full text-xs font-medium ${IMPORTANCE_BADGE[r.importance] || BADGE_FALLBACK}`} style={{ width: '110px', textAlign: 'center' }}>{r.importance}</span>
                             : <span className="text-gray-300 text-xs">—</span>}
                         </td>
-                        <td className="px-3 py-3 align-middle" style={{ width: '120px' }}>
+                        <td className="px-3 py-3 align-middle text-center" style={{ width: '120px' }}>
                           {r.execution
                             ? <span className={`inline-flex items-center whitespace-nowrap px-2 py-0.5 rounded-full text-xs font-medium ${EXECUTION_BADGE[r.execution] || BADGE_FALLBACK}`} style={{ width: '110px', justifyContent: 'center' }}>{r.execution}</span>
                             : <span className="text-gray-300 text-xs">—</span>}
                         </td>
                         {hasOwners && (
-                          <td className="px-3 py-3 text-gray-600 text-xs align-middle whitespace-nowrap">{r.suggested_owner || <span className="text-gray-300">—</span>}</td>
+                          <td className="px-3 py-3 text-gray-600 text-xs align-middle whitespace-nowrap text-center">{r.suggested_owner || <span className="text-gray-300">—</span>}</td>
                         )}
                         </>}
                       </tr>
@@ -200,8 +203,11 @@ export default function TeamGapSelfReport({
 
       {/* Team gap only: the personal report closes itself, inside its own
           component, after the same tables. */}
-      {!isPersonal && <ChaosAssessmentPlug />}
-      {!isPersonal && <PrintCredit />}
+      {/* Screen only. On paper the pointer rides on the cover's credit instead:
+          held to the end it dragged a near-empty sheet along with it, and a
+          report that closes on its own last table reads better anyway. On
+          screen it stays where it was, where it can be clicked. */}
+      {!isPersonal && <div className="no-print"><ChaosAssessmentPlug /></div>}
 
       {/* Team gap only. A personal assessment carries its actions above the
           answers table instead, and duplicating them here would put two

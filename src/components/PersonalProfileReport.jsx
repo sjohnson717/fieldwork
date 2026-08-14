@@ -129,7 +129,7 @@ export default function PersonalProfileReport({
             </p>
           );
         })()}
-        <PrintCredit />
+        <PrintCredit plug />
       </div>
 
       <div className="flex items-center gap-3 mb-8 no-print">
@@ -428,8 +428,8 @@ export default function PersonalProfileReport({
         );
       })}
 
-      <ChaosAssessmentPlug />
-      <PrintCredit />
+      {/* Screen only — the printed pointer rides on the cover's credit. */}
+      <div className="no-print"><ChaosAssessmentPlug /></div>
     </>
   );
 }

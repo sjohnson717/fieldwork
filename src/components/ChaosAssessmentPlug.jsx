@@ -5,7 +5,24 @@
 // where most people finish reading. It closes the document — a report about
 // someone's own skills earns the right to suggest a next step at the end, not
 // alongside their answers.
-export default function ChaosAssessmentPlug() {
+// `compact` is the printed form: the same sentence and the same link, as one
+// more line inside the cover's credit block rather than a bordered section of
+// its own. The sentence lives here in both cases so the two can't drift.
+export default function ChaosAssessmentPlug({ compact = false }) {
+  if (compact) {
+    return (
+      <p className="text-xs text-gray-400 mt-1.5">
+        If you found this helpful, check out the Chaos Assessment at{" "}
+        <a
+          href="https://www.productgrowthleaders.com/assess"
+          className="text-gray-400 no-underline"
+        >
+          www.productgrowthleaders.com/assess
+        </a>
+      </p>
+    );
+  }
+
   return (
     <div className="report-outro">
       <p className="text-sm text-gray-500">
