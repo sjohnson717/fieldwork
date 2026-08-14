@@ -3,6 +3,7 @@ import { PERSONAL_AXES, heatClass, normalize } from "@/lib/personal-scoring";
 import { computeSelfGapProfile } from "@/lib/self-gap";
 import TeamGapSelfSummary from "@/components/TeamGapSelfSummary";
 import PrintCredit from "@/components/PrintCredit";
+import { resumeLinkFor } from "@/lib/token-address";
 import ChaosAssessmentPlug from "@/components/ChaosAssessmentPlug";
 
 const QUARTZ_ICON = "https://media.base44.com/images/public/6a29ff3bc8effbeb3d637555/9e97ff5e6_Quartzicon.png";
@@ -28,6 +29,9 @@ export default function TeamGapSelfReport({
   onRevise,
   onDone,
   readOnly = false,
+  myToken,
+  onCopyLink,
+  copiedLink,
 }) {
   const availableFacets = FACET_ORDER.filter(f => activities.some(a => a.facet === f));
 
@@ -288,6 +292,33 @@ export default function TeamGapSelfReport({
               </button>
             )}
           </div>
+          {/* Their own link, in the document rather than in the address bar.
+              The address used to carry ?t=… so this page could be bookmarked,
+              and iOS Safari printed it into the footer of every saved sheet —
+              a working edit link on a report people forward to a manager. The
+              token now lives here instead: copyable, explained, and marked
+              no-print so a saved PDF cannot take it.
+
+              Never in the facilitator's preview. That is someone else's
+              submission, and this control hands over the ability to rewrite it. */}
+          {!readOnly && myToken && (
+            <div className="no-print max-w-lg mx-auto mt-2 mb-6">
+              <p className="text-xs text-gray-500 mb-1.5">
+                Bookmark your own link to come back to this and update it at any time. It's yours — anyone with it can change your answers.
+              </p>
+              <div className="flex items-center gap-2 bg-gray-100 border border-gray-200 rounded-lg px-3 py-2">
+                <p className="text-[11px] text-gray-500 font-mono flex-1 truncate">
+                  {resumeLinkFor(myToken)}
+                </p>
+                <button
+                  onClick={onCopyLink}
+                  className="shrink-0 text-xs font-medium text-blue-600 hover:text-blue-800 border border-blue-200 hover:border-blue-300 px-2.5 py-1 rounded-lg transition-colors"
+                >
+                  {copiedLink ? "Copied!" : "Copy"}
+                </button>
+              </div>
+            </div>
+          )}
           {!readOnly && !returningCompleted && (
             /* Screen chrome, and marked as such: without no-print this closing
                nudge printed underneath the credit, splitting the one block on

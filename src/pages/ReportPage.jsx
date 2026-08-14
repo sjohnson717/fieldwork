@@ -4,6 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { getAssignedActivities } from "@/lib/activities";
 import { getBuyerReport } from "@/lib/public-assessment";
 import { usePrintSafeUrl } from "@/lib/print-safe-url";
+import { claimToken } from "@/lib/token-address";
 import ExecSummary from "@/components/ExecSummary";
 import ChaosAssessmentPlug from "@/components/ChaosAssessmentPlug";
 import {
@@ -334,8 +335,15 @@ function FacetWheel({ activityStats, activities, onFacetClick }) {
 // ── Main ReportPage ──────────────────────────────────────────────────────────
 
 export default function ReportPage() {
-  const { token } = useParams();
-  // The URL is the credential on this page; keep it out of the printed header.
+  const { token: tokenInPath } = useParams();
+  // Claimed on the first render rather than in an effect, so the address is
+  // already clean before anything paints — a print or a screenshot taken
+  // immediately cannot catch the token. Idempotent, so a StrictMode double
+  // invoke changes nothing. See lib/token-address.js for why the address cannot
+  // hold a credential on a page that prints.
+  const [token] = useState(() => claimToken("buyer", tokenInPath, "/report"));
+  // Secondary now that the address carries no token: it still strips on
+  // beforeprint, which covers any surface that has not moved to claimToken.
   usePrintSafeUrl();
   const [assessment, setAssessment] = useState(null);
   const [activities, setActivities] = useState([]);
@@ -353,8 +361,17 @@ export default function ReportPage() {
   const hasFetched = useRef(false);
 
   useEffect(() => {
-    if (!token || hasFetched.current) return;
+    if (hasFetched.current) return;
     hasFetched.current = true;
+    // No token in the path and none in this tab's storage: someone reloaded a
+    // cleaned address in a new tab, or typed /report. That is the same dead end
+    // as a bad token, and it has to say so — the early return this replaced left
+    // the page on its loading spinner for ever.
+    if (!token) {
+      setError("Report not found. Please check your link.");
+      setLoading(false);
+      return;
+    }
     loadReport();
   }, [token]);
 

@@ -33,8 +33,15 @@ function App() {
             <Route element={<ProtectedRoute />}>
               <Route path="/admin" element={<AdminPage />} />
             </Route>
+            {/* Both of these are reached with a token in the path, which is
+                then cleared from the address — so the token-free forms have to
+                render too, for a reload of the cleaned address. They recover the
+                token from this tab's storage, and show their own "link not
+                valid" state when there is none. */}
             <Route path="/report/:token" element={<ReportPage />} />
+            <Route path="/report" element={<ReportPage />} />
             <Route path="/team/:token" element={<TeamLeaderPage />} />
+            <Route path="/team" element={<TeamLeaderPage />} />
             <Route path="/" element={<LandingPage />} />
             <Route path="/readme" element={<ReadMe />} />
             <Route path="/facilitator-guide" element={<FacilitatorGuide />} />

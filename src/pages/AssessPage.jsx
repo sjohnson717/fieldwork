@@ -5,6 +5,7 @@ import { getAssessmentByCode, getRespondentSession, saveRespondentAnswers } from
 import { PERSONAL_AXES, computePersonProfile } from "@/lib/personal-scoring";
 import { rebuildResponses } from "@/lib/responses";
 import { usePrintSafeUrl } from "@/lib/print-safe-url";
+import { claimToken, resumeLinkFor } from "@/lib/token-address";
 import { FACET_ORDER } from "@/lib/scoring";
 import PersonalProfileReport from "@/components/PersonalProfileReport";
 import TeamGapSelfReport from "@/components/TeamGapSelfReport";
@@ -127,17 +128,16 @@ export default function AssessPage() {
   // which is a section quietly missing rather than a broken report.
   const [resources, setResources] = useState([]);
 
-  // Swap ?code=… for ?t=… once we know who this is, so the address bar holds
-  // their personal link rather than the broadcast one. Without this, anyone
-  // bookmarking the page they registered on gets the shared code link back,
-  // which starts a brand new registration — the URL is the only credential in
-  // this design, so it has to actually be in the URL.
-  const rememberInUrl = (token) => {
+  // Their token, held for this tab and kept out of the address.
+  //
+  // This used to write ?t=… into the address bar so the page could be
+  // bookmarked, and the broadcast ?code=… removed so a bookmark could not start
+  // a second registration. The first half is what iOS Safari then printed into
+  // the footer of every sheet of their saved PDF — see lib/token-address.js.
+  // The code still has to go: a reload carrying it would register them twice.
+  const rememberToken = (token) => {
     setMyToken(token);
-    const url = new URL(window.location.href);
-    url.searchParams.delete("code");
-    url.searchParams.set("t", token);
-    window.history.replaceState({}, "", url);
+    claimToken("respondent", token, "/assess");
   };
 
   // Same reasoning as the buyer report: this page's summary is saved as a PDF,
@@ -162,7 +162,11 @@ export default function AssessPage() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const urlCode = params.get("code");
-    const urlToken = params.get("t");
+    // Claimed, not read: the token moves into this tab's storage and out of the
+    // address in the same step, before any paint that a print could capture. On
+    // a reload of the cleaned address it comes back from storage, so refreshing
+    // a survey still works.
+    const urlToken = claimToken("respondent", params.get("t"), "/assess");
 
     if (urlToken) {
       loadFromToken(urlToken);
@@ -331,7 +335,7 @@ export default function AssessPage() {
         status: "started"
       });
       setRespondent(r);
-      rememberInUrl(token);
+      rememberToken(token);
       const acts = await getAssignedActivities(assessment);
       setActivities(acts);
       const titles = await base44.entities.JobTitle.filter({ active: true }, "sort_order");
@@ -803,7 +807,7 @@ const handleNext = once(async () => {
               returningCompleted={returningCompleted}
               onRevise={handleRevise}
               onCopyLink={() => {
-                navigator.clipboard.writeText(`${window.location.origin}/assess?t=${myToken}`);
+                navigator.clipboard.writeText(resumeLinkFor(myToken));
                 setCopiedLink(true);
                 setTimeout(() => setCopiedLink(false), 2000);
               }}
@@ -817,6 +821,13 @@ const handleNext = once(async () => {
 
     return (
       <TeamGapSelfReport
+        myToken={myToken}
+        onCopyLink={() => {
+          navigator.clipboard.writeText(resumeLinkFor(myToken));
+          setCopiedLink(true);
+          setTimeout(() => setCopiedLink(false), 2000);
+        }}
+        copiedLink={copiedLink}
         assessment={assessment}
         respondent={respondent}
         name={name}

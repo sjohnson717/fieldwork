@@ -5,6 +5,7 @@ import { getAssignedActivities } from "@/lib/activities";
 import { getTeamLeaderView } from "@/lib/public-assessment";
 import { FACET_ORDER, FACET_SUBTITLES } from "@/lib/scoring";
 import { usePrintSafeUrl } from "@/lib/print-safe-url";
+import { claimToken } from "@/lib/token-address";
 
 const PGL_LOGO = "https://static.wixstatic.com/media/739bca_d49790dff653441fae7d036110019dc2~mv2.png";
 
@@ -102,8 +103,15 @@ function CopyButton({ text }) {
 }
 
 export default function TeamLeaderPage() {
-  const { token } = useParams();
-  // The URL is the credential on this page; keep it out of the printed header.
+  const { token: tokenInPath } = useParams();
+  // Claimed on the first render rather than in an effect, so the address is
+  // already clean before anything paints — a print or a screenshot taken
+  // immediately cannot catch the token. Idempotent, so a StrictMode double
+  // invoke changes nothing. See lib/token-address.js for why the address cannot
+  // hold a credential on a page that prints.
+  const [token] = useState(() => claimToken("team", tokenInPath, "/team"));
+  // Secondary now that the address carries no token: it still strips on
+  // beforeprint, which covers any surface that has not moved to claimToken.
   usePrintSafeUrl();
   const [assessment, setAssessment] = useState(null);
   const [respondents, setRespondents] = useState([]);
@@ -123,7 +131,12 @@ export default function TeamLeaderPage() {
 
 
   useEffect(() => {
-    if (token) loadPage();
+    if (token) return void loadPage();
+    // Same as the buyer report: a cleaned address reloaded in a new tab has no
+    // token to recover, and must land on the not-found state rather than an
+    // endless spinner.
+    setError("Team link not found. Please check your link.");
+    setLoading(false);
   }, [token]);
 
   useEffect(() => { document.title = "Team | Quartz Assessments"; }, []);
