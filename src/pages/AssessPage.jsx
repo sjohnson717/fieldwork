@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { getAssignedActivities } from "@/lib/activities";
-import { getAssessmentByCode, getRespondentSession } from "@/lib/public-assessment";
+import { getAssessmentByCode, getRespondentSession, saveRespondentAnswers } from "@/lib/public-assessment";
 import { PERSONAL_AXES, computePersonProfile } from "@/lib/personal-scoring";
 import { rebuildResponses } from "@/lib/responses";
 import { usePrintSafeUrl } from "@/lib/print-safe-url";
@@ -93,6 +93,26 @@ export default function AssessPage() {
   const [currentFacetIndex, setCurrentFacetIndex] = useState(0);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  // One request at a time, latched in a ref rather than in `saving`.
+  //
+  // `disabled={saving}` only stops the second click once React has re-rendered
+  // with the new state. Two taps in the same frame — a double tap on a phone,
+  // or a touch and click pair from one press — both read the pre-render value
+  // and both run. That is how two Respondent records came to exist for one
+  // person 5ms apart, one of which then collected every answer while the other
+  // stayed empty and read on the facilitator's roster as someone who never
+  // responded. A ref is written and seen synchronously, so the second call
+  // returns before it can create anything.
+  const inFlight = useRef(false);
+  const once = (fn) => async (...args) => {
+    if (inFlight.current) return;
+    inFlight.current = true;
+    try {
+      return await fn(...args);
+    } finally {
+      inFlight.current = false;
+    }
+  };
   const [allTitles, setAllTitles] = useState([]);
   // This person's own resume token. Held separately because the two entry
   // paths learn it differently: the code path generates it here at
@@ -243,9 +263,10 @@ export default function AssessPage() {
     }
   };
 
-  const handleTokenIntroSubmit = async () => {
+  const handleTokenIntroSubmit = once(async () => {
     setError("");
     if (!title.trim()) return setError("Please enter your job title.");
+    setSaving(true);
     try {
       const updated = await base44.entities.Respondent.update(respondent.id, { title: title.trim() });
       setRespondent(updated);
@@ -256,14 +277,16 @@ export default function AssessPage() {
       setStep("rating");
     } catch (e) {
       setError("Something went wrong. Please try again.");
+    } finally {
+      setSaving(false);
     }
-  };
+  });
 
   // Takes the code explicitly so the URL path can submit one before the state
   // update lands. A code they can fix by retyping sends them back to the entry
   // card; a closed assessment is a dead end, since the code was right and
   // trying it again changes nothing.
-  const handleCodeSubmit = async (submitted = code) => {
+  const handleCodeSubmit = once(async (submitted = code) => {
     setError("");
     const retry = (message) => {
       setError(message);
@@ -274,6 +297,7 @@ export default function AssessPage() {
       setStep("dead-end");
     };
     if (!submitted.trim()) return retry("Please enter an assessment code.");
+    setSaving(true);
     try {
       const result = await getAssessmentByCode(submitted);
       const found = result?.assessment;
@@ -283,13 +307,16 @@ export default function AssessPage() {
       setStep("intro");
     } catch (e) {
       retry("Something went wrong. Please try again.");
+    } finally {
+      setSaving(false);
     }
-  };
+  });
 
-  const handleIntroSubmit = async () => {
+  const handleIntroSubmit = once(async () => {
     setError("");
     if (!name.trim()) return setError("Please enter your name.");
     if (!title.trim()) return setError("Please enter your job title.");
+    setSaving(true);
     try {
       const token = crypto.randomUUID();
       const r = await base44.entities.Respondent.create({
@@ -308,8 +335,10 @@ export default function AssessPage() {
       setStep("rating");
     } catch (e) {
       setError("Something went wrong. Please try again.");
+    } finally {
+      setSaving(false);
     }
-  };
+  });
 
   const loadExistingResponses = async () => {
     const allResponses = await base44.entities.Response.list();
@@ -363,58 +392,49 @@ export default function AssessPage() {
   const currentFacet = availableFacets[currentFacetIndex];
   const facetActivities = activities.filter(a => a.facet === currentFacet);
 
-const handleNext = async () => {
+const handleNext = once(async () => {
   setSaving(true);
   setError("");
   try {
-    for (const activity of facetActivities) {
+    const isLastFacet = currentFacetIndex >= availableFacets.length - 1;
+
+    // Answers keyed by activity, not by row id. The browser used to hold the
+    // Response id and choose create or update for itself, which is how this
+    // page came to depend on a write respondents are not permitted to make —
+    // Response.rls.update is admin, org_admin and facilitator only, so every
+    // second save of a page was refused. saveResponses resolves the token
+    // server-side and upserts by activity instead. Only the fields this
+    // assessment type asks about are sent; the function writes no others.
+    const answers = facetActivities.map(activity => {
       const r = responses[activity.id] || {};
-      // Only the fields this assessment type asks about are written. Sending
-      // the other type's fields as null would be harmless on a fresh record
-      // but would wipe real answers if an assessment's type were ever changed
-      // after responses existed.
-      const payload = isPersonal
-        ? Object.fromEntries(PERSONAL_AXES.map(a => [a.key, r[a.key] || null]))
-        : {
-            importance: r.importance || null,
-            execution: r.execution || null,
-            suggested_owner: r.suggested_owner || null
-          };
+      return {
+        activity_id: activity.id,
+        ...(isPersonal
+          ? Object.fromEntries(PERSONAL_AXES.map(a => [a.key, r[a.key] || null]))
+          : {
+              importance: r.importance || null,
+              execution: r.execution || null,
+              suggested_owner: r.suggested_owner || null
+            }),
+      };
+    });
 
-      const existingId = r.id; // use the id already in state, loaded at init
-      if (existingId) {
-        await base44.entities.Response.update(existingId, payload);
-      } else {
-        const created = await base44.entities.Response.create({
-          assessment_id: assessment.id,
-          respondent_id: respondent.id,
-          activity_id: activity.id,
-          ...payload
-        });
-        // Store the new id in state so a second Next on this page also updates
-        setResponses(prev => ({
-          ...prev,
-          [activity.id]: { ...prev[activity.id], id: created.id }
-        }));
-      }
+    // Completion travels with the last page's answers rather than as a second
+    // call after it.
+    await saveRespondentAnswers(myToken, answers, { complete: isLastFacet });
+
+    if (!isLastFacet) {
+      setCurrentFacetIndex(i => i + 1);
+      window.scrollTo(0, 0);
+    } else {
+      setStep("done");
     }
-
-      if (currentFacetIndex < availableFacets.length - 1) {
-        setCurrentFacetIndex(i => i + 1);
-        window.scrollTo(0, 0);
-      } else {
-        await base44.entities.Respondent.update(respondent.id, {
-          status: "completed",
-          completed_date: new Date().toISOString()
-        });
-        setStep("done");
-      }
     } catch (e) {
       console.error("handleNext error:", e);
       setError("Error saving responses. Please try again.");
     }
     setSaving(false);
-  };
+  });
 
   // ── Loading state ─────────────────────────────────────────────────────────
   if (step === "loading") return (
@@ -495,11 +515,15 @@ const handleNext = async () => {
             </div>
           </div>
           {error && <p className="text-red-600 text-sm mb-4">{error}</p>}
+          {/* Disabled while the request is out, and it says so. The latch above
+              is what actually prevents a second registration; this is what stops
+              someone tapping again because nothing appeared to happen. */}
           <button
             onClick={handleTokenIntroSubmit}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition-colors"
+            disabled={saving}
+            className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold py-3 rounded-lg transition-colors"
           >
-            Start Assessment
+            {saving ? "Starting…" : "Start Assessment"}
           </button>
         </div>
       </div>
@@ -529,9 +553,10 @@ const handleNext = async () => {
           {error && <p className="text-red-600 text-sm mb-4">{error}</p>}
           <button
             onClick={() => handleCodeSubmit()}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition-colors"
+            disabled={saving}
+            className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold py-3 rounded-lg transition-colors"
           >
-            Continue
+            {saving ? "Checking…" : "Continue"}
           </button>
         </div>
       </div>
@@ -573,11 +598,15 @@ const handleNext = async () => {
             </div>
           </div>
           {error && <p className="text-red-600 text-sm mb-4">{error}</p>}
+          {/* The one button on this page that creates a record. Registering
+              twice makes two respondents out of one person, and only one of
+              them ends up holding the answers. */}
           <button
             onClick={handleIntroSubmit}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition-colors"
+            disabled={saving}
+            className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold py-3 rounded-lg transition-colors"
           >
-            Start Assessment
+            {saving ? "Starting…" : "Start Assessment"}
           </button>
         </div>
       </div>
@@ -697,6 +726,12 @@ const handleNext = async () => {
             {currentFacetIndex > 0 && (
               <button
                 onClick={() => {
+                  // Paging away clears any failed-save message. Back saves
+                  // nothing, so a message left over from the page they are
+                  // leaving would sit under a page it never described — which
+                  // is how a save failure came to look like a Back button that
+                  // reports an error.
+                  setError("");
                   setCurrentFacetIndex(i => i - 1);
                   window.scrollTo(0, 0);
                 }}
