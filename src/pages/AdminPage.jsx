@@ -79,7 +79,7 @@ export default function AdminPage() {
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState("");
 
-  useEffect(() => { document.title = "Admin | Quartz Assessment"; }, []);
+  useEffect(() => { document.title = "Admin | Quartz Assessments"; }, []);
 
   // One place to remember the selection, so creating, deleting and clicking a
   // row all persist it without each having to.

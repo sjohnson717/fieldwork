@@ -366,8 +366,8 @@ export default function ReportPage() {
   // assessment names its next download correctly.
   useEffect(() => {
     document.title = assessment?.title
-      ? `${assessment.title} | Quartz Assessment`
-      : "Report | Quartz Assessment";
+      ? `${assessment.title} | Quartz Assessments`
+      : "Report | Quartz Assessments";
   }, [assessment?.title]);
 
   const loadReport = async () => {

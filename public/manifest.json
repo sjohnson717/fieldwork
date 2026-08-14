@@ -1,0 +1,22 @@
+{
+  "name": "Quartz Assessments",
+  "short_name": "Quartz",
+  "description": "Assessments from Product Growth Leaders that identify challenges in your product team and processes, and prepare a plan to improve.",
+  "icons": [
+    {
+      "src": "https://media.base44.com/images/public/6a29ff3bc8effbeb3d637555/9e97ff5e6_Quartzicon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://media.base44.com/images/public/6a29ff3bc8effbeb3d637555/9e97ff5e6_Quartzicon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "theme_color": "#3366FF",
+  "background_color": "#ffffff"
+}

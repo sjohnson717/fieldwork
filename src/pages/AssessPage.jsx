@@ -146,8 +146,8 @@ export default function AssessPage() {
   // person's, so it stays out of the filename.
   useEffect(() => {
     document.title = assessment?.title
-      ? `${assessment.title} | Quartz Assessment`
-      : "Assess | Quartz Assessment";
+      ? `${assessment.title} | Quartz Assessments`
+      : "Assess | Quartz Assessments";
   }, [assessment?.title]);
 
   const isPersonalAssessment = assessment?.assessment_type === "personal";

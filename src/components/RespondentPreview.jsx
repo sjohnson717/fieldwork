@@ -70,7 +70,7 @@ export default function RespondentPreview({ assessment, respondent, activities, 
   useEffect(() => {
     const previousTitle = document.title;
     document.body.classList.add("preview-open");
-    if (assessment?.title) document.title = `${assessment.title} | Quartz Assessment`;
+    if (assessment?.title) document.title = `${assessment.title} | Quartz Assessments`;
     return () => {
       document.body.classList.remove("preview-open");
       document.title = previousTitle;

@@ -10,8 +10,22 @@
          token. Modern browsers already default to this; pinning it means the
          guarantee doesn't depend on a browser default. -->
     <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <!-- public/manifest.json, checked in, rather than the one the platform
+         generates from its own app metadata. A password manager titles the
+         entry it saves from what the page declares — the title tag and the
+         manifest name — and the generated file named this app "Quartz
+         Fieldwork" after the repository, which is what facilitators then found
+         saved in their keychains. The name belongs with the code that ships it.
+
+         Names must agree across all three declarations: this tag, the manifest,
+         and the document.title each page sets. They did not — the tag said
+         "Quartz Assessment", singular, while everything else said
+         "Assessments" — and the static tag is the one a password manager reads,
+         because it is there before React runs. -->
     <link rel="manifest" href="/manifest.json" />
-    <title>Quartz Assessment</title>
+    <meta name="application-name" content="Quartz Assessments" />
+    <meta name="apple-mobile-web-app-title" content="Quartz" />
+    <title>Quartz Assessments</title>
   </head>
   <body>
     <div id="root"></div>
