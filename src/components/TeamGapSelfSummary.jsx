@@ -50,29 +50,41 @@ export default function TeamGapSelfSummary({ profile }) {
             <div key={key} className={`bg-white rounded-xl border border-gray-200 border-l-4 ${b.accent} p-5`}>
               <h3 className={`text-base font-bold ${b.heading}`}>{b.label} · {bucket.length}</h3>
               <p className="text-xs text-gray-500 mt-1 mb-3 leading-relaxed">{b.hint}</p>
-              <div className="space-y-1.5">
+              {/* Wider gaps on a phone, where each row is two lines: at 1.5 the
+                  space between a name and its own pills matched the space
+                  between one activity and the next, and the rows read as six
+                  loose lines rather than three answers. */}
+              <div className="space-y-3 sm:space-y-1.5">
                 {/* The same pills, at the same width, as the answer table in the
                     appendix. As free text the two labels floated in a column
                     that was only as wide as its longest word, so no two rows
                     lined up and the eye couldn't run down either answer. */}
                 {bucket.map(row => (
-                  <div key={row.activity.id} className="flex items-center gap-3">
-                    <span className="text-sm text-gray-800 flex-1 min-w-0">{row.activity.name}</span>
-                    <span
-                      className={`inline-block shrink-0 whitespace-nowrap px-2 py-0.5 rounded-full text-xs font-medium text-center ${IMPORTANCE_BADGE[row.importance] || BADGE_FALLBACK}`}
-                      style={{ width: "110px" }}
-                    >
-                      {row.importance}
-                    </span>
-                    <span
-                      className={`inline-block shrink-0 whitespace-nowrap px-2 py-0.5 rounded-full text-xs font-medium text-center ${EXECUTION_BADGE[row.execution] || BADGE_FALLBACK}`}
-                      style={{ width: "110px" }}
-                    >
-                      {row.execution}
-                    </span>
-                    <span className="text-[10px] uppercase tracking-widest text-gray-400 shrink-0 w-16 text-right">
-                      {row.activity.facet}
-                    </span>
+                  /* On a phone the pills drop to a line of their own beneath the
+                     activity name. The four columns below need about 330px of
+                     fixed width and a phone card offers under 300, so the name's
+                     flex-1 collapsed to nothing and its wrapped text ran
+                     underneath the pills. From sm up — which includes any
+                     printed page, since print media queries measure the sheet —
+                     the wrapper is display:contents and this is the same single
+                     aligned line it has always been. */
+                  <div key={row.activity.id} className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-3">
+                    <span className="text-sm text-gray-800 sm:flex-1 sm:min-w-0">{row.activity.name}</span>
+                    <div className="flex items-center gap-2 sm:contents">
+                      <span
+                        className={`whitespace-nowrap px-2 py-0.5 rounded-full text-xs font-medium text-center flex-1 min-w-0 sm:flex-none sm:shrink-0 sm:w-[110px] ${IMPORTANCE_BADGE[row.importance] || BADGE_FALLBACK}`}
+                      >
+                        {row.importance}
+                      </span>
+                      <span
+                        className={`whitespace-nowrap px-2 py-0.5 rounded-full text-xs font-medium text-center flex-1 min-w-0 sm:flex-none sm:shrink-0 sm:w-[110px] ${EXECUTION_BADGE[row.execution] || BADGE_FALLBACK}`}
+                      >
+                        {row.execution}
+                      </span>
+                      <span className="text-[10px] uppercase tracking-widest text-gray-400 shrink-0 w-16 text-right">
+                        {row.activity.facet}
+                      </span>
+                    </div>
                   </div>
                 ))}
               </div>
