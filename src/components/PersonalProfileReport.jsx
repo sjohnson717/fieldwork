@@ -362,7 +362,13 @@ export default function PersonalProfileReport({
           const bucket = profile.buckets[key];
           if (!bucket || bucket.length === 0) return null;
           return (
-            <div key={key} className={`bg-white rounded-xl border border-gray-200 border-l-4 ${c.selfAccent} p-5 break-inside-avoid`}>
+            /* No break-inside-avoid, for the same reason the team gap report
+               dropped it: a seventeen-row bucket that cannot fit in what's left
+               of a page jumps to the next one whole, and on a real report that
+               left the bottom third of a sheet blank. Splitting mid-bucket costs
+               nothing — the print stylesheet pins every heading to the rows that
+               follow it, so a label can still never end a page alone. */
+            <div key={key} className={`bg-white rounded-xl border border-gray-200 border-l-4 ${c.selfAccent} p-5`}>
               <h3 className={`text-base font-bold ${c.selfHeading}`}>{c.selfLabel}</h3>
               <p className="text-xs text-gray-500 mt-1 mb-3 leading-relaxed">{c.selfHint}</p>
               <div className="space-y-1.5">
