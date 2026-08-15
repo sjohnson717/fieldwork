@@ -18,7 +18,9 @@ import { functionErrorMessage } from "@/lib/utils";
 const TYPES = [
   { key: "free_article",  label: "Free article" },
   { key: "external",      label: "External resource" },
-  { key: "quartz_book",   label: "Quartz book" },
+  // The label is what the reader sees on the report, so the picker has to use
+  // the same word. The key stays as it is — it is on every stored record.
+  { key: "quartz_book",   label: "Book" },
   { key: "quartz_course", label: "Course or workshop" },
 ];
 

@@ -222,7 +222,7 @@ The survey says the same thing before anyone answers: *"The profile is yours to 
 
 ## Suggested resources
 
-Resources are managed in **Library → Resources**. Each one is typed — free article, external resource, Quartz book, or course or workshop — and attached to the activities it serves. The type is shown to the reader, so they know what they're being sent before they click.
+Resources are managed in **Library → Resources**. Each one is typed — free article, external resource, book, or course or workshop — and attached to the activities it serves. The type is shown to the reader, so they know what they're being sent before they click.
 
 **The library is loaded.** All 65 activities carry a resource: 35 Product Growth Leaders articles and 10 third-party books, attached to the activities they serve. One activity — Staff Promotional Events — deliberately has none, and shows only its Try this step. A resource serving several activities is listed **once**, under the highest-ranked opportunity that claims it, so a shortlist doesn't repeat the same article three times.
 
