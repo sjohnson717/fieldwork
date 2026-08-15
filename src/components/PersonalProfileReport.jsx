@@ -28,6 +28,12 @@ const QUARTZ_ICON = "https://media.base44.com/images/public/6a29ff3bc8effbeb3d63
 // interest to mean the same kind of thing — which is exactly what this
 // assessment exists to keep apart.
 
+// At or below this many items, the resources section is padded with whatever
+// the library marks as `fallback`. Two rather than three: three entries already
+// read as a list someone assembled, and the point of the padding is to rescue
+// the cases that read as a leftover.
+const THIN_SHORTLIST = 2;
+
 const RESOURCE_TYPES = {
   free_article:  { label: "Free article",        tone: "bg-emerald-50 text-emerald-700 border-emerald-200" },
   external:      { label: "External resource",   tone: "bg-blue-50 text-blue-700 border-blue-200" },
@@ -153,6 +159,36 @@ function ProfileShape({ mix }) {
   );
 }
 
+function ResourceItem({ resource: r }) {
+  const type = RESOURCE_TYPES[r.resource_type] || RESOURCE_TYPES.external;
+  return (
+    <div>
+      <div className="flex items-baseline gap-2 flex-wrap">
+        <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded border ${type.tone}`}>
+          {type.label}
+        </span>
+        <span className="text-sm text-gray-800 font-medium">{r.title}</span>
+        {r.source && <span className="text-xs text-gray-400">{r.source}</span>}
+      </div>
+      {r.note && <p className="text-xs text-gray-500 mt-1 leading-relaxed">{r.note}</p>}
+      {r.url && (
+        /* A link whose visible text is the address itself. The address has to
+           be readable on paper, where a link is just underlined words — but
+           showing it as plain text left someone reading on screen retyping an
+           article URL by hand. This prints the same and clicks. */
+        <a
+          href={r.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block text-[11px] text-blue-600 hover:text-blue-800 hover:underline mt-0.5 break-all"
+        >
+          {r.url}
+        </a>
+      )}
+    </div>
+  );
+}
+
 function SectionHeading({ eyebrow, title, blurb, first = false }) {
   return (
     <div className={`${first ? "" : "print-section"} mb-5 pt-1`}>
@@ -203,6 +239,21 @@ export default function PersonalProfileReport({
     items.forEach(r => alreadyListed.add(r.id));
     resourcesByActivity.push({ activity: o.activity, items });
   }
+
+  // A shortlist of one or two is thin enough to read as an afterthought rather
+  // than a recommendation, and it happens whenever someone's opportunities land
+  // on the activities the library covers least. `fallback` resources fill it
+  // out: the few things worth reading whatever you're working on.
+  //
+  // Only when the shortlist is thin, and never on its own. Padding a list that
+  // already has five items would push the house reading in front of advice
+  // chosen for this person, and a section carrying nothing but the house
+  // reading is an advertisement whatever the heading says — so a report with
+  // nothing attached still shows no resources at all.
+  const listedCount = resourcesByActivity.reduce((n, g) => n + g.items.length, 0);
+  const fallbackItems = listedCount > 0 && listedCount <= THIN_SHORTLIST
+    ? resources.filter(r => r.fallback && !alreadyListed.has(r.id))
+    : [];
 
   return (
     <>
@@ -433,39 +484,26 @@ export default function PersonalProfileReport({
               <div key={activity.id} className="bg-white rounded-xl border border-gray-200 p-5 break-inside-avoid">
                 <h3 className="text-sm font-bold text-gray-900 mb-3">{activity.name}</h3>
                 <div className="space-y-3">
-                  {items.map(r => {
-                    const type = RESOURCE_TYPES[r.resource_type] || RESOURCE_TYPES.external;
-                    return (
-                      <div key={r.id}>
-                        <div className="flex items-baseline gap-2 flex-wrap">
-                          <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded border ${type.tone}`}>
-                            {type.label}
-                          </span>
-                          <span className="text-sm text-gray-800 font-medium">{r.title}</span>
-                          {r.source && <span className="text-xs text-gray-400">{r.source}</span>}
-                        </div>
-                        {r.note && <p className="text-xs text-gray-500 mt-1 leading-relaxed">{r.note}</p>}
-                        {r.url && (
-                          /* A link whose visible text is the address itself. The
-                             address has to be readable on paper, where a link is
-                             just underlined words — but showing it as plain text
-                             left someone reading on screen retyping an article
-                             URL by hand. This prints the same and clicks. */
-                          <a
-                            href={r.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="block text-[11px] text-blue-600 hover:text-blue-800 hover:underline mt-0.5 break-all"
-                          >
-                            {r.url}
-                          </a>
-                        )}
-                      </div>
-                    );
-                  })}
+                  {items.map(r => <ResourceItem key={r.id} resource={r} />)}
                 </div>
               </div>
             ))}
+
+            {/* Last, and under a heading that is plainly not an activity name.
+                These were not chosen for this person the way the cards above
+                were, and presenting them as though they had been is the one
+                thing that would make the whole section less trustworthy. */}
+            {fallbackItems.length > 0 && (
+              <div className="bg-white rounded-xl border border-gray-200 p-5 break-inside-avoid">
+                <h3 className="text-sm font-bold text-gray-900">Worth reading whatever you focus on</h3>
+                <p className="text-xs text-gray-500 mt-1 mb-3 leading-relaxed">
+                  Not tied to any one activity above — general groundwork for the craft.
+                </p>
+                <div className="space-y-3">
+                  {fallbackItems.map(r => <ResourceItem key={r.id} resource={r} />)}
+                </div>
+              </div>
+            )}
           </div>
         </>
       )}

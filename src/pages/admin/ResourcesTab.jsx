@@ -26,6 +26,7 @@ const TYPE_LABEL = Object.fromEntries(TYPES.map(t => [t.key, t.label]));
 
 const EMPTY = {
   title: "", resource_type: "free_article", source: "", url: "", note: "", activity_ids: [],
+  fallback: false,
 };
 
 function ActivityPicker({ activities, selectedIds, onToggle }) {
@@ -104,10 +105,28 @@ function ResourceForm({ draft, setDraft, activities, onSave, onCancel, saving, s
       />
       <div>
         <p className="text-xs text-gray-500 mb-1.5">
-          Offered for these activities ({draft.activity_ids.length} selected). A resource attached to nothing never appears on a report.
+          Offered for these activities ({draft.activity_ids.length} selected).{" "}
+          {draft.fallback
+            ? "Attached to nothing, this still reaches a report whose shortlist comes out thin."
+            : "A resource attached to nothing never appears on a report."}
         </p>
         <ActivityPicker activities={activities} selectedIds={draft.activity_ids} onToggle={toggle} />
       </div>
+      {/* Below the activity picker on purpose: it is the exception to the rule
+          the picker states, and reads as one there. */}
+      <label className="flex items-start gap-2 cursor-pointer">
+        <input
+          type="checkbox"
+          checked={!!draft.fallback}
+          onChange={e => setDraft(d => ({ ...d, fallback: e.target.checked }))}
+          className="w-3.5 h-3.5 mt-0.5 rounded border-gray-300 text-[#3366FF] focus:ring-[#3366FF] cursor-pointer"
+        />
+        <span className="text-xs text-gray-500 leading-relaxed">
+          Also offer this when a report's shortlist comes out thin — one or two items — whatever
+          was recommended. For the few things worth reading whatever someone is working on. It never
+          makes the section appear on its own.
+        </span>
+      </label>
       <div className="flex items-center gap-3">
         <button
           onClick={onSave}
@@ -246,6 +265,7 @@ export default function ResourcesTab() {
                           title: r.title || "", resource_type: r.resource_type || "free_article",
                           source: r.source || "", url: r.url || "", note: r.note || "",
                           activity_ids: r.activity_ids || [],
+                          fallback: !!r.fallback,
                         });
                       }}
                       className="text-xs text-gray-400 hover:text-[#3366FF] font-medium transition-colors"
@@ -264,9 +284,16 @@ export default function ResourcesTab() {
                 {r.url && <p className="text-[11px] text-blue-600 mt-0.5 truncate font-mono">{r.url}</p>}
                 <p className="text-[11px] text-gray-400 mt-1">
                   {(r.activity_ids || []).length === 0
-                    ? "Not attached to any activity — will never appear on a report"
+                    ? r.fallback
+                      // Not the dead end that message describes: a fallback with
+                      // no activities still reaches a thin report.
+                      ? "Not attached to any activity — offered only when a shortlist is thin"
+                      : "Not attached to any activity — will never appear on a report"
                     : (r.activity_ids || []).map(activityName).filter(Boolean).join(" · ")}
                 </p>
+                {r.fallback && (
+                  <p className="text-[11px] text-[#1a2e7a] mt-0.5">Also offered when a shortlist is thin</p>
+                )}
               </div>
             )}
           </div>
