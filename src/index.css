@@ -179,23 +179,35 @@
     page-break-after: avoid;
   }
 
-  /* Zero page margins suppress the browser's own header and footer, which
-     otherwise stamp the page URL onto every sheet — and this page's URL
-     contains the respondent's private token, which would let anyone holding
-     the PDF reopen and edit their answers. Margins come back as padding on
-     the printed container instead. The cost is losing the browser's page
-     numbering; leaking the token is the worse trade. */
+  /* Vertical only. The sides stay at zero because the container's own 14mm
+     padding already insets them, and it does so on every sheet — horizontal
+     padding repeats down a fragmented column in a way vertical padding does
+     not. Top and bottom padding applies once, at the start of the document, so
+     under the old `margin: 0` every page after the first ran to the trim: a
+     heading flush against the top edge, and nothing at the foot. On paper that
+     is not just tight, it is inside the border most printers cannot reach, so
+     the browser clips it or shrinks the whole sheet to make it fit.
+     14mm to match the sides rather than a round half-inch, so all four edges
+     are the same measurement.
+
+     This was `margin: 0` to suppress the browser's header and footer, which
+     stamp the page URL onto every sheet — back when that URL carried the
+     respondent's resume token. It no longer does: lib/token-address.js keeps
+     the credential out of the address entirely, and its own header names this
+     rule as the weaker attempt it replaced. The rule outlived its reason.
+
+     So the header and footer band may come back, on browsers set to print it.
+     That is now a page number and a token-free URL, which is the page
+     numbering the old comment here regretted losing. */
   @page {
-    margin: 0;
+    margin: 14mm 0;
   }
 
   /* The title block gets the first sheet to itself. This is the one forced
      break worth keeping: it means a report left on a desk or handed across a
      table shows a name and a title rather than someone's answers. */
   /* The cover fills its sheet so the credit can sit at the foot of it rather
-     than floating under the date. 14mm is the container's top padding, which
-     applies once at the start of the document — the only page it affects is
-     this one. */
+     than floating under the date. */
   .print-cover {
     display: flex !important;
     flex-direction: column;
@@ -206,18 +218,22 @@
        1200px-high window against a 279mm sheet. The cover then ran 35mm past
        the trim and pushed the credit onto a second sheet, alone.
 
-       So: 11in of paper, less the container's 14mm top padding, less the
-       column's own 2.5rem, less 14mm of bottom trim to match the top. A4 is
-       taller than Letter, so sizing to the shorter sheet can only leave the
-       credit a little high — never overflow, and never a blank page.
+       So: 11in of paper, less the 28mm the page margins now take from it —
+       14mm at the head and 14mm at the foot — less the column's own 2.5rem.
+       A4 is taller than Letter, so sizing to the shorter sheet can only leave
+       the credit a little high — never overflow, and never a blank page.
 
-       The last 22mm is for browsers that reserve page margins of their own.
-       Chrome honours `@page { margin: 0 }` and gives the whole sheet; Safari
-       does not, and prints a header and footer band besides, so the cover ran
-       past the shorter printable area and split the credit across two pages —
-       the second line stranded alone overleaf. Sized for the browser that
-       gives the least room: on Chrome the credit sits low rather than flush,
-       which is the cost of it holding together everywhere. */
+       The arithmetic is unchanged from when this subtracted the container's
+       top padding and a matching bottom trim instead: the same 28mm, moved
+       from the container to the page box. Only the reason it is 28mm changed.
+
+       The last 22mm is for browsers that reserve more than they are asked to.
+       Chrome takes the 14mm and no more; Safari reserves its own and prints a
+       header and footer band besides, so the cover ran past the shorter
+       printable area and split the credit across two pages — the second line
+       stranded alone overleaf. Sized for the browser that gives the least
+       room: on Chrome the credit sits low rather than flush, which is the cost
+       of it holding together everywhere. */
     height: calc(11in - 28mm - 2.5rem - 22mm);
     margin-bottom: 0 !important;
     break-after: page;
@@ -276,7 +292,11 @@
      the last page, and the leftover padding spilled onto a blank page of its
      own, which reads as a printing fault rather than a margin. */
   .print-plain {
-    padding: 14mm 14mm 0 !important;
+    /* Sides only. The top used to be 14mm here, which is where the first page
+       got its inset from — and only the first, which is the bug the @page rule
+       above now fixes. Left in place it would land on top of the page margin
+       and give sheet one twice the gap of every other. */
+    padding: 0 14mm !important;
   }
 
   .print-plain > * {
