@@ -121,6 +121,11 @@ export const interestLevel = (resp) => normalize("interest", resp?.interest);
 // greyscale printing, since the PDF is the share artefact — which means colour
 // can navigate but must never be the message.
 //
+// `selfFill` is the same five hues as solid fills, for the summary bars. It
+// lives here rather than in the component so a segment and the card it
+// summarises cannot drift onto different colours — the bars are only readable
+// at all because the reader can match a band to the section below it.
+//
 // The first attempt at that was teal→sky→indigo→violet, which failed on its
 // own terms: four adjacent hues are a ramp, and the two purples were not
 // tellable apart in print. These are spread much wider.
@@ -147,6 +152,7 @@ export const CATEGORIES = {
     color: "bg-emerald-100 text-emerald-800 border-emerald-200",
     selfAccent: "border-l-teal-500",
     selfHeading: "text-teal-800",
+    selfFill: "bg-teal-500",
   },
   develop: {
     label: "Develop",
@@ -156,6 +162,7 @@ export const CATEGORIES = {
     color: "bg-blue-100 text-blue-800 border-blue-200",
     selfAccent: "border-l-blue-500",
     selfHeading: "text-blue-800",
+    selfFill: "bg-blue-500",
   },
   deemphasize: {
     label: "Reluctant",
@@ -165,6 +172,7 @@ export const CATEGORIES = {
     color: "bg-amber-100 text-amber-800 border-amber-200",
     selfAccent: "border-l-violet-500",
     selfHeading: "text-violet-800",
+    selfFill: "bg-violet-500",
   },
   // The category the old four-bucket model could not express, and the reason
   // this file stopped merging experience with skills.
@@ -176,6 +184,7 @@ export const CATEGORIES = {
     color: "bg-orange-100 text-orange-800 border-orange-200",
     selfAccent: "border-l-amber-500",
     selfHeading: "text-amber-800",
+    selfFill: "bg-amber-500",
   },
   lower: {
     label: "Poor fit",
@@ -185,6 +194,7 @@ export const CATEGORIES = {
     color: "bg-gray-100 text-gray-600 border-gray-200",
     selfAccent: "border-l-slate-400",
     selfHeading: "text-slate-700",
+    selfFill: "bg-slate-400",
   },
 };
 
@@ -371,6 +381,55 @@ export function computeFacetProfile(profile, facetOrder) {
       };
     })
     .filter(Boolean);
+}
+
+// ── The shape of the profile, whole and by phase ───────────────────────────
+//
+// Counts only — the same classification the lists below are built from, laid
+// out as bands instead of as five headings the reader has to hold in their head
+// at once. Nothing new is computed here, which is the point: a summary that
+// could disagree with the lists it summarises would be worse than no summary.
+//
+// Deliberately not a pie. A pie asserts its slices are parts of one meaningful
+// whole, and the denominator here is how many activities a facilitator put in
+// scope — a fact about the assessment, not about the person. It would also read
+// "lower priority" as a share of failure, and it dies in greyscale, which is
+// exactly where this report spends its life.
+//
+// `share` is on the whole-profile bands only. Per facet the widths are scaled
+// against the busiest facet instead, so a phase holding two activities does not
+// draw the same full-width bar as one holding six — that comparison is the
+// entire reason for splitting by phase.
+export function computeCategoryMix(profile, facetOrder) {
+  const keys = Object.keys(CATEGORIES);
+  const total = profile.answeredCount;
+
+  const countFor = (rows) => {
+    const counts = Object.fromEntries(keys.map(k => [k, 0]));
+    for (const row of rows) if (row.category) counts[row.category] += 1;
+    return keys.map(key => ({ key, count: counts[key] })).filter(s => s.count > 0);
+  };
+
+  const answered = profile.rows.filter(r => r.category !== null);
+
+  const byFacet = facetOrder
+    .map(facet => {
+      const rows = answered.filter(r => r.activity.facet === facet);
+      if (rows.length === 0) return null;
+      return { facet, count: rows.length, segments: countFor(rows) };
+    })
+    .filter(Boolean);
+
+  return {
+    total,
+    // Whole-profile bands, in declaration order — which is the order the
+    // sections appear in below, so the bar reads top-to-bottom as the page does.
+    overall: countFor(answered).map(s => ({ ...s, share: total === 0 ? 0 : s.count / total })),
+    byFacet,
+    // The scale every facet bar is drawn against. Never zero: byFacet only
+    // holds facets with at least one answered activity.
+    facetMax: byFacet.reduce((m, f) => Math.max(m, f.count), 0),
+  };
 }
 
 // ── Development opportunities ──────────────────────────────────────────────

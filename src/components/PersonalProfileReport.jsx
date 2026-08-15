@@ -1,6 +1,7 @@
 import {
   CATEGORIES,
   PERSONAL_AXES,
+  computeCategoryMix,
   computeFacetProfile,
   computeDevelopmentOpportunities,
   dominantBucket,
@@ -58,6 +59,100 @@ function AxisBar({ value }) {
   );
 }
 
+// The whole profile as one band of colour, then the same band split by phase
+// of product work.
+//
+// This exists because the five lists below answer "what did I say about each
+// activity" and nothing answers "what shape is this". Someone whose answers are
+// two thirds one category is being told one thing, not twenty-five, and reading
+// that as five headings and a column of names gets it backwards.
+//
+// The per-phase split is the part that earns its space. The facet was already
+// on every row as a grey word in the margin, doing nothing; stacked per phase it
+// shows where in the product lifecycle someone's strengths actually sit, which
+// is a finding about a role rather than a tally of activities.
+//
+// No numbers on the segments themselves — a band two activities wide has no
+// room, and a count that only appears on the wide ones reads as a ranking. The
+// totals sit at the end of each row and in the key, which also keeps the whole
+// thing readable when it prints in black and white.
+function ProfileShape({ mix }) {
+  if (mix.total === 0) return null;
+
+  return (
+    <div className="bg-white rounded-xl border border-gray-200 p-5 mb-4 break-inside-avoid">
+      <div className="flex items-baseline justify-between gap-3 mb-2">
+        <h3 className="text-sm font-bold text-gray-900">The shape of your answers</h3>
+        <span className="text-[11px] text-gray-400 shrink-0">
+          {mix.total} {mix.total === 1 ? "activity" : "activities"}
+        </span>
+      </div>
+
+      {/* Hairline gaps rather than one continuous bar. Printed in black and
+          white — which is most of the time, because the PDF is what gets
+          shared — the five hues collapse to much the same grey, and without a
+          gap the bands stop being countable at all. */}
+      <div className="flex h-7 gap-px rounded-lg overflow-hidden mb-2">
+        {mix.overall.map(seg => (
+          <div
+            key={seg.key}
+            className={CATEGORIES[seg.key].selfFill}
+            style={{ width: `${seg.share * 100}%` }}
+          />
+        ))}
+      </div>
+
+      {/* The key is the section headings verbatim, not shorter labels invented
+          for it. The bar is only decodable if a band can be matched to the block
+          it stands for, and two vocabularies for the same five things would cost
+          more than the width the long names take.
+
+          Saying the order out loud is what makes this survive a black and white
+          printer: the swatches go grey with everything else, and position is
+          then the only thing left that still identifies a band. Every bar on
+          this card uses the same order, including the per-phase ones. */}
+      <p className="text-[11px] text-gray-400 mb-2.5">Bands run left to right in the order of this key.</p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-1 mb-5">
+        {mix.overall.map(seg => (
+          <div key={seg.key} className="flex items-baseline gap-2">
+            <span className={`w-2.5 h-2.5 rounded-sm shrink-0 translate-y-0.5 ${CATEGORIES[seg.key].selfFill}`} />
+            <span className="text-[11px] text-gray-600 leading-snug flex-1">{CATEGORIES[seg.key].selfLabel}</span>
+            <span className="text-[11px] text-gray-400 shrink-0">{seg.count}</span>
+          </div>
+        ))}
+      </div>
+
+      <div className="border-t border-gray-100 pt-4">
+        <div className="text-[11px] text-gray-400 mb-3">Where they sit across the product lifecycle</div>
+        <div className="space-y-2">
+          {mix.byFacet.map(row => (
+            <div key={row.facet} className="flex items-center gap-3">
+              <div className="w-20 sm:w-28 shrink-0 text-right leading-tight">
+                <div className="text-[10px] font-bold uppercase tracking-widest text-gray-900">{row.facet}</div>
+                <div className="text-[10px] text-gray-400 hidden sm:block">{FACET_SUBTITLES[row.facet]}</div>
+              </div>
+              {/* Scaled against the busiest phase rather than each row filling
+                  the width: a phase with two activities in it should look
+                  smaller than one with six, which is most of what this view is
+                  for. */}
+              <div className="flex-1 flex gap-0.5 h-4">
+                {row.segments.map(seg => (
+                  <div
+                    key={seg.key}
+                    className={`rounded-sm ${CATEGORIES[seg.key].selfFill}`}
+                    style={{ width: `${(seg.count / mix.facetMax) * 100}%` }}
+                  />
+                ))}
+              </div>
+              <span className="text-[11px] text-gray-400 w-4 shrink-0 text-right">{row.count}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function SectionHeading({ eyebrow, title, blurb, first = false }) {
   return (
     <div className={`${first ? "" : "print-section"} mb-5 pt-1`}>
@@ -86,6 +181,7 @@ export default function PersonalProfileReport({
   readOnly = false,
 }) {
   const facetRows = computeFacetProfile(profile, FACET_ORDER);
+  const mix = computeCategoryMix(profile, FACET_ORDER);
   const opportunities = computeDevelopmentOpportunities(profile);
   const dominant = dominantBucket(profile);
 
@@ -198,6 +294,10 @@ export default function PersonalProfileReport({
         blurb="Your answers sorted by what they suggest you might do next. Experience, skills and interest are kept apart on purpose — they tell you different things, and combining them into a single score would hide the most useful findings."
       />
 
+      {/* Before the prose, not after it: the paragraph below is a sentence about
+          a shape, and it reads very differently once you have seen the shape. */}
+      <ProfileShape mix={mix} />
+
       {dominant && (
         <div className="bg-white rounded-xl border border-gray-200 p-5 mb-4 break-inside-avoid">
           <p className="text-sm text-gray-700 leading-relaxed">
@@ -231,7 +331,7 @@ export default function PersonalProfileReport({
       <SectionHeading
         eyebrow="Part two"
         title="Your Quartz profile"
-        blurb="The same answers by phase of product work. Three separate bars, never one combined score — where they disagree is usually the interesting part."
+        blurb="Phase by phase again, but the self-ratings underneath rather than the categories they sorted into. Three separate bars, never one combined score — where they disagree is usually the interesting part."
       />
 
       <div className="bg-white rounded-xl border border-gray-200 p-5 mb-4">
