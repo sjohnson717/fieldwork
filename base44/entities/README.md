@@ -224,6 +224,16 @@ that came back short would put a Delete on a question people have answered.
 activity" — so those rows are updated to drop the id. Refusing on them would
 block a delete over a link the operator cannot see from the Activities tab.
 
+**An empty `activity_ids` is no longer proof a resource is dead.** It used to
+be: a resource attached to nothing could never appear on a report, and the
+Library tab says so on the row. `Resource.fallback` breaks that — a resource
+carrying the flag is offered whenever a report's shortlist comes to one or two
+items, whatever was recommended, and the ones worth flagging are exactly the
+general ones that belong to no single activity. So the cleanup above can strip a
+fallback resource's last id and leave it working, which is correct and worth
+knowing before anything starts treating unattached rows as orphans. The tab
+prints a different sentence on those rows for the same reason.
+
 **The other three Library tabs need no reference check, for reasons worth
 stating.** Nothing anywhere stores an `ActivitySet` id: creating an assessment
 copies the set's `activity_ids` onto the assessment, so a set is read once and

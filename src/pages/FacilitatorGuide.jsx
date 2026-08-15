@@ -120,6 +120,7 @@ That last part matters. A summary that graded anyone would make the next answer 
 
 | | Personal | Team gap |
 |---|---|---|
+| **Opens with** | *The shape of your answers* — every activity as one band of colour, then the same band split by phase | The same card, over the four gap buckets |
 | **Part one** | *Your product profile* — activities sorted into the five categories | *Where you'd focus first* — activities bucketed by the distance between how much they matter and how well they're done |
 | **Part two** | *Your Quartz profile* — experience, skills and interest per facet, three separate bars | *Your view by phase* — importance and execution per facet, two bars |
 | **Part three** | *Development opportunities* — up to five, each with a **Try this** step | — |
@@ -128,6 +129,8 @@ That last part matters. A summary that graded anyone would make the next answer 
 | **Appendix** | Every answer they gave | Every answer they gave |
 
 Neither ever combines its axes into one number. On the team gap side the distance between "this matters" and "this is being done" *is* the finding, and a single score would hide it — the same reason the personal report has no overall grade.
+
+**The shape card is counts, never a score.** It re-counts the same sorting the sections below it show, so it can never say something the lists contradict. Its second half is the part worth pointing at in a debrief: split by phase, it shows whether someone's strengths — or a team's gaps — are spread evenly or piled into one part of the lifecycle. That is a finding about a role or a scope, and it is hard to see from a list of activity names. Anything nobody could rate keeps its own band, drawn as an outline, so the phase totals still add up to the activities in that phase.
 
 > **The team gap summary carries one thing the client report cannot.** An activity someone called important and marked "I don't know" on is a fact about that person's sightlines. Averaged across a team it disappears into a smaller sample. On an individual summary it is worth raising out loud, and it is usually closed in one sentence by someone else in the room.
 
@@ -202,10 +205,11 @@ The report appears as soon as they finish — they don't have to come back for i
 
 | Part | Contains |
 |------|----------|
-| **1 · Your product profile** | Their activities sorted into the five categories |
+| **1 · Your product profile** | Opens with *the shape of your answers* — every activity as one band of colour, then the same band per phase of product work — then their activities sorted into the five categories |
 | **2 · Your Quartz profile** | Experience, skills and interest per facet, as three separate bars |
 | **3 · Development opportunities** | A shortlist of up to five, each with the reason it was chosen and one concrete **Try this** step, plus questions to take into a development conversation |
 | **4 · Suggested resources** | Reading and practice for those opportunities. Only appears if resources have been attached to the recommended activities |
+| | *When that shortlist comes to one or two items*, anything in the library ticked **"also offer when a shortlist is thin"** is added under a heading of its own. It never pads a longer list, and never makes the section appear on its own |
 | **Appendix** | Every answer they gave |
 
 **Save as PDF to share** and their own bookmark link sit above the appendix, at the top of the report. Sharing is the PDF, deliberately not their link — the link permits editing, so forwarding it hands a manager write access to someone's own self-assessment.
