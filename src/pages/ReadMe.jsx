@@ -117,7 +117,7 @@ Facilitators have accounts. **Respondents, team leaders and buyers never do** �
 
 **The User entity ignores entity-level RLS.** Only per-field rules bind on it. Treat any new field on User as unprotected until it has one.
 
-**A copied constant goes stale in every copy at once.** \`FACET_ORDER\` lived in four files. \`LEARN\` was removed from the six code copies but never from the entity enum, so the backend accepted a LEARN activity and the UI then made it unreachable — unanswerable in \`AssessPage\`, invisible in every picker, absent from the report. All four now import from \`scoring.js\`.
+**A copied constant goes stale in every copy at once.** \`FACET_ORDER\` lived in four files. \`LEARN\` was removed from the six code copies but never from the entity enum, so the backend accepted a LEARN activity and the UI then made it unreachable — unanswerable in \`Assessment\`, invisible in every picker, absent from the report. All four now import from \`scoring.js\`.
 
 **\`indexOf\` returns \`-1\`, not \`undefined\`.** \`FACET_ORDER.indexOf(f) ?? 99\` never fires its fallback, so an unrecognised facet sorted *first* rather than last. Use \`facetRank()\`.
 

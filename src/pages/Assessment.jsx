@@ -77,7 +77,7 @@ function RatingButton({ options, value, onChange, colorMap }) {
 }
 
 
-export default function AssessPage() {
+export default function Assessment() {
   const [step, setStep] = useState("entry");
   // The URL is the credential on this page; keep it out of the printed header.
   usePrintSafeUrl();

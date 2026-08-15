@@ -306,9 +306,9 @@ super-admin only.
 
 `create` and `update` stay open, because `/assess` is unauthenticated and each
 respondent registers themselves. The open question was whether Base44 applies
-the read rule to the record a `create` or `update` returns — `AssessPage` uses
-that returned record, so if it did, self-registration would break for everyone
-who is not a super-admin.
+the read rule to the record a `create` or `update` returns — the `/assess`
+page uses that returned record, so if it did, self-registration would break
+for everyone who is not a super-admin.
 
 **Measured on 2026-07-30: it does not.** With `read` closed to super-admin only,
 an anonymous respondent still registered and answered normally. So a write rule
@@ -368,9 +368,9 @@ parallel `PersonalResponse` would have meant a second set of RLS rules to keep
 in step with this one, a second branch in `publicAssessment`, and a second
 cascade in `deleteAssessment` that would fail closed the day someone forgot it.
 
-The cost of one entity is that a Response has fields it never uses. `AssessPage`
-writes only the fields its type asks about, so a type change on an assessment
-that already has responses cannot silently blank the other half — though nothing
+The cost of one entity is that a Response has fields it never uses. The
+`/assess` page writes only the fields its type asks about, so a type change on
+an assessment that already has responses cannot silently blank the other half — though nothing
 offers to change type, and the create form deliberately doesn't let you.
 
 **`parent_assessment_id` is optional in both directions.** It links a personal
