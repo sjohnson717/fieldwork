@@ -106,6 +106,68 @@ export const gapLabel = (gap) => {
   return "Performing well";
 };
 
+// ── The shape of a team's answers ──────────────────────────────────────────
+//
+// The same four states gapLabel names, counted rather than averaged, whole and
+// per facet. Nothing new is computed: a summary that could disagree with the
+// activity rows it summarises would be worse than no summary.
+//
+// This is deliberately not what the facet wheel shows. That badges each facet
+// by its *average* gap, which is the right shorthand for "how is this phase
+// doing" and the wrong one for "how much of it is in trouble" — one severe gap
+// among five healthy activities averages away to "performing well". Counting
+// keeps the one activity visible as a band you can see.
+//
+// `nodata` is a band rather than an omission. An activity nobody completed has
+// a null gap, and dropping it would leave the per-facet totals disagreeing with
+// the number of activities listed under that facet further down the page —
+// which is the arithmetic a reader checks first. Drawn as an outline so it
+// reads as an unanswered slot rather than a fourth verdict.
+export const GAP_BUCKETS = {
+  critical: { label: "Immediate attention", fill: "bg-[#FF3333]" },
+  attention: { label: "Worth discussing",   fill: "bg-[#FFCC00]" },
+  ontrack:   { label: "Performing well",    fill: "bg-[#11CC77]" },
+  nodata:    { label: "Not enough answers", fill: "bg-white border border-gray-300" },
+};
+
+// Matches gapLabel's thresholds, so the bands and the activity rows can never
+// disagree about what counts as a gap.
+export const gapBucket = (gap) => {
+  if (gap === null || gap === undefined) return "nodata";
+  if (gap >= 2) return "critical";
+  if (gap >= 1) return "attention";
+  return "ontrack";
+};
+
+export function computeGapMix(activities, activityStats, facetOrder) {
+  const keys = Object.keys(GAP_BUCKETS);
+
+  const countFor = (acts) => {
+    const counts = Object.fromEntries(keys.map(k => [k, 0]));
+    for (const a of acts) counts[gapBucket(activityStats[a.id]?.avgGap ?? null)] += 1;
+    return keys.map(key => ({ key, count: counts[key] })).filter(s => s.count > 0);
+  };
+
+  const byFacet = facetOrder
+    .map(facet => {
+      const acts = activities.filter(a => a.facet === facet);
+      if (acts.length === 0) return null;
+      return { facet, count: acts.length, segments: countFor(acts) };
+    })
+    .filter(Boolean);
+
+  const total = activities.length;
+
+  return {
+    total,
+    // Declaration order, worst first — which is the order the filter chips and
+    // the activity list below already use.
+    overall: countFor(activities).map(s => ({ ...s, share: total === 0 ? 0 : s.count / total })),
+    byFacet,
+    facetMax: byFacet.reduce((m, f) => Math.max(m, f.count), 0),
+  };
+}
+
 // Aggregates a set of Response records per activity into
 // { avgImp, avgExec, avgGap, n, topOwner, ownerAgreement, ownerEntries }.
 export function computeActivityStats(activities, responses) {

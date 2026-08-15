@@ -12,11 +12,14 @@ import {
   FACET_SUBTITLES,
   IMPORTANCE_LABEL,
   EXECUTION_LABEL,
+  FACET_ORDER,
+  GAP_BUCKETS,
   avg,
   fmt,
   gapColor,
   gapLabel,
   computeActivityStats,
+  computeGapMix,
 } from "@/lib/scoring";
 
 // ── Brand ────────────────────────────────────────────────────────────────────
@@ -261,6 +264,98 @@ function ThemeSection({ group, activities, activityStats, filterLevel, facetFilt
   );
 }
 
+// The whole assessment as one band of colour, then the same band per facet.
+//
+// The respondent reports carry the same card, and for the same reason: the
+// sections below answer "how is each activity doing" and nothing answered "what
+// shape is this". A team with two thirds of its scope in the red is being told
+// one thing, not eighteen.
+//
+// Per facet it answers a question the wheel below cannot. That badges a phase by
+// its average gap, which is the right shorthand for how the phase is doing and
+// the wrong one for how much of it is in trouble — one severe gap among five
+// healthy activities averages away to "performing well", and the band keeps it
+// visible. The two are complementary: the wheel is also the navigation, since
+// its counts are the links that filter the list.
+//
+// No numbers on the bands themselves — a one-activity band has no room, and a
+// count that only appears on the wide ones reads as a ranking. Totals sit at the
+// end of each row and in the key.
+function ShapeOfAnswers({ mix }) {
+  if (mix.total === 0) return null;
+
+  return (
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-8 py-6 mb-10 break-inside-avoid">
+      <div className="flex items-baseline justify-between gap-3 mb-3">
+        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-widest">The shape of the assessment</h2>
+        <span className="text-xs text-gray-400 shrink-0">
+          {mix.total} {mix.total === 1 ? "activity" : "activities"}
+        </span>
+      </div>
+
+      {/* Hairline gaps and each band with its own corners rather than one
+          rounded strip. Printed in black and white the three colours collapse
+          to much the same grey, and a clipped outline on the "not enough
+          answers" band loses whichever side the clip lands on — which reads as
+          a broken bar rather than an empty one. */}
+      <div className="flex h-8 gap-px mb-2">
+        {mix.overall.map(seg => (
+          <div
+            key={seg.key}
+            className={`rounded-sm ${GAP_BUCKETS[seg.key].fill}`}
+            style={{ width: `${seg.share * 100}%` }}
+          />
+        ))}
+      </div>
+
+      {/* Saying the order out loud is what makes this survive a black and white
+          printer: the swatches go grey with everything else, and position is
+          then the only thing that still identifies a band. */}
+      <p className="text-[11px] text-gray-400 mb-3">Bands run left to right in the order of this key.</p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5 mb-6">
+        {mix.overall.map(seg => (
+          <div key={seg.key} className="flex items-baseline gap-2">
+            <span className={`w-2.5 h-2.5 rounded-sm shrink-0 translate-y-0.5 ${GAP_BUCKETS[seg.key].fill}`} />
+            <span className="text-xs text-gray-600 leading-snug flex-1">{GAP_BUCKETS[seg.key].label}</span>
+            <span className="text-xs text-gray-400 shrink-0">{seg.count}</span>
+          </div>
+        ))}
+      </div>
+
+      <div className="border-t border-gray-100 pt-5">
+        <div className="text-[11px] text-gray-400 mb-3">Where they sit across the product lifecycle</div>
+        <div className="space-y-2">
+          {mix.byFacet.map(row => (
+            <div key={row.facet} className="flex items-center gap-3">
+              {/* Plain text, not a link to the phase. Making these clickable
+                  put seven 13px-tall tap targets on a phone, the smallest on
+                  the page, to duplicate navigation the wheel below already
+                  owns — its counts are the links that filter the list. */}
+              <div className="w-20 sm:w-28 shrink-0 text-right leading-tight">
+                <div className="text-[10px] font-bold uppercase tracking-widest text-gray-900">{row.facet}</div>
+                <div className="text-[10px] text-gray-400 hidden sm:block">{FACET_SUBTITLES[row.facet]}</div>
+              </div>
+              {/* Scaled against the busiest phase rather than each row filling
+                  the width: a phase holding two activities should look smaller
+                  than one holding six, which is most of what this view is for. */}
+              <div className="flex-1 flex gap-0.5 h-4">
+                {row.segments.map(seg => (
+                  <div
+                    key={seg.key}
+                    className={`rounded-sm ${GAP_BUCKETS[seg.key].fill}`}
+                    style={{ width: `${(seg.count / mix.facetMax) * 100}%` }}
+                  />
+                ))}
+              </div>
+              <span className="text-[11px] text-gray-400 w-4 shrink-0 text-right">{row.count}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function FacetWheel({ activityStats, activities, onFacetClick }) {
   const statusLabel = (gap) => {
     if (gap === null) return { label: "No data",       color: "#9CA3AF", bg: "#F3F4F6" };
@@ -469,6 +564,8 @@ export default function ReportPage() {
 
   // Minimum-response gate
   const threshold = Math.min(3, scoredCount);
+
+  const gapMix = computeGapMix(activities, activityStats, FACET_ORDER);
 
   const handleFacetClick = (facet, level) => {
     setFilterLevel(level);
@@ -679,6 +776,12 @@ export default function ReportPage() {
             </div>
           </div>
         </div>
+
+        {/* ── The shape of it ──
+            Directly under the key finding, which gives two of these counts as
+            bare numbers. The bar is the same counts as a proportion, which is
+            what turns "6 need attention" into "and 12 do not". */}
+        <ShapeOfAnswers mix={gapMix} />
 
         {/* ── Plain-English summary ── */}
         {summaryBullets.length > 0 && (
