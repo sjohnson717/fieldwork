@@ -1,4 +1,4 @@
-import { SELF_BUCKETS } from "@/lib/self-gap";
+import { SELF_BUCKETS, MIX_SEGMENTS, computeSelfGapMix } from "@/lib/self-gap";
 import { FACET_SUBTITLES, IMPORTANCE_BADGE, EXECUTION_BADGE, BADGE_FALLBACK } from "@/lib/scoring";
 
 // What one respondent said, summarized, above the answer table they already had.
@@ -16,6 +16,105 @@ import { FACET_SUBTITLES, IMPORTANCE_BADGE, EXECUTION_BADGE, BADGE_FALLBACK } fr
 // Both axes run 0–3, so one divisor serves both bars.
 const pct = (v) => (v === null || v === undefined ? 0 : Math.round((v / 3) * 100));
 
+// The whole set of answers as one band of colour, then the same band split by
+// phase of product work.
+//
+// The personal report's summary card, rebuilt around what a team gap asks. The
+// four sections below answer "what did I say about each activity" and nothing
+// answered "what shape is this" — and here the shape is the more useful of the
+// two, because someone whose answers are mostly red is describing a team under
+// pressure everywhere rather than reporting fifteen separate problems.
+//
+// The per-phase split is what earns the space. The facet was already on every
+// row as a grey word in the margin doing nothing; stacked per phase it shows
+// whether the pressure is spread evenly or piled into one part of the
+// lifecycle, which is the difference between a general complaint and something
+// a workshop can be pointed at.
+//
+// No numbers on the bands themselves — a one-activity band has no room, and a
+// count that only appears on the wide ones reads as a ranking. Totals sit at the
+// end of each row and in the key.
+function ShapeOfAnswers({ mix }) {
+  if (mix.total === 0) return null;
+
+  return (
+    <div className="bg-white rounded-xl border border-gray-200 p-5 mb-4 break-inside-avoid">
+      <div className="flex items-baseline justify-between gap-3 mb-2">
+        <h3 className="text-sm font-bold text-gray-900">The shape of your answers</h3>
+        <span className="text-[11px] text-gray-400 shrink-0">
+          {mix.total} {mix.total === 1 ? "activity" : "activities"}
+        </span>
+      </div>
+
+      {/* Hairline gaps rather than one continuous bar. Printed in black and
+          white — which is most of the time, because the PDF is what gets
+          shared — red, amber and green collapse to much the same grey, and
+          without a gap the bands stop being countable at all.
+
+          Each band carries its own corners instead of the row being one
+          rounded strip with the ends clipped off. The unrated band is drawn as
+          an outline, and a clipped outline loses the side the clip lands on,
+          which read as a broken bar rather than an empty one. It also matches
+          the per-phase rows below. */}
+      <div className="flex h-7 gap-px mb-2">
+        {mix.overall.map(seg => (
+          <div
+            key={seg.key}
+            className={`rounded-sm ${MIX_SEGMENTS[seg.key].fill}`}
+            style={{ width: `${seg.share * 100}%` }}
+          />
+        ))}
+      </div>
+
+      {/* The key is the section headings verbatim, not shorter labels invented
+          for it: the bar is only decodable if a band can be matched to the
+          block it stands for.
+
+          Saying the order out loud is what makes this survive a black and white
+          printer — the swatches go grey with everything else, and position is
+          then the only thing left that identifies a band. Every bar on this
+          card uses the same order, including the per-phase ones. */}
+      <p className="text-[11px] text-gray-400 mb-2.5">Bands run left to right in the order of this key.</p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-1 mb-5">
+        {mix.overall.map(seg => (
+          <div key={seg.key} className="flex items-baseline gap-2">
+            <span className={`w-2.5 h-2.5 rounded-sm shrink-0 translate-y-0.5 ${MIX_SEGMENTS[seg.key].fill}`} />
+            <span className="text-[11px] text-gray-600 leading-snug flex-1">{MIX_SEGMENTS[seg.key].label}</span>
+            <span className="text-[11px] text-gray-400 shrink-0">{seg.count}</span>
+          </div>
+        ))}
+      </div>
+
+      <div className="border-t border-gray-100 pt-4">
+        <div className="text-[11px] text-gray-400 mb-3">Where they sit across the product lifecycle</div>
+        <div className="space-y-2">
+          {mix.byFacet.map(row => (
+            <div key={row.facet} className="flex items-center gap-3">
+              <div className="w-20 sm:w-28 shrink-0 text-right leading-tight">
+                <div className="text-[10px] font-bold uppercase tracking-widest text-gray-900">{row.facet}</div>
+                <div className="text-[10px] text-gray-400 hidden sm:block">{FACET_SUBTITLES[row.facet]}</div>
+              </div>
+              {/* Scaled against the busiest phase rather than each row filling
+                  the width: a phase holding two activities should look smaller
+                  than one holding six, which is most of what this view is for. */}
+              <div className="flex-1 flex gap-0.5 h-4">
+                {row.segments.map(seg => (
+                  <div
+                    key={seg.key}
+                    className={`rounded-sm ${MIX_SEGMENTS[seg.key].fill}`}
+                    style={{ width: `${(seg.count / mix.facetMax) * 100}%` }}
+                  />
+                ))}
+              </div>
+              <span className="text-[11px] text-gray-400 w-4 shrink-0 text-right">{row.count}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function SectionHeading({ eyebrow, title, blurb }) {
   return (
     <div className="print-section mb-5 pt-1">
@@ -28,6 +127,7 @@ function SectionHeading({ eyebrow, title, blurb }) {
 
 export default function TeamGapSelfSummary({ profile }) {
   const { buckets, facets, unknowns } = profile;
+  const mix = computeSelfGapMix(profile);
 
   return (
     <>
@@ -37,6 +137,8 @@ export default function TeamGapSelfSummary({ profile }) {
         title="Where you'd focus first"
         blurb="Your answers sorted by the distance between how much an activity matters and how well you think it's being done. Importance and execution are kept apart on purpose — the gap between them is the finding, and one combined score would hide it."
       />
+
+      <ShapeOfAnswers mix={mix} />
 
       <div className="space-y-4 mb-6">
         {Object.entries(SELF_BUCKETS).map(([key, b]) => {
@@ -122,7 +224,7 @@ export default function TeamGapSelfSummary({ profile }) {
       <SectionHeading
         eyebrow="Part two"
         title="Your view by phase"
-        blurb="The same answers grouped by phase of product work. Two bars, never one combined score — where the blue bar runs well ahead of the grey one is where you see the most pressure."
+        blurb="Phase by phase again, but the two ratings underneath rather than the gaps they added up to. Two bars, never one combined score — where the blue bar runs well ahead of the grey one is where you see the most pressure."
       />
 
       <div className="bg-white rounded-xl border border-gray-200 p-5 mb-6">
