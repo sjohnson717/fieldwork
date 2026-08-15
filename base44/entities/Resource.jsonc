@@ -35,6 +35,11 @@
       "default": [],
       "description": "Activities this resource is offered for. Many-to-many: one resource can serve several activities, and an activity can have several."
     },
+    "fallback": {
+      "type": "boolean",
+      "default": false,
+      "description": "Offer this when a report's shortlist comes out thin — one or two items — regardless of which activities were recommended. For the handful of things worth reading whatever someone is working on. It never makes the section appear on its own: a report with nothing attached still shows no resources at all, because a section carrying only the house reading reads as advertising rather than advice."
+    },
     "sort_order": {
       "type": "number"
     },
