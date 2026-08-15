@@ -26,9 +26,9 @@ export const EXECUTION_BADGE = {
 };
 
 // The one canonical facet order. Everything that sorts, pages or groups by facet
-// imports this — AssessPage's paging, the library and assessment activity pickers,
-// getAssignedActivities. Keeping a local copy is how LEARN went missing from four
-// files at once while staying present in the entity enum.
+// imports this — the survey's paging in `Assessment`, the library and activity
+// pickers, getAssignedActivities. Keeping a local copy is how LEARN went missing
+// from four files at once while staying present in the entity enum.
 export const FACET_ORDER = ["DEFINE", "COMMIT", "DESCRIBE", "CREATE", "PREPARE", "DELIVER", "LEARN"];
 
 export const FACET_SUBTITLES = {

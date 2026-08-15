@@ -5,7 +5,7 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider } from '@/lib/AuthContext';
 import ScrollToTop from './components/ScrollToTop';
-import AssessPage from './pages/AssessPage';
+import Assessment from './pages/Assessment';
 import ReadMe from './pages/ReadMe';
 import FacilitatorGuide from './pages/FacilitatorGuide';
 import AdminPage from './pages/AdminPage';
@@ -30,7 +30,7 @@ function App() {
             <Route path="/register" element={<Register />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/assess" element={<AssessPage />} />
+            <Route path="/assess" element={<Assessment />} />
             {/* Where a signed-in account with no role lands. Anything that used
                 to send such an account to /assess sends it here instead: the
                 respondent survey is not a permissions message. */}

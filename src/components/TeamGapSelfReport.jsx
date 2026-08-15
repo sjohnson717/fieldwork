@@ -9,12 +9,12 @@ import ChaosAssessmentPlug from "@/components/ChaosAssessmentPlug";
 const QUARTZ_ICON = "https://media.base44.com/images/public/6a29ff3bc8effbeb3d637555/9e97ff5e6_Quartzicon.png";
 
 // What a respondent sees after submitting a team gap assessment: their own
-// summary, then every answer they gave. Lifted out of AssessPage so the
-// facilitator's read-only preview renders the same screen from the same code
-// rather than a second rendering of the same idea — two of those drift, and
-// the whole point of the preview is to show what the respondent actually got.
+// summary, then every answer they gave. Lifted out of `Assessment` (the
+// /assess page) so the facilitator's read-only preview renders the same screen
+// from the same code rather than a second rendering of the same idea — two of
+// those drift, and the point of the preview is to show what they actually got.
 //
-// `responses` is keyed by activity id, which is AssessPage's own answer state.
+// `responses` is keyed by activity id, which is `Assessment`'s own answer state.
 // `readOnly` drops the controls that write or navigate — Revise, Done, and the
 // closing note — leaving the page identical in every other respect.
 export default function TeamGapSelfReport({

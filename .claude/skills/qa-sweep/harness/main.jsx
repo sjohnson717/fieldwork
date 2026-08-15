@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom/client'
 import '@/index.css'
 import './audit.js'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import AssessPage from '@/pages/AssessPage'
+import Assessment from '@/pages/Assessment'
 import ReportPage from '@/pages/ReportPage'
 import TeamLeaderPage from '@/pages/TeamLeaderPage'
 import NoAccess from '@/pages/NoAccess'
@@ -41,7 +41,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   <AuthProvider>
   <BrowserRouter>
     <Routes>
-      <Route path="/assess" element={<AssessPage />} />
+      <Route path="/assess" element={<Assessment />} />
       <Route path="/report/:token" element={<ReportPage />} />
       {/* Mirrors App.jsx: the token is cleared from the address after arrival,
           so the token-free forms have to render too. */}
