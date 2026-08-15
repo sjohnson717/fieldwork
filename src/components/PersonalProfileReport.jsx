@@ -37,7 +37,10 @@ const THIN_SHORTLIST = 2;
 const RESOURCE_TYPES = {
   free_article:  { label: "Free article",        tone: "bg-emerald-50 text-emerald-700 border-emerald-200" },
   external:      { label: "External resource",   tone: "bg-blue-50 text-blue-700 border-blue-200" },
-  quartz_book:   { label: "Quartz book",         tone: "bg-violet-50 text-violet-700 border-violet-200" },
+  // Label and key differ on purpose. The key is stored on every existing
+  // record and in the entity enum, so renaming it would be a migration for a
+  // word nobody reads.
+  quartz_book:   { label: "Book",                tone: "bg-violet-50 text-violet-700 border-violet-200" },
   quartz_course: { label: "Course or workshop",  tone: "bg-amber-50 text-amber-800 border-amber-200" },
 };
 

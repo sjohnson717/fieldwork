@@ -37,7 +37,7 @@ The two are separate records that can be linked, so a report can cross what a te
 | **Organization** | The consulting org. The tenant boundary; \`org_id\` on other records points here. |
 | **Invitation** | Carries an application role until an invited user first signs in. |
 | **JobTitle** | The picklist of roles offered when suggesting an owner. |
-| **Resource** | Authored learning resources for the personal report. Typed (free article / external / Quartz book / course), attached to activities by \`activity_ids\`. Read is open — the personal report renders unauthenticated. |
+| **Resource** | Authored learning resources for the personal report. Typed (free article / external / book / course), attached to activities by \`activity_ids\`. Read is open — the personal report renders unauthenticated. |
 | **User** | Base44 built-in, extended with \`org_id\` and an application \`role\`. |
 
 Built-in fields on every entity: \`id\`, \`created_date\`, \`updated_date\`, \`created_by_id\`.`,
