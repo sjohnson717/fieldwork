@@ -17,6 +17,7 @@ import {
 } from "@/lib/personal-scoring";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import RespondentPreview from "@/components/RespondentPreview";
+import SurveyFeedback from "@/components/SurveyFeedback";
 
 const VIEWS = [
   { key: "people", label: "People" },
@@ -102,6 +103,12 @@ export default function PersonalResults({ assessment }) {
       console.error("Failed to load personal results", e);
     }
     setLoading(false);
+  };
+
+  // Clearing one comment updates the row in place rather than refetching the
+  // whole results page — nothing else on screen derives from these fields.
+  const handleFeedbackCleared = (id, field) => {
+    setRespondents(prev => prev.map(r => (r.id === id ? { ...r, [field]: null } : r)));
   };
 
   const handleDeleteRespondent = async (id) => {
@@ -567,6 +574,11 @@ export default function PersonalResults({ assessment }) {
           </div>
         );
       })()}
+
+      {/* Survey feedback. Renders nothing until someone has written
+          something, and is admin-only by construction: these fields reach the
+          browser through listRespondents and through no public payload. */}
+      <SurveyFeedback respondents={respondents} onChange={handleFeedbackCleared} />
 
       {previewRespondent && isSuperAdmin && (
         <RespondentPreview

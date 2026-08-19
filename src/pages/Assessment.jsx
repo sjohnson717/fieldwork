@@ -92,6 +92,12 @@ export default function Assessment() {
   const [activities, setActivities] = useState([]);
   const [responses, setResponses] = useState({});
   const [currentFacetIndex, setCurrentFacetIndex] = useState(0);
+  // The two closing questions. Held apart from `responses` because they are not
+  // answers about an activity — they live on Respondent, and the wrap-up page
+  // saves them on its own after the last facet has already marked the
+  // respondent complete.
+  const [closingComments, setClosingComments] = useState("");
+  const [missingCoverage, setMissingCoverage] = useState("");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   // One request at a time, latched in a ref rather than in `saving`.
@@ -224,6 +230,10 @@ export default function Assessment() {
       // Respondents self-register through the shared code link and are
       // created as "started", so there is no earlier state to promote from.
       setRespondent(r);
+      // Anything they wrote on the wrap-up page last time, so revising brings
+      // it back rather than presenting an empty box that would overwrite it.
+      setClosingComments(r.closing_comments || "");
+      setMissingCoverage(r.missing_coverage || "");
 
       // Someone returning to their own link after finishing can look back at
       // what they submitted. Their answers are loaded up front so the review
@@ -355,6 +365,11 @@ export default function Assessment() {
   const loadExistingResponses = async () => {
     const session = await getRespondentSession(myToken);
     setResponses(rebuildResponses(session?.responses || []));
+    // The wrap-up answers come back for the same reason the ratings do: a
+    // revision that started from stale text would re-save the old text over
+    // whatever is stored now.
+    setClosingComments(session?.respondent?.closing_comments || "");
+    setMissingCoverage(session?.respondent?.missing_coverage || "");
   };
 
   const handleRevise = async () => {
@@ -438,13 +453,41 @@ const handleNext = once(async () => {
       setCurrentFacetIndex(i => i + 1);
       window.scrollTo(0, 0);
     } else {
-      setStep("done");
+      // The wrap-up sits between the last facet and the review page, not after
+      // it: the review page is the one people print and share, and free text
+      // written for us has no business in a PDF that leaves the building.
+      setStep("wrapup");
+      window.scrollTo(0, 0);
     }
     } catch (e) {
       console.error("handleNext error:", e);
       setError("Error saving responses. Please try again.");
     }
     setSaving(false);
+  });
+
+  // Saving the wrap-up is a call of its own, with no answers attached: the
+  // respondent was already marked complete by the last facet's save, so this
+  // page can be skipped, failed or abandoned without costing them their
+  // submission. That is also why a failure here does not block the review page
+  // — losing an optional comment is not a reason to strand someone short of
+  // the report they came for.
+  const handleWrapup = once(async () => {
+    setSaving(true);
+    setError("");
+    try {
+      await saveRespondentAnswers(myToken, [], {
+        feedback: {
+          closing_comments: closingComments.trim(),
+          missing_coverage: missingCoverage.trim(),
+        },
+      });
+    } catch (e) {
+      console.error("handleWrapup error:", e);
+    }
+    setSaving(false);
+    setStep("done");
+    window.scrollTo(0, 0);
   });
 
   // ── Loading state ─────────────────────────────────────────────────────────
@@ -764,6 +807,83 @@ const handleNext = once(async () => {
                 different destinations — the personal profile report and the team
                 gap answer table — so it names the moment rather than the page. */}
             {saving ? "Saving..." : currentFacetIndex < availableFacets.length - 1 ? "Next →" : "Finish and review"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  // ── Wrap-up ───────────────────────────────────────────────────────────────
+  //
+  // Two optional questions after the last facet, and the only free text the
+  // survey collects. Both exist to improve the instrument: the first catches
+  // whatever the rating scales had no room for, and the second asks — in the
+  // respondent's own language rather than a survey designer's — for work the
+  // activity library is missing.
+  //
+  // The note about where these go is not decoration. The intro screen promises
+  // a team respondent that their answers are "seen in aggregate by your team
+  // leader", and a paragraph of free text cannot be aggregated and is often
+  // recognisable as its author. These answers are held to a narrower promise
+  // instead, and the page has to say so where it asks.
+  if (step === "wrapup") return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-3xl mx-auto px-4 py-8">
+        <div className="mb-6">
+          <p className="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-1">Quartz · Product Assessment</p>
+          <h1 className="text-xl font-bold text-gray-900">Two last questions</h1>
+          <p className="text-sm text-gray-500 mt-2 leading-relaxed">
+            Both are optional. They go to the Quartz team, who use them to make the
+            assessment better — they are not part of {isPersonal ? "your profile" : "your team's report"}.
+          </p>
+        </div>
+
+        <div className="space-y-4">
+          <div className="bg-white rounded-xl border border-gray-200 p-5">
+            <label htmlFor="closing-comments" className="block font-semibold text-gray-900 mb-1">
+              What else do you want to tell us?
+            </label>
+            <p className="text-sm text-gray-500 mb-3">Anything the questions above didn't give you room to say.</p>
+            <textarea
+              id="closing-comments"
+              value={closingComments}
+              onChange={e => setClosingComments(e.target.value)}
+              maxLength={2000}
+              rows={4}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none resize-y"
+            />
+          </div>
+
+          <div className="bg-white rounded-xl border border-gray-200 p-5">
+            <label htmlFor="missing-coverage" className="block font-semibold text-gray-900 mb-1">
+              Is there anything you do in your role that we didn't ask about?
+            </label>
+            <p className="text-sm text-gray-500 mb-3">Work that matters but never came up in the questions.</p>
+            <textarea
+              id="missing-coverage"
+              value={missingCoverage}
+              onChange={e => setMissingCoverage(e.target.value)}
+              maxLength={2000}
+              rows={4}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none resize-y"
+            />
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between gap-3 mt-6">
+          <button
+            onClick={() => { setStep("done"); window.scrollTo(0, 0); }}
+            disabled={saving}
+            className="text-gray-500 hover:text-gray-800 disabled:opacity-50 font-medium px-4 py-3 rounded-lg transition-colors"
+          >
+            Skip
+          </button>
+          <button
+            onClick={handleWrapup}
+            disabled={saving}
+            className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold px-8 py-3 rounded-lg transition-colors"
+          >
+            {saving ? "Saving..." : "Continue →"}
           </button>
         </div>
       </div>

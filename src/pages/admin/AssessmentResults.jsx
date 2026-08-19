@@ -5,6 +5,7 @@ import { listRespondents } from "@/lib/public-assessment";
 import { FACET_ORDER, IMPORTANCE_SCORE, EXECUTION_SCORE, avg, fmt } from "@/lib/scoring";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import RespondentPreview from "@/components/RespondentPreview";
+import SurveyFeedback from "@/components/SurveyFeedback";
 
 // Gap = high importance, low execution = most actionable
 const gapScore = (imp, exec) => {
@@ -60,6 +61,12 @@ export default function AssessmentResults({ assessment }) {
 
   const [removingRespondent, setRemovingRespondent] = useState(null);
   const [previewRespondent, setPreviewRespondent] = useState(null);
+
+  // Clearing one comment updates the row in place rather than refetching the
+  // whole results page — nothing else on screen derives from these fields.
+  const handleFeedbackCleared = (id, field) => {
+    setRespondents(prev => prev.map(r => (r.id === id ? { ...r, [field]: null } : r)));
+  };
 
   const handleDeleteRespondent = async (id) => {
     setRemovingRespondent(null);
@@ -605,6 +612,11 @@ export default function AssessmentResults({ assessment }) {
 
       {/* Gated twice on purpose: the row link is only rendered for a super
           admin, and the overlay only mounts for one. */}
+      {/* Survey feedback. Renders nothing until someone has written
+          something, and is admin-only by construction: these fields reach the
+          browser through listRespondents and through no public payload. */}
+      <SurveyFeedback respondents={respondents} onChange={handleFeedbackCleared} />
+
       {previewRespondent && isSuperAdmin && (
         <RespondentPreview
           assessment={assessment}

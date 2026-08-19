@@ -65,6 +65,13 @@ Deno.serve(async (req) => {
         status: r.status,
         completed_date: r.completed_date || null,
         created_date: r.created_date,
+        // The two closing questions from the end of the survey. Admin-side
+        // only, which is the whole reason they come through this function
+        // rather than any of publicAssessment's shapes — they are collected to
+        // improve the instrument, and they are never reported to a buyer or a
+        // team leader, or raised in the discussion.
+        closing_comments: r.closing_comments || null,
+        missing_coverage: r.missing_coverage || null,
       })),
     });
   } catch (error) {
