@@ -79,6 +79,7 @@ Be straight about this in any report you write from it.
 | Firefox | Not installed. Optional: `npx playwright install firefox webkit` and adapt `sweep.mjs`. |
 | Edge | Chromium, same engine as the sweep. Covered in substance. |
 | Real printers | Only PDFs are produced. |
+| `/readme`, `/facilitator-guide`, `/admin` | The harness mounts the survey and report routes only, so these render as its index page rather than as themselves. Both doc pages need nothing but a `MemoryRouter` — they use router hooks and no backend — so a throwaway harness alongside this one is enough; admin pages need auth stubs as well. |
 | The live backend | The sweep runs against fixtures. It proves the app's behaviour, not the deployment's — see the live checks at the end. |
 
 Playwright's WebKit is worth adding if cross-engine coverage matters, but it is
