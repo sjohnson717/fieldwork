@@ -28,6 +28,14 @@
     },
     "activity_log": {
       "type": "string"
+    },
+    "closing_comments": {
+      "type": "string",
+      "description": "Free text: \"What else do you want to tell us?\" Admin-only; never reported."
+    },
+    "missing_coverage": {
+      "type": "string",
+      "description": "Free text: anything they do in their role the survey did not ask about. Candidate activities for the library. Admin-only; never reported."
     }
   },
   "required": [

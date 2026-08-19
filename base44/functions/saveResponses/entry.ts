@@ -55,6 +55,16 @@ const PERSONAL_FIELDS = ["experience", "skills", "interest"];
 // is under a hundred. A cap keeps a single call from turning into a bulk write.
 const MAX_ANSWERS = 200;
 
+// The closing questions, asked once at the end of the survey and stored on
+// Respondent rather than Response — they are about the instrument, not about
+// any one activity. Admin-only: nothing here reaches a buyer report, a team
+// leader dashboard or the discussion.
+const FEEDBACK_FIELDS = ["closing_comments", "missing_coverage"];
+
+// Long enough for a considered paragraph or three, short enough that this open
+// endpoint cannot be used to park arbitrary data on a Respondent row.
+const MAX_FEEDBACK = 2000;
+
 // Explicit, because the platform's own default page size is not the app's to
 // assume. A respondent has one row per activity, and an assessment's library is
 // small — but "small enough that the default covered it" is how a silent
@@ -87,7 +97,7 @@ Deno.serve(async (req) => {
     const base44 = createClientFromRequest(req);
     const svc = base44.asServiceRole.entities;
 
-    const { token, answers, complete } = await req.json();
+    const { token, answers, complete, feedback } = await req.json();
     if (!token || typeof token !== "string") {
       return Response.json({ error: "token is required" }, { status: 400 });
     }
@@ -96,6 +106,35 @@ Deno.serve(async (req) => {
     }
     if (answers.length > MAX_ANSWERS) {
       return Response.json({ error: "too many answers" }, { status: 400 });
+    }
+
+    // Validated before anything is written, so a bad feedback payload fails the
+    // whole call rather than leaving a page of answers saved beside a rejected
+    // comment.
+    const feedbackPayload = {};
+    if (feedback !== undefined && feedback !== null) {
+      if (typeof feedback !== "object" || Array.isArray(feedback)) {
+        return Response.json({ error: "invalid feedback" }, { status: 400 });
+      }
+      for (const field of FEEDBACK_FIELDS) {
+        const value = feedback[field];
+        if (value === undefined) continue;
+        if (value === null || value === "") {
+          // Clearing is a real state: someone can revise their answers and
+          // delete what they wrote, and an admin can clear a comment that
+          // should not have been left.
+          feedbackPayload[field] = null;
+          continue;
+        }
+        if (typeof value !== "string") {
+          return Response.json({ error: `invalid ${field}` }, { status: 400 });
+        }
+        const trimmed = value.trim();
+        if (trimmed.length > MAX_FEEDBACK) {
+          return Response.json({ error: `invalid ${field}` }, { status: 400 });
+        }
+        feedbackPayload[field] = trimmed || null;
+      }
     }
 
     const respondents = await svc.Respondent.filter({ token }, null, ALL);
@@ -195,11 +234,19 @@ Deno.serve(async (req) => {
     // apart, a respondent whose final save succeeded and whose status update
     // failed was left permanently "started" with a full set of answers, which
     // reads on the facilitator's roster as someone who never finished.
+    //
+    // The closing feedback rides along in the same update for the same reason,
+    // though it never gates completion: it is asked on a page *after* the last
+    // one that marks a respondent finished, and someone who closes the tab
+    // rather than answering an optional question has still completed the
+    // survey.
+    const respondentPatch = { ...feedbackPayload };
     if (complete === true) {
-      await svc.Respondent.update(r.id, {
-        status: "completed",
-        completed_date: new Date().toISOString(),
-      });
+      respondentPatch.status = "completed";
+      respondentPatch.completed_date = new Date().toISOString();
+    }
+    if (Object.keys(respondentPatch).length > 0) {
+      await svc.Respondent.update(r.id, respondentPatch);
     }
 
     return Response.json({ created, updated, skipped: answers.length - clean.length });

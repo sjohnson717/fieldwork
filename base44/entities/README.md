@@ -316,6 +316,36 @@ is what governs a write's return value, not the read rule. Still worth walking
 one respondent through `/assess?code=…` after any change here, because a green
 build proves nothing about RLS.
 
+## The survey's two free-text answers are the one thing never reported
+
+`Respondent.closing_comments` and `Respondent.missing_coverage` hold the two
+optional questions on the wrap-up page after the survey's last facet — what else
+someone wants to tell us, and anything they do in their role the assessment
+failed to ask about. Both exist to improve the instrument.
+
+They sit on `Respondent` rather than `Response` because they are asked once
+about the survey, not per activity: a `Response` row is keyed by
+`activity_id` and carries nothing but enums, so a closing comment could only
+have gone there as a row pointing at no activity.
+
+**Nothing protects them but omission, and that is deliberate.** Free text cannot
+be aggregated and is often recognisable as its author, so it cannot be held to
+the promise `/assess` makes a team respondent on its own intro screen — that
+their answers are seen in aggregate by their team leader. Every payload
+`publicAssessment` serves whitelists the respondent fields it returns, and only
+the `respondent` mode — the person's own resume link, so their own text comes
+back on a revise — names these two. The `team` and `buyer` shapes do not, the
+discussion never reads them, and `listRespondents` is the only path that brings
+them to a browser. Adding them to any other payload is all it would take to
+break the promise silently, and no rule would stop it.
+
+`saveResponses` writes them, validated and length-capped like every other field
+because that endpoint is open. It does not gate completion on them: the wrap-up
+page comes *after* the save that marks a respondent finished, so someone who
+skips it or closes the tab has still completed the survey. The page also sits
+before the review screen rather than after it, because the review screen is the
+one people print and share.
+
 ## Two assessment types on one entity
 
 `Assessment.assessment_type` is `team_gap` or `personal`, and `Response` carries

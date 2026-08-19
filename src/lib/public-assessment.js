@@ -34,8 +34,19 @@ export const listRespondents = async (assessmentId) => {
 // `answers` is [{ activity_id, ...fields }]; the function upserts by activity,
 // so no row ids travel to the browser or back. `complete` marks the respondent
 // finished in the same call as their last page of answers.
-export const saveRespondentAnswers = async (token, answers, { complete = false } = {}) => {
-  const res = await base44.functions.invoke('saveResponses', { token, answers, complete });
+//
+// `feedback` carries the two closing questions, which live on Respondent rather
+// than Response because they are asked once about the survey itself. It is sent
+// on its own, with an empty answers array, from the wrap-up page — that page
+// comes after the one that marks a respondent complete, so skipping it costs
+// them nothing.
+/**
+ * @param {string} token
+ * @param {Array<Object>} answers
+ * @param {{ complete?: boolean, feedback?: Record<string, string> }} [options]
+ */
+export const saveRespondentAnswers = async (token, answers, { complete = false, feedback } = {}) => {
+  const res = await base44.functions.invoke('saveResponses', { token, answers, complete, feedback });
   return res?.data ?? null;
 };
 

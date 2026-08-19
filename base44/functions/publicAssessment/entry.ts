@@ -137,6 +137,17 @@ Deno.serve(async (req) => {
             // Dates the printed copy of their answers, so it reads as a record
             // of what they submitted and when.
             completed_date: r.completed_date || null,
+            // Their own closing feedback, so a resumed link or "Revise my
+            // answers" brings back what they wrote rather than an empty box
+            // they would have to fill in again.
+            //
+            // Only this mode returns them. The "team" and "buyer" shapes below
+            // list their respondent fields explicitly and do not name these,
+            // which is the whole of what keeps free text out of a report the
+            // survey promised would be read in aggregate. Adding them there
+            // would break that promise silently.
+            closing_comments: r.closing_comments || null,
+            missing_coverage: r.missing_coverage || null,
           },
         });
       }
