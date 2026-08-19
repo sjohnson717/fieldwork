@@ -112,7 +112,23 @@ You can print from the preview, which is how to get a copy of someone's report w
   {
     id: "participants",
     title: "What participants see",
-    content: `Both assessment types now end on a summary of what that person said. It replaces the thank-you dialog, and it is the same idea in both instruments: report someone's own answers back to them, organised, and say nothing about whether they are right.
+    content: `## Before they start
+
+The intro screen says what the assessment is for, what it will ask, roughly how long it takes and what comes out at the end — then names each rating axis with a one-line definition. Every activity card repeats those definitions beside the labels.
+
+**You do not have to brief people on any of this, and the public assessments have nobody to do it.** Say it in your own words if you like; just don't assume it has to come from you. What the axes mean and why they are kept apart is in *Personal assessments* below.
+
+## Two questions at the end
+
+After the last facet, before the summary, every respondent gets two optional free-text boxes: what else they want to tell us, and anything they do in their role the assessment didn't ask about.
+
+**These are for improving the instrument and are never reported.** They are not in the client report, not on the team leader dashboard, and not in the discussion — so nothing a participant writes there will surface in a room. They are read in Admin → Results, and a comment can be cleared there.
+
+Worth knowing what they are before a participant mentions having written something. The second one is the more useful of the two: an answer to it is a candidate activity for the library.
+
+## The summaries
+
+Both assessment types end on a summary of what that person said. It replaces the thank-you dialog, and it is the same idea in both instruments: report someone's own answers back to them, organised, and say nothing about whether they are right.
 
 That last part matters. A summary that graded anyone would make the next answer less honest, and it would pre-empt the debrief — **discrepancies between people are the room's work, not the report's**.
 
@@ -136,7 +152,9 @@ Neither ever combines its axes into one number. On the team gap side the distanc
 
 ## Nothing is submitted at the end
 
-Answers are saved as they are given, in both instruments. The last page of the survey says **Finish and review** rather than "Preview your responses", and the button below the team gap summary says **Done** rather than "Submit" — by then the submission has already happened, and a button promising otherwise implied that closing the tab would lose the work.
+Answers are saved as they are given, in both instruments. Every facet page ends on **Next**, the wrap-up below says **Finish and review**, and the button under the team gap summary says **Done** rather than "Submit" — by then the submission has already happened, and a button promising otherwise implied that closing the tab would lose the work.
+
+Someone is recorded as complete when they finish the last facet, *before* the wrap-up. So a person who closes the tab on those two optional questions has still completed the assessment, and will show as completed on your roster.
 
 Respondents can still revise. Their own link reopens their answers until the assessment closes; on a personal assessment, indefinitely.
 
@@ -159,13 +177,11 @@ The cover carries the Quartz mark, not a PGL logo: this is the respondent's docu
     title: "Personal assessments",
     content: `A personal assessment asks each person about their own experience, skills and interest in the same activities the team rates. It produces a development profile for the individual and a capability picture for you.
 
-## The survey explains itself
+## What the three axes mean
 
-You no longer need to brief people on what the three axes mean. Every activity card carries the definition beside its label — *Experience · how much you've done this*, *Skills · how good you are at it*, *Interest · how much you want to do more of it* — and the intro screen states them again before anyone starts, along with what the assessment is for and roughly how long it takes.
+The survey defines them itself, on the intro screen and beside every label: *Experience · how much you've done this*, *Skills · how good you are at it*, *Interest · how much you want to do more of it*.
 
-This matters most where you are not in the room. The same screens field the public assessments, where nobody is available to explain anything, and a respondent who reads Experience and Skills as the same question rates them identically — which does not look like bad data, it just quietly empties **Under-skilled** below.
-
-Say it in your own words if you like; just don't assume it has to come from you.
+They are worded to be told apart rather than to sound gentle. Someone who reads Experience and Skills as the same question rates them identically — which does not look like bad data, because the answers are still well-formed. It quietly empties **Under-skilled** below, the category that only exists if those two answers can disagree.
 
 ## Ordering
 
