@@ -95,6 +95,14 @@ Row-level security fails closed and quietly, and a green build proves nothing
 about it. Walk a real respondent through `/assess?code=…` after any change to an
 entity's rules.
 
+The survey's two closing free-text answers (`Respondent.closing_comments` and
+`missing_coverage`) are the one thing collected that is never reported. Nothing
+guards them but omission: every payload `publicAssessment` serves whitelists the
+respondent fields it returns, and only a respondent's own resume session names
+these. Adding them to the team or buyer shape is all it would take to put a
+recognisable paragraph into a report the survey promised would be read in
+aggregate.
+
 ## Maintenance belongs in the app
 
 Everything that accumulates is removable from `/admin` — organizations,
