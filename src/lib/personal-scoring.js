@@ -40,12 +40,15 @@ export const INTEREST_OPTIONS   = ["None", "Limited", "Moderate", "Passionate"];
 // the work for years and was never shown a better way to do it is only
 // distinguishable from a beginner if those two answers can disagree.
 //
-// Skills is worded as an action rather than a verdict on the person for the
-// reason the facilitator guide gives about the category names — the moment a
-// rating reads as a judgement, people stop answering it honestly.
+// Skills asks how good someone is at the work, in those words. The alternative
+// considered was the softer "how well you do it", on the theory that a rating
+// reading as a verdict on the person is what stops people answering honestly —
+// the same reasoning the facilitator guide gives for keeping the category names
+// away from respondents. It was rejected as too indirect to do the one job this
+// hint has: telling Skills apart from Experience directly above it.
 export const PERSONAL_AXES = [
   { key: "experience", label: "Experience", hint: "how much you've done this",          options: EXPERIENCE_OPTIONS, scores: EXPERIENCE_SCORE },
-  { key: "skills",     label: "Skills",     hint: "how well you do it",                 options: SKILLS_OPTIONS,     scores: SKILLS_SCORE },
+  { key: "skills",     label: "Skills",     hint: "how good you are at it",             options: SKILLS_OPTIONS,     scores: SKILLS_SCORE },
   { key: "interest",   label: "Interest",   hint: "how much you want to do more of it", options: INTEREST_OPTIONS,   scores: INTEREST_SCORE },
 ];
 
