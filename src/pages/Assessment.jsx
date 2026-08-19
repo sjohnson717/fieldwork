@@ -801,12 +801,14 @@ const handleNext = once(async () => {
             disabled={saving}
             className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold px-8 py-3 rounded-lg transition-colors"
           >
-            {/* "Finish and review" rather than "Preview your responses": answers
-                are saved as they are given in both flows, so nothing here is a
-                preview of something not yet committed. It also has to fit two
-                different destinations — the personal profile report and the team
-                gap answer table — so it names the moment rather than the page. */}
-            {saving ? "Saving..." : currentFacetIndex < availableFacets.length - 1 ? "Next →" : "Finish and review"}
+            {/* Every facet button reads "Next", the last one included, because
+                the last facet is no longer the last page — the wrap-up follows
+                it. This said "Finish and review" on the final facet and was
+                confusing the moment the wrap-up went in: it promised the review
+                screen and delivered two more questions, so the page after it
+                read as something that had gone wrong. "Finish and review" now
+                sits on the wrap-up, where it is true. */}
+            {saving ? "Saving..." : "Next →"}
           </button>
         </div>
       </div>
@@ -883,7 +885,11 @@ const handleNext = once(async () => {
             disabled={saving}
             className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold px-8 py-3 rounded-lg transition-colors"
           >
-            {saving ? "Saving..." : "Continue →"}
+            {/* The one button in the survey that really does reach the review
+                screen. Skip beside it goes to the same place without saving,
+                which is what makes both questions optional in fact and not just
+                in the sentence above them. */}
+            {saving ? "Saving..." : "Finish and review"}
           </button>
         </div>
       </div>

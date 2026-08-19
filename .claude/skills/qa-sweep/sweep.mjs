@@ -69,18 +69,24 @@ const openReview = async (page) => {
 // The wrap-up page is reachable only by finishing the survey, so the layout
 // matrix has to page through to it. Two free-text boxes and a two-button footer
 // are exactly the shape that breaks at 320px.
-const openWrapup = async (page) => {
+// Every facet's button reads "Next", the last one included; "Finish and review"
+// lives on the wrap-up itself. Paging by "Next" alone therefore cannot overshoot
+// into the wrap-up's own primary button, which is what would happen the moment
+// a driver advanced by whichever label it found.
+const onWrapup = (page) => page.evaluate(() => !!document.getElementById("closing-comments"));
+
+const pageToWrapup = async (page) => {
   for (let i = 0; i < 10; i++) {
+    if (await onWrapup(page)) return true;
     const advanced = await page.evaluate(() => {
-      const b = [...document.querySelectorAll("button")].find(x => /Next|Finish and review/.test(x.textContent));
+      const b = [...document.querySelectorAll("button")].find(x => /Next/.test(x.textContent));
       if (b) { b.click(); return true; }
       return false;
     });
     if (!advanced) break;
     await wait(600);
-    const there = await page.evaluate(() => /Two last questions/.test(document.body.innerText));
-    if (there) break;
   }
+  return await onWrapup(page);
 };
 
 await mkdir(outDir, { recursive: true });
@@ -97,7 +103,7 @@ for (const route of ROUTES) {
     await page.setViewport({ width, height: 900, deviceScaleFactor: 1, isMobile: width < 768, hasTouch: width < 768 });
     await page.goto(baseUrl + route.url, { waitUntil: "networkidle0" });
     if (route.review) await openReview(page);
-    if (route.wrapup) await openWrapup(page);
+    if (route.wrapup) await pageToWrapup(page);
     await wait(400);
 
     const audit = await page.evaluate(() => (window.__qaAudit ? window.__qaAudit() : { error: "audit module did not load" }));
@@ -212,7 +218,7 @@ await flow("next is single-submit", async (page) => {
 await flow("finishing completes the respondent", async (page) => {
   await page.goto(baseUrl + "/assess?t=TOKEN-RESP-4", { waitUntil: "networkidle0" });
   for (let i = 0; i < 9; i++) {
-    const advanced = (await clickText(page, "Next")) || (await clickText(page, "Finish and review"));
+    const advanced = await clickText(page, "Next");
     if (!advanced) break;
     await wait(700);
   }
@@ -233,14 +239,7 @@ await flow("finishing completes the respondent", async (page) => {
 // this asserts completion is already true when the page is reached.
 await flow("wrap-up saves feedback and never gates completion", async (page) => {
   await page.goto(baseUrl + "/assess?t=TOKEN-RESP-4", { waitUntil: "networkidle0" });
-  for (let i = 0; i < 10; i++) {
-    const advanced = (await clickText(page, "Next")) || (await clickText(page, "Finish and review"));
-    if (!advanced) break;
-    await wait(700);
-    if (await page.evaluate(() => /Two last questions/.test(document.body.innerText))) break;
-  }
-  const onWrapup = await page.evaluate(() => !!document.getElementById("closing-comments"));
-  if (!onWrapup) return { pass: false, detail: "never reached the wrap-up page" };
+  if (!(await pageToWrapup(page))) return { pass: false, detail: "never reached the wrap-up page" };
 
   const completedBefore = await page.evaluate(() =>
     window.__qa.respondents.find(x => x.id === "resp-4")?.status);
@@ -259,7 +258,7 @@ await flow("wrap-up saves feedback and never gates completion", async (page) => 
     set("missing-coverage", "Pricing research.");
   });
   await wait(200);
-  if (!(await clickText(page, "Continue"))) return { pass: false, detail: "no Continue button on the wrap-up" };
+  if (!(await clickText(page, "Finish and review"))) return { pass: false, detail: "no Finish and review button on the wrap-up" };
   await wait(900);
 
   const after = await page.evaluate(() => {
@@ -293,14 +292,7 @@ await flow("wrap-up saves feedback and never gates completion", async (page) => 
 // Skipping the wrap-up writes nothing at all.
 await flow("skipping the wrap-up writes nothing", async (page) => {
   await page.goto(baseUrl + "/assess?t=TOKEN-RESP-4", { waitUntil: "networkidle0" });
-  for (let i = 0; i < 10; i++) {
-    const advanced = (await clickText(page, "Next")) || (await clickText(page, "Finish and review"));
-    if (!advanced) break;
-    await wait(700);
-    if (await page.evaluate(() => /Two last questions/.test(document.body.innerText))) break;
-  }
-  if (!(await page.evaluate(() => !!document.getElementById("closing-comments"))))
-    return { pass: false, detail: "never reached the wrap-up page" };
+  if (!(await pageToWrapup(page))) return { pass: false, detail: "never reached the wrap-up page" };
 
   const before = await page.evaluate(() => window.__qa.calls.filter(c => c.name === "fn:saveResponses").length);
   if (!(await clickText(page, "Skip"))) return { pass: false, detail: "no Skip button on the wrap-up" };
