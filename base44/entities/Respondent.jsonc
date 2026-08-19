@@ -29,16 +29,6 @@
     "activity_log": {
       "type": "string"
     },
-    // The two closing questions, asked once at the end of the survey rather
-    // than per activity — which is why they sit here and not on Response,
-    // whose rows are keyed by activity and carry nothing but enums.
-    //
-    // Both are for improving the instrument, and neither is ever shown to a
-    // buyer, a team leader, or the discussion. That is enforced by omission:
-    // every payload in publicAssessment whitelists the respondent fields it
-    // returns, and only the "respondent" mode — the person's own resume link —
-    // names these. Adding them to the "team" or "buyer" shapes is what would
-    // break the promise the survey's own intro screen makes.
     "closing_comments": {
       "type": "string",
       "description": "Free text: \"What else do you want to tell us?\" Admin-only; never reported."
