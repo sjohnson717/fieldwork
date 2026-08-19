@@ -159,6 +159,14 @@ The cover carries the Quartz mark, not a PGL logo: this is the respondent's docu
     title: "Personal assessments",
     content: `A personal assessment asks each person about their own experience, skills and interest in the same activities the team rates. It produces a development profile for the individual and a capability picture for you.
 
+## The survey explains itself
+
+You no longer need to brief people on what the three axes mean. Every activity card carries the definition beside its label — *Experience · how much you've done this*, *Skills · how well you do it*, *Interest · how much you want to do more of it* — and the intro screen states them again before anyone starts, along with what the assessment is for and roughly how long it takes.
+
+This matters most where you are not in the room. The same screens field the public assessments, where nobody is available to explain anything, and a respondent who reads Experience and Skills as the same question rates them identically — which does not look like bad data, it just quietly empties **Under-skilled** below.
+
+Say it in your own words if you like; just don't assume it has to come from you.
+
 ## Ordering
 
 Run the leadership gap analysis first where you can. It tells you which activities actually matter to this business, and it gives the personal results something to be measured against. A capability profile on its own says what people can do; crossed with the gap analysis it says whether that matches what the team needs.

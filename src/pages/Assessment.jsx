@@ -40,6 +40,30 @@ const PERSONAL_RAMP = [
   { border: "border-blue-800",  bg: "bg-blue-800",  text: "text-white" },
 ];
 
+// The team gap's two rating axes, in the same shape as PERSONAL_AXES.
+//
+// These were two hardcoded blocks of JSX while the personal axes came from a
+// list, so the survey had two different ways of describing the same thing and
+// the labels could only be changed in one of them. `suggested_owner` stays out:
+// it is a choice among the assessment's roles rather than a rating, and it
+// already asks its question in words.
+const TEAM_GAP_AXES = [
+  {
+    key: "importance",
+    label: "Importance",
+    hint: "how much this matters to your team's success",
+    options: IMPORTANCE_OPTIONS,
+    colors: IMPORTANCE_COLORS,
+  },
+  {
+    key: "execution",
+    label: "Current execution",
+    hint: "how well your team does it today",
+    options: EXECUTION_OPTIONS,
+    colors: EXECUTION_COLORS,
+  },
+];
+
 const rampFor = (options) =>
   Object.fromEntries(options.map((opt, i) => {
     // Spread the ramp across however many options the scale has, so a
@@ -76,6 +100,55 @@ function RatingButton({ options, value, onChange, colorMap }) {
   );
 }
 
+
+// What the assessment is, said before someone starts it.
+//
+// The intro used to be a heading, one sentence about who sees the answers, and
+// two form fields — so the screen that asked for a commitment never said what
+// to, how long it would take, or what came out of the other end. A facilitator
+// covered that on the call; the public assessments have no facilitator, and the
+// same screen serves both.
+//
+// The axes come from the same constants the activity cards use, so the intro
+// cannot describe the survey differently from the survey.
+function IntroPurpose({ isPersonal, activityCount }) {
+  const axes = isPersonal ? PERSONAL_AXES : TEAM_GAP_AXES;
+
+  // A rounded guess, not a measurement — a few seconds of reading and a few
+  // taps per activity. Stated as "about" and rounded to five minutes because
+  // the honest precision here is low, and a figure like "13 minutes" would
+  // claim more than anyone knows.
+  const minutes = Math.max(5, Math.round((activityCount * 0.25) / 5) * 5);
+
+  return (
+    <div className="mb-6 text-sm text-gray-600 space-y-3">
+      <p>
+        {activityCount > 0
+          ? <>You'll go through <span className="font-semibold text-gray-800">{activityCount} activities</span> that product teams do, and rate </>
+          : <>You'll go through the activities that product teams do, and rate </>}
+        {isPersonal ? "yourself on three things:" : "each one on two things:"}
+      </p>
+      <ul className="space-y-1">
+        {axes.map(axis => (
+          <li key={axis.key}>
+            <span className="font-semibold text-gray-800">{axis.label}</span>
+            <span className="text-gray-500"> — {axis.hint}</span>
+          </li>
+        ))}
+      </ul>
+      <p>
+        {isPersonal
+          ? "They're deliberately kept apart: where your three answers disagree is the most useful thing this produces. At the end you get a development profile of your own."
+          : "They're deliberately kept apart: an activity that matters a lot and isn't being done well is what your team will spend its time on."}
+      </p>
+      {activityCount > 0 && (
+        <p className="text-gray-500">
+          About {minutes} minutes. Your answers save as you go, so you can stop and come back.
+        </p>
+      )}
+    </div>
+  );
+}
 
 export default function Assessment() {
   const [step, setStep] = useState("entry");
@@ -272,7 +345,11 @@ export default function Assessment() {
         await loadSurveyData(a, session.responses);
         setStep("rating");
       } else {
-        // Needs title — show minimal intro
+        // Needs title — show the intro. The activities are loaded first so the
+        // intro can say how many questions this actually is; it used to fetch
+        // them in the submit handler, which meant the one screen asking someone
+        // to commit was the one screen that could not tell them to what.
+        await loadSurveyData(a, session.responses);
         setStep("token-intro");
       }
     } catch (e) {
@@ -288,10 +365,8 @@ export default function Assessment() {
     try {
       const updated = await base44.entities.Respondent.update(respondent.id, { title: title.trim() });
       setRespondent(updated);
-      const acts = await getAssignedActivities(assessment);
-      setActivities(acts);
-      const titles = await base44.entities.JobTitle.filter({ active: true }, "sort_order");
-      setAllTitles(titles.map(t => t.name));
+      // Activities and job titles were loaded before the intro rendered, so
+      // starting is a state change rather than another wait.
       setStep("rating");
     } catch (e) {
       setError("Something went wrong. Please try again.");
@@ -322,6 +397,10 @@ export default function Assessment() {
       if (!found) return retry("Code not found. Please check and try again.");
       if (found.status === "closed") return deadEnd("This assessment is no longer accepting responses.");
       setAssessment(found);
+      // Same reason as the token path: the intro states the size of the task,
+      // so it needs the activities before it renders rather than after someone
+      // has already agreed to start.
+      await loadSurveyData(found, []);
       setStep("intro");
     } catch (e) {
       retry("Something went wrong. Please try again.");
@@ -346,10 +425,8 @@ export default function Assessment() {
       });
       setRespondent(r);
       rememberToken(token);
-      const acts = await getAssignedActivities(assessment);
-      setActivities(acts);
-      const titles = await base44.entities.JobTitle.filter({ active: true }, "sort_order");
-      setAllTitles(titles.map(t => t.name));
+      // Activities and job titles were loaded before the intro rendered, so
+      // starting is a state change rather than another wait.
       setStep("rating");
     } catch (e) {
       setError("Something went wrong. Please try again.");
@@ -548,8 +625,12 @@ const handleNext = once(async () => {
           <div className="mb-8">
             <img src="https://media.base44.com/images/public/6a29ff3bc8effbeb3d637555/9e97ff5e6_Quartzicon.png" alt="Quartz Assessment" className="h-10 w-10 mb-3 object-contain" />
             <h1 className="text-2xl font-bold text-gray-900">Before we begin</h1>
-            <p className="text-gray-500 mt-2">{introBlurb}</p>
           </div>
+          <IntroPurpose isPersonal={isPersonal} activityCount={activities.length} />
+          {/* The confidentiality line stays last, next to the fields that ask
+              for a name — it answers "who sees this" at the moment someone is
+              being asked to identify themselves. */}
+          <p className="text-sm text-gray-600 mb-6">{introBlurb}</p>
           <div className="space-y-4 mb-6">
             <div>
               <label className="block text-sm font-medium text-gray-600 mb-1">Your name</label>
@@ -627,8 +708,12 @@ const handleNext = once(async () => {
           <div className="mb-8">
             <img src="https://media.base44.com/images/public/6a29ff3bc8effbeb3d637555/9e97ff5e6_Quartzicon.png" alt="Quartz Assessment" className="h-10 w-10 mb-3 object-contain" />
             <h1 className="text-2xl font-bold text-gray-900">Before we begin</h1>
-            <p className="text-gray-500 mt-2">{introBlurb}</p>
           </div>
+          <IntroPurpose isPersonal={isPersonal} activityCount={activities.length} />
+          {/* The confidentiality line stays last, next to the fields that ask
+              for a name — it answers "who sees this" at the moment someone is
+              being asked to identify themselves. */}
+          <p className="text-sm text-gray-600 mb-6">{introBlurb}</p>
           <div className="space-y-4 mb-6">
             <div>
               <label className="block text-sm font-medium text-gray-600 mb-1">Your name</label>
@@ -695,36 +780,36 @@ const handleNext = once(async () => {
                   {activity.description && <p className="text-sm text-gray-500 mt-0.5">{activity.description}</p>}
                 </div>
                 <div className="space-y-3">
-                  {isPersonal ? PERSONAL_AXES.map(axis => (
+                  {/* One loop for both assessment types now that the team gap's
+                      axes are a list too. The hint sits beside the label rather
+                      than in a tooltip: hover does not exist on the phones most
+                      of these are answered on, and a definition read once on the
+                      intro is forgotten by the third activity — which is exactly
+                      where the distinction starts to matter.
+
+                      gray-500 rather than gray-400 deliberately. gray-400 on
+                      white is a standing 2.43:1 contrast finding, and this text
+                      is here to be read carefully by people who are unsure. */}
+                  {(isPersonal ? PERSONAL_AXES : TEAM_GAP_AXES).map(axis => (
                     <div key={axis.key}>
-                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">{axis.label}</p>
+                      <p className="mb-2 leading-snug">
+                        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{axis.label}</span>
+                        <span className="text-xs text-gray-500"> · {axis.hint}</span>
+                      </p>
                       <RatingButton
                         options={axis.options}
                         value={r[axis.key]}
                         onChange={val => handleRatingChange(activity.id, axis.key, val)}
-                        colorMap={PERSONAL_COLORS[axis.key]}
+                        colorMap={isPersonal ? PERSONAL_COLORS[axis.key] : axis.colors}
                       />
                     </div>
-                  )) : <>
-                  <div>
-                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Importance</p>
-                    <RatingButton
-                      options={IMPORTANCE_OPTIONS}
-                      value={r.importance}
-                      onChange={val => handleRatingChange(activity.id, "importance", val)}
-                      colorMap={IMPORTANCE_COLORS}
-                    />
-                  </div>
-                  <div>
-                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Current Execution</p>
-                    <RatingButton
-                      options={EXECUTION_OPTIONS}
-                      value={r.execution}
-                      onChange={val => handleRatingChange(activity.id, "execution", val)}
-                      colorMap={EXECUTION_COLORS}
-                    />
-                  </div>
-                  {assessment?.roles?.length > 0 && (
+                  ))}
+                  {/* Team gap only, and only when the assessment names roles.
+                      Not an axis: a suggested owner is a choice among this
+                      assessment's roles rather than a rating, which is why it
+                      sits outside the loop above and asks its question in
+                      words. */}
+                  {!isPersonal && assessment?.roles?.length > 0 && (
                     <div>
                       <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Who should own this?</p>
                       <div className="space-y-2">
@@ -766,7 +851,6 @@ const handleNext = once(async () => {
                       </div>
                     </div>
                   )}
-                  </>}
                 </div>
               </div>
             );

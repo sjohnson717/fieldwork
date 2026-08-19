@@ -31,10 +31,22 @@ export const INTEREST_OPTIONS   = ["None", "Limited", "Moderate", "Passionate"];
 
 // The three axes as data, so the survey, the results grid and the report all
 // iterate the same list instead of each hard-coding three of everything.
+// `hint` is shown under the label on every activity card in the survey.
+//
+// The three axes were bare one-word labels, and a respondent who reads
+// Experience and Skills as synonyms rates them identically — which does not
+// look like bad data, because the answers are still well-formed. It quietly
+// empties the one category the instrument exists to find: someone who has done
+// the work for years and was never shown a better way to do it is only
+// distinguishable from a beginner if those two answers can disagree.
+//
+// Skills is worded as an action rather than a verdict on the person for the
+// reason the facilitator guide gives about the category names — the moment a
+// rating reads as a judgement, people stop answering it honestly.
 export const PERSONAL_AXES = [
-  { key: "experience", label: "Experience", options: EXPERIENCE_OPTIONS, scores: EXPERIENCE_SCORE },
-  { key: "skills",     label: "Skills",     options: SKILLS_OPTIONS,     scores: SKILLS_SCORE },
-  { key: "interest",   label: "Interest",   options: INTEREST_OPTIONS,   scores: INTEREST_SCORE },
+  { key: "experience", label: "Experience", hint: "how much you've done this",          options: EXPERIENCE_OPTIONS, scores: EXPERIENCE_SCORE },
+  { key: "skills",     label: "Skills",     hint: "how well you do it",                 options: SKILLS_OPTIONS,     scores: SKILLS_SCORE },
+  { key: "interest",   label: "Interest",   hint: "how much you want to do more of it", options: INTEREST_OPTIONS,   scores: INTEREST_SCORE },
 ];
 
 export const AXIS_BY_KEY = Object.fromEntries(PERSONAL_AXES.map(a => [a.key, a]));
