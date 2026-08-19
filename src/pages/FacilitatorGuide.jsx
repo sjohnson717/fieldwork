@@ -161,7 +161,7 @@ The cover carries the Quartz mark, not a PGL logo: this is the respondent's docu
 
 ## The survey explains itself
 
-You no longer need to brief people on what the three axes mean. Every activity card carries the definition beside its label — *Experience · how much you've done this*, *Skills · how well you do it*, *Interest · how much you want to do more of it* — and the intro screen states them again before anyone starts, along with what the assessment is for and roughly how long it takes.
+You no longer need to brief people on what the three axes mean. Every activity card carries the definition beside its label — *Experience · how much you've done this*, *Skills · how good you are at it*, *Interest · how much you want to do more of it* — and the intro screen states them again before anyone starts, along with what the assessment is for and roughly how long it takes.
 
 This matters most where you are not in the room. The same screens field the public assessments, where nobody is available to explain anything, and a respondent who reads Experience and Skills as the same question rates them identically — which does not look like bad data, it just quietly empties **Under-skilled** below.
 
