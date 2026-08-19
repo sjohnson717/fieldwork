@@ -64,6 +64,23 @@ const TEAM_GAP_AXES = [
   },
 ];
 
+// The third team gap question, kept apart from the axes above because it is a
+// choice among this assessment's roles rather than a rating — nothing scores it
+// and it has no scale.
+//
+// It carries a hint for a different reason than the axes do. "Who should own
+// this?" is already a question, so the wording is not what needed explaining;
+// what needed explaining is that it asks who *should* be accountable rather
+// than who happens to do it today, and that answering it assigns nobody
+// anything. Nothing in the app calls a suggested owner an owner, and a
+// respondent who thinks they are naming someone's new job answers more
+// cautiously than one who knows they are making a suggestion.
+const OWNERSHIP_QUESTION = {
+  key: "suggested_owner",
+  label: "Who should own this?",
+  hint: "the role that should be accountable, not who does it today",
+};
+
 const rampFor = (options) =>
   Object.fromEntries(options.map((opt, i) => {
     // Spread the ramp across however many options the scale has, so a
@@ -111,8 +128,15 @@ function RatingButton({ options, value, onChange, colorMap }) {
 //
 // The axes come from the same constants the activity cards use, so the intro
 // cannot describe the survey differently from the survey.
-function IntroPurpose({ isPersonal, activityCount }) {
-  const axes = isPersonal ? PERSONAL_AXES : TEAM_GAP_AXES;
+function IntroPurpose({ isPersonal, activityCount, showOwnership }) {
+  // Ownership is only asked when the assessment names roles, so the intro only
+  // promises it then. Describing a question that never appears would be worse
+  // than not describing it at all.
+  const questions = isPersonal
+    ? PERSONAL_AXES
+    : [...TEAM_GAP_AXES, ...(showOwnership ? [OWNERSHIP_QUESTION] : [])];
+  const countWord = { 1: "one thing", 2: "two things", 3: "three things", 4: "four things" }[questions.length]
+    || `${questions.length} things`;
 
   // A rounded guess, not a measurement — a few seconds of reading and a few
   // taps per activity. Stated as "about" and rounded to five minutes because
@@ -124,12 +148,12 @@ function IntroPurpose({ isPersonal, activityCount }) {
     <div className="mb-6 text-sm text-gray-600 space-y-3">
       <p>
         {activityCount > 0
-          ? <>You'll go through <span className="font-semibold text-gray-800">{activityCount} activities</span> that product teams do, and rate </>
-          : <>You'll go through the activities that product teams do, and rate </>}
-        {isPersonal ? "yourself on three things:" : "each one on two things:"}
+          ? <>You'll go through <span className="font-semibold text-gray-800">{activityCount} activities</span> that product teams do, and {isPersonal ? "rate " : "answer "}</>
+          : <>You'll go through the activities that product teams do, and {isPersonal ? "rate " : "answer "}</>}
+        {isPersonal ? `yourself on ${countWord}:` : `${countWord} about each:`}
       </p>
       <ul className="space-y-1">
-        {axes.map(axis => (
+        {questions.map(axis => (
           <li key={axis.key}>
             <span className="font-semibold text-gray-800">{axis.label}</span>
             <span className="text-gray-500"> — {axis.hint}</span>
@@ -139,8 +163,11 @@ function IntroPurpose({ isPersonal, activityCount }) {
       <p>
         {isPersonal
           ? "They're deliberately kept apart: where your three answers disagree is the most useful thing this produces. At the end you get a development profile of your own."
-          : "They're deliberately kept apart: an activity that matters a lot and isn't being done well is what your team will spend its time on."}
+          : `${showOwnership ? "The first two are" : "They're"} deliberately kept apart: an activity that matters a lot and isn't being done well is what your team will spend its time on.`}
       </p>
+      {showOwnership && !isPersonal && (
+        <p>Nothing is assigned to anyone. The report shows which role the team suggested most often for each activity, which is a starting point for a conversation rather than a decision.</p>
+      )}
       {activityCount > 0 && (
         <p className="text-gray-500">
           About {minutes} minutes. Your answers save as you go, so you can stop and come back.
@@ -626,7 +653,11 @@ const handleNext = once(async () => {
             <img src="https://media.base44.com/images/public/6a29ff3bc8effbeb3d637555/9e97ff5e6_Quartzicon.png" alt="Quartz Assessment" className="h-10 w-10 mb-3 object-contain" />
             <h1 className="text-2xl font-bold text-gray-900">Before we begin</h1>
           </div>
-          <IntroPurpose isPersonal={isPersonal} activityCount={activities.length} />
+          <IntroPurpose
+            isPersonal={isPersonal}
+            activityCount={activities.length}
+            showOwnership={assessment?.roles?.length > 0}
+          />
           {/* The confidentiality line stays last, next to the fields that ask
               for a name — it answers "who sees this" at the moment someone is
               being asked to identify themselves. */}
@@ -709,7 +740,11 @@ const handleNext = once(async () => {
             <img src="https://media.base44.com/images/public/6a29ff3bc8effbeb3d637555/9e97ff5e6_Quartzicon.png" alt="Quartz Assessment" className="h-10 w-10 mb-3 object-contain" />
             <h1 className="text-2xl font-bold text-gray-900">Before we begin</h1>
           </div>
-          <IntroPurpose isPersonal={isPersonal} activityCount={activities.length} />
+          <IntroPurpose
+            isPersonal={isPersonal}
+            activityCount={activities.length}
+            showOwnership={assessment?.roles?.length > 0}
+          />
           {/* The confidentiality line stays last, next to the fields that ask
               for a name — it answers "who sees this" at the moment someone is
               being asked to identify themselves. */}
@@ -811,7 +846,10 @@ const handleNext = once(async () => {
                       words. */}
                   {!isPersonal && assessment?.roles?.length > 0 && (
                     <div>
-                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Who should own this?</p>
+                      <p className="mb-2 leading-snug">
+                        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{OWNERSHIP_QUESTION.label}</span>
+                        <span className="text-xs text-gray-500"> · {OWNERSHIP_QUESTION.hint}</span>
+                      </p>
                       <div className="space-y-2">
                         {assessment.roles.map(role => (
                           <label key={role} className="flex items-center gap-3 cursor-pointer">
