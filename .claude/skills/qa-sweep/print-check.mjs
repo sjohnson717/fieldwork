@@ -57,7 +57,15 @@ for (const route of ROUTES) {
     const page = await browser.newPage();
     const problems = [];
     page.on("pageerror", e => problems.push(`pageerror: ${e.message}`));
-    page.on("console", m => { if (m.type() === "error") problems.push(`console: ${m.text().slice(0, 200)}`); });
+    // The harness serves no favicon, and Chromium asks for one on every page.
+    // Reported, that 404 is a permanent two-line finding that means nothing —
+    // and a finding nobody can act on is how the real ones stop being read.
+    page.on("console", m => {
+      if (m.type() !== "error") return;
+      const text = m.text();
+      if (/favicon\.ico/.test(text) || /Failed to load resource.*404/.test(text)) return;
+      problems.push(`console: ${text.slice(0, 200)}`);
+    });
 
     await page.goto(baseUrl + route.url, { waitUntil: "networkidle0" });
 
@@ -112,7 +120,7 @@ await writeFile(path.join(outDir, "print-summary.json"), JSON.stringify(summary,
 
 for (const row of summary) {
   const flags = [
-    row.problems.length ? `${row.problems.length} console errors` : null,
+    row.problems.length ? `${row.problems.length} console errors: ${row.problems.join(" | ").slice(0, 300)}` : null,
     row.iosLeak ? `TOKEN IN ADDRESS WITH NO beforeprint — iOS would print it: ${row.addressDuringPrint}` : null,
     !row.iosLeak && row.tokenLeak ? `token in address after beforeprint: ${row.addressWithEvent}` : null,
     row.tokenInPrintedBody ? "TOKEN IN PRINTED BODY — a no-print marking is missing" : null,

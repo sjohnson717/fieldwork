@@ -51,6 +51,7 @@ const ROUTES = [
   { name: "personal-profile", url: "/assess?t=TOKEN-PERSONAL", review: true, expect: "part one" },
   { name: "buyer-report", url: "/report/TOKEN-BUYER", expect: "executive summary" },
   { name: "team-dashboard", url: "/team/TOKEN-TEAM" },
+  { name: "survey-wrapup", url: "/assess?t=TOKEN-RESP-4", wrapup: true, expect: "two last questions" },
   { name: "dead-link", url: "/assess?t=NOT-A-TOKEN", expect: "no longer valid" },
 ];
 
@@ -63,6 +64,23 @@ const openReview = async (page) => {
     return false;
   });
   if (clicked) await wait(700);
+};
+
+// The wrap-up page is reachable only by finishing the survey, so the layout
+// matrix has to page through to it. Two free-text boxes and a two-button footer
+// are exactly the shape that breaks at 320px.
+const openWrapup = async (page) => {
+  for (let i = 0; i < 10; i++) {
+    const advanced = await page.evaluate(() => {
+      const b = [...document.querySelectorAll("button")].find(x => /Next|Finish and review/.test(x.textContent));
+      if (b) { b.click(); return true; }
+      return false;
+    });
+    if (!advanced) break;
+    await wait(600);
+    const there = await page.evaluate(() => /Two last questions/.test(document.body.innerText));
+    if (there) break;
+  }
 };
 
 await mkdir(outDir, { recursive: true });
@@ -79,6 +97,7 @@ for (const route of ROUTES) {
     await page.setViewport({ width, height: 900, deviceScaleFactor: 1, isMobile: width < 768, hasTouch: width < 768 });
     await page.goto(baseUrl + route.url, { waitUntil: "networkidle0" });
     if (route.review) await openReview(page);
+    if (route.wrapup) await openWrapup(page);
     await wait(400);
 
     const audit = await page.evaluate(() => (window.__qaAudit ? window.__qaAudit() : { error: "audit module did not load" }));
@@ -205,6 +224,95 @@ await flow("finishing completes the respondent", async (page) => {
   return {
     pass: state.status === "completed" && state.completed && state.completeFlag === true,
     detail: `status=${state.status}, completed_date=${state.completed}, last save complete=${state.completeFlag}`,
+  };
+});
+
+// The wrap-up saves its free text without touching the answers, and without
+// re-completing a respondent the previous page already completed. It comes
+// after that save on purpose: skipping it must cost a respondent nothing, so
+// this asserts completion is already true when the page is reached.
+await flow("wrap-up saves feedback and never gates completion", async (page) => {
+  await page.goto(baseUrl + "/assess?t=TOKEN-RESP-4", { waitUntil: "networkidle0" });
+  for (let i = 0; i < 10; i++) {
+    const advanced = (await clickText(page, "Next")) || (await clickText(page, "Finish and review"));
+    if (!advanced) break;
+    await wait(700);
+    if (await page.evaluate(() => /Two last questions/.test(document.body.innerText))) break;
+  }
+  const onWrapup = await page.evaluate(() => !!document.getElementById("closing-comments"));
+  if (!onWrapup) return { pass: false, detail: "never reached the wrap-up page" };
+
+  const completedBefore = await page.evaluate(() =>
+    window.__qa.respondents.find(x => x.id === "resp-4")?.status);
+
+  const rowsBefore = await page.evaluate(() =>
+    window.__qa.responses.filter(r => r.respondent_id === "resp-4").length);
+
+  await page.evaluate(() => {
+    const set = (id, v) => {
+      const el = document.getElementById(id);
+      Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, "value").set.call(el, v);
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+    };
+    // Padded deliberately: the server trims, and the sweep should notice if it stops.
+    set("closing-comments", "   The importance scale felt blunt.   ");
+    set("missing-coverage", "Pricing research.");
+  });
+  await wait(200);
+  if (!(await clickText(page, "Continue"))) return { pass: false, detail: "no Continue button on the wrap-up" };
+  await wait(900);
+
+  const after = await page.evaluate(() => {
+    const r = window.__qa.respondents.find(x => x.id === "resp-4");
+    const last = window.__qa.calls.filter(c => c.name === "fn:saveResponses").slice(-1)[0];
+    return {
+      cc: r?.closing_comments,
+      mc: r?.missing_coverage,
+      answersSent: last?.payload?.answers?.length,
+      completeFlag: last?.payload?.complete,
+      rows: window.__qa.responses.filter(x => x.respondent_id === "resp-4").length,
+      onReport: !document.getElementById("closing-comments"),
+    };
+  });
+
+  const pass =
+    completedBefore === "completed" &&
+    after.cc === "The importance scale felt blunt." &&
+    after.mc === "Pricing research." &&
+    after.answersSent === 0 &&
+    after.completeFlag !== true &&
+    after.rows === rowsBefore &&
+    after.onReport;
+
+  return {
+    pass,
+    detail: `completed before wrap-up=${completedBefore}, trimmed=${JSON.stringify(after.cc)}, answers sent=${after.answersSent}, complete flag=${after.completeFlag}, rows ${rowsBefore}\u2192${after.rows}, advanced=${after.onReport}`,
+  };
+});
+
+// Skipping the wrap-up writes nothing at all.
+await flow("skipping the wrap-up writes nothing", async (page) => {
+  await page.goto(baseUrl + "/assess?t=TOKEN-RESP-4", { waitUntil: "networkidle0" });
+  for (let i = 0; i < 10; i++) {
+    const advanced = (await clickText(page, "Next")) || (await clickText(page, "Finish and review"));
+    if (!advanced) break;
+    await wait(700);
+    if (await page.evaluate(() => /Two last questions/.test(document.body.innerText))) break;
+  }
+  if (!(await page.evaluate(() => !!document.getElementById("closing-comments"))))
+    return { pass: false, detail: "never reached the wrap-up page" };
+
+  const before = await page.evaluate(() => window.__qa.calls.filter(c => c.name === "fn:saveResponses").length);
+  if (!(await clickText(page, "Skip"))) return { pass: false, detail: "no Skip button on the wrap-up" };
+  await wait(900);
+  const after = await page.evaluate(() => ({
+    calls: window.__qa.calls.filter(c => c.name === "fn:saveResponses").length,
+    status: window.__qa.respondents.find(x => x.id === "resp-4")?.status,
+    onReport: !document.getElementById("closing-comments"),
+  }));
+  return {
+    pass: after.calls === before && after.status === "completed" && after.onReport,
+    detail: `${after.calls - before} extra save(s), status=${after.status}, advanced=${after.onReport}`,
   };
 });
 

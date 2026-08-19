@@ -130,7 +130,16 @@ export const base44 = {
           return {
             data: {
               assessment: a,
-              respondent: { id: r.id, name: r.name, title: r.title || null, status: r.status, completed_date: r.completed_date || null },
+              // The wrap-up fields travel on this mode and no other, which is
+              // what keeps the survey's free text out of the team and buyer
+              // shapes below. Mirrored here so the sweep fails if that ever
+              // stops being true.
+              respondent: {
+                id: r.id, name: r.name, title: r.title || null, status: r.status,
+                completed_date: r.completed_date || null,
+                closing_comments: r.closing_comments || null,
+                missing_coverage: r.missing_coverage || null,
+              },
               responses: ownRowsFor(r.id),
             },
           };
@@ -174,7 +183,7 @@ export const base44 = {
       }
 
       if (name === "saveResponses") {
-        const { token, answers, complete } = body;
+        const { token, answers, complete, feedback } = body;
         const r = state.respondents.find(x => x.token === token);
         if (!r) return notFound();
         if (!Array.isArray(answers)) { const e = new Error("answers must be an array"); e.status = 400; throw e; }
@@ -185,6 +194,20 @@ export const base44 = {
           const existing = state.responses.find(row => row.respondent_id === r.id && row.activity_id === activity_id);
           if (existing) { Object.assign(existing, fields); existing.updated = true; updated++; }
           else { state.responses.push({ id: `new-${state.responses.length}`, assessment_id: r.assessment_id, respondent_id: r.id, activity_id, ...fields }); created++; }
+        }
+        // The wrap-up's free text, validated the way the real function does:
+        // trimmed, capped, and empty meaning "cleared" rather than "unchanged".
+        if (feedback !== undefined && feedback !== null) {
+          if (typeof feedback !== "object" || Array.isArray(feedback)) { const e = new Error("invalid feedback"); e.status = 400; throw e; }
+          for (const field of ["closing_comments", "missing_coverage"]) {
+            const value = feedback[field];
+            if (value === undefined) continue;
+            if (value === null || value === "") { r[field] = null; continue; }
+            if (typeof value !== "string") { const e = new Error(`invalid ${field}`); e.status = 400; throw e; }
+            const trimmed = value.trim();
+            if (trimmed.length > 2000) { const e = new Error(`invalid ${field}`); e.status = 400; throw e; }
+            r[field] = trimmed || null;
+          }
         }
         if (complete === true) { r.status = "completed"; r.completed_date = new Date().toISOString(); }
         return { data: { created, updated, skipped: 0 } };
