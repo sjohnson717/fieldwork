@@ -116,7 +116,7 @@ You can print from the preview, which is how to get a copy of someone's report w
 
 The intro screen says what the assessment is for, what it will ask, roughly how long it takes and what comes out at the end — then names each question with a one-line definition. Every activity card repeats those definitions beside the labels.
 
-On a team gap that names ownership roles, the intro covers that question too: it says the answer is the role that **should** be accountable rather than whoever does the work today, and that nothing is assigned to anyone. Both were worth stating — a respondent describing the status quo produces a tidy, useless answer, and one who thinks they are naming somebody's new job answers cautiously. An assessment with no roles configured is never told about a question it will not ask.
+On a team gap that names ownership roles, the intro covers that question too: the answer is the role that **should** be accountable, not whoever does the work today. Worth stating, because a respondent describing the status quo produces a tidy answer that reports what the room already knows. An assessment with no roles configured is never told about a question it will not ask.
 
 **You do not have to brief people on any of this, and the public assessments have nobody to do it.** Say it in your own words if you like; just don't assume it has to come from you. What the axes mean and why they are kept apart is in *Personal assessments* below.
 

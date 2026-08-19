@@ -128,7 +128,7 @@ function RatingButton({ options, value, onChange, colorMap }) {
 //
 // The axes come from the same constants the activity cards use, so the intro
 // cannot describe the survey differently from the survey.
-function IntroPurpose({ isPersonal, activityCount, showOwnership }) {
+function IntroPurpose({ isPersonal, activityCount, showOwnership, blurb }) {
   // Ownership is only asked when the assessment names roles, so the intro only
   // promises it then. Describing a question that never appears would be worse
   // than not describing it at all.
@@ -165,12 +165,14 @@ function IntroPurpose({ isPersonal, activityCount, showOwnership }) {
           ? "They're deliberately kept apart: where your three answers disagree is the most useful thing this produces. At the end you get a development profile of your own."
           : `${showOwnership ? "The first two are" : "They're"} deliberately kept apart: an activity that matters a lot and isn't being done well is what your team will spend its time on.`}
       </p>
-      {showOwnership && !isPersonal && (
-        <p>Nothing is assigned to anyone. The report shows which role the team suggested most often for each activity, which is a starting point for a conversation rather than a decision.</p>
-      )}
+      {/* Who sees this, then how long it takes — in that order, and both inside
+          this component rather than one here and one on each intro screen.
+          Copy whose order matters should not depend on two files agreeing. */}
+      <p>{blurb}</p>
       {activityCount > 0 && (
         <p className="text-gray-500">
-          About {minutes} minutes. Your answers save as you go, so you can stop and come back.
+          This assessment should take about {minutes} minutes. Your answers save as
+          you go, so you can stop and come back.
         </p>
       )}
     </div>
@@ -657,11 +659,8 @@ const handleNext = once(async () => {
             isPersonal={isPersonal}
             activityCount={activities.length}
             showOwnership={assessment?.roles?.length > 0}
+            blurb={introBlurb}
           />
-          {/* The confidentiality line stays last, next to the fields that ask
-              for a name — it answers "who sees this" at the moment someone is
-              being asked to identify themselves. */}
-          <p className="text-sm text-gray-600 mb-6">{introBlurb}</p>
           <div className="space-y-4 mb-6">
             <div>
               <label className="block text-sm font-medium text-gray-600 mb-1">Your name</label>
@@ -744,11 +743,8 @@ const handleNext = once(async () => {
             isPersonal={isPersonal}
             activityCount={activities.length}
             showOwnership={assessment?.roles?.length > 0}
+            blurb={introBlurb}
           />
-          {/* The confidentiality line stays last, next to the fields that ask
-              for a name — it answers "who sees this" at the moment someone is
-              being asked to identify themselves. */}
-          <p className="text-sm text-gray-600 mb-6">{introBlurb}</p>
           <div className="space-y-4 mb-6">
             <div>
               <label className="block text-sm font-medium text-gray-600 mb-1">Your name</label>
