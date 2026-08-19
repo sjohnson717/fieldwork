@@ -59,6 +59,8 @@ actually rendered, so a blank screen cannot pass as clean.
 | next is single-submit | duplicate saves from a double tap |
 | finishing completes the respondent | a full set of answers stuck at "started" |
 | revise re-reads and rewrites | a revision that starts blank, or writes a second row |
+| wrap-up saves feedback, never gates completion | free text lost, or an optional page costing someone their submission |
+| skipping the wrap-up writes nothing | a Skip that saves anyway, or strands the respondent |
 
 **Permissions.** The stub enforces the real rules: `Response.update`,
 `Response.create` and unauthenticated reads of `Response` all throw, exactly as
@@ -127,8 +129,8 @@ not mistaken for a new regression:
 - Layout gate failures open at the time of writing: the buyer report and the
   personal profile report clip and overlap below 430px, and the team dashboard's
   participant table clips at 320–375px. The respondent's own report, both
-  registration screens, the resumed survey and the dead-link screen are clean at
-  every width.
+  registration screens, the resumed survey, the survey wrap-up and the dead-link
+  screen are clean at every width.
 
 ## Extending
 
