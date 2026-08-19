@@ -131,6 +131,13 @@ not mistaken for a new regression:
   participant table clips at 320–375px. The respondent's own report, both
   registration screens, the resumed survey, the survey wrap-up and the dead-link
   screen are clean at every width.
+- The buyer report's overlap counts dropped in August 2026 (12→7 at 320px, 8→6
+  at 375 and 390, 2→0 at 430) without anything on that page changing. The
+  overlap check had been measuring bounding rects, which for a *wrapped inline*
+  element is the union of its line boxes and therefore always intersects the
+  inline sibling before it. It now measures per line box. The surviving findings
+  are real — a category badge drawn over a facet heading — and the numbers above
+  are the corrected baseline, not an improvement anyone made.
 
 ## Extending
 

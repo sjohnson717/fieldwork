@@ -132,16 +132,41 @@ export function qaAudit(options = {}) {
     (el.textContent || "").trim().length > 0 &&
     getComputedStyle(el).position !== "absolute"
   );
+  //
+  //    Measured per line box, not by bounding rect. getBoundingClientRect() on
+  //    an inline element that wraps returns the union of its lines — a box
+  //    running the full width of the paragraph — which always intersects the
+  //    inline sibling that precedes it on the first line. Two spans reading
+  //    "Importance · how much this matters", wrapped onto a second line, were
+  //    reported as text drawn over text on every route that used them, and no
+  //    pixel of either was actually covered. getClientRects() returns one rect
+  //    per line box, which is what "share a line box region" meant all along.
+  //
+  //    Block elements return a single rect equal to their border box, so the
+  //    case this check was written for — a collapsed flex item spilling across
+  //    its neighbour — measures exactly as before.
+  const lineBoxes = new Map();
+  const rectsOf = (el) => {
+    if (!lineBoxes.has(el)) lineBoxes.set(el, [...el.getClientRects()]);
+    return lineBoxes.get(el);
+  };
   for (let i = 0; i < textLeaves.length; i++) {
     for (let j = i + 1; j < textLeaves.length; j++) {
-      const a = textLeaves[i].getBoundingClientRect(), b = textLeaves[j].getBoundingClientRect();
-      const overlapX = Math.min(a.right, b.right) - Math.max(a.left, b.left);
-      const overlapY = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top);
-      // 4px of tolerance: descenders and line-height padding routinely touch.
-      if (overlapX > 4 && overlapY > 4) {
+      let worst = null;
+      for (const a of rectsOf(textLeaves[i])) {
+        for (const b of rectsOf(textLeaves[j])) {
+          const overlapX = Math.min(a.right, b.right) - Math.max(a.left, b.left);
+          const overlapY = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top);
+          // 4px of tolerance: descenders and line-height padding routinely touch.
+          if (overlapX > 4 && overlapY > 4 && (!worst || overlapX * overlapY > worst.x * worst.y)) {
+            worst = { x: Math.round(overlapX), y: Math.round(overlapY) };
+          }
+        }
+      }
+      if (worst) {
         findings.overlap.push({
           a: describe(textLeaves[i]), b: describe(textLeaves[j]),
-          overlapPx: { x: Math.round(overlapX), y: Math.round(overlapY) },
+          overlapPx: worst,
         });
       }
     }
