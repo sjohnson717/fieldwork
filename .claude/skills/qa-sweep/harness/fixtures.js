@@ -47,6 +47,11 @@ export const PERSONAL = {
   roles: [],
 };
 
+// act-1 carries the longest title in the vocabulary on purpose: at 53
+// characters it is what overflowed the printed appendix's owner column and got
+// clipped mid-word, back when that cell was nowrap. The widest real value is
+// the one worth fixturing.
+//
 // Ownership answers are job titles, which is what the survey offers — the
 // library recommends functions, so act-1 exercises a title satisfying its own
 // function, act-3 a product title satisfying the *other* product function,
@@ -58,7 +63,7 @@ export const PERSONAL = {
 // rating. act-6 is half answered and act-8 unrated, which is what puts the
 // "couldn't answer" and unanswered paths on screen.
 export const OWN_ANSWERS = [
-  { activity_id: "act-1", importance: "Critical", execution: "Inconsistent", suggested_owner: "Product Manager / Product Owner" },
+  { activity_id: "act-1", importance: "Critical", execution: "Inconsistent", suggested_owner: "Head of Product Management / Principal Product Manager" },
   { activity_id: "act-2", importance: "Nice to have", execution: "Good", suggested_owner: null },
   { activity_id: "act-3", importance: "Critical", execution: "Not done", suggested_owner: "Product Marketing Manager" },
   { activity_id: "act-4", importance: "Important", execution: "Excellent", suggested_owner: null },
