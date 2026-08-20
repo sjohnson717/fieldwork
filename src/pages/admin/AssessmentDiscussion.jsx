@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { getAssignedActivities } from "@/lib/activities";
-import { ownerMatchesRecommendation } from "@/lib/ownership";
+import { ownerMatchesRecommendation, ownerOptionsFor } from "@/lib/ownership";
 import {
   THEME_GROUPS,
   FACET_SUBTITLES,
@@ -526,7 +526,9 @@ export default function AssessmentDiscussion({ assessment }) {
         </span>
       </div>
 
-      {/* Theme sections */}
+      {/* Theme sections. assessmentRoles is the list the survey offered, not
+          the stored roles — a facilitator recording a decision has to be able
+          to name the role the respondents named. */}
       {THEME_GROUPS.map(group => (
         <ThemeSection
           key={group.label}
@@ -538,7 +540,7 @@ export default function AssessmentDiscussion({ assessment }) {
           draftNote={draftNote}
           draftDecision={draftDecision}
           draftRole={draftRole}
-          assessmentRoles={assessment.roles || []}
+          assessmentRoles={ownerOptionsFor(activities, assessment.roles || [])}
           saving={saving}
           onDraftNoteChange={(id, val) => setDraftNote(prev => ({ ...prev, [id]: val }))}
           onDraftDecisionChange={(id, val) => setDraftDecision(prev => ({ ...prev, [id]: val }))}

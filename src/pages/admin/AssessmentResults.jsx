@@ -117,6 +117,12 @@ export default function AssessmentResults({ assessment }) {
   }
 
   const availableFacets = FACET_ORDER.filter(f => activities.some(a => a.facet === f));
+
+  // Whether to show ownership at all. Gated on someone having answered, not on
+  // the assessment defining roles: the survey derives its own owner options
+  // now, so stored roles no longer say whether the question was asked — and an
+  // assessment with none would have hidden answers it did collect.
+  const hasOwnerAnswers = responses.some(r => r.suggested_owner);
   const filteredActivities = selectedFacet === "ALL"
     ? activities
     : activities.filter(a => a.facet === selectedFacet);
@@ -372,7 +378,7 @@ export default function AssessmentResults({ assessment }) {
                   {/* A tally of who respondents say does the work today, not an
                       assignment: the survey asks what happens, and nothing in
                       the assessment gives anyone the job. */}
-                  {assessment.roles?.length > 0 && (
+                  {hasOwnerAnswers && (
                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Most often named</th>
                   )}
                 </tr>
@@ -402,7 +408,7 @@ export default function AssessmentResults({ assessment }) {
                           {fmt(act.avgGap)}
                         </span>
                       </td>
-                      {assessment.roles?.length > 0 && (
+                      {hasOwnerAnswers && (
                         <td className="px-4 py-3">
                           {ownership ? (
                             <div>
@@ -528,7 +534,7 @@ export default function AssessmentResults({ assessment }) {
       )}
 
       {/* Owner suggestions */}
-      {assessment.roles?.length > 0 && (() => {
+      {hasOwnerAnswers && (() => {
         const ownerTally = {};
         for (const act of activities) {
           const actResponses = responses.filter(r => r.activity_id === act.id && r.suggested_owner);

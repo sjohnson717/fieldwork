@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { getAssignedActivities } from "@/lib/activities";
+import { ownerOptionsFor } from "@/lib/ownership";
 import { EXPERIENCE_OPTIONS, SKILLS_OPTIONS, INTEREST_OPTIONS } from "@/lib/personal-scoring";
 
 const IMPORTANCE_OPTIONS = ["Not needed", "Nice to have", "Important", "Critical"];
@@ -12,7 +13,7 @@ const FAKE_RESPONDENTS = [
   { name: "Jordan Chen",    title: "Engineering" },
   { name: "Morgan Lee",     title: "Design / UX" },
   { name: "Taylor Okafor",  title: "Product Manager / Product Owner" },
-  { name: "Sam Nguyen",     title: "Head of Product / Principal Product Manager" },
+  { name: "Sam Nguyen",     title: "Head of Product Management / Principal Product Manager" },
   { name: "Casey Patel",    title: "Engineering" },
   { name: "Drew Kimura",    title: "Customer Success" },
   { name: "Riley Torres",   title: "Sales / Sales Engineering" },
@@ -24,12 +25,12 @@ const FAKE_RESPONDENTS = [
 // PMs rate LEARN/DEFINE high importance but admit low execution
 // Engineers rate CREATE high, PREPARE/DELIVER low
 const IMPORTANCE_WEIGHTS = {
-  DEFINE:   { "Product Manager / Product Owner": [0,0,1,3], "Engineering": [0,1,2,1], "Design / UX": [0,1,2,1], "Head of Product / Principal Product Manager": [0,0,1,3], default: [0,1,2,1] },
+  DEFINE:   { "Product Manager / Product Owner": [0,0,1,3], "Engineering": [0,1,2,1], "Design / UX": [0,1,2,1], "Head of Product Management / Principal Product Manager": [0,0,1,3], default: [0,1,2,1] },
   COMMIT:   { "Product Manager / Product Owner": [0,0,1,2], "Engineering": [1,2,1,0], "Executive": [0,0,1,3], default: [0,1,2,1] },
   DESCRIBE: { "Product Manager / Product Owner": [0,0,1,3], "Engineering": [0,0,2,2], "Design / UX": [0,0,1,3], default: [0,1,2,1] },
   CREATE:   { "Engineering": [0,0,1,3], "Product Manager / Product Owner": [0,0,2,2], "Design / UX": [0,0,1,3], default: [0,1,2,1] },
   PREPARE:  { "Sales / Sales Engineering": [0,0,1,3], "Customer Success": [0,0,1,2], "Product Manager / Product Owner": [0,1,2,1], default: [0,1,2,1] },
-  DELIVER:  { "Head of Product / Principal Product Manager": [0,0,1,3], "Product Manager / Product Owner": [0,0,2,2], default: [0,1,2,1] },
+  DELIVER:  { "Head of Product Management / Principal Product Manager": [0,0,1,3], "Product Manager / Product Owner": [0,0,2,2], default: [0,1,2,1] },
 };
 
 // Execution is generally lower than importance — that's the whole point
@@ -48,32 +49,32 @@ const EXECUTION_WEIGHTS = {
 // have no clear owner without a Head of Product role.
 const OWNER_WEIGHTS = {
   // DEFINE
-  "Problem Discovery":                 { "Product Manager / Product Owner": 3, "Head of Product / Principal Product Manager": 2, "Sales / Sales Engineering": 1, "Customer Success": 1 },
-  "Persona Definition":                { "Product Manager / Product Owner": 3, "Design / UX": 2, "Head of Product / Principal Product Manager": 1 },
-  "Solution Validation":               { "Product Manager / Product Owner": 3, "Head of Product / Principal Product Manager": 2, "Design / UX": 1 },
-  "Strategic Fit (ASPIRE)":            { "Head of Product / Principal Product Manager": 2, "Executive": 2, "Product Manager / Product Owner": 2 },
+  "Problem Discovery":                 { "Product Manager / Product Owner": 3, "Head of Product Management / Principal Product Manager": 2, "Sales / Sales Engineering": 1, "Customer Success": 1 },
+  "Persona Definition":                { "Product Manager / Product Owner": 3, "Design / UX": 2, "Head of Product Management / Principal Product Manager": 1 },
+  "Solution Validation":               { "Product Manager / Product Owner": 3, "Head of Product Management / Principal Product Manager": 2, "Design / UX": 1 },
+  "Strategic Fit (ASPIRE)":            { "Head of Product Management / Principal Product Manager": 2, "Executive": 2, "Product Manager / Product Owner": 2 },
   "Competitive Research":              { "Product Manager / Product Owner": 2, "Product Marketing Manager": 2, "Sales / Sales Engineering": 2 },
-  "Product Brief":                     { "Product Manager / Product Owner": 3, "Head of Product / Principal Product Manager": 2 },
-  "DEFINE Go/No-Go Decision":          { "Head of Product / Principal Product Manager": 3, "Executive": 2, "Product Manager / Product Owner": 1 },
+  "Product Brief":                     { "Product Manager / Product Owner": 3, "Head of Product Management / Principal Product Manager": 2 },
+  "DEFINE Go/No-Go Decision":          { "Head of Product Management / Principal Product Manager": 3, "Executive": 2, "Product Manager / Product Owner": 1 },
   "Manage Feature Requests":           { "Product Manager / Product Owner": 2, "Engineering": 1, "Customer Success": 2, "Sales / Sales Engineering": 1 },
 
   // COMMIT
-  "Develop Product Vision":            { "Head of Product / Principal Product Manager": 3, "Executive": 2, "Product Manager / Product Owner": 1 },
-  "Product Roadmap":                   { "Product Manager / Product Owner": 3, "Head of Product / Principal Product Manager": 2, "Engineering": 1 },
-  "Size Market Opportunity":           { "Head of Product / Principal Product Manager": 2, "Executive": 2, "Product Marketing Manager": 2 },
-  "Pricing":                           { "Product Marketing Manager": 2, "Executive": 2, "Head of Product / Principal Product Manager": 1, "Sales / Sales Engineering": 1 },
-  "Develop Success Metrics":           { "Head of Product / Principal Product Manager": 2, "Product Manager / Product Owner": 2, "Executive": 2 },
-  "COMMIT Go/No-Go Decision":          { "Head of Product / Principal Product Manager": 3, "Executive": 2 },
-  "Business Plan":                     { "Head of Product / Principal Product Manager": 2, "Executive": 2, "Product Marketing Manager": 1 },
-  "Competitive Strategy":              { "Head of Product / Principal Product Manager": 2, "Product Marketing Manager": 2, "Executive": 1 },
-  "Portfolio Management":              { "Head of Product / Principal Product Manager": 2, "Executive": 2 },
-  "Build, Buy, or Partner":            { "Engineering": 2, "Head of Product / Principal Product Manager": 2, "Executive": 1 },
+  "Develop Product Vision":            { "Head of Product Management / Principal Product Manager": 3, "Executive": 2, "Product Manager / Product Owner": 1 },
+  "Product Roadmap":                   { "Product Manager / Product Owner": 3, "Head of Product Management / Principal Product Manager": 2, "Engineering": 1 },
+  "Size Market Opportunity":           { "Head of Product Management / Principal Product Manager": 2, "Executive": 2, "Product Marketing Manager": 2 },
+  "Pricing":                           { "Product Marketing Manager": 2, "Executive": 2, "Head of Product Management / Principal Product Manager": 1, "Sales / Sales Engineering": 1 },
+  "Develop Success Metrics":           { "Head of Product Management / Principal Product Manager": 2, "Product Manager / Product Owner": 2, "Executive": 2 },
+  "COMMIT Go/No-Go Decision":          { "Head of Product Management / Principal Product Manager": 3, "Executive": 2 },
+  "Business Plan":                     { "Head of Product Management / Principal Product Manager": 2, "Executive": 2, "Product Marketing Manager": 1 },
+  "Competitive Strategy":              { "Head of Product Management / Principal Product Manager": 2, "Product Marketing Manager": 2, "Executive": 1 },
+  "Portfolio Management":              { "Head of Product Management / Principal Product Manager": 2, "Executive": 2 },
+  "Build, Buy, or Partner":            { "Engineering": 2, "Head of Product Management / Principal Product Manager": 2, "Executive": 1 },
 
   // DESCRIBE
   "Problem Stories & Scenarios":       { "Product Manager / Product Owner": 4, "Design / UX": 2 },
 
   // CREATE
-  "Prioritize Potential Capabilities": { "Product Manager / Product Owner": 4, "Head of Product / Principal Product Manager": 2, "Engineering": 1 },
+  "Prioritize Potential Capabilities": { "Product Manager / Product Owner": 4, "Head of Product Management / Principal Product Manager": 2, "Engineering": 1 },
   "Requirements & Technical Briefing": { "Product Manager / Product Owner": 4, "Engineering": 2 },
   "Release Brief":                     { "Product Manager / Product Owner": 3, "Engineering": 2 },
   "Interaction Design":                { "Design / UX": 4, "Engineering": 1 },
@@ -82,18 +83,18 @@ const OWNER_WEIGHTS = {
 
   // PREPARE
   "Brief the Go-to-Market Teams":      { "Product Marketing Manager": 4, "Product Manager / Product Owner": 1, "Sales / Sales Engineering": 1 },
-  "Propose the Scope of the Launch":   { "Product Marketing Manager": 3, "Head of Product / Principal Product Manager": 1, "Product Manager / Product Owner": 1 },
+  "Propose the Scope of the Launch":   { "Product Marketing Manager": 3, "Head of Product Management / Principal Product Manager": 1, "Product Manager / Product Owner": 1 },
   "Launch Planning":                   { "Product Marketing Manager": 4, "Product Manager / Product Owner": 1 },
   "Readiness Planning":                { "Product Marketing Manager": 1, "Customer Success": 1, "Sales / Sales Engineering": 1, "Engineering": 1 },
   "Sales Enablement":                  { "Sales / Sales Engineering": 3, "Product Marketing Manager": 3, "Product Manager / Product Owner": 1 },
   "Positioning":                       { "Product Marketing Manager": 4, "Product Manager / Product Owner": 1 },
   "Buyer Experience":                  { "Product Marketing Manager": 2, "Sales / Sales Engineering": 2, "Design / UX": 1 },
   "Marketing Plan":                    { "Product Marketing Manager": 4, "Executive": 1 },
-  "Communicate Status to Stakeholders":{ "Product Manager / Product Owner": 2, "Head of Product / Principal Product Manager": 1, "Product Marketing Manager": 1 },
+  "Communicate Status to Stakeholders":{ "Product Manager / Product Owner": 2, "Head of Product Management / Principal Product Manager": 1, "Product Marketing Manager": 1 },
 
   // DELIVER
-  "DELIVER Go/No-Go Decision":         { "Head of Product / Principal Product Manager": 3, "Executive": 2, "Product Marketing Manager": 1 },
-  "Monitor Performance & Metrics":     { "Product Manager / Product Owner": 2, "Head of Product / Principal Product Manager": 2, "Executive": 1 },
+  "DELIVER Go/No-Go Decision":         { "Head of Product Management / Principal Product Manager": 3, "Executive": 2, "Product Marketing Manager": 1 },
+  "Monitor Performance & Metrics":     { "Product Manager / Product Owner": 2, "Head of Product Management / Principal Product Manager": 2, "Executive": 1 },
   "Win/Loss Analysis":                 { "Sales / Sales Engineering": 3, "Product Marketing Manager": 2, "Customer Success": 2 },
   "Revenue Growth":                    { "Product Marketing Manager": 3, "Sales / Sales Engineering": 2 },
   "Revenue Retention":                 { "Customer Success": 3, "Product Marketing Manager": 2, "Sales / Sales Engineering": 1 },
@@ -191,6 +192,9 @@ export default function AssessmentDemoData({ assessment }) {
     setProgress("Starting…");
 
     const activities = await getAssignedActivities(assessment);
+    // Seeded answers should look like real ones, which means picking from what
+    // the survey actually offers rather than from stored roles.
+    const ownerOptions = ownerOptionsFor(activities, assessment.roles || []);
     if (activities.length === 0) {
       setProgress("No activities assigned to this assessment. Add an activity set first.");
       setGenerating(false);
@@ -223,7 +227,7 @@ export default function AssessmentDemoData({ assessment }) {
         for (const activity of activities) {
           const answers = isPersonal
             ? generatePersonalResponse(activity, personalProfile)
-            : generateResponse(activity, title, assessment.roles);
+            : generateResponse(activity, title, ownerOptions);
           await base44.entities.Response.create({
             assessment_id: assessment.id,
             respondent_id: respondent.id,

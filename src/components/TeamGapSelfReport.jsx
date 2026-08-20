@@ -35,13 +35,13 @@ export default function TeamGapSelfReport({
 }) {
   const availableFacets = FACET_ORDER.filter(f => activities.some(a => a.facet === f));
 
-  // The owner question is optional, and skipping it is common — the survey asks
-  // it on every activity whenever the assessment defines roles, and a
-  // respondent who answered none leaves a column of dashes running the length
-  // of the appendix. Roles existing is what makes the question askable; an
-  // answer to it is what makes the column worth printing.
+  // The owner question is optional and skipping it is common, so a respondent
+  // who answered none would otherwise get a column of dashes running the length
+  // of the appendix. Gated on an actual answer rather than on the assessment
+  // defining roles: the survey derives its own options now, so stored roles no
+  // longer say whether the question was asked, and an answer existing is the
+  // only thing that makes the column worth printing anyway.
   const hasOwners = !isPersonal
-    && assessment?.roles?.length > 0
     && activities.some(a => responses[a.id]?.suggested_owner);
 
   // Local answer state is keyed by activity; the profile wants Response rows.
