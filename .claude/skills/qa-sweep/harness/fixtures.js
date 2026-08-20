@@ -14,13 +14,13 @@ export const FACETS = ["DEFINE", "COMMIT", "DESCRIBE", "CREATE", "PREPARE", "DEL
 // a second DEFINE activity so at least one page carries more than one card.
 // Names are the real library's longest, which is what breaks pill alignment.
 export const ACTIVITIES = [
-  { id: "act-1", name: "Understand the Market", facet: "DEFINE", sort_order: 0, description: "Develop and maintain an understanding of customers, market needs, trends, technologies, and changes that may affect product opportunities and decisions." },
+  { id: "act-1", name: "Understand the Market", facet: "DEFINE", sort_order: 0, preferred_owner: "Product Management", description: "Develop and maintain an understanding of customers, market needs, trends, technologies, and changes that may affect product opportunities and decisions." },
   { id: "act-2", name: "Go/No-Go Decision to Pursue Initiative", facet: "DEFINE", sort_order: 1, description: "Decide whether an opportunity is worth pursuing." },
-  { id: "act-3", name: "Set Strategic Direction & Priorities", facet: "COMMIT", sort_order: 2, description: "Agree where the product is going and what comes first." },
+  { id: "act-3", name: "Set Strategic Direction & Priorities", facet: "COMMIT", sort_order: 2, preferred_owner: "Product Management", description: "Agree where the product is going and what comes first." },
   { id: "act-4", name: "Define & Communicate Product Direction", facet: "DESCRIBE", sort_order: 3, description: "Turn direction into something teams can build against." },
   { id: "act-5", name: "Explore Solution Concepts", facet: "CREATE", sort_order: 4, description: "Try more than one shape of answer before committing." },
-  { id: "act-6", name: "Coordinate Launch Readiness", facet: "PREPARE", sort_order: 5, description: "Make sure everyone who meets the customer is ready." },
-  { id: "act-7", name: "Drive Outcomes & Improvement", facet: "DELIVER", sort_order: 6, description: "Watch what happens after release and act on it." },
+  { id: "act-6", name: "Coordinate Launch Readiness", facet: "PREPARE", sort_order: 5, preferred_owner: "Product Marketing", description: "Make sure everyone who meets the customer is ready." },
+  { id: "act-7", name: "Drive Outcomes & Improvement", facet: "DELIVER", sort_order: 6, preferred_owner: "Sales / Sales Engineering", description: "Watch what happens after release and act on it." },
   { id: "act-8", name: "Review Outcomes Against Assumptions", facet: "LEARN", sort_order: 7, description: "Compare what happened with what was predicted." },
 ].map(a => ({ ...a, active: true, assessment_id: null }));
 
@@ -47,18 +47,24 @@ export const PERSONAL = {
   roles: [],
 };
 
+// Ownership answers are job titles, which is what the survey offers — the
+// library recommends functions, so act-1 exercises a title satisfying its own
+// function, act-3 a product title satisfying the *other* product function,
+// act-6 a respondent who doesn't know, and act-7 a genuine mismatch against a
+// non-product recommendation. Those four are the whole of ownership.js.
+//
 // Every execution value the survey offers, including "I don't know", which is
 // absent from the entity's enum and is scored as no opinion rather than a low
 // rating. act-6 is half answered and act-8 unrated, which is what puts the
 // "couldn't answer" and unanswered paths on screen.
 export const OWN_ANSWERS = [
-  { activity_id: "act-1", importance: "Critical", execution: "Inconsistent", suggested_owner: "Product Management" },
+  { activity_id: "act-1", importance: "Critical", execution: "Inconsistent", suggested_owner: "Product Manager / Product Owner" },
   { activity_id: "act-2", importance: "Nice to have", execution: "Good", suggested_owner: null },
-  { activity_id: "act-3", importance: "Critical", execution: "Not done", suggested_owner: "Product Marketing" },
+  { activity_id: "act-3", importance: "Critical", execution: "Not done", suggested_owner: "Product Marketing Manager" },
   { activity_id: "act-4", importance: "Important", execution: "Excellent", suggested_owner: null },
   { activity_id: "act-5", importance: "Not needed", execution: "Good", suggested_owner: null },
-  { activity_id: "act-6", importance: "Critical", execution: "I don't know", suggested_owner: null },
-  { activity_id: "act-7", importance: "Nice to have", execution: "Not done", suggested_owner: "Product Management" },
+  { activity_id: "act-6", importance: "Critical", execution: "I don't know", suggested_owner: "I don't know" },
+  { activity_id: "act-7", importance: "Nice to have", execution: "Not done", suggested_owner: "Product Manager / Product Owner" },
   { activity_id: "act-8", importance: null, execution: null, suggested_owner: null },
 ];
 
@@ -92,6 +98,14 @@ const RATINGS = [
   ["Not needed", "Not done"], ["Critical", "I don't know"],
 ];
 
+const OWNER_CYCLE = [
+  "Product Manager / Product Owner",
+  "Product Marketing Manager",
+  "I don't know",
+  null,
+  "Engineering",
+];
+
 export const ALL_ANSWERS = RESPONDENTS.filter(r => r.status === "completed" || r.id === "resp-4").flatMap((r, ri) =>
   ACTIVITIES.map((a, ai) => {
     if (a.id === "act-8") return null; // nobody rated this one
@@ -102,7 +116,11 @@ export const ALL_ANSWERS = RESPONDENTS.filter(r => r.status === "completed" || r
       activity_id: a.id,
       importance,
       execution,
-      suggested_owner: ai % 3 === 0 ? "Product Management" : ai % 3 === 1 ? "Product Marketing" : null,
+      // Job titles, which is what the survey collects, plus "I don't know" and
+      // some skips. Rotated by respondent as well as activity so tallies
+      // actually disagree — a column where everyone picks the same role proves
+      // nothing about agreement, unclear ownership, or the mismatch badge.
+      suggested_owner: OWNER_CYCLE[(ri * 2 + ai) % OWNER_CYCLE.length],
     };
   }).filter(Boolean)
 );

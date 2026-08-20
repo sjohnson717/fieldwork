@@ -35,11 +35,17 @@ export const PRODUCT_TITLES = [
 // difference. It simply stops being flagged to the client as a problem.
 const PRODUCT_FUNCTIONS = ["Product Management", "Product Marketing"];
 
-// The same two functions drop out of the picker, so a respondent is never
-// choosing between "Product Management" and "Product Manager / Product Owner"
-// for the same activity — that choice has no right answer and would split the
-// tally between two spellings of one idea.
-const REPLACED_BY_TITLES = PRODUCT_FUNCTIONS;
+// Names the titles supersede. They are filtered out of the whole assembled
+// list, not just the part derived from activities: assessments created before
+// this change stored the functions — and an older spelling of the first title —
+// in Assessment.roles, so filtering only one source left the picker offering
+// "Product Management" directly beneath "Product Manager / Product Owner".
+// That choice has no right answer and splits the tally between two spellings of
+// one idea, which is the thing this whole module exists to prevent.
+const SUPERSEDED = [
+  ...PRODUCT_FUNCTIONS,
+  "Head of Product / Principal Product Manager",
+];
 
 // What a respondent picks from, for one assessment.
 //
@@ -50,14 +56,16 @@ const REPLACED_BY_TITLES = PRODUCT_FUNCTIONS;
 // Derived rather than stored, so an assessment can never end up offering a
 // role none of its activities recommend, or missing one they do.
 export const ownerOptionsFor = (activities = [], extraRoles = []) => {
-  const recommended = [...new Set(
-    activities.map(a => a.preferred_owner).filter(Boolean)
-  )].filter(fn => !REPLACED_BY_TITLES.includes(fn));
+  const keep = (name) => name && !SUPERSEDED.includes(name) && !PRODUCT_TITLES.includes(name);
+
+  const recommended = [...new Set(activities.map(a => a.preferred_owner))]
+    .filter(keep)
+    .sort((a, b) => a.localeCompare(b));
 
   return [...new Set([
     ...PRODUCT_TITLES,
-    ...recommended.sort((a, b) => a.localeCompare(b)),
-    ...extraRoles,
+    ...recommended,
+    ...extraRoles.filter(keep),
     UNKNOWN_OWNER,
   ])];
 };
