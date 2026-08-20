@@ -1,4 +1,4 @@
-import { UNKNOWN_OWNER } from "@/lib/ownership";
+import { NO_OWNER, UNKNOWN_OWNER } from "@/lib/ownership";
 // Shared scoring constants and helpers used by ReportPage, AssessmentDiscussion,
 // and AssessmentResults to turn raw Response records into importance/execution/gap stats.
 
@@ -203,9 +203,11 @@ export function computeActivityStats(activities, responses) {
     // would read as unanimous. It dilutes agreement without ever winning it.
     const ownerTally = {};
     let ownerUnknown = 0;
+    let ownerNone = 0;
     for (const r of actResps) {
       if (!r.suggested_owner) continue;
       if (r.suggested_owner === UNKNOWN_OWNER) { ownerUnknown++; continue; }
+      if (r.suggested_owner === NO_OWNER) { ownerNone++; continue; }
       ownerTally[r.suggested_owner] = (ownerTally[r.suggested_owner] || 0) + 1;
     }
     const ownerEntries = Object.entries(ownerTally).sort((a, b) => b[1] - a[1]);
@@ -215,7 +217,7 @@ export function computeActivityStats(activities, responses) {
       ? ownerEntries[0][1] / ownerWithSuggestion
       : null;
 
-    stats[act.id] = { avgImp, avgExec, avgGap, n: actResps.length, topOwner, ownerAgreement, ownerEntries, ownerUnknown };
+    stats[act.id] = { avgImp, avgExec, avgGap, n: actResps.length, topOwner, ownerAgreement, ownerEntries, ownerUnknown, ownerNone };
   }
   return stats;
 }

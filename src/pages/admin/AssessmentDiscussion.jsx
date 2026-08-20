@@ -151,6 +151,9 @@ function ActivityRow({ activity, stats, note, draftNote, draftDecision, draftRol
                           <span className="text-gray-400 ml-0.5">({count})</span>
                         </span>
                       ))}
+                      {stats.ownerNone > 0 && (
+                        <span className="text-gray-400"> · {stats.ownerNone} said no one owns it</span>
+                      )}
                       {stats.ownerUnknown > 0 && (
                         <span className="text-gray-400"> · {stats.ownerUnknown} didn't know</span>
                       )}

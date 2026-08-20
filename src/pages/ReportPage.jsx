@@ -123,12 +123,23 @@ function ActivityRow({ activity, stats, themeColor }) {
                       <span className="text-gray-400 ml-0.5">({count})</span>
                     </span>
                   ))}
+                  {stats.ownerNone > 0 && (
+                    <span className="text-gray-400"> · {stats.ownerNone} said no one owns it</span>
+                  )}
                   {stats.ownerUnknown > 0 && (
                     <span className="text-gray-400"> · {stats.ownerUnknown} didn't know</span>
                   )}
-                  {stats.ownerAgreement < 0.6 && (
+                  {/* A team that agrees nobody owns something is not unclear —
+                      it is clear, and the answer is nobody. Saying "unclear"
+                      there would soften the strongest finding this question
+                      produces into a shrug. It has to actually lead, though:
+                      one "no one" against one named role is a tie, and a tie is
+                      exactly what "unclear" is for. */}
+                  {stats.ownerNone > (stats.ownerEntries[0]?.[1] || 0) ? (
+                    <span className="ml-2 text-amber-600 font-medium">⚠ nobody owns this</span>
+                  ) : stats.ownerAgreement < 0.6 ? (
                     <span className="ml-2 text-amber-600 font-medium">⚠ ownership unclear</span>
-                  )}
+                  ) : null}
                 </div>
               )}
               {activity.preferred_owner && (

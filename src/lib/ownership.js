@@ -7,10 +7,19 @@
 // the work. Without a mapping between the two, every product activity would
 // read as a mismatch.
 
-// Offered last on every activity. "Who does this currently?" has an honest
-// answer that is not a role, and without it a respondent who doesn't know
-// either guesses — which manufactures a consensus that isn't there — or leaves
-// the question blank, which is indistinguishable from skipping it.
+// Two answers to "Who does this currently?" that are honest and are not roles.
+// Without them a respondent either guesses — manufacturing a consensus that
+// isn't there — or leaves the question blank, which is indistinguishable from
+// skipping it.
+//
+// They are different claims and both are worth having. "I don't know" is about
+// the respondent: they lack the knowledge. "No one" is about the team: the
+// respondent has the knowledge, and it is that nobody is accountable. A team
+// where five of seven don't know has a visibility problem; a team where five of
+// seven say nobody owns it has agreed on a finding. Execution's "Not done" does
+// not cover it either — work can be done well with no owner, which is the
+// fragile state most worth naming in a workshop.
+export const NO_OWNER = "No one";
 export const UNKNOWN_OWNER = "I don't know";
 
 // Always offered, in every survey, whatever the activities recommend.
@@ -66,6 +75,8 @@ export const ownerOptionsFor = (activities = [], extraRoles = []) => {
     ...PRODUCT_TITLES,
     ...recommended,
     ...extraRoles.filter(keep),
+    // Definite answer first, fallback last.
+    NO_OWNER,
     UNKNOWN_OWNER,
   ])];
 };

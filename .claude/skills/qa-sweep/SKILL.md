@@ -132,6 +132,12 @@ not mistaken for a new regression:
   participant table clips at 320–375px. The respondent's own report, both
   registration screens, the resumed survey, the survey wrap-up and the dead-link
   screen are clean at every width.
+- The buyer report's overlap counts rose again on 2026-08-20, to 8 at 320, 375
+  and 390 and 1 at 430, with clipping up in step. Nothing on that page changed:
+  the fixtures gained `preferred_owner` on four activities, so rows now carry a
+  "Discuss owner" badge that previously could not render at all, and a denser
+  row collides more. This is the current baseline, and the findings are the same
+  class as before — a category badge drawn over a facet heading.
 - The buyer report's overlap counts dropped in August 2026 (12→7 at 320px, 8→6
   at 375 and 390, 2→0 at 430) without anything on that page changing. The
   overlap check had been measuring bounding rects, which for a *wrapped inline*

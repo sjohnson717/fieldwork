@@ -55,8 +55,9 @@ export const PERSONAL = {
 // Ownership answers are job titles, which is what the survey offers — the
 // library recommends functions, so act-1 exercises a title satisfying its own
 // function, act-3 a product title satisfying the *other* product function,
-// act-6 a respondent who doesn't know, and act-7 a genuine mismatch against a
-// non-product recommendation. Those four are the whole of ownership.js.
+// act-5 a respondent who says nobody owns it, act-6 one who doesn't know, and
+// act-7 a genuine mismatch against a non-product recommendation. Those five are
+// the whole of ownership.js.
 //
 // Every execution value the survey offers, including "I don't know", which is
 // absent from the entity's enum and is scored as no opinion rather than a low
@@ -67,7 +68,7 @@ export const OWN_ANSWERS = [
   { activity_id: "act-2", importance: "Nice to have", execution: "Good", suggested_owner: null },
   { activity_id: "act-3", importance: "Critical", execution: "Not done", suggested_owner: "Product Marketing Manager" },
   { activity_id: "act-4", importance: "Important", execution: "Excellent", suggested_owner: null },
-  { activity_id: "act-5", importance: "Not needed", execution: "Good", suggested_owner: null },
+  { activity_id: "act-5", importance: "Not needed", execution: "Good", suggested_owner: "No one" },
   { activity_id: "act-6", importance: "Critical", execution: "I don't know", suggested_owner: "I don't know" },
   { activity_id: "act-7", importance: "Nice to have", execution: "Not done", suggested_owner: "Product Manager / Product Owner" },
   { activity_id: "act-8", importance: null, execution: null, suggested_owner: null },
@@ -109,6 +110,7 @@ const OWNER_CYCLE = [
   "I don't know",
   null,
   "Engineering",
+  "No one",
 ];
 
 export const ALL_ANSWERS = RESPONDENTS.filter(r => r.status === "completed" || r.id === "resp-4").flatMap((r, ri) =>
@@ -125,7 +127,13 @@ export const ALL_ANSWERS = RESPONDENTS.filter(r => r.status === "completed" || r
       // some skips. Rotated by respondent as well as activity so tallies
       // actually disagree — a column where everyone picks the same role proves
       // nothing about agreement, unclear ownership, or the mismatch badge.
-      suggested_owner: OWNER_CYCLE[(ri * 2 + ai) % OWNER_CYCLE.length],
+      // act-5 is the unowned one: a clear majority saying "No one", which is
+      // the only shape that earns the "nobody owns this" label rather than
+      // "ownership unclear". The rotation alone never produces a majority, so
+      // that branch would go unrendered.
+      suggested_owner: a.id === "act-5"
+        ? (ri === 0 ? "Product Manager / Product Owner" : "No one")
+        : OWNER_CYCLE[(ri * 2 + ai) % OWNER_CYCLE.length],
     };
   }).filter(Boolean)
 );
