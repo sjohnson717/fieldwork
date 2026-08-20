@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { getAssignedActivities } from "@/lib/activities";
+import { ownerOptionsFor } from "@/lib/ownership";
 import { getAssessmentByCode, getRespondentSession, saveRespondentAnswers } from "@/lib/public-assessment";
 import { PERSONAL_AXES, computePersonProfile } from "@/lib/personal-scoring";
 import { rebuildResponses } from "@/lib/responses";
@@ -51,7 +52,7 @@ const TEAM_GAP_AXES = [
   {
     key: "importance",
     label: "Importance",
-    hint: "how much this matters to your team's success",
+    hint: "how much this matters to your team right now",
     options: IMPORTANCE_OPTIONS,
     colors: IMPORTANCE_COLORS,
   },
@@ -68,17 +69,22 @@ const TEAM_GAP_AXES = [
 // choice among this assessment's roles rather than a rating — nothing scores it
 // and it has no scale.
 //
-// It carries a hint for a different reason than the axes do. "Who should own
-// this?" is already a question, so the wording is not what needed explaining;
-// what needed explaining is that it asks who *should* be accountable rather
-// than who happens to do it today, and that answering it assigns nobody
-// anything. Nothing in the app calls a suggested owner an owner, and a
-// respondent who thinks they are naming someone's new job answers more
-// cautiously than one who knows they are making a suggestion.
+// It asks who does the work today, not who ought to. The library already
+// carries the recommendation in each activity's `preferred_owner`, so asking a
+// respondent to name it too would collect an opinion we already hold; asking
+// what actually happens supplies the other half, and the report can then show
+// recommended against actual. That gap is the coaching conversation: win/loss
+// analysis recommended to product marketing but owned by sales today is a
+// finding, and it only exists if the survey asks about today.
+//
+// This reverses an earlier decision that framed the question as "who should own
+// this", on the reasoning that a respondent describing the status quo reports
+// what the room already knows. The room knowing it is not the same as the
+// report showing it, and nothing else in the instrument captures it.
 const OWNERSHIP_QUESTION = {
   key: "suggested_owner",
-  label: "Who should own this?",
-  hint: "the role that should be accountable, not who does it today",
+  label: "Who does this currently?",
+  hint: "the role that actually does it today, even if it belongs elsewhere",
 };
 
 const rampFor = (options) =>
@@ -129,9 +135,8 @@ function RatingButton({ options, value, onChange, colorMap }) {
 // The axes come from the same constants the activity cards use, so the intro
 // cannot describe the survey differently from the survey.
 function IntroPurpose({ isPersonal, activityCount, showOwnership, blurb }) {
-  // Ownership is only asked when the assessment names roles, so the intro only
-  // promises it then. Describing a question that never appears would be worse
-  // than not describing it at all.
+  // The caller passes the same condition the activity card renders on, so the
+  // intro cannot promise a question the survey does not ask.
   const questions = isPersonal
     ? PERSONAL_AXES
     : [...TEAM_GAP_AXES, ...(showOwnership ? [OWNERSHIP_QUESTION] : [])];
@@ -165,6 +170,18 @@ function IntroPurpose({ isPersonal, activityCount, showOwnership, blurb }) {
           ? "They're deliberately kept apart: where your three answers disagree is the most useful thing this produces. At the end you get a development profile of your own."
           : `${showOwnership ? "The first two are" : "They're"} deliberately kept apart: an activity that matters a lot and isn't being done well is what your team will spend its time on.`}
       </p>
+      {/* Every team gap question asks about the present — how things are, not
+          how they ought to be or are about to become. Said once here rather
+          than three times in the hints, which have their own job and are read
+          on a phone. Personal assessments rate a person, where "today" is not
+          the distinction that needs drawing. */}
+      {!isPersonal && (
+        <p>
+          Answer for <span className="font-semibold text-gray-800">how things are today</span>, not
+          how they should be. A gap between what matters and what's actually happening is the
+          point — that's what your team will talk about afterwards.
+        </p>
+      )}
       {/* Who sees this, then how long it takes — in that order, and both inside
           this component rather than one here and one on each intro screen.
           Copy whose order matters should not depend on two files agreeing. */}
@@ -524,6 +541,13 @@ export default function Assessment() {
   const currentFacet = availableFacets[currentFacetIndex];
   const facetActivities = activities.filter(a => a.facet === currentFacet);
 
+  // What the ownership question offers. Derived from the activities this
+  // assessment actually uses, plus the three product titles that appear in
+  // every survey, plus whatever the facilitator added by hand. Stored roles are
+  // a contribution to this list, not the list itself, so an assessment can
+  // never offer a role none of its activities recommend or miss one they do.
+  const ownerOptions = ownerOptionsFor(activities, assessment?.roles || []);
+
 const handleNext = once(async () => {
   setSaving(true);
   setError("");
@@ -658,7 +682,7 @@ const handleNext = once(async () => {
           <IntroPurpose
             isPersonal={isPersonal}
             activityCount={activities.length}
-            showOwnership={assessment?.roles?.length > 0}
+            showOwnership={!isPersonal && ownerOptions.length > 0}
             blurb={introBlurb}
           />
           <div className="space-y-4 mb-6">
@@ -742,7 +766,7 @@ const handleNext = once(async () => {
           <IntroPurpose
             isPersonal={isPersonal}
             activityCount={activities.length}
-            showOwnership={assessment?.roles?.length > 0}
+            showOwnership={!isPersonal && ownerOptions.length > 0}
             blurb={introBlurb}
           />
           <div className="space-y-4 mb-6">
@@ -840,14 +864,14 @@ const handleNext = once(async () => {
                       assessment's roles rather than a rating, which is why it
                       sits outside the loop above and asks its question in
                       words. */}
-                  {!isPersonal && assessment?.roles?.length > 0 && (
+                  {!isPersonal && ownerOptions.length > 0 && (
                     <div>
                       <p className="mb-2 leading-snug">
                         <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{OWNERSHIP_QUESTION.label}</span>
                         <span className="text-xs text-gray-500"> · {OWNERSHIP_QUESTION.hint}</span>
                       </p>
                       <div className="space-y-2">
-                        {assessment.roles.map(role => (
+                        {ownerOptions.map(role => (
                           <label key={role} className="flex items-center gap-3 cursor-pointer">
                             <input
                               type="radio"
@@ -863,12 +887,12 @@ const handleNext = once(async () => {
                           <input
                             type="radio"
                             name={`owner-${activity.id}`}
-                            checked={!!r.suggested_owner && !assessment.roles.includes(r.suggested_owner)}
+                            checked={!!r.suggested_owner && !ownerOptions.includes(r.suggested_owner)}
                             onChange={() => {}}
                             className="w-4 h-4 text-amber-500 border-gray-300 focus:ring-amber-400"
                           />
                           <select
-                            value={!!r.suggested_owner && !assessment.roles.includes(r.suggested_owner) ? r.suggested_owner : ""}
+                            value={!!r.suggested_owner && !ownerOptions.includes(r.suggested_owner) ? r.suggested_owner : ""}
                             onChange={e => {
                               if (e.target.value) handleRatingChange(activity.id, "suggested_owner", e.target.value);
                             }}
@@ -876,7 +900,7 @@ const handleNext = once(async () => {
                           >
                             <option value="">Other…</option>
                             {allTitles
-                              .filter(t => !assessment.roles.includes(t))
+                              .filter(t => !ownerOptions.includes(t))
                               .map(t => (
                                 <option key={t} value={t}>{t}</option>
                               ))}

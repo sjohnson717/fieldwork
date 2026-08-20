@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { getAssignedActivities } from "@/lib/activities";
+import { ownerMatchesRecommendation } from "@/lib/ownership";
 import {
   THEME_GROUPS,
   FACET_SUBTITLES,
@@ -105,7 +106,7 @@ function ActivityRow({ activity, stats, note, draftNote, draftDecision, draftRol
           {stats?.ownerEntries?.length > 0 && (() => {
             const ownerBadge =
               stats.ownerAgreement < 0.5 ? "Owner unclear" :
-              (activity.preferred_owner && stats.topOwner !== activity.preferred_owner) ? "Discuss owner" :
+              (activity.preferred_owner && !ownerMatchesRecommendation(stats.topOwner, activity.preferred_owner)) ? "Discuss owner" :
               null;
             return ownerBadge ? (
               <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[#F5F3FF] text-[#6D28D9]">
@@ -142,7 +143,7 @@ function ActivityRow({ activity, stats, note, draftNote, draftDecision, draftRol
                 <div className="space-y-1">
                   {stats.ownerEntries?.length > 0 && (
                     <div className="text-xs text-gray-500">
-                      <span className="font-medium text-gray-700">Proposed owner: </span>
+                      <span className="font-medium text-gray-700">Owns it today: </span>
                       {stats.ownerEntries.map(([name, count], i) => (
                         <span key={name}>
                           {i > 0 && <span className="text-gray-300 mx-1">·</span>}

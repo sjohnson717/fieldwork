@@ -148,7 +148,7 @@ export default function TeamGapSelfReport({
           <div key={facet} className="mb-6">
             <div className="facet-heading text-xs font-bold uppercase tracking-widest text-blue-600 mb-2 px-1">{facet}</div>
             {/* Three columns fit a phone once the widths below stop being
-                fixed; four — a suggested owner, or the personal report's three
+                fixed; four — the role that owns it today, or the personal report's three
                 axes — do not, by about 30px at 375px. Those scroll sideways
                 inside the card rather than losing the last column's right edge
                 to overflow-hidden. From sm up, which includes the printed
@@ -182,7 +182,7 @@ export default function TeamGapSelfReport({
                          sentence rather than a rating — it reads perfectly well
                          under the activity name, which is where it goes below
                          sm. */
-                      <th className="hidden sm:table-cell text-center px-1.5 sm:px-3 py-2.5 text-xs font-semibold text-gray-500">Suggested owner</th>
+                      <th className="hidden sm:table-cell text-center px-1.5 sm:px-3 py-2.5 text-xs font-semibold text-gray-500">Owns it today</th>
                     )}
                     </>}
                   </tr>
@@ -195,7 +195,7 @@ export default function TeamGapSelfReport({
                         <td className="px-3 sm:px-4 py-3 text-gray-800 font-medium align-middle">
                           {activity.name}
                           {hasOwners && r.suggested_owner && (
-                            /* The phone home for the suggested owner column.
+                            /* The phone home for the ownership column.
                                Labelled, because without the column heading
                                above it a bare role name under an activity
                                could be read as part of the activity. */

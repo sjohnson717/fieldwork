@@ -369,11 +369,11 @@ export default function AssessmentResults({ assessment }) {
                   <th className="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wide">Importance</th>
                   <th className="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wide">Execution</th>
                   <th className="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wide">Gap ↓</th>
-                  {/* "Most suggested", not "Top Owner": this is a tally of what
-                      respondents proposed, and nothing in the assessment
-                      assigns ownership to anyone. */}
+                  {/* A tally of who respondents say does the work today, not an
+                      assignment: the survey asks what happens, and nothing in
+                      the assessment gives anyone the job. */}
                   {assessment.roles?.length > 0 && (
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Most suggested</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Most often named</th>
                   )}
                 </tr>
               </thead>
@@ -544,7 +544,7 @@ export default function AssessmentResults({ assessment }) {
         if (items.length === 0) return null;
         return (
           <section className="bg-white rounded-xl border border-gray-200 p-6">
-            <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-4">Suggested ownership</h3>
+            <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-4">Current ownership</h3>
             <div className="space-y-2">
               {items.map(({ activity: act, top, count, total }) => (
                 <div key={act.id} className="flex items-center gap-3 text-sm">
@@ -585,7 +585,7 @@ export default function AssessmentResults({ assessment }) {
                     <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide w-64">Activity</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Importance</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Execution</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Suggested owner</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Owns it today</th>
                   </tr>
                 </thead>
                 <tbody>

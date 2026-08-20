@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { getAssignedActivities } from "@/lib/activities";
 import { getBuyerReport } from "@/lib/public-assessment";
+import { ownerMatchesRecommendation } from "@/lib/ownership";
 import { usePrintSafeUrl } from "@/lib/print-safe-url";
 import { claimToken } from "@/lib/token-address";
 import ExecSummary from "@/components/ExecSummary";
@@ -86,7 +87,7 @@ function ActivityRow({ activity, stats, themeColor }) {
           {stats?.ownerEntries?.length > 0 && (() => {
             const ownerBadge =
               stats.ownerAgreement < 0.5 ? "Discuss owner" :
-              (activity.preferred_owner && stats.topOwner !== activity.preferred_owner) ? "Discuss owner" :
+              (activity.preferred_owner && !ownerMatchesRecommendation(stats.topOwner, activity.preferred_owner)) ? "Discuss owner" :
               null;
             return ownerBadge ? (
               <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[#F5F3FF] text-[#6D28D9]">
@@ -114,7 +115,7 @@ function ActivityRow({ activity, stats, themeColor }) {
             <div className="space-y-1">
               {stats.ownerEntries?.length > 0 && (
                 <div className="text-xs text-gray-500">
-                  <span className="font-medium text-gray-700">Proposed owner: </span>
+                  <span className="font-medium text-gray-700">Owns it today: </span>
                   {stats.ownerEntries.map(([name, count], i) => (
                     <span key={name}>
                       {i > 0 && <span className="text-gray-300 mx-1">·</span>}
@@ -662,7 +663,7 @@ export default function ReportPage() {
     if (unclearOwnership > 0) {
       summaryBullets.push({
         icon: "🟡",
-        text: `**${topRole}** is the most commonly suggested owner (${topCount} ${topCount === 1 ? "activity" : "activities"}), but ownership is unclear on ${unclearOwnership} ${unclearOwnership === 1 ? "activity" : "activities"} — worth discussing as a team.`,
+        text: `**${topRole}** is most often named as owning this today (${topCount} ${topCount === 1 ? "activity" : "activities"}), but ownership is unclear on ${unclearOwnership} ${unclearOwnership === 1 ? "activity" : "activities"} — worth discussing as a team.`,
       });
     } else {
       summaryBullets.push({
