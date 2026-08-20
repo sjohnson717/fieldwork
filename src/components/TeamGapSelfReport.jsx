@@ -228,8 +228,13 @@ export default function TeamGapSelfReport({
                             ? <span className={`inline-block whitespace-nowrap px-2 py-0.5 rounded-full text-xs font-medium text-center w-full sm:w-[110px] ${EXECUTION_BADGE[r.execution] || BADGE_FALLBACK}`}>{r.execution}</span>
                             : <span className="text-gray-300 text-xs">—</span>}
                         </td>
+                        {/* The owner cell wraps. These are job titles now, and "Head of
+                            Product Management / Principal Product Manager" is 53 characters
+                            against the 18 of the function name it replaced — held on one
+                            line it set the column's width and squeezed the activity name
+                            and both badge columns to fit around it. */}
                         {hasOwners && (
-                          <td className="hidden sm:table-cell px-1.5 sm:px-3 py-3 text-gray-600 text-xs align-middle text-center sm:whitespace-nowrap">{r.suggested_owner || <span className="text-gray-300">—</span>}</td>
+                          <td className="hidden sm:table-cell px-1.5 sm:px-3 py-3 text-gray-600 text-xs align-middle text-center">{r.suggested_owner || <span className="text-gray-300">—</span>}</td>
                         )}
                         </>}
                       </tr>
