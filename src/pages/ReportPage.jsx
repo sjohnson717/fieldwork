@@ -123,6 +123,9 @@ function ActivityRow({ activity, stats, themeColor }) {
                       <span className="text-gray-400 ml-0.5">({count})</span>
                     </span>
                   ))}
+                  {stats.ownerUnknown > 0 && (
+                    <span className="text-gray-400"> · {stats.ownerUnknown} didn't know</span>
+                  )}
                   {stats.ownerAgreement < 0.6 && (
                     <span className="ml-2 text-amber-600 font-medium">⚠ ownership unclear</span>
                   )}

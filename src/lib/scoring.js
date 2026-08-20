@@ -1,3 +1,4 @@
+import { UNKNOWN_OWNER } from "@/lib/ownership";
 // Shared scoring constants and helpers used by ReportPage, AssessmentDiscussion,
 // and AssessmentResults to turn raw Response records into importance/execution/gap stats.
 
@@ -194,9 +195,18 @@ export function computeActivityStats(activities, responses) {
       .filter((v) => v !== null);
     const avgGap = avg(gaps);
 
+    // "I don't know" is an answer to the ownership question but not a role, so
+    // it is counted apart from the tally. Left in, it would sort to the top on
+    // any activity where confusion is the majority view and the report would
+    // name it as the owner. Kept out of the denominator below it would do the
+    // opposite — three people naming a role and five saying they don't know
+    // would read as unanimous. It dilutes agreement without ever winning it.
     const ownerTally = {};
+    let ownerUnknown = 0;
     for (const r of actResps) {
-      if (r.suggested_owner) ownerTally[r.suggested_owner] = (ownerTally[r.suggested_owner] || 0) + 1;
+      if (!r.suggested_owner) continue;
+      if (r.suggested_owner === UNKNOWN_OWNER) { ownerUnknown++; continue; }
+      ownerTally[r.suggested_owner] = (ownerTally[r.suggested_owner] || 0) + 1;
     }
     const ownerEntries = Object.entries(ownerTally).sort((a, b) => b[1] - a[1]);
     const topOwner = ownerEntries[0]?.[0] || null;
@@ -205,7 +215,7 @@ export function computeActivityStats(activities, responses) {
       ? ownerEntries[0][1] / ownerWithSuggestion
       : null;
 
-    stats[act.id] = { avgImp, avgExec, avgGap, n: actResps.length, topOwner, ownerAgreement, ownerEntries };
+    stats[act.id] = { avgImp, avgExec, avgGap, n: actResps.length, topOwner, ownerAgreement, ownerEntries, ownerUnknown };
   }
   return stats;
 }

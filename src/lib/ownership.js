@@ -7,6 +7,12 @@
 // the work. Without a mapping between the two, every product activity would
 // read as a mismatch.
 
+// Offered last on every activity. "Who does this currently?" has an honest
+// answer that is not a role, and without it a respondent who doesn't know
+// either guesses — which manufactures a consensus that isn't there — or leaves
+// the question blank, which is indistinguishable from skipping it.
+export const UNKNOWN_OWNER = "I don't know";
+
 // Always offered, in every survey, whatever the activities recommend.
 export const PRODUCT_TITLES = [
   "Head of Product Management / Principal Product Manager",
@@ -52,6 +58,7 @@ export const ownerOptionsFor = (activities = [], extraRoles = []) => {
     ...PRODUCT_TITLES,
     ...recommended.sort((a, b) => a.localeCompare(b)),
     ...extraRoles,
+    UNKNOWN_OWNER,
   ])];
 };
 
