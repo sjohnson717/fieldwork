@@ -282,6 +282,10 @@ export default function Assessment() {
   const [closingComments, setClosingComments] = useState("");
   const [missingCoverage, setMissingCoverage] = useState("");
   const [error, setError] = useState("");
+  // The facet index whose "nothing selected" warning has already been shown.
+  // An index rather than a flag: pressing Next twice on one page must go
+  // through, while arriving at a different blank page must warn again.
+  const [blankWarnedFor, setBlankWarnedFor] = useState(null);
   const [saving, setSaving] = useState(false);
   // One request at a time, latched in a ref rather than in `saving`.
   //
@@ -668,7 +672,27 @@ export default function Assessment() {
     setSaving(false);
   });
 
+  // Every activity on this page still unanswered. Partly answered does not
+  // count: leaving one activity alone is a legitimate choice, and warning about
+  // it would nag someone who is answering normally.
+  const currentPageIsBlank = () =>
+    answersForCurrentFacet().every(a =>
+      Object.entries(a).every(([k, v]) => k === "activity_id" || !v)
+    );
+
   const handleNext = once(async () => {
+  // A respondent paged through six blank pages and stopped one short of the
+  // end, leaving six rows of nulls and no way to tell whether he meant to skip
+  // or had not realised the ratings were tappable. Nothing here blocks him:
+  // forcing an answer produces junk, and "I don't know" is already a real
+  // answer to the execution question. The first Next on a wholly blank page
+  // says what to do and stops; a second goes through.
+  if (currentPageIsBlank() && blankWarnedFor !== currentFacetIndex) {
+    setBlankWarnedFor(currentFacetIndex);
+    setError("");
+    return;
+  }
+
   setSaving(true);
   setError("");
   try {
@@ -1024,6 +1048,28 @@ export default function Assessment() {
         </div>
 
         {error && <p className="text-red-500 text-sm mt-4">{error}</p>}
+
+        {/* Not styled as an error, because nothing has gone wrong: skipping a
+            page is allowed and the next press goes through. It leads with how
+            to answer rather than with the objection — the likeliest reason a
+            page is blank is not knowing the ratings are tappable.
+
+            Re-checks blankness on every render rather than trusting the flag,
+            so answering something clears the message immediately instead of
+            leaving it contradicting the page. */}
+        {blankWarnedFor === currentFacetIndex && currentPageIsBlank() && (
+          <div
+            role="status"
+            className="mt-4 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3"
+          >
+            <p className="text-sm text-amber-900">
+              Nothing is selected on this page yet — tap a rating under each activity to answer.
+            </p>
+            <p className="text-xs text-amber-800 mt-1">
+              If you meant to skip it, press Next again.
+            </p>
+          </div>
+        )}
 
         {/* Stopping halfway. The intro promises answers save as you go and that
             you can come back, which was only half true: a page's answers are

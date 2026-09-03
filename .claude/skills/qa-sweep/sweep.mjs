@@ -98,8 +98,12 @@ const openReview = async (page) => {
 // a driver advanced by whichever label it found.
 const onWrapup = (page) => page.evaluate(() => !!document.getElementById("closing-comments"));
 
+// Twenty, not ten: a page with nothing selected now takes two presses of Next
+// — the first says nothing is selected, the second goes through — so a survey
+// paged from start to finish without answering needs twice the clicks it used
+// to. Ten was one short of a seven-facet survey resumed at page three.
 const pageToWrapup = async (page) => {
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < 20; i++) {
     if (await onWrapup(page)) return true;
     const advanced = await page.evaluate(() => {
       const b = [...document.querySelectorAll("button")].find(x => /Next/.test(x.textContent));
@@ -274,7 +278,9 @@ await flow("next is single-submit", async (page) => {
 // Finishing marks the respondent complete in the same call as the last page.
 await flow("finishing completes the respondent", async (page) => {
   await page.goto(baseUrl + "/assess?t=TOKEN-RESP-4", { waitUntil: "networkidle0" });
-  for (let i = 0; i < 9; i++) {
+  // Same doubling as pageToWrapup: this flow answers nothing, so every page it
+  // crosses is blank and costs two presses.
+  for (let i = 0; i < 20; i++) {
     const advanced = await clickText(page, "Next");
     if (!advanced) break;
     await wait(700);
