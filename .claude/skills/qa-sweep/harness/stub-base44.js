@@ -20,12 +20,15 @@ const ANSWER_FIELDS = ["importance", "execution", "suggested_owner", "experience
 
 const state = {
   assessments: [
-    { ...TEAM_GAP, team_token: TEAM_TOKEN, buyer_token: BUYER_TOKEN },
+    { ...TEAM_GAP, team_token: TEAM_TOKEN, buyer_token: BUYER_TOKEN, tag_ids: ["tag-1"] },
     { ...PERSONAL, team_token: TEAM_TOKEN + "-P", buyer_token: BUYER_TOKEN + "-P" },
   ],
   respondents: RESPONDENTS.map(r => ({ ...r, assessment_id: TEAM_GAP.id })),
   responses: ALL_ANSWERS.map((a, i) => ({ id: `row-${i}`, assessment_id: TEAM_GAP.id, ...a })),
   notes: DISCUSSION_NOTES.map(n => ({ ...n })),
+  // One tag, on the gap assessment only, so the admin sidebar exercises both
+  // the chip on a tagged row and the absence of one on an untagged row.
+  tags: [{ id: "tag-1", name: "Northwind Systems" }],
   flags: [],
   calls: [],
   violations: [],
@@ -72,6 +75,29 @@ export const base44 = {
     Activity: { filter: async () => readOnly(ACTIVITIES) },
     JobTitle: { filter: async () => [{ name: "Product Management" }, { name: "Product Marketing" }, { name: "Engineering" }, { name: "Design" }] },
     Resource: { filter: async () => [] },
+    // Admin reads these two directly. The sweep's own routes are public and
+    // reach an assessment through publicAssessment, so the stub went without
+    // them for a long time — which meant /admin threw on mount and no admin
+    // page could be checked at all, including the two results tabs that hold
+    // every respondent's answers.
+    Tag: { list: async () => readOnly(state.tags) },
+    Assessment: {
+      // Staff-only, like Response.list: an anonymous caller must never be able
+      // to enumerate assessments and read their access codes and tokens.
+      list: async () => (state.user ? readOnly(state.assessments) : forbid("Assessment.list")),
+      get: async (id) => {
+        if (!state.user) return forbid("Assessment.get");
+        const found = state.assessments.find(a => a.id === id);
+        return found ? { ...found } : Promise.reject(new Error("not found"));
+      },
+      update: async (id, patch) => {
+        if (!state.user) return forbid("Assessment.update");
+        const row = state.assessments.find(a => a.id === id);
+        Object.assign(row, patch);
+        log("Assessment.update", patch);
+        return { ...row };
+      },
+    },
     Organization: { filter: async () => [{ id: "org-1", name: "Product Growth Leaders" }] },
     DiscussionNote: { filter: async () => readOnly(state.notes) },
     TeamLeaderFlag: {
@@ -215,6 +241,17 @@ export const base44 = {
 
       if (name === "listRespondents") {
         return { data: { respondents: readOnly(state.respondents) } };
+      }
+
+      // Called by AssessmentOverview on mount. Without it every admin route
+      // reported a console error that belonged to the harness, not the app —
+      // which is the kind of finding that teaches people to ignore findings.
+      if (name === "listUsers") {
+        if (!state.user) return forbid("listUsers");
+        return { data: { users: [
+          { id: "user-1", email: "qa@example.com", full_name: "QA Admin", role: "admin", org_id: "org-1" },
+          { id: "user-2", email: "facilitator@example.com", full_name: "Sam Facilitator", role: "facilitator", org_id: "org-1" },
+        ] } };
       }
 
       throw new Error(`QA stub: unhandled function "${name}"`);

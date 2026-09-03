@@ -53,6 +53,25 @@ const ROUTES = [
   { name: "team-dashboard", url: "/team/TOKEN-TEAM" },
   { name: "survey-wrapup", url: "/assess?t=TOKEN-RESP-4", wrapup: true, expect: "two last questions" },
   { name: "dead-link", url: "/assess?t=NOT-A-TOKEN", expect: "no longer valid" },
+  {
+    name: "admin-results-team-gap",
+    url: "/admin",
+    signIn: { email: "qa@example.com", role: "admin" },
+    admin: { assessment: "Product Team Effectiveness", tab: "Results" },
+    // Desktop only. Admin sits behind a 256px fixed sidebar and is used on a
+    // laptop; measuring it at phone widths reports sideways scroll nobody
+    // intends to fix, which is how a gate stops being read.
+    widths: [768, 1280],
+    expect: "respondents",
+  },
+  {
+    name: "admin-results-personal",
+    url: "/admin",
+    signIn: { email: "qa@example.com", role: "admin" },
+    admin: { assessment: "Product Manager Self-Assessment", tab: "Results" },
+    widths: [768, 1280],
+    expect: "capability",
+  },
 ];
 
 const wait = (ms) => new Promise(r => setTimeout(r, ms));
@@ -89,6 +108,24 @@ const pageToWrapup = async (page) => {
   return await onWrapup(page);
 };
 
+// Admin pages need a signed-in staff user and two clicks: pick an assessment
+// in the sidebar, then open a tab. They were outside this sweep entirely, which
+// left the two results tabs — the screens holding every respondent's answers —
+// checked at no width at all.
+const openAdminTab = async (page, { assessment, tab }) => {
+  await page.evaluate((title) => {
+    const b = [...document.querySelectorAll("aside li button")]
+      .find(x => x.textContent.includes(title));
+    if (b) b.click();
+  }, assessment);
+  await wait(500);
+  await page.evaluate((label) => {
+    const b = [...document.querySelectorAll("button")].find(x => x.textContent.trim() === label);
+    if (b) b.click();
+  }, tab);
+  await wait(900);
+};
+
 await mkdir(outDir, { recursive: true });
 await mkdir(path.join(outDir, "screens"), { recursive: true });
 
@@ -98,10 +135,19 @@ const flows = [];
 
 // ── Part one: layout and a11y across the matrix ──────────────────────────────
 for (const route of ROUTES) {
-  for (const width of WIDTHS) {
+  for (const width of (route.widths || WIDTHS)) {
     const page = await browser.newPage();
     await page.setViewport({ width, height: 900, deviceScaleFactor: 1, isMobile: width < 768, hasTouch: width < 768 });
+    if (route.signIn) {
+      // sessionStorage needs an origin, so land somewhere on it first, sign in,
+      // then go to the route. Anonymous routes must never do this — the stub's
+      // permission checks key off the signed-in user, and a stray session would
+      // hide exactly the refusals this sweep exists to catch.
+      await page.goto(baseUrl + "/landing", { waitUntil: "domcontentloaded" });
+      await page.evaluate((u) => window.qaSignIn(u), route.signIn);
+    }
     await page.goto(baseUrl + route.url, { waitUntil: "networkidle0" });
+    if (route.admin) await openAdminTab(page, route.admin);
     if (route.review) await openReview(page);
     if (route.wrapup) await pageToWrapup(page);
     await wait(400);
@@ -433,7 +479,7 @@ md.push(`\n## What this run did not cover\n`);
 md.push(`- Real Safari or iOS WebKit. Chromium only. See SKILL.md for the manual pass.`);
 md.push(`- Real Android hardware.`);
 md.push(`- Print output: run print-check.mjs and read the PDFs.`);
-md.push(`- Admin pages: they need an authenticated user; see SKILL.md.`);
+md.push(`- Admin pages other than the two results tabs. Those two now run, signed in as an admin, at desktop widths only.`);
 md.push(`- The live backend. This sweep runs against the stub, which enforces the RLS rules but holds fixture data.`);
 
 await writeFile(path.join(outDir, "report.md"), md.join("\n") + "\n");

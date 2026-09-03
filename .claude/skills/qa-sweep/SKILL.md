@@ -79,7 +79,8 @@ Be straight about this in any report you write from it.
 | Firefox | Not installed. Optional: `npx playwright install firefox webkit` and adapt `sweep.mjs`. |
 | Edge | Chromium, same engine as the sweep. Covered in substance. |
 | Real printers | Only PDFs are produced. |
-| `/readme`, `/facilitator-guide`, `/admin` | The harness mounts the survey and report routes only, so these render as its index page rather than as themselves. Both doc pages need nothing but a `MemoryRouter` — they use router hooks and no backend — so a throwaway harness alongside this one is enough; admin pages need auth stubs as well. |
+| `/readme`, `/facilitator-guide` | The harness does not mount them, so they render as its index page. Both need nothing but a `MemoryRouter` — router hooks and no backend — so a throwaway harness alongside this one is enough. |
+| Admin pages other than the two results tabs | `/admin` is mounted and the Results tab of each assessment type is swept, signed in as an admin. The other tabs — Overview, Activities, Ownership Roles, Discussion — are not, and adding one is a `ROUTES` entry with `signIn` and `admin: { assessment, tab }`. |
 | The live backend | The sweep runs against fixtures. It proves the app's behaviour, not the deployment's — see the live checks at the end. |
 
 Playwright's WebKit is worth adding if cross-engine coverage matters, but it is
@@ -132,6 +133,12 @@ not mistaken for a new regression:
   participant table clips at 320–375px. The respondent's own report, both
   registration screens, the resumed survey, the survey wrap-up and the dead-link
   screen are clean at every width.
+- The two admin results tabs joined the sweep in September 2026 and open with
+  their own baseline: `admin-results-personal` clean at both widths,
+  `admin-results-team-gap` 10px of sideways scroll at 768 — page padding plus
+  the fixed sidebar, not the tables. Both carry contrast findings on the
+  `text-gray-300` Remove control and the `text-gray-400` tag name, same class as
+  everything else in this list.
 - The buyer report's overlap counts rose again on 2026-08-20, to 8 at 320, 375
   and 390 and 1 at 430, with clipping up in step. Nothing on that page changed:
   the fixtures gained `preferred_owner` on four activities, so rows now carry a
@@ -158,10 +165,15 @@ stub's server-side state — not against the DOM alone. "The screen looks right"
 and "one row changed" are different claims, and the second is the one that
 matters.
 
-**Admin pages:** they need a signed-in user. Alias `@/lib/AuthContext` to a stub
-alongside the base44 alias in the generated `vite.config.js`, and set
-`window.__qa.user = { role: "admin" }` so the stub permits staff reads. Never log
-in with real credentials to test.
+**Admin pages:** add a `ROUTES` entry with `signIn: { email, role }` and
+`admin: { assessment, tab }` — the driver signs in through the auth stub, picks
+that assessment in the sidebar and opens that tab. Give it
+`widths: [768, 1280]`: admin sits behind a 256px fixed sidebar and is used on a
+laptop, so phone widths report sideways scroll nobody intends to fix.
+
+Never log in with real credentials to test. The stub's permission checks key off
+the signed-in user, so a route that should be anonymous must not carry `signIn` —
+a stray session hides exactly the refusals this sweep exists to catch.
 
 **Awkward data belongs in `fixtures.js`**, not in the driver. The fixtures
 already carry the long activity names, the half-answered activity, the activity
