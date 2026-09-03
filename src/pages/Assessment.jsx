@@ -134,6 +134,24 @@ function RatingButton({ options, value, onChange, colorMap }) {
 //
 // The axes come from the same constants the activity cards use, so the intro
 // cannot describe the survey differently from the survey.
+
+// Reading an activity, weighing it, and making three judgements about it.
+//
+// This is the rate the facilitator guide's preset table already implies — 22
+// activities in ~15 minutes, 32 in ~20, 42 in ~30 — and it reproduces all four
+// of those figures exactly. It replaces a 15-second guess that undercut the
+// guide roughly threefold and had the intro promising five minutes for work
+// the same repo told facilitators to budget fifteen to twenty for.
+//
+// Under-promising is the expensive direction to be wrong in: someone told five
+// minutes who is still answering at fifteen abandons, and a half-finished
+// personal profile is worth nothing to them.
+//
+// Still an estimate, not a measurement. Revisit once there are ~10 real
+// completions: Respondent.created_date to completed_date gives the actual
+// distribution, and the median of that beats anyone's guess.
+const SECONDS_PER_ACTIVITY = 40;
+
 function IntroPurpose({ isPersonal, activityCount, showOwnership, blurb }) {
   // The caller passes the same condition the activity card renders on, so the
   // intro cannot promise a question the survey does not ask.
@@ -143,11 +161,13 @@ function IntroPurpose({ isPersonal, activityCount, showOwnership, blurb }) {
   const countWord = { 1: "one thing", 2: "two things", 3: "three things", 4: "four things" }[questions.length]
     || `${questions.length} things`;
 
-  // A rounded guess, not a measurement — a few seconds of reading and a few
-  // taps per activity. Stated as "about" and rounded to five minutes because
-  // the honest precision here is low, and a figure like "13 minutes" would
-  // claim more than anyone knows.
-  const minutes = Math.max(5, Math.round((activityCount * 0.25) / 5) * 5);
+  // Stated as "about" and rounded to five minutes because the honest precision
+  // here is low, and a figure like "13 minutes" would claim more than anyone
+  // knows. Floored at five so a tiny assessment never reads as instant.
+  const minutes = Math.max(
+    5,
+    Math.round((activityCount * SECONDS_PER_ACTIVITY) / 60 / 5) * 5,
+  );
 
   return (
     <div className="mb-6 text-sm text-gray-600 space-y-3">
