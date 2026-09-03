@@ -21,7 +21,10 @@ export function parseCSV(text) {
 
   // Strip a UTF-8 BOM — Excel writes one, and it would otherwise become part of
   // the first header name and break the column lookup.
-  const src = text.replace(/^﻿/, "");
+  // \uFEFF as an escape, not the character itself: this used to hold a
+  // literal BOM, which is invisible in an editor and silently deleted by a
+  // careless edit to the line.
+  const src = text.replace(/^\uFEFF/, "");
 
   for (let i = 0; i < src.length; i++) {
     const c = src[i];
