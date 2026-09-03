@@ -12,6 +12,7 @@ import {
 import { FACET_ORDER, FACET_SUBTITLES } from "@/lib/scoring";
 import PrintCredit from "@/components/PrintCredit";
 import ChaosAssessmentPlug from "@/components/ChaosAssessmentPlug";
+import ResumeLink from "@/components/ResumeLink";
 
 const QUARTZ_ICON = "https://media.base44.com/images/public/6a29ff3bc8effbeb3d637555/9e97ff5e6_Quartzicon.png";
 
@@ -212,8 +213,6 @@ export default function PersonalProfileReport({
   myToken,
   returningCompleted,
   onRevise,
-  onCopyLink,
-  copiedLink,
   resources = [],
   // Set by the facilitator's preview, which renders someone else's profile:
   // revising is theirs to do, and the resume link is theirs to hold.
@@ -320,24 +319,7 @@ export default function PersonalProfileReport({
             </button>
           )}
         </div>
-        {myToken && (
-          <div>
-            <p className="text-xs text-gray-500 mb-1.5">
-              Bookmark your own link to come back to this and update it at any time. It's yours — anyone with it can change your answers.
-            </p>
-            <div className="flex items-center gap-2 bg-gray-100 border border-gray-200 rounded-lg px-3 py-2 max-w-lg">
-              <p className="text-[11px] text-gray-500 font-mono flex-1 truncate">
-                {`${window.location.origin}/assess?t=${myToken}`}
-              </p>
-              <button
-                onClick={onCopyLink}
-                className="shrink-0 text-xs font-medium text-blue-600 hover:text-blue-800 border border-blue-200 hover:border-blue-300 px-2.5 py-1 rounded-lg transition-colors"
-              >
-                {copiedLink ? "Copied!" : "Copy"}
-              </button>
-            </div>
-          </div>
-        )}
+        <ResumeLink token={myToken} className="max-w-lg" />
       </div>
 
       {/* ── 1. Your Product Profile ── */}

@@ -7,6 +7,7 @@ import { PERSONAL_AXES, computePersonProfile } from "@/lib/personal-scoring";
 import { rebuildResponses } from "@/lib/responses";
 import { usePrintSafeUrl } from "@/lib/print-safe-url";
 import { claimToken, resumeLinkFor } from "@/lib/token-address";
+import ResumeLink from "@/components/ResumeLink";
 import { FACET_ORDER } from "@/lib/scoring";
 import PersonalProfileReport from "@/components/PersonalProfileReport";
 import TeamGapSelfReport from "@/components/TeamGapSelfReport";
@@ -249,6 +250,10 @@ export default function Assessment() {
   // stayed empty and read on the facilitator's roster as someone who never
   // responded. A ref is written and seen synchronously, so the second call
   // returns before it can create anything.
+  // Set when someone asks to stop and come back. Their answers are written
+  // first, so the panel can say they are saved without that being a promise
+  // about the page they are still looking at.
+  const [pausedLink, setPausedLink] = useState(false);
   const inFlight = useRef(false);
   const once = (fn) => async (...args) => {
     if (inFlight.current) return;
@@ -568,20 +573,16 @@ export default function Assessment() {
   // never offer a role none of its activities recommend or miss one they do.
   const ownerOptions = ownerOptionsFor(activities, assessment?.roles || []);
 
-const handleNext = once(async () => {
-  setSaving(true);
-  setError("");
-  try {
-    const isLastFacet = currentFacetIndex >= availableFacets.length - 1;
-
-    // Answers keyed by activity, not by row id. The browser used to hold the
-    // Response id and choose create or update for itself, which is how this
-    // page came to depend on a write respondents are not permitted to make —
-    // Response.rls.update is admin, org_admin and facilitator only, so every
-    // second save of a page was refused. saveResponses resolves the token
-    // server-side and upserts by activity instead. Only the fields this
-    // assessment type asks about are sent; the function writes no others.
-    const answers = facetActivities.map(activity => {
+// The write payload for the page on screen. Shared by Next and by
+  // "save and finish later" so the two cannot come to send different shapes —
+  // a pause that wrote a subtly different record would be the kind of bug that
+  // only shows up in someone's half-finished answers.
+  //
+  // Keyed by activity, not by row id: saveRespondentAnswers resolves the token
+  // server-side and upserts by activity, because Response.rls.update excludes
+  // respondents. Only the fields this assessment type asks about are sent.
+  const answersForCurrentFacet = () =>
+    facetActivities.map(activity => {
       const r = responses[activity.id] || {};
       return {
         activity_id: activity.id,
@@ -594,6 +595,45 @@ const handleNext = once(async () => {
             }),
       };
     });
+
+  // "Save and finish later". The survey already writes a page of answers when
+  // Next is pressed, but only then — so someone interrupted halfway down a
+  // facet has answers on screen that no save has seen, and no way to get their
+  // link even if they had. This writes the current page and then hands over
+  // the link, which is the pair of things "come back later" actually needs.
+  //
+  // Deliberately does not advance the facet. Someone pausing has not finished
+  // this page, and moving them on would mean returning to a page they never
+  // completed with no sign of where they stopped.
+  const handleSaveAndPause = once(async () => {
+    setSaving(true);
+    setError("");
+    try {
+      await saveRespondentAnswers(myToken, answersForCurrentFacet());
+      setPausedLink(true);
+    } catch (e) {
+      console.error("handleSaveAndPause error:", e);
+      // The link is useless if the answers behind it did not land, so this
+      // reports the failure rather than showing the panel anyway.
+      setError("Couldn't save just now. Please try again.");
+    }
+    setSaving(false);
+  });
+
+  const handleNext = once(async () => {
+  setSaving(true);
+  setError("");
+  try {
+    const isLastFacet = currentFacetIndex >= availableFacets.length - 1;
+
+    // Answers keyed by activity, not by row id. The browser used to hold the
+    // Response id and choose create or update for itself, which is how this
+    // page came to depend on a write respondents are not permitted to make —
+    // Response.rls.update is admin, org_admin and facilitator only, so every
+    // second save of a page was refused. saveResponses resolves the token
+    // server-side and upserts by activity instead. Only the fields this
+    // assessment type asks about are sent; the function writes no others.
+    const answers = answersForCurrentFacet();
 
     // Completion travels with the last page's answers rather than as a second
     // call after it.
@@ -936,6 +976,49 @@ const handleNext = once(async () => {
         </div>
 
         {error && <p className="text-red-500 text-sm mt-4">{error}</p>}
+
+        {/* Stopping halfway. The intro promises answers save as you go and that
+            you can come back, which was only half true: a page's answers are
+            written on Next, but the link needed to return was shown nowhere
+            until the survey was finished. Someone interrupted on facet three
+            had to start over.
+
+            Not in the address bar, and not a bookmark — see
+            src/lib/token-address.js. The link is text on the page, marked
+            no-print, and it appears only after the write succeeds. */}
+        {pausedLink ? (
+          <div className="mt-6 bg-white border border-gray-200 rounded-xl p-5">
+            <p className="text-sm font-semibold text-gray-900 mb-1">Your answers so far are saved</p>
+            <p className="text-xs text-gray-500 mb-3">
+              Come back to this link whenever you like and pick up where you left off. It opens your
+              answers, so keep it to yourself.
+            </p>
+            <ResumeLink
+              token={myToken}
+              description="Your link — copy it somewhere safe before you close this tab."
+            />
+            <button
+              onClick={() => setPausedLink(false)}
+              className="mt-4 text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors"
+            >
+              Keep going →
+            </button>
+          </div>
+        ) : (
+          <div className="mt-6 text-center">
+            <button
+              onClick={handleSaveAndPause}
+              disabled={saving}
+              // px-4 py-3 rather than a bare text link: at 20px tall this was
+              // the smallest tap target on a page whose rating pills are
+              // already under the 44px guideline, and it is reached one-handed
+              // on a phone. The padding takes it to 44.
+              className="text-sm text-gray-500 hover:text-gray-800 disabled:opacity-50 underline underline-offset-2 transition-colors px-4 py-3"
+            >
+              {saving ? "Saving…" : "Save and finish later"}
+            </button>
+          </div>
+        )}
 
         <div className="mt-6 flex justify-between items-center">
           <div>
