@@ -6,13 +6,12 @@ import { getBuyerReport } from "@/lib/public-assessment";
 import { ownerMatchesRecommendation } from "@/lib/ownership";
 import { usePrintSafeUrl } from "@/lib/print-safe-url";
 import { claimToken } from "@/lib/token-address";
+import GapBar from "@/components/GapBar";
 import ExecSummary from "@/components/ExecSummary";
 import ChaosAssessmentPlug from "@/components/ChaosAssessmentPlug";
 import {
   THEME_GROUPS,
   FACET_SUBTITLES,
-  IMPORTANCE_LABEL,
-  EXECUTION_LABEL,
   FACET_ORDER,
   GAP_BUCKETS,
   avg,
@@ -28,37 +27,7 @@ const QUARTZ_LOGO = "https://media.base44.com/images/public/6a29ff3bc8effbeb3d63
 
 // ── Sub-components ───────────────────────────────────────────────────────────
 
-function StatCard({ value, label, color }) {
-  return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-6 py-5 text-center">
-      <div className="text-3xl font-bold mb-1" style={{ color }}>{value}</div>
-      <div className="text-xs text-gray-500 font-medium uppercase tracking-wide">{label}</div>
-    </div>
-  );
-}
 
-function GapBar({ importance, execution, gap, maxWidth = 200 }) {
-  const impPct  = importance !== null ? (importance / 3) * 100 : 0;
-  const execPct = execution  !== null ? (execution  / 3) * 100 : 0;
-  return (
-    <div className="space-y-1.5">
-      <div className="flex items-center gap-2">
-        <span className="text-[10px] text-gray-400 w-16 text-right shrink-0">Importance</span>
-        <div className="flex-1 bg-gray-100 rounded-full h-2 max-w-[200px]">
-          <div className="h-2 rounded-full bg-[#3366FF] transition-all" style={{ width: `${impPct}%` }} />
-        </div>
-        <span className="text-[10px] text-gray-500 w-20 shrink-0">{IMPORTANCE_LABEL[Math.round(importance)] || "—"}</span>
-      </div>
-      <div className="flex items-center gap-2">
-        <span className="text-[10px] text-gray-400 w-16 text-right shrink-0">Execution</span>
-        <div className="flex-1 bg-gray-100 rounded-full h-2 max-w-[200px]">
-          <div className="h-2 rounded-full bg-[#11CC77] transition-all" style={{ width: `${execPct}%` }} />
-        </div>
-        <span className="text-[10px] text-gray-500 w-20 shrink-0">{EXECUTION_LABEL[Math.round(execution)] || "—"}</span>
-      </div>
-    </div>
-  );
-}
 
 function ActivityRow({ activity, stats, themeColor }) {
   const [expanded, setExpanded] = useState(false);
@@ -110,7 +79,7 @@ function ActivityRow({ activity, stats, themeColor }) {
 
       {expanded && stats && (
         <div className="px-5 pb-4 space-y-4">
-          <GapBar importance={stats.avgImp} execution={stats.avgExec} gap={gap} />
+          <GapBar importance={stats.avgImp} execution={stats.avgExec} />
           {(stats.ownerEntries?.length > 0 || activity.preferred_owner) && (
             <div className="space-y-1">
               {stats.ownerEntries?.length > 0 && (

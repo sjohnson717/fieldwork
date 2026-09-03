@@ -6,13 +6,12 @@ import {
   computeDevelopmentOpportunities,
   dominantBucket,
   DOMINANT_SUMMARY,
-  heatClass,
-  normalize,
 } from "@/lib/personal-scoring";
 import { FACET_ORDER, FACET_SUBTITLES } from "@/lib/scoring";
 import PrintCredit from "@/components/PrintCredit";
 import ChaosAssessmentPlug from "@/components/ChaosAssessmentPlug";
 import ResumeLink from "@/components/ResumeLink";
+import ActivityAnswerTable from "@/components/ActivityAnswerTable";
 
 const QUARTZ_ICON = "https://media.base44.com/images/public/6a29ff3bc8effbeb3d637555/9e97ff5e6_Quartzicon.png";
 
@@ -516,56 +515,14 @@ export default function PersonalProfileReport({
               : `All ${activities.length} activities. The ${activities.length - profile.answeredCount} you didn't rate show as a dash.`
         }
       />
-      {FACET_ORDER.filter(f => activities.some(a => a.facet === f)).map(facet => {
-        const facetActs = activities.filter(a => a.facet === facet);
-        return (
-          <div key={facet} className="mb-6">
-            <div className="facet-heading text-xs font-bold uppercase tracking-widest text-blue-600 mb-2 px-1">{facet}</div>
-            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-gray-100 bg-gray-50">
-                    <th className="text-left px-4 py-2.5 text-xs font-semibold text-gray-500 w-2/5">Activity</th>
-                    {PERSONAL_AXES.map(axis => (
-                      <th key={axis.key} className="text-center px-3 py-2.5 text-xs font-semibold text-gray-500">{axis.label}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {facetActs.map(activity => {
-                    const row = profile.rows.find(r => r.activity.id === activity.id);
-                    const resp = row?.response || {};
-                    return (
-                      <tr key={activity.id} className="border-b border-gray-50 last:border-0">
-                        <td className="px-4 py-2.5 text-gray-800">{activity.name}</td>
-                        {PERSONAL_AXES.map(axis => (
-                          <td key={axis.key} className="px-3 py-2.5 text-center">
-                            {resp[axis.key] ? (
-                              /* One intensity ramp, not a good/bad palette, and
-                                 the same one the facilitator's matrix uses. Red
-                                 for a low answer would be wrong twice over: this
-                                 is a document its owner hands to a manager, and
-                                 on Interest a low answer is a preference, not a
-                                 deficiency — marking it as failure inverts the
-                                 axis the report is built on. Shade says more or
-                                 less, which is all these answers claim. */
-                              <span className={`inline-block text-xs font-medium px-2.5 py-1 rounded-full ${heatClass(normalize(axis.key, resp[axis.key]))}`}>
-                                {resp[axis.key]}
-                              </span>
-                            ) : (
-                              <span className="text-xs text-gray-300">—</span>
-                            )}
-                          </td>
-                        ))}
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        );
-      })}
+      {/* Answers come from profile.rows; the shared table wants them keyed by
+          activity, so they are mapped here rather than teaching the table a
+          second shape. */}
+      <ActivityAnswerTable
+        activities={activities}
+        responses={Object.fromEntries(profile.rows.map(r => [r.activity.id, r.response || {}]))}
+        isPersonal
+      />
 
       {/* Screen only — the printed pointer rides on the cover's credit. */}
       <div className="no-print"><ChaosAssessmentPlug /></div>

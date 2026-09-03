@@ -2,11 +2,10 @@ import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { getAssignedActivities } from "@/lib/activities";
 import { ownerMatchesRecommendation, ownerOptionsFor } from "@/lib/ownership";
+import GapBar from "@/components/GapBar";
 import {
   THEME_GROUPS,
   FACET_SUBTITLES,
-  IMPORTANCE_LABEL,
-  EXECUTION_LABEL,
   avg,
   gapColor,
   gapLabel,
@@ -23,32 +22,6 @@ const STATUS_OPTIONS = ["not_discussed", "in_discussion", "decision_recorded", "
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
-function GapBar({ importance, execution }) {
-  const impPct  = importance !== null ? (importance / 3) * 100 : 0;
-  const execPct = execution  !== null ? (execution  / 3) * 100 : 0;
-  return (
-    <div className="space-y-1.5">
-      <div className="flex items-center gap-2">
-        <span className="text-[10px] text-gray-400 w-16 text-right shrink-0">Importance</span>
-        <div className="flex-1 bg-gray-100 rounded-full h-2 max-w-[200px]">
-          <div className="h-2 rounded-full bg-[#3366FF] transition-all" style={{ width: `${impPct}%` }} />
-        </div>
-        <span className="text-[10px] text-gray-500 w-20 shrink-0">
-          {importance !== null ? IMPORTANCE_LABEL[Math.round(importance)] : "—"}
-        </span>
-      </div>
-      <div className="flex items-center gap-2">
-        <span className="text-[10px] text-gray-400 w-16 text-right shrink-0">Execution</span>
-        <div className="flex-1 bg-gray-100 rounded-full h-2 max-w-[200px]">
-          <div className="h-2 rounded-full bg-[#11CC77] transition-all" style={{ width: `${execPct}%` }} />
-        </div>
-        <span className="text-[10px] text-gray-500 w-20 shrink-0">
-          {execution !== null ? EXECUTION_LABEL[Math.round(execution)] : "—"}
-        </span>
-      </div>
-    </div>
-  );
-}
 
 function ActivityRow({ activity, stats, note, draftNote, draftDecision, draftRole, assessmentRoles, saving, onDraftNoteChange, onDraftDecisionChange, onDraftRoleChange, onSave, onToggleFlag, onStatusChange }) {
   const [expanded, setExpanded] = useState(false);
