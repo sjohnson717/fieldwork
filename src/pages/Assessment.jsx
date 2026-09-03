@@ -282,10 +282,10 @@ export default function Assessment() {
   const [closingComments, setClosingComments] = useState("");
   const [missingCoverage, setMissingCoverage] = useState("");
   const [error, setError] = useState("");
-  // The facet index whose "nothing selected" warning has already been shown.
-  // An index rather than a flag: pressing Next twice on one page must go
-  // through, while arriving at a different blank page must warn again.
-  const [blankWarnedFor, setBlankWarnedFor] = useState(null);
+  // Whether the "nothing selected" warning has already been shown. Shown at
+  // most once, on the first page: a second Next must go through, and every
+  // later page goes through untouched.
+  const [blankWarned, setBlankWarned] = useState(false);
   const [saving, setSaving] = useState(false);
   // One request at a time, latched in a ref rather than in `saving`.
   //
@@ -685,10 +685,14 @@ export default function Assessment() {
   // end, leaving six rows of nulls and no way to tell whether he meant to skip
   // or had not realised the ratings were tappable. Nothing here blocks him:
   // forcing an answer produces junk, and "I don't know" is already a real
-  // answer to the execution question. The first Next on a wholly blank page
-  // says what to do and stops; a second goes through.
-  if (currentPageIsBlank() && blankWarnedFor !== currentFacetIndex) {
-    setBlankWarnedFor(currentFacetIndex);
+  // answer to the execution question. The first Next on a wholly blank first
+  // page says what to do and stops; a second goes through.
+  //
+  // Only the first page. The point is to teach that the ratings are tappable,
+  // which one mention does; repeating it on every blank page nags a respondent
+  // who has understood and is deliberately skipping.
+  if (currentFacetIndex === 0 && !blankWarned && currentPageIsBlank()) {
+    setBlankWarned(true);
     setError("");
     return;
   }
@@ -1054,10 +1058,11 @@ export default function Assessment() {
             to answer rather than with the objection — the likeliest reason a
             page is blank is not knowing the ratings are tappable.
 
-            Re-checks blankness on every render rather than trusting the flag,
-            so answering something clears the message immediately instead of
-            leaving it contradicting the page. */}
-        {blankWarnedFor === currentFacetIndex && currentPageIsBlank() && (
+            Re-checks blankness and the page on every render rather than
+            trusting the flag, so answering something — or moving on — clears
+            the message immediately instead of leaving it contradicting the
+            page. */}
+        {blankWarned && currentFacetIndex === 0 && currentPageIsBlank() && (
           <div
             role="status"
             className="mt-4 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3"
