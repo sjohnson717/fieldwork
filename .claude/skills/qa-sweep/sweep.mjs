@@ -46,7 +46,11 @@ const WIDTHS = [320, 375, 390, 430, 768, 1280];
 const ROUTES = [
   { name: "registration-team-gap", url: "/assess?code=QA111", expect: "Before we begin" },
   { name: "registration-personal", url: "/assess?code=QA222", expect: "Before we begin" },
-  { name: "resume-partial", url: "/assess?t=TOKEN-RESP-4", expect: "DEFINE" },
+  // resp-4 answered act-1 and act-2 (DEFINE) and act-3 (COMMIT), so the first
+  // page with anything left to do is DESCRIBE. Asserting the facet name makes
+  // this route a regression test for where a resumed survey opens — it used to
+  // open on page one regardless, and send someone back through finished pages.
+  { name: "resume-partial", url: "/assess?t=TOKEN-RESP-4", expect: "DESCRIBE" },
   { name: "respondent-report", url: "/assess?t=TOKEN-RESP-1", review: true, expect: "where you'd focus first" },
   { name: "personal-profile", url: "/assess?t=TOKEN-PERSONAL", review: true, expect: "part one" },
   { name: "buyer-report", url: "/report/TOKEN-BUYER", expect: "executive summary" },
@@ -236,13 +240,20 @@ await flow("back then forward re-saves without duplicating", async (page) => {
   await clickText(page, "Next");
   await wait(1000);
   const state = await page.evaluate(() => {
-    const rows = window.__qa.responses.filter(r => r.respondent_id === "resp-4" && r.activity_id === "act-1");
-    return { count: rows.length, importance: rows[0]?.importance, saves: window.__qa.calls.filter(c => c.name === "fn:saveResponses").length };
+    // Whichever activity this page happens to hold, read from the first save
+    // rather than named here. Hard-coding act-1 only worked while a resumed
+    // survey always opened on page one; it now opens on the first unfinished
+    // page, and a test pinned to the old behaviour would fail for the wrong
+    // reason.
+    const saveCalls = window.__qa.calls.filter(c => c.name === "fn:saveResponses");
+    const firstEdited = saveCalls[0]?.payload?.answers?.[0]?.activity_id;
+    const rows = window.__qa.responses.filter(r => r.respondent_id === "resp-4" && r.activity_id === firstEdited);
+    return { activity: firstEdited, count: rows.length, importance: rows[0]?.importance, saves: saveCalls.length };
   });
   const errorShown = await page.evaluate(() => /Error saving responses/.test(document.body.innerText));
   return {
     pass: state.count === 1 && state.importance === "Not needed" && !errorShown,
-    detail: `${state.count} row(s) for act-1, importance=${state.importance}, ${state.saves} saves, errorShown=${errorShown}`,
+    detail: `${state.count} row(s) for ${state.activity}, importance=${state.importance}, ${state.saves} saves, errorShown=${errorShown}`,
   };
 });
 

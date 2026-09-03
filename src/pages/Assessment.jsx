@@ -12,6 +12,41 @@ import { FACET_ORDER, IMPORTANCE_LABEL, EXECUTION_LABEL } from "@/lib/scoring";
 import PersonalProfileReport from "@/components/PersonalProfileReport";
 import TeamGapSelfReport from "@/components/TeamGapSelfReport";
 
+// The facets this assessment actually uses, in order. Extracted because the
+// resume calculation below needs it before any state is set, and the render
+// needs it after — two copies of the same filter is how they drift.
+const facetsIn = (activities) => FACET_ORDER.filter(f => activities.some(a => a.facet === f));
+
+// Which page to open when someone returns.
+//
+// This used to be page one, always. Answers were all restored, so nothing was
+// lost, but somebody who stopped on page six had to press Next through five
+// finished pages to reach the work, re-saving each one on the way. "Pick up
+// where you left off" was on the screen, and it was not what happened.
+//
+// The first page holding an activity with no answer at all. Not the furthest
+// page they reached: someone who read a page and answered nothing has not
+// started it, and dropping them past it would skip the questions. Someone who
+// deliberately left one activity blank and moved on is sent back to it, which
+// is the case this gets wrong, and it costs them a press of Next.
+//
+// Everything answered means they finished the questions without submitting, so
+// open the last page — one Next from the wrap-up.
+const resumeFacetIndex = (activities, responses, isPersonal) => {
+  const fields = isPersonal
+    ? PERSONAL_AXES.map(a => a.key)
+    : ["importance", "execution", "suggested_owner"];
+  const facets = facetsIn(activities);
+  const untouched = (activity) => {
+    const answer = responses[activity.id] || {};
+    return !fields.some(k => answer[k]);
+  };
+  const index = facets.findIndex(f =>
+    activities.filter(a => a.facet === f).some(untouched)
+  );
+  return index === -1 ? Math.max(0, facets.length - 1) : index;
+};
+
 const HERO_IMAGE = "https://media.base44.com/images/public/6a29ff3bc8effbeb3d637555/2ffc15b8c_curated-lifestyle-H3ZVdxBRIW0-unsplash.jpg";
 
 // The rated options come from scoring.js, which is where their numeric values
@@ -353,7 +388,12 @@ export default function Assessment() {
     setActivities(acts);
     const titles = await base44.entities.JobTitle.filter({ active: true }, "sort_order");
     setAllTitles(titles.map(t => t.name));
-    setResponses(rebuildResponses(saved || []));
+    const rebuilt = rebuildResponses(saved || []);
+    setResponses(rebuilt);
+    // Open on the first unfinished page rather than the first page. Set here
+    // because this is the one place holding the activities and the saved
+    // answers together, before anything renders.
+    setCurrentFacetIndex(resumeFacetIndex(acts, rebuilt, a.assessment_type === "personal"));
   };
 
   const loadFromToken = async (t) => {
@@ -570,7 +610,7 @@ export default function Assessment() {
     ? "Your answers describe your own experience, skills and interests. The profile is yours to keep, and sharing it is your call."
     : "Your responses are confidential and will only be seen in aggregate by your team leader.";
 
-  const availableFacets = FACET_ORDER.filter(f => activities.some(a => a.facet === f));
+  const availableFacets = facetsIn(activities);
   const currentFacet = availableFacets[currentFacetIndex];
   const facetActivities = activities.filter(a => a.facet === currentFacet);
 
