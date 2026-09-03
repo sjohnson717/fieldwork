@@ -56,7 +56,6 @@ function ActivityChecklist({ set, activities, onToggle }) {
 
       {byFacet.map(({ facet, items }) => {
         const allSelected = items.every(a => selectedIds.has(a.id));
-        const noneSelected = items.every(a => !selectedIds.has(a.id));
         return (
           <div key={facet}>
             <div className="flex items-center justify-between mb-1.5">

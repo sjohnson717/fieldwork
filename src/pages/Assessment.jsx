@@ -8,14 +8,22 @@ import { rebuildResponses } from "@/lib/responses";
 import { usePrintSafeUrl } from "@/lib/print-safe-url";
 import { claimToken, resumeLinkFor } from "@/lib/token-address";
 import ResumeLink from "@/components/ResumeLink";
-import { FACET_ORDER } from "@/lib/scoring";
+import { FACET_ORDER, IMPORTANCE_LABEL, EXECUTION_LABEL } from "@/lib/scoring";
 import PersonalProfileReport from "@/components/PersonalProfileReport";
 import TeamGapSelfReport from "@/components/TeamGapSelfReport";
 
 const HERO_IMAGE = "https://media.base44.com/images/public/6a29ff3bc8effbeb3d637555/2ffc15b8c_curated-lifestyle-H3ZVdxBRIW0-unsplash.jpg";
 
-const IMPORTANCE_OPTIONS = ["Not needed", "Nice to have", "Important", "Critical"];
-const EXECUTION_OPTIONS = ["Not done", "Inconsistent", "Good", "Excellent", "I don't know"];
+// The rated options come from scoring.js, which is where their numeric values
+// live — retyped here, the two lists could drift and the survey would offer an
+// answer nothing knows how to score.
+//
+// Execution takes one more: "I don't know" is an answer to the question but not
+// a rating, and responseGap treats it as unrated. Expressed as the labels plus
+// that, so the difference is one visible line rather than two lists that happen
+// to differ by an element.
+const IMPORTANCE_OPTIONS = IMPORTANCE_LABEL;
+const EXECUTION_OPTIONS = [...EXECUTION_LABEL, "I don't know"];
 
 const IMPORTANCE_COLORS = {
   "Not needed":   { border: "border-gray-400",   bg: "bg-gray-400",   text: "text-gray-700" },
@@ -423,7 +431,7 @@ export default function Assessment() {
         await loadSurveyData(a, session.responses);
         setStep("token-intro");
       }
-    } catch (e) {
+    } catch {
       setError("Something went wrong. Please try again.");
       setStep("dead-end");
     }
@@ -439,7 +447,7 @@ export default function Assessment() {
       // Activities and job titles were loaded before the intro rendered, so
       // starting is a state change rather than another wait.
       setStep("rating");
-    } catch (e) {
+    } catch {
       setError("Something went wrong. Please try again.");
     } finally {
       setSaving(false);
@@ -473,7 +481,7 @@ export default function Assessment() {
       // has already agreed to start.
       await loadSurveyData(found, []);
       setStep("intro");
-    } catch (e) {
+    } catch {
       retry("Something went wrong. Please try again.");
     } finally {
       setSaving(false);
@@ -499,7 +507,7 @@ export default function Assessment() {
       // Activities and job titles were loaded before the intro rendered, so
       // starting is a state change rather than another wait.
       setStep("rating");
-    } catch (e) {
+    } catch {
       setError("Something went wrong. Please try again.");
     } finally {
       setSaving(false);

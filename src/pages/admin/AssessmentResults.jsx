@@ -1,21 +1,18 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { FACET_ORDER, IMPORTANCE_SCORE, EXECUTION_SCORE, avg, fmt } from "@/lib/scoring";
+import { FACET_ORDER, IMPORTANCE_SCORE, EXECUTION_SCORE, responseGap, avg, fmt } from "@/lib/scoring";
 import { loadResultsData, deleteRespondentCascade } from "@/lib/respondents";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import RespondentRoster from "@/components/RespondentRoster";
 import RespondentPreview from "@/components/RespondentPreview";
 import SurveyFeedback from "@/components/SurveyFeedback";
 
-// Gap = high importance, low execution = most actionable
-const gapScore = (imp, exec) => {
-  const i = IMPORTANCE_SCORE[imp] ?? -1;
-  const e = EXECUTION_SCORE[exec] ?? -1;
-  if (i < 0 || e < 0) return null;
-  return i - e;
-};
-
-const importanceColor = (avg) => {
+// Tailwind classes for a heatmap cell, not colours for a swatch. Named
+// *CellClass because the gap one used to be `gapColor`, which is also exported
+// by scoring.js returning a hex string for the report's dots — the same name
+// for two different things, one careless import from a bug that would have
+// rendered "#FF3333" as a class name and simply shown nothing.
+const importanceCellClass = (avg) => {
   if (avg === null) return "bg-gray-50 text-gray-300";
   if (avg >= 2.5) return "bg-[#3366FF] text-white";
   if (avg >= 1.5) return "bg-[#4d80ff] text-[#1a2e7a]";
@@ -23,7 +20,7 @@ const importanceColor = (avg) => {
   return "bg-gray-100 text-gray-500";
 };
 
-const executionColor = (avg) => {
+const executionCellClass = (avg) => {
   if (avg === null) return "bg-gray-50 text-gray-300";
   if (avg >= 2.5) return "bg-emerald-600 text-white";
   if (avg >= 1.5) return "bg-emerald-300 text-emerald-900";
@@ -31,7 +28,7 @@ const executionColor = (avg) => {
   return "bg-gray-100 text-gray-500";
 };
 
-const gapColor = (gap) => {
+const gapCellClass = (gap) => {
   if (gap === null) return "bg-gray-50 text-gray-300";
   if (gap >= 2) return "bg-gray-900 text-white";
   if (gap >= 1) return "bg-gray-500 text-white";
@@ -140,7 +137,7 @@ export default function AssessmentResults({ assessment }) {
     const avgImp = avg(importanceScores);
     const avgExec = avg(executionScores);
     const gaps = actResponses
-      .map(r => gapScore(r.importance, r.execution))
+      .map(r => responseGap(r))
       .filter(v => v !== null);
     const avgGap = avg(gaps);
     return { ...act, avgImp, avgExec, avgGap, n: actResponses.length };
@@ -157,22 +154,22 @@ export default function AssessmentResults({ assessment }) {
     if (!r) return null;
     if (view === "importance") return IMPORTANCE_SCORE[r.importance] ?? null;
     if (view === "execution") return EXECUTION_SCORE[r.execution] ?? null;
-    if (view === "gap") return gapScore(r.importance, r.execution);
+    if (view === "gap") return responseGap(r);
     return null;
   };
 
   const getCellColor = (val) => {
     if (val === null) return "bg-gray-50";
-    if (view === "importance") return importanceColor(val);
-    if (view === "execution") return executionColor(val);
-    if (view === "gap") return gapColor(val);
+    if (view === "importance") return importanceCellClass(val);
+    if (view === "execution") return executionCellClass(val);
+    if (view === "gap") return gapCellClass(val);
     return "bg-gray-100";
   };
 
   const getAvgColor = (act) => {
-    if (view === "importance") return importanceColor(act.avgImp);
-    if (view === "execution") return executionColor(act.avgExec);
-    if (view === "gap") return gapColor(act.avgGap);
+    if (view === "importance") return importanceCellClass(act.avgImp);
+    if (view === "execution") return executionCellClass(act.avgExec);
+    if (view === "gap") return gapCellClass(act.avgGap);
     return "bg-gray-100";
   };
 
@@ -334,17 +331,17 @@ export default function AssessmentResults({ assessment }) {
                         <div className="text-[10px] text-gray-400 mt-0.5">{act.facet}</div>
                       </td>
                       <td className="px-4 py-3 text-center">
-                        <span className={`inline-flex items-center justify-center w-10 h-7 rounded text-xs font-bold ${importanceColor(act.avgImp)}`}>
+                        <span className={`inline-flex items-center justify-center w-10 h-7 rounded text-xs font-bold ${importanceCellClass(act.avgImp)}`}>
                           {fmt(act.avgImp)}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-center">
-                        <span className={`inline-flex items-center justify-center w-10 h-7 rounded text-xs font-bold ${executionColor(act.avgExec)}`}>
+                        <span className={`inline-flex items-center justify-center w-10 h-7 rounded text-xs font-bold ${executionCellClass(act.avgExec)}`}>
                           {fmt(act.avgExec)}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-center">
-                        <span className={`inline-flex items-center justify-center w-10 h-7 rounded text-xs font-bold ${gapColor(act.avgGap)}`}>
+                        <span className={`inline-flex items-center justify-center w-10 h-7 rounded text-xs font-bold ${gapCellClass(act.avgGap)}`}>
                           {fmt(act.avgGap)}
                         </span>
                       </td>
@@ -463,7 +460,7 @@ export default function AssessmentResults({ assessment }) {
                 <div className="flex items-center gap-2 text-xs text-gray-500">
                   <span>Imp <span className="font-semibold text-[#3366FF]">{fmt(act.avgImp)}</span></span>
                   <span>Exec <span className="font-semibold text-emerald-600">{fmt(act.avgExec)}</span></span>
-                  <span className={`font-bold px-2 py-0.5 rounded-full ${gapColor(act.avgGap)}`}>
+                  <span className={`font-bold px-2 py-0.5 rounded-full ${gapCellClass(act.avgGap)}`}>
                     Δ {fmt(act.avgGap)}
                   </span>
                 </div>
@@ -509,7 +506,6 @@ export default function AssessmentResults({ assessment }) {
 
       {view === "individual" && isSuperAdmin && (() => {
         const activeRespondentId = selectedRespondentId || respondents[0]?.id;
-        const selectedResp = respondents.find(r => r.id === activeRespondentId);
         return (
           <div>
             <div className="flex items-center gap-3 mb-4">

@@ -19,7 +19,6 @@ const STATUS_LABELS = {
 
 export default function AssessmentOverview({ assessment, onUpdate, onDelete, deleting }) {
   const { user: currentUser } = useAuth();
-  const [loading, setLoading] = useState(true);
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [allUsers, setAllUsers] = useState([]);
   const [loadingUsers, setLoadingUsers] = useState(true);

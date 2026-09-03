@@ -29,7 +29,7 @@ const QUARTZ_LOGO = "https://media.base44.com/images/public/6a29ff3bc8effbeb3d63
 
 
 
-function ActivityRow({ activity, stats, themeColor }) {
+function ActivityRow({ activity, stats }) {
   const [expanded, setExpanded] = useState(false);
   const gap = stats?.avgGap ?? null;
   const dot = gapColor(gap);
@@ -190,10 +190,6 @@ function ThemeSection({ group, activities, activityStats, filterLevel, facetFilt
   const themeAvgGap = avg(themeGaps);
 
   const criticalCount = groupActivities.filter(a => (activityStats[a.id]?.avgGap ?? 0) >= 2).length;
-  const attentionCount = groupActivities.filter(a => {
-    const g = activityStats[a.id]?.avgGap ?? 0;
-    return g >= 1 && g < 2;
-  }).length;
 
   return (
     <section className="mb-10">
@@ -238,7 +234,6 @@ function ThemeSection({ group, activities, activityStats, filterLevel, facetFilt
                 key={act.id}
                 activity={act}
                 stats={activityStats[act.id]}
-                themeColor={group.color}
               />
             ))}
           </div>

@@ -1,3 +1,5 @@
+import { avg, fmt } from "@/lib/scoring";
+
 // Scoring for the personal assessment type: what each person brings to the
 // same activity library the team gap assessment rates.
 //
@@ -73,8 +75,13 @@ export const normalize = (axisKey, label) => {
 
 export const score = (axisKey, label) => AXIS_BY_KEY[axisKey]?.scores[label] ?? null;
 
-export const avg = (arr) => (arr.length === 0 ? null : arr.reduce((a, b) => a + b, 0) / arr.length);
-export const fmt = (n) => (n === null || n === undefined ? "—" : n.toFixed(1));
+// avg and fmt come from scoring.js rather than being defined again here. They
+// were, identically for avg and near-identically for fmt, which is how
+// PersonalResults ended up importing `fmt` from this file and `fmt as fmtTeam`
+// from the other one — two names for the same function, aliased to resolve a
+// collision that did not exist. pct is genuinely local: nothing in the team gap
+// report is expressed as a percentage.
+export { avg, fmt };
 export const pct = (n) => (n === null || n === undefined ? "—" : `${Math.round(n * 100)}%`);
 
 // ── Capability and its four quadrants ──────────────────────────────────────

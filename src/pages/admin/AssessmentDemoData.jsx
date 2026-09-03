@@ -3,9 +3,12 @@ import { base44 } from "@/api/base44Client";
 import { getAssignedActivities } from "@/lib/activities";
 import { ownerOptionsFor } from "@/lib/ownership";
 import { EXPERIENCE_OPTIONS, SKILLS_OPTIONS, INTEREST_OPTIONS } from "@/lib/personal-scoring";
+import { IMPORTANCE_LABEL, EXECUTION_LABEL } from "@/lib/scoring";
 
-const IMPORTANCE_OPTIONS = ["Not needed", "Nice to have", "Important", "Critical"];
-const EXECUTION_OPTIONS  = ["Not done", "Inconsistent", "Good", "Excellent"];
+// Same lists as the survey offers, from the file that scores them. Retyped
+// here, generated demo data could carry a label nothing knows how to score.
+const IMPORTANCE_OPTIONS = IMPORTANCE_LABEL;
+const EXECUTION_OPTIONS  = EXECUTION_LABEL;
 
 // Realistic fake respondent profiles
 const FAKE_RESPONDENTS = [

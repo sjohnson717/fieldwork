@@ -91,7 +91,21 @@ export const THEME_GROUPS = [
 ];
 
 export const avg = (arr) => (arr.length === 0 ? null : arr.reduce((a, b) => a + b, 0) / arr.length);
-export const fmt = (n) => (n === null ? "—" : n.toFixed(1));
+// Guards undefined as well as null. It only ever received null before, until a
+// second copy of this function grew in personal-scoring.js that also handled
+// undefined — a sure sign one of its callers passes it. One definition, the
+// defensive one; the alternative is a TypeError on an optional field.
+export const fmt = (n) => (n === null || n === undefined ? "—" : n.toFixed(1));
+
+// What a gap is, in one place: importance minus execution for a single
+// response, and null unless the respondent answered both sides. The formula
+// lived inline in computeActivityStats and again in the results heatmap, which
+// is one copy too many for the number the whole product is named after.
+export const responseGap = (response) => {
+  const i = IMPORTANCE_SCORE[response?.importance];
+  const e = EXECUTION_SCORE[response?.execution];
+  return i !== undefined && e !== undefined ? i - e : null;
+};
 
 export const gapColor = (gap) => {
   if (gap === null) return "#E5E7EB";
@@ -186,13 +200,7 @@ export function computeActivityStats(activities, responses) {
     // whenever a respondent answered only one side of a question, since that
     // response would otherwise pull avgImp or avgExec without a matching
     // partner to subtract against.
-    const gaps = actResps
-      .map((r) => {
-        const i = IMPORTANCE_SCORE[r.importance];
-        const e = EXECUTION_SCORE[r.execution];
-        return i !== undefined && e !== undefined ? i - e : null;
-      })
-      .filter((v) => v !== null);
+    const gaps = actResps.map(responseGap).filter((v) => v !== null);
     const avgGap = avg(gaps);
 
     // "I don't know" is an answer to the ownership question but not a role, so

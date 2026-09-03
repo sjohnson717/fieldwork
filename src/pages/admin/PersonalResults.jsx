@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { FACET_ORDER, computeActivityStats, fmt as fmtTeam } from "@/lib/scoring";
+import { FACET_ORDER, computeActivityStats, fmt } from "@/lib/scoring";
 import {
   PERSONAL_AXES,
   CATEGORIES,
@@ -10,7 +10,6 @@ import {
   normalize,
   score,
   heatClass,
-  fmt,
   pct,
 } from "@/lib/personal-scoring";
 import { loadResultsData, deleteRespondentCascade } from "@/lib/respondents";
@@ -476,7 +475,7 @@ export default function PersonalResults({ assessment }) {
                       <span className="flex-1 text-gray-700">{row.activity.name}</span>
                       <span className="text-xs text-gray-400">{row.activity.facet}</span>
                       {parent && row.avgImp !== null && (
-                        <span className="text-xs text-gray-500">Imp <span className="font-semibold text-[#3366FF]">{fmtTeam(row.avgImp)}</span></span>
+                        <span className="text-xs text-gray-500">Imp <span className="font-semibold text-[#3366FF]">{fmt(row.avgImp)}</span></span>
                       )}
                       <span className="text-xs bg-rose-100 text-rose-700 font-medium px-2 py-0.5 rounded-full">
                         best {pct(row.bestFit?.capability ?? null)}
@@ -510,8 +509,8 @@ export default function PersonalResults({ assessment }) {
                         <div className="text-[10px] text-gray-400 mt-0.5">{row.activity.facet}</div>
                       </td>
                       {parent && <>
-                        <td className="px-4 py-3 text-center text-xs text-gray-600">{fmtTeam(row.avgImp)}</td>
-                        <td className="px-4 py-3 text-center text-xs text-gray-600">{fmtTeam(row.avgGap)}</td>
+                        <td className="px-4 py-3 text-center text-xs text-gray-600">{fmt(row.avgImp)}</td>
+                        <td className="px-4 py-3 text-center text-xs text-gray-600">{fmt(row.avgGap)}</td>
                         <td className="px-4 py-3 text-xs text-gray-600">{row.topOwner || <span className="text-gray-300">—</span>}</td>
                       </>}
                       <td className="px-4 py-3">

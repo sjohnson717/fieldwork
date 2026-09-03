@@ -168,7 +168,7 @@ export default function TeamLeaderPage() {
       }
       setFlags(flagMap);
       setDraftNotes(noteMap);
-    } catch (e) {
+    } catch {
       setError("Something went wrong loading this page.");
     }
     setLoading(false);

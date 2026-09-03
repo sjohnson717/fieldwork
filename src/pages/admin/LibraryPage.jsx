@@ -281,9 +281,8 @@ function ActivitiesTab() {
           if (selectedFacet === "ALL") {
             persistOrder(reordered);
           } else {
-            const others = activities.filter(a => a.facet !== selectedFacet);
-            // Rebuild full list: interleave by original position isn't trivial;
-            // easier: replace the filtered items in-place in the full list
+            // Replace the filtered items in place in the full list, rather than
+            // trying to interleave by original position.
             const newFull = [...activities];
             let ri = 0;
             for (let i = 0; i < newFull.length; i++) {
