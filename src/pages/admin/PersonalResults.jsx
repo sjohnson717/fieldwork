@@ -1,7 +1,5 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { getAssignedActivities } from "@/lib/activities";
-import { listRespondents } from "@/lib/public-assessment";
 import { FACET_ORDER, computeActivityStats, fmt as fmtTeam } from "@/lib/scoring";
 import {
   PERSONAL_AXES,
@@ -15,7 +13,9 @@ import {
   fmt,
   pct,
 } from "@/lib/personal-scoring";
+import { loadResultsData, deleteRespondentCascade } from "@/lib/respondents";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import RespondentRoster from "@/components/RespondentRoster";
 import RespondentPreview from "@/components/RespondentPreview";
 import SurveyFeedback from "@/components/SurveyFeedback";
 
@@ -69,11 +69,7 @@ export default function PersonalResults({ assessment }) {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [acts, resps, ress] = await Promise.all([
-        getAssignedActivities(assessment),
-        listRespondents(assessment.id),
-        base44.entities.Response.filter({ assessment_id: assessment.id }),
-      ]);
+      const { activities: acts, respondents: resps, responses: ress } = await loadResultsData(assessment);
       setActivities(acts);
       setRespondents(resps);
       setResponses(ress);
@@ -114,9 +110,7 @@ export default function PersonalResults({ assessment }) {
   const handleDeleteRespondent = async (id) => {
     setRemovingRespondent(null);
     try {
-      const resps = await base44.entities.Response.filter({ respondent_id: id });
-      for (const r of resps) await base44.entities.Response.delete(r.id);
-      await base44.entities.Respondent.delete(id);
+      await deleteRespondentCascade(id);
       setRespondents(prev => prev.filter(r => r.id !== id));
       setResponses(prev => prev.filter(r => r.respondent_id !== id));
     } catch (e) {
@@ -168,8 +162,12 @@ export default function PersonalResults({ assessment }) {
     return { norm, display: raw === null ? "" : String(raw) };
   };
 
-  const completedCount = respondents.filter(r => r.status === "completed").length;
-  const answeredIds = new Set(responses.map(r => r.respondent_id));
+  // One profile per person, computed once. The roster asks three questions of
+  // each — is it empty, capability, interest — and computePersonProfile walks
+  // every activity to answer any of them.
+  const profiles = Object.fromEntries(
+    respondents.map(r => [r.id, computePersonProfile(activities, responses, r.id)])
+  );
 
   // A personal profile stays editable after the assessment closes, by design —
   // it belongs to the person, not to the engagement. The cost is that the
@@ -186,77 +184,41 @@ export default function PersonalResults({ assessment }) {
   return (
     <div className="p-8 space-y-8">
 
-      {/* Respondents */}
-      <section className="bg-white rounded-xl border border-gray-200 p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Respondents</h3>
-            <p className="text-xs text-gray-400 mt-0.5">
-              {respondents.length} total · {completedCount} completed · {respondents.filter(r => !answeredIds.has(r.id)).length} empty
-            </p>
-          </div>
-          <button onClick={loadData} className="text-xs text-gray-400 hover:text-blue-600 transition-colors">
-            Refresh
-          </button>
-        </div>
-        {revisedAfterClose > 0 && (
+      <RespondentRoster
+        respondents={respondents}
+        isEmptyFor={r => profiles[r.id].answeredCount === 0}
+        onRefresh={loadData}
+        onRemove={setRemovingRespondent}
+        canPreview={isSuperAdmin}
+        onPreview={setPreviewRespondent}
+        notice={revisedAfterClose > 0 ? (
           <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-4">
             {revisedAfterClose} {revisedAfterClose === 1 ? "person has" : "people have"} changed answers since this
             assessment closed on {new Date(assessment.closed_date).toLocaleDateString()}. The figures below include
             those edits, so they may differ from anything you've already presented.
           </p>
-        )}
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="text-xs text-gray-400 uppercase tracking-wide border-b border-gray-100">
-              <th className="text-left pb-2 font-medium w-36">Name</th>
-              <th className="text-left pb-2 font-medium w-28">Title</th>
-              <th className="text-left pb-2 font-medium">Status</th>
-              <th className="text-left pb-2 font-medium">Capability</th>
-              <th className="text-left pb-2 font-medium">Interest</th>
-              <th className="pb-2" />
-            </tr>
-          </thead>
-          <tbody>
-            {respondents.map(r => {
-              const profile = computePersonProfile(activities, responses, r.id);
-              const isEmpty = profile.answeredCount === 0;
-              return (
-                <tr key={r.id} className={`border-b border-gray-50 last:border-0 ${isEmpty ? "bg-red-50/40" : ""}`}>
-                  <td className="py-2.5 font-medium text-gray-800">{r.name}</td>
-                  <td className="py-2.5 text-gray-500">{r.title}</td>
-                  <td className="py-2.5">
-                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                      r.status === "completed" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"
-                    }`}>
-                      {r.status}
-                    </span>
-                  </td>
-                  <td className="py-2.5 text-xs font-semibold text-gray-600">{pct(profile.avgCapability)}</td>
-                  <td className="py-2.5 text-xs font-semibold text-gray-600">{pct(profile.avgInterest)}</td>
-                  <td className="py-2.5 pl-2 text-right flex items-center justify-end gap-3">
-                    {isSuperAdmin && !isEmpty && (
-                      <button
-                        onClick={() => setPreviewRespondent(r)}
-                        title="See this person's own profile report, read-only"
-                        className="text-xs text-gray-400 hover:text-blue-600 transition-colors"
-                      >
-                        Preview
-                      </button>
-                    )}
-                    <button
-                      onClick={() => setRemovingRespondent(r)}
-                      className={`text-xs transition-colors ${isEmpty ? "text-red-300 hover:text-red-500 font-medium" : "text-gray-300 hover:text-red-400"}`}
-                    >
-                      Remove
-                    </button>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </section>
+        ) : null}
+        columns={[
+          {
+            key: "capability",
+            label: "Capability",
+            render: r => (
+              <span className="text-xs font-semibold text-gray-600">
+                {pct(profiles[r.id].avgCapability)}
+              </span>
+            ),
+          },
+          {
+            key: "interest",
+            label: "Interest",
+            render: r => (
+              <span className="text-xs font-semibold text-gray-600">
+                {pct(profiles[r.id].avgInterest)}
+              </span>
+            ),
+          },
+        ]}
+      />
 
       {/* Controls */}
       <div className="flex items-center gap-4 flex-wrap">

@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { getAssignedActivities } from "@/lib/activities";
-import { listRespondents } from "@/lib/public-assessment";
 import { FACET_ORDER, IMPORTANCE_SCORE, EXECUTION_SCORE, avg, fmt } from "@/lib/scoring";
+import { loadResultsData, deleteRespondentCascade } from "@/lib/respondents";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import RespondentRoster from "@/components/RespondentRoster";
 import RespondentPreview from "@/components/RespondentPreview";
 import SurveyFeedback from "@/components/SurveyFeedback";
 
@@ -71,9 +71,7 @@ export default function AssessmentResults({ assessment }) {
   const handleDeleteRespondent = async (id) => {
     setRemovingRespondent(null);
     try {
-      const resps = await base44.entities.Response.filter({ respondent_id: id });
-      for (const r of resps) await base44.entities.Response.delete(r.id);
-      await base44.entities.Respondent.delete(id);
+      await deleteRespondentCascade(id);
       setRespondents(prev => prev.filter(r => r.id !== id));
     } catch (e) {
       console.error("Failed to delete respondent", e);
@@ -83,11 +81,7 @@ export default function AssessmentResults({ assessment }) {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [acts, resps, ress] = await Promise.all([
-        getAssignedActivities(assessment),
-        listRespondents(assessment.id),
-        base44.entities.Response.filter({ assessment_id: assessment.id }),
-      ]);
+      const { activities: acts, respondents: resps, responses: ress } = await loadResultsData(assessment);
       setActivities(acts);
       setRespondents(resps);
       setResponses(ress);
@@ -189,98 +183,44 @@ export default function AssessmentResults({ assessment }) {
     return "—";
   };
 
-  const completedCount = respondents.filter(r => r.status === "completed").length;
 
   return (
     <div className="p-8 space-y-8">
 
-      {/* Respondents */}
-      <section className="bg-white rounded-xl border border-gray-200 p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Respondents</h3>
-            <p className="text-xs text-gray-400 mt-0.5">
-              {respondents.length} total · {completedCount} completed · {respondents.filter(r => !responseCountMap[r.id]).length} empty
-            </p>
-          </div>
+      <RespondentRoster
+        respondents={respondents}
+        isEmptyFor={r => !responseCountMap[r.id]}
+        onRefresh={loadData}
+        onRemove={setRemovingRespondent}
+        canPreview={isSuperAdmin}
+        onPreview={setPreviewRespondent}
+        rowActions={r => (
           <button
-            onClick={loadData}
+            onClick={() => { setSelectedRespondentId(r.id); setView("individual"); }}
             className="text-xs text-gray-400 hover:text-blue-600 transition-colors"
           >
-            Refresh
+            Answers
           </button>
-        </div>
-        {respondents.length === 0 ? (
-          <p className="text-sm text-gray-400 text-center py-6">No responses yet.</p>
-        ) : (
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-xs text-gray-400 uppercase tracking-wide border-b border-gray-100">
-                <th className="text-left pb-2 font-medium w-36">Name</th>
-                <th className="text-left pb-2 font-medium w-28">Title</th>
-                <th className="text-left pb-2 font-medium">Status</th>
-                <th className="text-left pb-2 font-medium">Responses</th>
-                <th className="text-left pb-2 font-medium">Date</th>
-                <th className="pb-2" />
-              </tr>
-            </thead>
-            <tbody>
-              {respondents.map(r => {
-                const count = responseCountMap[r.id] || 0;
-                const isEmpty = count === 0;
-                return (
-                  <tr key={r.id} className={`border-b border-gray-50 last:border-0 ${isEmpty ? "bg-red-50/40" : ""}`}>
-                    <td className="py-2.5 font-medium text-gray-800">{r.name}</td>
-                    <td className="py-2.5 text-gray-500">{r.title}</td>
-                    <td className="py-2.5">
-                      <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                        r.status === "completed" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"
-                      }`}>
-                        {r.status}
-                      </span>
-                    </td>
-                    <td className="py-2.5">
-                      <span className={`text-xs font-semibold ${isEmpty ? "text-red-400" : "text-gray-500"}`}>
-                        {isEmpty ? "0 — empty" : count}
-                      </span>
-                    </td>
-                    <td className="py-2.5 pr-4 text-gray-400 text-xs">
-                      {new Date(r.created_date).toLocaleDateString()}
-                    </td>
-                    <td className="py-2.5 pl-2 text-right flex items-center justify-end gap-3">
-                      {/* Same gate as the Individual Answers tab: this is one
-                          person's raw answers, not an aggregate. */}
-                      {isSuperAdmin && !isEmpty && (
-                        <>
-                          <button
-                            onClick={() => { setSelectedRespondentId(r.id); setView("individual"); }}
-                            className="text-xs text-gray-400 hover:text-blue-600 transition-colors"
-                          >
-                            Answers
-                          </button>
-                          <button
-                            onClick={() => setPreviewRespondent(r)}
-                            title="See this person's own summary page, read-only"
-                            className="text-xs text-gray-400 hover:text-blue-600 transition-colors"
-                          >
-                            Preview
-                          </button>
-                        </>
-                      )}
-                      <button
-                        onClick={() => setRemovingRespondent(r)}
-                        className={`text-xs transition-colors ${isEmpty ? "text-red-300 hover:text-red-500 font-medium" : "text-gray-300 hover:text-red-400"}`}
-                      >
-                        Remove
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
         )}
-      </section>
+        columns={[
+          {
+            key: "responses",
+            label: "Responses",
+            render: (r, isEmpty) => (
+              <span className={`text-xs font-semibold ${isEmpty ? "text-red-400" : "text-gray-500"}`}>
+                {isEmpty ? "0 — empty" : responseCountMap[r.id]}
+              </span>
+            ),
+          },
+          {
+            key: "date",
+            label: "Date",
+            render: r => (
+              <span className="text-gray-400 text-xs">{new Date(r.created_date).toLocaleDateString()}</span>
+            ),
+          },
+        ]}
+      />
 
       {/* Controls */}
       <div className="flex items-center gap-4 flex-wrap">
