@@ -51,6 +51,10 @@ Each facilitator only sees assessments they created themselves, plus any they've
 
 > **Which preset should I use?** Default works well for most teams. Use Brief for time-constrained teams. Use Executive for leadership-only assessments focused on strategic outcomes.
 
+**Those times are what the respondent is told.** The intro screen works the estimate out from the activity count at forty seconds each, which reproduces all four numbers above, so the figure on screen and the figure in this table cannot drift apart. Change the activity selection and the estimate follows it.
+
+Forty seconds is a considered guess, not a measurement — reading an activity and making three judgements about it. The one completion timed so far came in at forty-one. Tell us if yours run consistently longer or shorter and the constant can move.
+
 > **Extended is now the whole library — budget for it.** At 65 activities it asks roughly half again as much of each respondent as it used to. Worth it for a deep-dive diagnostic; too much to send a busy team without warning them first.
 
 Presets are a starting point, not a cage. After applying one, tick and untick individual activities in the same tab, or add custom activities specific to this client.
@@ -86,11 +90,14 @@ LEARN is in **Default** and **Extended**. Executive and Brief deliberately leave
 
 > **Personal assessments work differently here.** The dashboard shows who has responded but offers no per-person links, and there is no buyer report. A personal link reopens and *edits* that person's answers, so it stays with them — a team leader needs to know a response arrived, not to be able to rewrite it. If someone loses their link, they re-join with the access code and you remove the empty duplicate from the Results tab.
 
+> **Tell people they can stop partway.** Every survey page carries **Save and finish later**, which writes the page and hands them their own link. Someone who uses it does not need you or the dashboard to get back in. It is worth a line in whatever you send, because the people most likely to abandon are the ones who did not know they could pause.
+
 ## Distributing the Survey
 
 - For facilitators: Get a list of names and emails from the team leader. You can email the participants with the generic **Access** code or use the the **Team Leader Dashboard** to get custom links to share.
 - For team leaders: Share the **Team Leader Dashboard** link from the Overview tab. They can add names and emails for the assessments.
-- Suggested message: *"Please take 15–20 minutes to complete this assessment before [DATE]. Your responses are anonymous. [LINK]"*
+- Suggested message: *"Please complete this assessment before [DATE] — it takes about [the time the intro quotes for your preset]. You can stop partway and come back; the survey will give you a link. Your responses are anonymous. [LINK]"*
+- Quote the same figure the intro does rather than a habit like "15–20 minutes". An Extended assessment is three quarters of an hour, and someone who was promised twenty minutes stops at twenty.
 - Set a deadline. Two business days is usually sufficient.
 
 ## Monitoring Completion
@@ -152,13 +159,35 @@ Neither ever combines its axes into one number. On the team gap side the distanc
 
 > **The team gap summary carries one thing the client report cannot.** An activity someone called important and marked "I don't know" on is a fact about that person's sightlines. Averaged across a team it disappears into a smaller sample. On an individual summary it is worth raising out loud, and it is usually closed in one sentence by someone else in the room.
 
+## Stopping partway, and coming back
+
+Every facet page carries **Save and finish later** under the Next button. It writes the page on screen and then shows that person their own link, copyable, with a line saying anyone holding it can change their answers.
+
+Three things worth knowing about it:
+
+- **It does not advance the page.** Somebody pausing has not finished the page they are on, and moving them would mean returning to a page they never completed.
+- **The link is the page's text, not the address bar.** The address never carries a token — iOS Safari prints the address into the footer of a saved PDF, which would put a working edit link on a document people forward to a manager. The block is marked no-print for the same reason.
+- **Coming back opens the first page with anything still to do**, not page one. Answers already given are all there, prefilled. Someone who left one activity blank and moved on is taken back to it, which costs a press of Next.
+
+A respondent who never uses it and closes the tab is not stranded — their answers are saved page by page, and the access code lets them re-join. But that creates a second empty row for the same person, which you then remove from the Results tab. The pause is the tidier path, which is why it is worth mentioning up front.
+
+## A page with nothing selected
+
+Pressing Next on a page where **no** activity has been answered stops once and says nothing is selected, with a line on how to answer. Pressing Next again goes through.
+
+Nothing is required. "I don't know" is a real answer to the execution question, and a mandatory field would produce answers given to get past it. Skipping a page you have nothing to say about stays allowed.
+
+This exists because a respondent paged through six facets answering nothing, stopped one page short of the end, and left six empty rows — and the data cannot say whether he meant to skip or had not realised the ratings were tappable. **An empty row is not a signal you can read.** If your rosters keep showing people with zero responses after this, the problem is not that nobody told them.
+
+Partly answered pages say nothing at all: leaving one activity alone is a normal choice.
+
 ## Nothing is submitted at the end
 
-Answers are saved as they are given, in both instruments. Every facet page ends on **Next**, the wrap-up below says **Finish and review**, and the button under the team gap summary says **Done** rather than "Submit" — by then the submission has already happened, and a button promising otherwise implied that closing the tab would lose the work.
+Answers are saved page by page, in both instruments. Every facet page ends on **Next**, the wrap-up below says **Finish and review**, and the button under the team gap summary says **Done** rather than "Submit" — by then the submission has already happened, and a button promising otherwise implied that closing the tab would lose the work.
 
 Someone is recorded as complete when they finish the last facet, *before* the wrap-up. So a person who closes the tab on those two optional questions has still completed the assessment, and will show as completed on your roster.
 
-Respondents can still revise. Their own link reopens their answers until the assessment closes; on a personal assessment, indefinitely.
+Respondents can still revise. Their own link — the one **Save and finish later** hands out, or the one on their summary — reopens their answers until the assessment closes; on a personal assessment, indefinitely.
 
 ## Saving it as a PDF
 
