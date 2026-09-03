@@ -35,12 +35,18 @@ npm install
 npm run dev
 ```
 
-`.env.local` needs the app ID and backend URL:
+`.env.local` needs the app ID and backend URL. These are this app's real
+values, not placeholders — both are public, and they ship in the client bundle
+anyway:
 
 ```
-VITE_BASE44_APP_ID=your_app_id
-VITE_BASE44_APP_BASE_URL=https://your-app.base44.app
+VITE_BASE44_APP_ID=6a29ff3bc8effbeb3d637555
+VITE_BASE44_APP_BASE_URL=https://quartz-assessments.base44.app
 ```
+
+The backend URL is the app's own host. An older one, `fieldworkapp-3d637555`,
+still answers under `/api` while 404ing at the root, so a stale value here fails
+in the confusing direction: dev works, and the URL is dead in a browser.
 
 Local dev runs against the live backend, so entity records you create or edit
 are real. `/admin` requires a facilitator account and redirects to Base44 for
