@@ -21,6 +21,10 @@ export default function TagsPage({ onTagsChanged }) {
   const [deletingTag, setDeletingTag] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
   const [deleteError, setDeleteError] = useState("");
+  const [mergingTag, setMergingTag] = useState(null);
+  const [mergeTargetId, setMergeTargetId] = useState("");
+  const [merging, setMerging] = useState(false);
+  const [mergeNotice, setMergeNotice] = useState("");
 
   useEffect(() => { loadTags(); }, []);
 
@@ -66,6 +70,44 @@ export default function TagsPage({ onTagsChanged }) {
     setDeletingId(null);
   };
 
+  // Candidates a tag may be folded into. Same organization only — the function
+  // enforces it, and offering a cross-org target the server will refuse is a
+  // control whose only outcome is an explanation. A super-admin sees every
+  // organization's tags here, so this is also the list most in need of it.
+  const mergeTargets = (tag) =>
+    tags.filter(t => t.id !== tag.id && (t.org_id || null) === (tag.org_id || null));
+
+  const handleMerge = async () => {
+    if (!mergingTag || !mergeTargetId) return;
+    setMerging(true);
+    setDeleteError("");
+    setMergeNotice("");
+    try {
+      const res = await base44.functions.invoke("mergeTag", {
+        sourceTagId: mergingTag.id,
+        targetTagId: mergeTargetId,
+      });
+      const error = res?.data?.error;
+      if (error) throw new Error(error);
+      const m = res.data.merged;
+      setMergeNotice(
+        `Merged ${m.source.name} into ${m.target.name} — ${m.assessmentsUpdated} assessment${m.assessmentsUpdated === 1 ? "" : "s"} moved.`
+      );
+      setMergingTag(null);
+      setMergeTargetId("");
+      // Counts on every remaining row have moved, so this reloads rather than
+      // patching state — and the sidebar's filter still lists the tag that just
+      // went, the same reason the delete path calls onTagsChanged.
+      await loadTags();
+      onTagsChanged?.();
+    } catch (e) {
+      console.error("Failed to merge tag", e);
+      setDeleteError(functionErrorMessage(e, "Failed to merge the tag."));
+      setMergingTag(null);
+    }
+    setMerging(false);
+  };
+
   const unusedCount = tags.filter(t => t.assessment_count === 0).length;
 
   return (
@@ -86,10 +128,13 @@ export default function TagsPage({ onTagsChanged }) {
           Tags are created from an assessment's Overview tab. Removing one there
           takes it off that assessment; deleting it here takes it off the list
           everyone picks from, which is only possible once nothing uses it.
+          Merge is for the same grouping entered twice — it moves every
+          assessment onto the tag you keep, then deletes the other.
         </p>
 
         {loadError && <p className="text-xs text-red-500 px-6 py-3">{loadError}</p>}
         {deleteError && <p className="text-xs text-red-500 px-6 py-3">{deleteError}</p>}
+        {mergeNotice && <p className="text-xs text-green-700 bg-green-50 px-6 py-3">{mergeNotice}</p>}
 
         {loading ? (
           <div className="flex justify-center py-12">
@@ -119,7 +164,19 @@ export default function TagsPage({ onTagsChanged }) {
                       <span>{tag.assessment_count} assessment{tag.assessment_count !== 1 ? "s" : ""}</span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-right">
+                  <td className="px-4 py-3 text-right whitespace-nowrap">
+                    {/* Merge is the answer for a tag that is in use and should
+                        not exist — the same word typed twice. Delete only ever
+                        applies to one nothing uses, so the two never compete
+                        for the same row. */}
+                    {mergeTargets(tag).length > 0 && (
+                      <button
+                        onClick={() => { setMergingTag(tag); setMergeTargetId(""); setMergeNotice(""); }}
+                        className="text-xs font-medium text-gray-300 hover:text-[#3366FF] transition-colors mr-3"
+                      >
+                        Merge
+                      </button>
+                    )}
                     {/* Offered only on a tag nothing uses. The function refuses
                         a used one regardless — it counts assessments this page
                         never sees — but a control whose only outcome is an
@@ -140,6 +197,34 @@ export default function TagsPage({ onTagsChanged }) {
           </table>
         )}
       </section>
+
+      <ConfirmDialog
+        open={!!mergingTag}
+        busy={merging}
+        confirmDisabled={!mergeTargetId}
+        title={`Merge ${mergingTag?.name} into another tag?`}
+        message={`Every assessment carrying ${mergingTag?.name} will carry the tag you choose instead, and ${mergingTag?.name} will be deleted. This can't be undone — the assessments do not remember which tag they used to have.`}
+        confirmLabel={merging ? "Merging…" : "Merge tag"}
+        onConfirm={handleMerge}
+        onCancel={() => { setMergingTag(null); setMergeTargetId(""); }}
+      >
+        <label className="block text-xs font-medium text-gray-500 mb-1.5">
+          Keep this tag
+        </label>
+        <select
+          value={mergeTargetId}
+          onChange={e => setMergeTargetId(e.target.value)}
+          className="w-full border border-gray-200 rounded-lg px-2 py-2 text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
+        >
+          <option value="">Choose a tag…</option>
+          {mergingTag && mergeTargets(mergingTag).map(t => (
+            <option key={t.id} value={t.id}>
+              {t.name}
+              {t.assessment_count > 0 ? ` · ${t.assessment_count} assessment${t.assessment_count === 1 ? "" : "s"}` : " · not used"}
+            </option>
+          ))}
+        </select>
+      </ConfirmDialog>
 
       <ConfirmDialog
         open={!!deletingTag}

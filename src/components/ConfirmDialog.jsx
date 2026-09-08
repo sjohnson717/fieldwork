@@ -19,6 +19,11 @@ export default function ConfirmDialog({
   cancelLabel = "Cancel",
   busy = false,
   destructive = false,
+  // Confirmations that need one decision made before they can be confirmed —
+  // the merge target, say. Rendered inside the guard rather than behind it, so
+  // the choice and the warning about it are read together.
+  children,
+  confirmDisabled = false,
   onConfirm,
   onCancel,
 }) {
@@ -51,7 +56,8 @@ export default function ConfirmDialog({
         <h2 id="confirm-dialog-title" className="text-base font-semibold text-gray-900 mb-2">
           {title}
         </h2>
-        <p className="text-sm text-gray-500 mb-6">{message}</p>
+        <p className={`text-sm text-gray-500 ${children ? "mb-4" : "mb-6"}`}>{message}</p>
+        {children && <div className="mb-6">{children}</div>}
         <div className="flex justify-end gap-2">
           <button
             ref={cancelRef}
@@ -63,7 +69,7 @@ export default function ConfirmDialog({
           </button>
           <button
             onClick={onConfirm}
-            disabled={busy}
+            disabled={busy || confirmDisabled}
             className={`text-sm font-medium px-4 py-2 rounded-lg text-white disabled:opacity-50 transition-colors ${
               destructive ? "bg-red-600 hover:bg-red-700" : "bg-[#3366FF] hover:bg-[#2952CC]"
             }`}
