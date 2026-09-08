@@ -47,6 +47,31 @@ export default function RespondentRoster({
         </button>
       </div>
 
+      {/* The confidentiality rule, stated where the individual data is.
+
+          This page and everything reachable from it — Answers, Preview, the
+          Matrix's per-person columns — show one named person's responses. The
+          reports do not, deliberately: the survey's own intro screen promises
+          answers are read in aggregate, and every payload publicAssessment
+          serves whitelists its way around naming anybody.
+
+          So the promise holds everywhere except here, and here is where a
+          facilitator does their reading. That was tolerable while the people
+          with access were the people who wrote the promise. With fractional
+          CPOs running their own engagements it needs saying on the screen,
+          because a screenshot of one row pasted into a deck is all it takes.
+
+          Not dismissible, and deliberately quiet rather than alarming: it is a
+          standing rule, and a banner that shouts becomes wallpaper by the third
+          engagement. It sits above `notice` so a transient warning appears
+          nearer the data it is about. */}
+      <p className="text-xs text-gray-500 leading-relaxed border-l-2 border-gray-300 pl-3 mb-4">
+        <span className="font-semibold text-gray-700">Individual responses stay in this room.</span>{" "}
+        Names and per-person answers are here so you can facilitate — never to be shared with the team,
+        the sponsor, or anyone outside the engagement. Respondents were told their answers would be read
+        in aggregate, and the reports keep that promise. This page is the one place that can break it.
+      </p>
+
       {notice}
 
       {respondents.length === 0 ? (
