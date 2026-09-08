@@ -28,9 +28,28 @@ Deno.serve(async (req) => {
     const allUsers = await base44.asServiceRole.entities.User.list();
     const sameOrg = (a, b) => (a || null) === (b || null);
 
+    // Revoking clears org_id, so a revoked account would drop straight out of
+    // its own org admin's list — leaving them looking at a roster that no
+    // longer contains the person they just revoked, and nothing to delete.
+    // former_org_id keeps it visible to that one organisation.
+    //
+    // Strict equality, not sameOrg: a null former_org_id must never match, or
+    // an org admin with no organisation would be shown every orgless revoked
+    // account in the system.
+    const wasInMyOrg = (u) => !!user.org_id && u.former_org_id === user.org_id;
+
     const users = allUsers
-      .filter((u) => user.role === "admin" || sameOrg(u.org_id, user.org_id))
-      .map((u) => ({ id: u.id, full_name: u.full_name, email: u.email, role: u.role, org_id: u.org_id || null }));
+      .filter((u) => user.role === "admin" || sameOrg(u.org_id, user.org_id) || wasInMyOrg(u))
+      .map((u) => ({
+        id: u.id,
+        full_name: u.full_name,
+        email: u.email,
+        role: u.role,
+        org_id: u.org_id || null,
+        // The UI needs this to decide whether to offer Delete on a no-access
+        // row; deleteTeamMember re-checks it server-side regardless.
+        former_org_id: u.former_org_id || null,
+      }));
 
     return Response.json({ users });
   } catch (error) {

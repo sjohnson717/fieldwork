@@ -31,6 +31,17 @@
           }
         }
       }
+    },
+    "former_org_id": {
+      "type": "string",
+      "description": "The organization a revoked account used to belong to. Set by updateTeamMember when a revoke clears org_id, and cleared again the moment any role is granted back. Only meaningful while role is 'user'. It exists so the org admin who revoked someone can still see and delete that row afterwards — clearing org_id used to put it beyond their reach. Per-field rule as on org_id, and for the same reason: the entity-level update rule does not bind on User. See this folder's README.",
+      "rls": {
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     }
   },
   "required": [

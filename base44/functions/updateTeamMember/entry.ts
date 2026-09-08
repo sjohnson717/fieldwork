@@ -58,13 +58,40 @@ Deno.serve(async (req) => {
         }
         updates.role = role;
         // Revoking access clears org membership too, matching what the
-        // confirmation dialog tells the operator.
-        if (role === "user") updates.org_id = null;
+        // confirmation dialog tells the operator. former_org_id remembers where
+        // they were, so their own org admin can still find and delete the row —
+        // see deleteTeamMember. Granting any role back clears it again: it is
+        // only meaningful on a no-access row, and a stale one would leave a
+        // former organisation's admin able to delete an active account.
+        if (role === "user") {
+          updates.org_id = null;
+          updates.former_org_id = target.org_id || null;
+        } else {
+          updates.former_org_id = null;
+        }
       }
-      if (orgId !== undefined) updates.org_id = orgId || null;
+      // An explicit organisation move supersedes any remembered one.
+      if (orgId !== undefined) {
+        updates.org_id = orgId || null;
+        updates.former_org_id = null;
+      }
     } else {
       // org_admin
-      if (!sameOrg(target.org_id, actor.org_id)) {
+      //
+      // A revoked row has no org_id at all, so membership alone would say the
+      // person they revoked five minutes ago is not theirs — they could take
+      // access away and never give it back. former_org_id closes that: it is
+      // set only by a revoke, only ever to the org the account was in, and
+      // cleared the moment any role is granted back.
+      //
+      // Matched strictly, unlike sameOrg above: null equals null there, which
+      // is what keeps the legacy no-org bucket working, but here it would let
+      // an org admin with no organisation act on every revoked account in the
+      // system that never had one either.
+      const ownsTarget =
+        sameOrg(target.org_id, actor.org_id) ||
+        (!!actor.org_id && target.former_org_id === actor.org_id);
+      if (!ownsTarget) {
         return Response.json({ error: "That user is not in your organization." }, { status: 403 });
       }
       if (role !== undefined) {
@@ -78,8 +105,16 @@ Deno.serve(async (req) => {
         return Response.json({ error: "You cannot move users between organizations." }, { status: 403 });
       }
       // Revoking access also clears org membership; that's the one org_id
-      // change an org admin may make, and only within their own org.
-      if (role === "user") updates.org_id = null;
+      // change an org admin may make, and only within their own org. The org
+      // they are leaving is remembered so this same admin can delete the row
+      // afterwards — target.org_id is already known to equal actor.org_id here,
+      // so this can only ever record the actor's own organisation.
+      if (role === "user") {
+        updates.org_id = null;
+        updates.former_org_id = target.org_id || null;
+      } else if (role !== undefined) {
+        updates.former_org_id = null;
+      }
     }
 
     if (Object.keys(updates).length === 0) {

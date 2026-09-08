@@ -171,6 +171,51 @@ The entity-level `update` rule is kept as defence in depth, but it is not what
 is doing the work. Treat any *new* custom field on `User` as unprotected until
 it has a per-field rule, and verify with a probe rather than assuming.
 
+`former_org_id` is the second field to carry one, added under that rule rather
+than in spite of it.
+
+## `former_org_id`, and why revoking used to be a one-way door
+
+Revoking someone clears their `org_id` — that is what takes their organisation
+away, and it is correct. The side effect was that the row then belonged to
+nobody: `listUsers` scopes an org admin to their own `org_id`, so the person
+they revoked vanished from their roster on the next load, and
+`deleteTeamMember` was super-admin only precisely because "an org admin could
+never be looking at one of these rows in the first place". Every departure at a
+client therefore came back to us as a support request. That was tolerable while
+the only org admins worked here, and is not once they are fractional CPOs
+running their own engagements.
+
+`updateTeamMember` now records `former_org_id` when a revoke clears `org_id`,
+and clears it again the moment any role is granted back — it is only ever
+meaningful on a no-access row. A stale one would leave a former organisation's
+admin holding delete rights over a since-reinstated account, so an explicit
+organisation move clears it too.
+
+Three places read it, and all three compare it **strictly**, unlike the
+`sameOrg` helper used for `org_id`:
+
+| Where | What it allows |
+|---|---|
+| `listUsers` | the revoked row stays visible to that one organisation |
+| `updateTeamMember` | the same admin can restore access, not only take it |
+| `deleteTeamMember` | that admin can finally clear the row out |
+
+`sameOrg` treats null as a bucket two accounts can share, which is what keeps
+the legacy no-org users working. Reused here it would be a hole: every revoked
+account with no former organisation would match every org admin who also has
+none. So the test is `!!actor.org_id && target.former_org_id === actor.org_id`,
+and a null on either side matches nothing.
+
+The org boundary check in `deleteTeamMember` sits *after* the no-access gate on
+purpose, so an org admin aiming at someone who still holds a role gets the same
+"revoke their access first" sentence a super-admin gets, rather than a bare 403
+that reads as a permissions bug.
+
+`TeamPage` decides whether to show Delete with the same predicate. That is
+presentation only — the function re-checks it — but a Delete button that
+answers 403 is worse than no button.
+
 ## Public token flows
 
 `/assess`, `/team/:token` and `/report/:token` are unauthenticated by design —

@@ -178,8 +178,20 @@ export default function TeamPage({ orgFilter = null, onClearOrgFilter, onBackToO
     setRemovingId(null);
   };
 
-  // Clearing a no-access row out of the list for good. Super-admin only, and
-  // only for rows already on No access — see base44/functions/deleteTeamMember.
+  // Who may clear a no-access row out of the list for good: a super-admin, or
+  // the org admin of the organisation it was revoked out of. Mirrors the check
+  // in base44/functions/deleteTeamMember, which is the one that enforces it —
+  // this only decides whether to offer the button, and offering a Delete that
+  // answers 403 is worse than not offering one.
+  //
+  // former_org_id is compared strictly rather than through a null-tolerant
+  // helper, for the reason spelled out in that function: null on both sides is
+  // a match nobody should get.
+  const canDelete = (u) =>
+    isAdmin || (isOrgAdmin && !!currentUser?.org_id && u.former_org_id === currentUser.org_id);
+
+  // Clearing a no-access row out of the list for good. Only for rows already on
+  // No access — see base44/functions/deleteTeamMember.
   const handleDeleteUser = async (user) => {
     if (user.id === currentUser.id) return;
     setDeletingUser(null);
@@ -391,7 +403,7 @@ export default function TeamPage({ orgFilter = null, onClearOrgFilter, onBackToO
                         and it hid the only thing left worth doing with it. */}
                     <td className="px-4 py-3 text-right">
                       {!isSelf && (
-                        isAdmin && u.role === NO_ACCESS_ROLE ? (
+                        canDelete(u) && u.role === NO_ACCESS_ROLE ? (
                           <button
                             onClick={() => setDeletingUser(u)}
                             disabled={isRemoving}

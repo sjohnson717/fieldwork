@@ -12,9 +12,19 @@ import { createClientFromRequest } from "npm:@base44/sdk@0.8.39";
 //   role has to be revoked first, which means the operator has already seen
 //   and confirmed what they are losing.
 //
-//   Only a super-admin. Revoking clears org_id, so a no-access row is never in
-//   anyone's organization — an org admin scoped to their own org could never
-//   be looking at one of these rows in the first place.
+//   Super-admin, or the org admin of the organisation the account was revoked
+//   out of. This used to be super-admin only, for a reason that was true at the
+//   time: revoking clears org_id, so a no-access row was in nobody's
+//   organization and an org admin could never have been looking at one. That
+//   made every departure at a client a support request to us, which does not
+//   hold up once the org admins are fractional CPOs running their own
+//   engagements. updateTeamMember now records former_org_id on revoke, so the
+//   row still knows whose person it was.
+//
+//   former_org_id is matched strictly — a null former_org_id never matches, so
+//   an org admin with no organisation of their own cannot reach the legacy
+//   no-org accounts, which is exactly the hole a permissive null-equals-null
+//   comparison would open here.
 //
 // What this does not do is delete the person's login. Base44 owns the auth
 // account; this removes the application's record of them. If they sign in
@@ -39,7 +49,7 @@ Deno.serve(async (req) => {
     } catch {
       return Response.json({ error: "Unauthorized" }, { status: 403 });
     }
-    if (!actor || actor.role !== "admin") {
+    if (!actor || !["admin", "org_admin"].includes(actor.role)) {
       return Response.json({ error: "Unauthorized" }, { status: 403 });
     }
 
@@ -60,6 +70,20 @@ Deno.serve(async (req) => {
       return Response.json({
         error: "Only accounts with no access can be deleted. Revoke their access first.",
       }, { status: 409 });
+    }
+
+    // The org boundary, checked after the no-access gate so an org admin gets
+    // the same "revoke them first" sentence a super-admin does rather than a
+    // flat refusal that reads as a permissions bug.
+    //
+    // Deliberately not the sameOrg helper used elsewhere: that treats null as a
+    // bucket two accounts can share, which is right for the legacy no-org
+    // users and wrong here, where it would hand every orgless revoked row to
+    // any org admin who also happens to have no organisation.
+    if (actor.role !== "admin" && (!actor.org_id || target.former_org_id !== actor.org_id)) {
+      return Response.json({
+        error: "That account was not revoked from your organization.",
+      }, { status: 403 });
     }
 
     const [created, all] = await Promise.all([
