@@ -43,7 +43,7 @@ export default function NoAccess() {
       <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-8 w-full max-w-md">
         <img src={QUARTZ_ICON} alt="" className="h-10 w-10 mb-5 object-contain" />
 
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">This account doesn't have access yet</h1>
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">This account doesn't have access</h1>
 
         {/* The address is the whole point of the page, so it is the one thing
             set apart from the prose rather than mentioned inside it. */}
