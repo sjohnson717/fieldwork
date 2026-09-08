@@ -56,6 +56,52 @@ every assessment in the system including other organizations' client data.
 Because org admins are not covered by role here, `AdminPage` seeds an
 organization's admins into `collaborator_ids` when an assessment is created.
 
+**`Activity` is two entities wearing one schema, and its write rules say so.**
+A row with no `assessment_id` is a *library* activity — shared authored content
+every organization reads and picks from. A row with one is a *custom* activity
+belonging to a single assessment. `getAssignedActivities` in
+`src/lib/activities.js` splits them on exactly that field.
+
+Update and delete used to grant any `admin`, `org_admin` or `facilitator`
+unconditionally, with no organization clause anywhere. That meant every
+facilitator in the system could edit or delete every row in the shared library,
+and every other organization's custom activities as well. It was survivable
+while every facilitator worked here. It is not survivable with fractional CPOs
+running their own engagements, and the failure is silent: assessments resolve
+`activity_ids` against live rows and drop what they cannot find, so a delete in
+one tenant removes a question from another tenant's report with no error raised
+anywhere.
+
+The rule is now super-admin, the row's own creator, or an `org_admin` whose
+`org_id` matches the row's — the same `$and`-ed shape as `Assessment.read`
+above, and for the same reason: an org match standing alone would also admit a
+plain `user`, and revoking someone leaves `org_id` in place.
+
+Library rows carry **no** `org_id`, deliberately. That is what confines them:
+the org clause cannot match a row with nothing to match against, so a library
+activity is editable by super-admin and by whoever created it, and by nobody
+else. Custom rows are stamped from `assessment.org_id` at create, in
+`AssessmentActivities` — from the assessment rather than the signed-in user, so
+a super-admin working inside a client's engagement does not stamp their own org
+and lock that client's admins out of their own question.
+
+Two consequences worth knowing before they look like bugs. Custom activities
+created before this rule have no `org_id` and are editable by their creator and
+super-admin only until re-saved; that is the safe direction, and it matches the
+legacy no-org bucket `Assessment` already has. And a collaborator on an
+assessment who is neither its creator nor an org admin can no longer edit its
+custom activities — a real narrowing, accepted because the alternative on offer
+was every facilitator everywhere, and `AdminPage` already seeds an
+organization's admins into `collaborator_ids`.
+
+`create` is deliberately left alone. Conditioning a create rule on the *absence*
+of `assessment_id` is not something these rules express reliably, and the
+question of whether a non-PGL facilitator should be able to add rows to the
+shared library at all is a product decision, not a hole to plug in passing.
+`deleteLibraryActivity` is unaffected either way: it runs as service role and
+does its own super-admin check, so it was never the exposed path — the raw
+entity API was.
+
 **User.update excludes `org_admin` deliberately.** It previously allowed any org
 admin blanket write access to the User entity, which meant they could promote
 themselves to `admin` or move users between organizations. Org admins manage

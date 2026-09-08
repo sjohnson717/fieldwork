@@ -36,6 +36,10 @@
     },
     "assessment_id": {
       "type": "string"
+    },
+    "org_id": {
+      "type": "string",
+      "description": "Custom activities only: the organization whose assessment this belongs to, stamped from the assessment at create. Library activities carry none deliberately — they are shared authored content, and an absent org_id is what confines them to super-admin and their own creator. See this folder's README."
     }
   },
   "required": [
@@ -54,15 +58,25 @@
     "update": {
       "$or": [
         { "user_condition": { "role": "admin" } },
-        { "user_condition": { "role": "org_admin" } },
-        { "user_condition": { "role": "facilitator" } }
+        { "created_by_id": "{{user.id}}" },
+        {
+          "$and": [
+            { "user_condition": { "role": "org_admin" } },
+            { "data.org_id": "{{user.data.org_id}}" }
+          ]
+        }
       ]
     },
     "delete": {
       "$or": [
         { "user_condition": { "role": "admin" } },
-        { "user_condition": { "role": "org_admin" } },
-        { "user_condition": { "role": "facilitator" } }
+        { "created_by_id": "{{user.id}}" },
+        {
+          "$and": [
+            { "user_condition": { "role": "org_admin" } },
+            { "data.org_id": "{{user.data.org_id}}" }
+          ]
+        }
       ]
     }
   }

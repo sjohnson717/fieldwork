@@ -216,12 +216,20 @@ export default function AssessmentActivities({ assessment, onUpdate }) {
     setAdding(true);
     setCustomError("");
     try {
+      // org_id comes from the assessment, not the signed-in user. It is the
+      // assessment's organization that owns this row, and a super-admin adding a
+      // custom activity to someone else's engagement would otherwise stamp their
+      // own org and lock that client's admins out of a question in their own
+      // survey. Absent on assessments predating organizations, which leaves the
+      // activity editable by its creator and super-admin only — the safe
+      // direction, and the same legacy no-org bucket Assessment already has.
       const created = await base44.entities.Activity.create({
         ...newItem,
         name: newItem.name.trim(),
         description: newItem.description.trim(),
         preferred_owner: newItem.preferred_owner.trim(),
         assessment_id: assessment.id,
+        org_id: assessment.org_id || undefined,
         active: true,
       });
       setCustomActivities(prev => [...prev, created]);
