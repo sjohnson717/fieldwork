@@ -10,48 +10,42 @@ import PrintCredit from "@/components/PrintCredit";
 // exactly what a band was written about, and withholding it here would leave
 // the imported advice unused.
 //
-// A band, though, not a score on its own. Chaos and Portfolio Health have no
+// A band, though, and not a score at all. Chaos and Portfolio Health have no
 // bands, and what this page showed them was a number over a paragraph
-// explaining that the number meant nothing on its own — so the pair went, and
+// explaining that the number meant nothing on its own — so that pair went, and
 // those two now go straight from the thank-you to what the person actually
-// said. It is a courtesy either way, not the product: the engagement is the
-// facilitated session.
+// said. The other two keep the band and its advice, without the figure that
+// used to sit above it. It is a courtesy either way, not the product: the
+// engagement is the facilitated session.
 
-// A quiet band. The bands already carry a verdict in their names — Sunset,
-// Discovery Required — and colouring them red would tell somebody their answers
-// were wrong when what they were is honest.
-function Score({ score, band }) {
-  const pct = score.possible ? Math.round((score.earned / score.possible) * 100) : 0;
+// The verdict, with no number in front of it.
+//
+// The bands already carry a verdict in their names — Sunset, Discovery Required
+// — and colouring them red would tell somebody their answers were wrong when
+// what they were is honest.
+//
+// There is no score here any more. A figure out of a possible total invites the
+// reader to do arithmetic on their own answers, and the arithmetic was never the
+// point: the band is the finding and the advice under it is what to do about it.
+// What survives is the one thing the number was carrying that the band cannot —
+// that a verdict drawn from a half-finished survey says so out loud, rather than
+// presenting itself as if everything had been answered.
+function Verdict({ score, band }) {
   const partial = score.answered < score.of;
   return (
     <section className="bg-white rounded-xl border border-gray-200 p-6">
-      <div className="flex items-baseline gap-3">
-        <p className="text-3xl font-bold text-gray-900 tabular-nums">
-          {score.earned}
-          <span className="text-gray-300 font-normal"> / {score.possible}</span>
+      <span className="text-sm font-semibold text-gray-700 border border-gray-200 rounded-full px-3 py-0.5">
+        {band.name}
+      </span>
+
+      {partial && (
+        <p className="text-xs text-gray-400 mt-3">
+          Based on the {score.answered} of {score.of} questions you answered. Skipped questions
+          are left out rather than counted against you.
         </p>
-        {band && (
-          <span className="text-sm font-semibold text-gray-700 border border-gray-200 rounded-full px-3 py-0.5">
-            {band.name}
-          </span>
-        )}
-      </div>
+      )}
 
-      <div className="mt-3 h-2 bg-gray-100 rounded-full overflow-hidden">
-        <div className="h-2 bg-blue-500 rounded-full" style={{ width: `${pct}%` }} />
-      </div>
-
-      {/* What the number is actually out of, said plainly. Somebody who
-          answered six of nine is scored on six — the alternative was Wix's,
-          where a blank counted as a wrong answer and an abandoned survey read
-          as a genuinely bad result. */}
-      <p className="text-xs text-gray-400 mt-2">
-        {partial
-          ? `Based on the ${score.answered} of ${score.of} questions you answered. Skipped questions are left out rather than counted against you.`
-          : `Across all ${score.of} questions.`}
-      </p>
-
-      {band?.advice && (
+      {band.advice && (
         <div className="mt-5 pt-5 border-t border-gray-100">
           {/* Preserves the paragraph breaks the advice was written with. It
               came across from a rich-text field and reads as a briefing, not a
@@ -63,7 +57,6 @@ function Score({ score, band }) {
           ))}
         </div>
       )}
-
     </section>
   );
 }
@@ -112,13 +105,11 @@ export default function InstrumentSelfSummary({
           </p>
         </header>
 
-        {/* Only where a band applies. Chaos and Portfolio Health carry none, and
-            what this drew for them was a bare number over a paragraph saying
-            the number had no verdict — which is a fair description of a figure
-            worth removing rather than explaining. Where there is a band it
-            stays, because the band and its advice are the reason this page
-            exists for those two instruments. */}
-        {score && answeredAny && band && <Score score={score} band={band} />}
+        {/* Only where a band applies. Chaos and Portfolio Health carry none, so
+            they go straight from the thank-you to the answers; Product Success
+            and Idea Reality show the band they landed in and the advice written
+            for it. The score itself is gone from all four. */}
+        {score && answeredAny && band && <Verdict score={score} band={band} />}
 
         <section>
           <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-3">
