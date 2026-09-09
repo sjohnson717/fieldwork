@@ -69,11 +69,13 @@ export function bandFor(bands, score) {
 
 // How a group answered one question.
 //
-// `spread` is the normalised standard deviation of the points behind the
-// answers — 0 when everyone agrees, 1 at the widest disagreement the scale
-// allows. Computed on points rather than on positions so the scales' deliberate
-// non-linearity is respected: on the challenge scale, Absolutely and Never sit
-// further apart than Somewhat and Not so much, and the report should say so.
+// `spread` runs 0 when everyone agrees to 1 at the widest disagreement the
+// scale allows. On a scale of three points or more it is the normalised
+// standard deviation of the points behind the answers, computed on points
+// rather than on positions so the scales' deliberate non-linearity is
+// respected: on the challenge scale, Absolutely and Never sit further apart
+// than Somewhat and Not so much, and the report should say so. A two-option
+// scale has no distances to respect and is measured differently — see below.
 //
 // A question one person answered has no spread rather than a spread of zero.
 // One opinion is not agreement, and sorting it alongside genuine consensus
@@ -100,11 +102,31 @@ export function distributionFor(question, rows, axis) {
     const rated = axis.options.filter(isRated).map((o) => o.points);
     const lo = Math.min(...rated);
     const hi = Math.max(...rated);
-    const sd = Math.sqrt(values.reduce((s, v) => s + (v - mean) ** 2, 0) / n);
-    // The widest a standard deviation can be on this scale: half the range,
-    // reached when the group splits evenly between the two extremes.
-    const widest = (hi - lo) / 2;
-    spread = widest === 0 ? 0 : Math.min(1, sd / widest);
+    if (rated.length === 2) {
+      // A two-option scale measures a division, not a distance.
+      //
+      // Standard deviation saturates on Yes/No: it is sqrt(p(1-p)) in the
+      // minority share, so one dissenter in six normalises to 0.75 and an even
+      // three-three split to 1.0 — near enough that every non-unanimous
+      // question on the Product Success Quiz came back "Split", eight of nine
+      // of them, and the agenda could not tell a near-consensus from a dead
+      // heat either. Distance is what a standard deviation adds, and with two
+      // options there is no distance to measure: Yes and No are one step apart
+      // however the points are written.
+      //
+      // What is left is how close the division is to even, which is twice the
+      // minority share — 0 unanimous, 1 exactly halved, and a straight line in
+      // between rather than a curve that reaches the top too early. Six people
+      // split five-one now read 0.33, four-two 0.67, three-three 1.0.
+      const low = values.filter((v) => v === lo).length;
+      spread = (2 * Math.min(low, n - low)) / n;
+    } else {
+      const sd = Math.sqrt(values.reduce((s, v) => s + (v - mean) ** 2, 0) / n);
+      // The widest a standard deviation can be on this scale: half the range,
+      // reached when the group splits evenly between the two extremes.
+      const widest = (hi - lo) / 2;
+      spread = widest === 0 ? 0 : Math.min(1, sd / widest);
+    }
   }
 
   return {
