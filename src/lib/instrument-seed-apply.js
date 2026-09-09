@@ -279,10 +279,16 @@ export async function seedInstruments(base44, { onProgress } = {}) {
       active: true,
     }, tally.resources);
 
+    // Every extra row is reported, not only the ones retired on this run.
+    // Reporting only what it just changed made the note vanish the moment a
+    // duplicate had been retired once — so a row retired last time and never
+    // deleted looked exactly like a clean library, which is the wrong way round
+    // for a check whose whole job is answering "did I miss any".
     for (const dup of extras) {
-      if (dup.active === false) continue;
-      await e.Resource.update(dup.id, { active: false, activity_ids: [] });
-      tally.resources.updated++;
+      if (dup.active !== false) {
+        await e.Resource.update(dup.id, { active: false, activity_ids: [] });
+        tally.resources.updated++;
+      }
       duplicates.push(r.title);
     }
   }
@@ -313,11 +319,14 @@ export async function seedInstruments(base44, { onProgress } = {}) {
     if (missing) notes.push(`${inst.name}: ${missing} of ${qs.length} questions have no commentary yet.`);
   }
   if (duplicates.length) {
+    const titles = [...new Set(duplicates)];
     notes.push(
-      `Retired ${duplicates.length} duplicate reading row${duplicates.length === 1 ? "" : "s"} left by an earlier run — ` +
-      `${[...new Set(duplicates)].slice(0, 4).join(", ")}${duplicates.length > 4 ? ", …" : ""}. ` +
-      `Their links were folded into the row that was kept; delete them from Resources when convenient.`,
+      `${duplicates.length} duplicate reading row${duplicates.length === 1 ? "" : "s"} still present, retired and emptied — ` +
+      `${titles.slice(0, 4).join(", ")}${titles.length > 4 ? `, and ${titles.length - 4} more` : ""}. ` +
+      `Their links are on the rows that were kept. Delete them in Library > Resources; this note goes away when they are gone.`,
     );
+  } else if ((seed.resources || []).length) {
+    notes.push("No duplicate reading rows — one row per article.");
   }
 
   const linked = new Set((seed.resources || []).flatMap((r) => r.question_labels));
