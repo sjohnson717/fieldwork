@@ -14,34 +14,54 @@ import PrintCredit from "@/components/PrintCredit";
 // Chaos Assessment's own closing advice tells a buyer to gather the team and
 // work out where perceptions differ, and this is that, computed.
 
-// The diverging ramp, worst answer to best.
+// The gap analysis palette, worst answer to best.
 //
-// Red for the problem end, blue for the other, strong at the extremes and pale
-// in the middle, with a neutral grey for an option that sits exactly on the
-// scale's midpoint. Not the rose/amber/lime/emerald ramp this replaced: those
-// four were one row each with their label beside them, so colour carried
-// nothing. A stacked bar has no room for a label per segment, and measured,
-// amber-400 and lime-400 — the two middle options of the challenge scale, side
-// by side in every question — sit 1.4 apart under deuteranopia and 14.7 with
-// full colour vision, under the 15 floor for telling two colours apart at all.
+// The same three fills the gap report's bands use, so a facilitator running a
+// gap analysis and an instrument for the same client reads one visual language
+// rather than two. Red is a problem, amber is worth discussing, green is fine —
+// and on the two instruments whose scale offers four answers, a deeper green
+// carries the far end.
 //
-// These clear it: worst adjacent pair 16.1 under protanopia, 22.0 normal
-// vision, on both the white sheet and the dark one.
-const PROBLEM_STRONG = "#a82a20";
-const PROBLEM_WEAK   = "#e8877c";
-const FINE_WEAK      = "#6da7ec";
-const FINE_STRONG    = "#184f95";
-const NEUTRAL        = "#9ca3af";
+// Two greens sit next to each other on a four-point bar and have to be tellable
+// apart, which is why the fourth step is a darker shade rather than a paler one:
+// a pale mint beside #11CC77 measures 11.1 with full colour vision, under the 15
+// floor. As it stands the worst adjacent pair is amber against green at 9.1
+// under protanopia and 22.7 with normal vision — which is the gap report's own
+// worst pair, unchanged, so this inherits its position rather than a new one.
+//
+// (What this replaced was a red-to-blue diverging ramp, chosen when the
+// instruments were the only thing in view. It measured better in isolation and
+// still lost: two palettes for "bad to good" in one engagement is worse than
+// one palette with a documented worst pair.)
+const GAP_RED    = "#FF3333";
+const GAP_AMBER  = "#FFCC00";
+const GAP_GREEN  = "#11CC77";
+const DEEP_GREEN = "#0A7A47";
+
+// Which steps a scale takes, by how many answers it offers. Yes/No is the two
+// ends; Yes/No/Unknown takes the middle band for the answer that sits on the
+// midpoint; the challenge scale takes all four. Anything longer — no instrument
+// asks one today — spreads across the same four rather than inventing steps.
+const RAMPS = {
+  2: [GAP_RED, GAP_GREEN],
+  3: [GAP_RED, GAP_AMBER, GAP_GREEN],
+  4: [GAP_RED, GAP_AMBER, GAP_GREEN, DEEP_GREEN],
+};
+const FULL = RAMPS[4];
+const rampFor = (n) =>
+  RAMPS[n] || Array.from({ length: n }, (_, i) =>
+    FULL[Math.round((n <= 1 ? 0 : i / (n - 1)) * (FULL.length - 1))]);
 
 // Where the line falls, and what colour each option takes.
 //
 // Options are split by the scale's own midpoint in points: below it they belong
 // to the problem arm, above it to the other, and an option sitting exactly on
-// the midpoint straddles the line in grey — by the scale's own arithmetic it is
-// neither side. That rule is the same on all three scales these instruments
-// use. The challenge scale's four points (0/3/5/8) divide two and two; Yes/No
-// divides one and one; Yes/No/Unknown puts Unknown on the problem arm, Yes on
-// the other, and No — exactly midway — astride the line.
+// the midpoint straddles the line — by the scale's own arithmetic it is neither
+// side. That rule is the same on all three scales these instruments use. The
+// challenge scale's four points (0/3/5/8) divide two and two; Yes/No divides one
+// and one; Yes/No/Unknown puts Unknown on the problem arm, Yes on the other, and
+// No — exactly midway — astride the line, in amber, which is the band the gap
+// report uses for the same "worth discussing" middle.
 //
 // An option carrying no points at all is not a position on the scale and gets
 // no place on the axis; it is counted beside the bar instead, with the people
@@ -49,31 +69,30 @@ const NEUTRAL        = "#9ca3af";
 function armsFor(counts) {
   const rated = counts.filter(c => c.points !== null);
   if (rated.length === 0) return null;
-  const lo = Math.min(...rated.map(c => c.points));
-  const hi = Math.max(...rated.map(c => c.points));
+
+  // Coloured by rank on the scale rather than by the order the options happen
+  // to be stored in, so the worst answer is red wherever it sits in the list.
+  const byRank = [...rated].sort((a, b) => a.points - b.points);
+  const ramp = rampFor(byRank.length);
+  const colorOf = new Map(byRank.map((c, i) => [c.label, ramp[i]]));
+
+  const lo = byRank[0].points;
+  const hi = byRank[byRank.length - 1].points;
   const mid = (lo + hi) / 2;
   const left = [];   // built outward from the centre
   const right = [];
   for (const c of rated) {
-    if (c.points < mid) left.unshift({ ...c, side: "left", share: 1 });
-    else if (c.points > mid) right.push({ ...c, side: "right", share: 1 });
+    const painted = { ...c, color: colorOf.get(c.label) };
+    if (c.points < mid) left.unshift({ ...painted, side: "left", share: 1 });
+    else if (c.points > mid) right.push({ ...painted, side: "right", share: 1 });
     else {
       // Half a straddling option each side, so the bar stays centred on the
       // line rather than the option picking a side it does not have.
-      left.unshift({ ...c, side: "left", share: 0.5, neutral: true });
-      right.unshift({ ...c, side: "right", share: 0.5, neutral: true });
+      left.unshift({ ...painted, side: "left", share: 0.5 });
+      right.unshift({ ...painted, side: "right", share: 0.5 });
     }
   }
-  // Strongest colour at each far end, palest beside the line. `left` runs
-  // outward from the centre, so its last entry is the extreme.
-  const paint = (arr, strong, weak) => arr.map((c, i) => ({
-    ...c,
-    color: c.neutral ? NEUTRAL : (i === arr.length - 1 ? strong : weak),
-  }));
-  return {
-    left: paint(left, PROBLEM_STRONG, PROBLEM_WEAK),
-    right: paint(right, FINE_STRONG, FINE_WEAK),
-  };
+  return { left, right };
 }
 
 // Every option in scale order, worst on the left and best on the right, each
@@ -93,10 +112,12 @@ function paletteFor(counts) {
   return out;
 }
 
-// Dark ink on the pale steps and the neutral, light on the strong ends, so a
-// count never sits on a colour it cannot be read against.
-const onColor = (c) =>
-  c.neutral || c.color === PROBLEM_WEAK || c.color === FINE_WEAK ? "#1f2937" : "#ffffff";
+// The ink a count takes on its own segment, measured rather than judged by eye.
+// On the three light fills, gray-900 clears AA at this size — 4.88 on the red,
+// 11.73 on the amber, 8.39 on the green — where the gray-800 that suited the
+// old palette left the red at 4.04, under the 4.5 a bold 11px needs. Only the
+// deep green is dark enough to take white, at 5.40.
+const onColor = (c) => (c.color === DEEP_GREEN ? "#ffffff" : "#111827");
 
 function Legend({ axis }) {
   const counts = axis.options.map(o => ({ label: o.label, points: o.points ?? null, n: 0 }));
