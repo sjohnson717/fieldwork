@@ -13,7 +13,12 @@ const ARTICLE_BASE = "https://www.productgrowthleaders.com";
 // should not open onto somebody else's booking page.
 //
 // Changing where that lives is this one line and a re-run.
-const ARTICLE_PREFIX = "/article/";
+//
+// /reading/ rather than the public /article/: the same pieces, served without
+// the nav and the newsletter capture. Those pages are set to noindex, which is
+// why three addresses for one article costs nothing here — search never has to
+// arbitrate between them.
+const ARTICLE_PREFIX = "/reading/";
 const articlePath = (slug) => `${ARTICLE_PREFIX}${slug}`;
 
 // Applying the six instruments to the backend.
