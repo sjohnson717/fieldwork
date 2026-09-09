@@ -5,10 +5,12 @@ import { computePersonProfile } from "@/lib/personal-scoring";
 import { rebuildResponses } from "@/lib/responses";
 import PersonalProfileReport from "@/components/PersonalProfileReport";
 import TeamGapSelfReport from "@/components/TeamGapSelfReport";
+import InstrumentSelfSummary from "@/components/InstrumentSelfSummary";
 
 // The respondent's own end-of-assessment page, as the facilitator sees it.
 //
-// It renders the same two components the respondent's page renders, from the
+// It renders the same components the respondent's page renders — the personal
+// profile, the team gap tables, or an instrument's own summary — from the
 // admin's already-loaded activities and responses — no respondent token is
 // fetched, sent, or shown. That is the whole design: the token is not a viewing
 // key but the resume credential, and anyone holding it can rewrite the answers
@@ -25,8 +27,14 @@ import TeamGapSelfReport from "@/components/TeamGapSelfReport";
 // here produced the cover repeated on each page with the admin sidebar bleeding
 // across the top of it. As a sibling of #root it can be printed alone: the
 // print rules hide #root and let this flow normally.
-export default function RespondentPreview({ assessment, respondent, activities, responses, onClose }) {
+export default function RespondentPreview({ assessment, respondent, activities, responses, instrument, onClose }) {
   const isPersonal = assessment?.assessment_type === "personal";
+  // The four instruments that ask their own questions show the respondent a
+  // third thing — their answers with the band they landed in. The instrument
+  // arrives already loaded rather than being fetched here: the results tab that
+  // opens this has it, and a second read of the same rows to learn what the
+  // caller already knows is a request for nothing.
+  const isInstrument = instrument?.question_source === "instrument";
   const [resources, setResources] = useState([]);
   // The respondent's own page gets org_name resolved server-side by
   // publicAssessment; the admin side loads the Assessment record itself, which
@@ -44,14 +52,16 @@ export default function RespondentPreview({ assessment, respondent, activities, 
 
   // Same lazy fetch, and same silent failure, as the respondent's page: an
   // empty list drops the Suggested Resources section rather than breaking the
-  // report around it.
+  // report around it. Fetched for the instruments too, because their own page
+  // offers reading and a preview that quietly dropped it would not be what the
+  // respondent sees.
   useEffect(() => {
-    if (!isPersonal) return;
+    if (!isPersonal && !isInstrument) return;
     base44.entities.Resource
       .filter({ active: true }, "sort_order")
       .then(setResources)
       .catch(() => setResources([]));
-  }, [isPersonal]);
+  }, [isPersonal, isInstrument]);
 
   // Escape closes it. This covers the whole screen, so the usual way out of a
   // full-page overlay should work without hunting for the button.
@@ -119,9 +129,22 @@ export default function RespondentPreview({ assessment, respondent, activities, 
         </button>
       </div>
 
-      {/* A personal assessment with nothing classifiable falls through to the
-          answer tables, exactly as the respondent's own page does. */}
-      {isPersonal && hasProfile ? (
+      {/* An instrument carries its own questions and its own summary. No token
+          and no onRevise, which is what makes it read-only — the same way the
+          other two are handed readOnly. */}
+      {isInstrument ? (
+        <InstrumentSelfSummary
+          instrument={instrument}
+          assessment={withOrg}
+          questions={activities}
+          responses={keyed}
+          name={respondent.name}
+          myToken={null}
+          resources={resources}
+        />
+      ) : /* A personal assessment with nothing classifiable falls through to the
+             answer tables, exactly as the respondent's own page does. */
+      isPersonal && hasProfile ? (
         <div className="print-plain">
           <div className="max-w-3xl mx-auto px-4 py-10">
             <PersonalProfileReport

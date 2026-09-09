@@ -2,10 +2,9 @@ import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { loadResultsData, deleteRespondentCascade } from "@/lib/respondents";
 import { loadInstrument, orderQuestions } from "@/lib/instruments";
-import { rebuildResponses } from "@/lib/responses";
 import RespondentRoster from "@/components/RespondentRoster";
+import RespondentPreview from "@/components/RespondentPreview";
 import InstrumentReport from "@/components/InstrumentReport";
-import InstrumentSelfSummary from "@/components/InstrumentSelfSummary";
 import ConfirmDialog from "@/components/ConfirmDialog";
 
 // The facilitator's results tab for an instrument that asks its own questions.
@@ -91,10 +90,6 @@ export default function InstrumentResults({ assessment }) {
   const rowsByActivity = {};
   for (const row of scored) (rowsByActivity[row.activity_id] ||= []).push(row);
 
-  const previewResponses = previewRespondent
-    ? rebuildResponses(responses.filter(r => r.respondent_id === previewRespondent.id))
-    : null;
-
   return (
     <div className="p-8 space-y-8">
       <RespondentRoster
@@ -137,32 +132,26 @@ export default function InstrumentResults({ assessment }) {
         </div>
       )}
 
-      {previewRespondent && previewResponses && (
-        // The respondent's own page, as they saw it. No resume token is fetched
-        // or shown: it is the credential that rewrites their answers, not a
-        // viewing key, which is why listRespondents withholds it and why this
-        // passes none.
-        <div className="fixed inset-0 z-50 bg-white overflow-y-auto">
-          <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between no-print">
-            <p className="text-sm text-gray-500">
-              {previewRespondent.name}&rsquo;s copy, read-only
-            </p>
-            <button
-              onClick={() => setPreviewRespondent(null)}
-              className="text-sm font-medium text-gray-500 hover:text-gray-800"
-            >
-              Close
-            </button>
-          </div>
-          <InstrumentSelfSummary
-            instrument={instrument}
-            assessment={assessment}
-            questions={questions}
-            responses={previewResponses}
-            name={previewRespondent.name}
-            myToken={null}
-          />
-        </div>
+      {previewRespondent && (
+        // The respondent's own page, as they saw it, through the same overlay
+        // the other two results tabs use. This tab had its own copy of it,
+        // which was white and read correctly but was not portalled and never
+        // set the class the print rules key on — so saving a PDF from here
+        // would have printed the admin page underneath and repeated the fixed
+        // overlay on every sheet, the exact failure RespondentPreview exists to
+        // stop.
+        //
+        // No resume token is fetched or shown: it is the credential that
+        // rewrites their answers, not a viewing key, which is why
+        // listRespondents withholds it and why nothing here passes one.
+        <RespondentPreview
+          assessment={assessment}
+          respondent={previewRespondent}
+          activities={questions}
+          responses={responses}
+          instrument={instrument}
+          onClose={() => setPreviewRespondent(null)}
+        />
       )}
 
       <ConfirmDialog
