@@ -229,6 +229,7 @@ export async function seedInstruments(base44, { onProgress } = {}) {
   // different thing from giving their client something worth reading.
   say("Reading");
   const existingResources = await e.Resource.list();
+  const duplicates = [];
   for (const [i, r] of (seed.resources || []).entries()) {
     // Matched to questions by label across every instrument that asks them, so
     // one article serving two questions is one row pointing at both — which is
@@ -237,19 +238,32 @@ export async function seedInstruments(base44, { onProgress } = {}) {
       .map((label) => questionRows.get(label)?.id)
       .filter(Boolean);
 
-    // Matched on url rather than title: a title can be edited on the blog and a
-    // url is what actually identifies the article. Two rows that genuinely are
-    // the same piece then reconcile instead of doubling.
-    const found = existingResources.find((row) => row.url === `${ARTICLE_BASE}${articlePath(r.slug)}`);
+    // Matched on the slug, not the whole url and not the title.
+    //
+    // Title is editable on the blog. Url looked stable and is not: moving these
+    // links from /article/ to /reading/ changed every one of them, so a run
+    // matching on url could not find the rows it had written itself and created
+    // fifteen more — thirty rows for fifteen articles, each one showing twice
+    // under its question. The slug is the part that survives both.
+    const slugOf = (u) => (u || "").split("?")[0].replace(/\/$/, "").split("/").pop();
+    const sameArticle = existingResources.filter((row) => slugOf(row.url) === r.slug);
 
     // Merged, never replaced. The same article can legitimately be offered for
     // a library activity and for an instrument question, and the field is
     // many-to-many for exactly that reason — overwriting would silently strip
     // an article off every library activity somebody had curated it for, and
     // the personal profile's reading list is built from those.
-    const activity_ids = [...new Set([...(found?.activity_ids || []), ...mine])];
+    const activity_ids = [...new Set([
+      ...sameArticle.flatMap((row) => row.activity_ids || []),
+      ...mine,
+    ])];
 
-    await upsert(e.Resource, existingResources, (row) => row === found, {
+    // Where duplicates already exist, the oldest is kept and the rest are
+    // retired: it is the one anything else in the app is most likely to point
+    // at, and its links have been folded into it above. Retired rather than
+    // deleted, like everything else here.
+    const [keep, ...extras] = sameArticle;
+    await upsert(e.Resource, existingResources, (row) => row === keep, {
       title: r.title,
       resource_type: "free_article",
       // The author, not the firm. Resource.source exists so attribution
@@ -264,6 +278,13 @@ export async function seedInstruments(base44, { onProgress } = {}) {
       sort_order: i,
       active: true,
     }, tally.resources);
+
+    for (const dup of extras) {
+      if (dup.active === false) continue;
+      await e.Resource.update(dup.id, { active: false, activity_ids: [] });
+      tally.resources.updated++;
+      duplicates.push(r.title);
+    }
   }
 
   // ── Bands ──────────────────────────────────────────────────────────────────
@@ -291,6 +312,14 @@ export async function seedInstruments(base44, { onProgress } = {}) {
     const missing = qs.filter((q) => !q.commentary).length;
     if (missing) notes.push(`${inst.name}: ${missing} of ${qs.length} questions have no commentary yet.`);
   }
+  if (duplicates.length) {
+    notes.push(
+      `Retired ${duplicates.length} duplicate reading row${duplicates.length === 1 ? "" : "s"} left by an earlier run — ` +
+      `${[...new Set(duplicates)].slice(0, 4).join(", ")}${duplicates.length > 4 ? ", …" : ""}. ` +
+      `Their links were folded into the row that was kept; delete them from Resources when convenient.`,
+    );
+  }
+
   const linked = new Set((seed.resources || []).flatMap((r) => r.question_labels));
   const unlinked = seed.questions.filter(
     (q) => q.question_type === "rating" && q.active !== false && (q.blog_id || "").trim() && !linked.has(q.label),
