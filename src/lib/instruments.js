@@ -33,10 +33,14 @@ const buildScale = (scale, options) => ({
 // branching on the assessment's type.
 export async function loadInstrument(assessment) {
   if (!assessment?.instrument_id) return null;
-  const [instruments, scales, options] = await Promise.all([
+  const [instruments, scales, options, bands] = await Promise.all([
     base44.entities.Instrument.filter({ id: assessment.instrument_id }),
     base44.entities.Scale.list("sort_order"),
     base44.entities.ScaleOption.list("sort_order"),
+    // Only two instruments have any, and an instrument with none simply shows
+    // no band — which is what Chaos and Portfolio Health did on Wix too, minus
+    // the bare unexplained number.
+    base44.entities.Band.filter({ instrument_id: assessment.instrument_id }, "sort_order"),
   ]);
   const instrument = instruments?.[0];
   if (!instrument) return null;
@@ -50,7 +54,11 @@ export async function loadInstrument(assessment) {
     .filter(Boolean)
     .map((s) => buildScale(s, options));
 
-  return { ...instrument, axes };
+  // Sorted by where they start rather than by sort_order, so a band list is
+  // always readable bottom-to-top no matter what order it was authored in.
+  const orderedBands = [...(bands || [])].sort((a, b) => (a.min_score ?? 0) - (b.min_score ?? 0));
+
+  return { ...instrument, axes, bands: orderedBands };
 }
 
 // The questions an instrument asks, in survey order.

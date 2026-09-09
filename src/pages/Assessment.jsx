@@ -12,6 +12,7 @@ import ResumeLink from "@/components/ResumeLink";
 import { FACET_ORDER, IMPORTANCE_LABEL, EXECUTION_LABEL } from "@/lib/scoring";
 import PersonalProfileReport from "@/components/PersonalProfileReport";
 import TeamGapSelfReport from "@/components/TeamGapSelfReport";
+import InstrumentSelfSummary from "@/components/InstrumentSelfSummary";
 
 // The facets this assessment actually uses, in order. Extracted because the
 // resume calculation below needs it before any state is set, and the render
@@ -1419,40 +1420,28 @@ export default function Assessment() {
       );
     }
 
-    // An instrument's own summary — score, band, the commentary on what you
-    // said — arrives in the next step. Until then this confirms what was sent
-    // and hands over the resume link, which is the pair of things somebody who
-    // has just finished actually needs.
+    // One person's own copy: their score, the band it falls in, and what they
+    // said with the commentary under each question.
     //
-    // Deliberately not the team gap confirmation below. That one reads
-    // importance against execution to sort what you said into buckets, and an
-    // instrument answer has neither: it would render an empty summary under a
-    // heading promising one, which is worse than a plain thank-you.
+    // This is the one surface where a score and a band belong. The team report
+    // has neither on purpose — a mean placed in a band is a verdict drawn from
+    // numbers that can hide a wide split — but a single person's own answers are
+    // exactly what the imported advice was written about.
+    //
+    // Deliberately not the team gap confirmation below, which reads importance
+    // against execution to bucket what you said. An instrument answer has
+    // neither, so that would render an empty summary under a heading promising
+    // one.
     if (instrument) {
-      const answered = activities.filter(a => {
-        const r = responses[a.id] || {};
-        return r.answer || r.answer_text;
-      }).length;
       return (
-        <div className="min-h-screen bg-gray-50">
-          <div className="max-w-2xl mx-auto px-4 py-16 text-center">
-            <h1 className="text-2xl font-bold text-gray-900">Thank you, {name.split(" ")[0]}</h1>
-            <p className="text-sm text-gray-500 mt-2">
-              Your answers to the {instrument.name} have been recorded — {answered} of {activities.length} questions.
-              {assessment?.subject && <> They are about <span className="font-medium text-gray-700">{assessment.subject}</span>.</>}
-            </p>
-            <p className="text-sm text-gray-500 mt-4">
-              They are read alongside everyone else's. What your team agrees and disagrees on is the
-              part worth discussing, and that is what your facilitator will bring to the session.
-            </p>
-            <div className="mt-8 text-left">
-              <ResumeLink
-                token={myToken}
-                description="Keep this link if you want to change an answer before the session."
-              />
-            </div>
-          </div>
-        </div>
+        <InstrumentSelfSummary
+          instrument={instrument}
+          assessment={assessment}
+          questions={activities}
+          responses={responses}
+          name={name}
+          myToken={myToken}
+        />
       );
     }
 

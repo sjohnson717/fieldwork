@@ -7,6 +7,7 @@ import AssessmentActivitiesTab from "./admin/AssessmentActivitiesTab";
 import AssessmentOwnershipRoles from "./admin/AssessmentOwnershipRoles";
 import AssessmentResults from "./admin/AssessmentResults";
 import PersonalResults from "./admin/PersonalResults";
+import InstrumentResults from "./admin/InstrumentResults";
 import AssessmentDiscussion from "./admin/AssessmentDiscussion";
 import LibraryPage from "./admin/LibraryPage";
 import InstrumentsPage from "./admin/InstrumentsPage";
@@ -29,9 +30,12 @@ const TEAM_TABS = ["Overview", "Activities", "Ownership Roles", "Results", "Disc
 const PERSONAL_TABS = ["Overview", "Activities", "Results"];
 
 // Instruments that ask their own fixed question list have no activity picker
-// and no ownership question, and their survey and report arrive in the next
-// step. Offering the tabs before then would be five links to empty panes.
-const INSTRUMENT_TABS = ["Overview"];
+// and no ownership question — the questions are the instrument's, not the
+// assessment's. Discussion is left out for now rather than for good: it is the
+// facilitated workspace, DiscussionNote already keys on assessment plus
+// question and knows nothing about axes, and pointing it here is the next
+// piece of work rather than a line in this list.
+const INSTRUMENT_TABS = ["Overview", "Results"];
 
 const tabsFor = (assessment, instrument) => {
   if (instrument && instrument.question_source === "instrument") return INSTRUMENT_TABS;
@@ -839,9 +843,14 @@ export default function AdminPage() {
                 />
               )}
               {effectiveTab === "Results" && (
-                selected.assessment_type === "personal"
-                  ? <PersonalResults assessment={selected} />
-                  : <AssessmentResults assessment={selected} />
+                // Routed by the instrument where there is one, and by
+                // assessment_type where there is not — which is every
+                // assessment made before instruments existed.
+                selectedInstrument?.question_source === "instrument"
+                  ? <InstrumentResults assessment={selected} />
+                  : selected.assessment_type === "personal"
+                    ? <PersonalResults assessment={selected} />
+                    : <AssessmentResults assessment={selected} />
               )}
               {effectiveTab === "Discussion" && (
                 <AssessmentDiscussion assessment={selected} />
