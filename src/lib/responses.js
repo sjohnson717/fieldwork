@@ -12,6 +12,12 @@ export const ANSWER_FIELDS = [
   "execution",
   "suggested_owner",
   ...PERSONAL_AXES.map(a => a.key),
+  // The instruments that ask their own questions: one chosen option, and the
+  // text of a written answer. Listed alongside the rest rather than behind a
+  // branch for the reason above — a row leaves the fields it does not use blank,
+  // and the survey sends only what its own instrument collects.
+  "answer",
+  "answer_text",
 ];
 
 // Response rows → answers keyed by activity id, which is the shape both the

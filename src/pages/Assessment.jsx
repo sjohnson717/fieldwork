@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { getAssignedActivities } from "@/lib/activities";
+import { loadInstrument, orderQuestions, sectionsWithQuestions } from "@/lib/instruments";
 import { ownerOptionsFor } from "@/lib/ownership";
 import { getAssessmentByCode, getRespondentSession, saveRespondentAnswers } from "@/lib/public-assessment";
 import { PERSONAL_AXES, computePersonProfile } from "@/lib/personal-scoring";
@@ -32,20 +33,39 @@ const facetsIn = (activities) => FACET_ORDER.filter(f => activities.some(a => a.
 //
 // Everything answered means they finished the questions without submitting, so
 // open the last page — one Next from the wrap-up.
-const resumeFacetIndex = (activities, responses, isPersonal) => {
-  const fields = isPersonal
-    ? PERSONAL_AXES.map(a => a.key)
-    : ["importance", "execution", "suggested_owner"];
-  const facets = facetsIn(activities);
+const resumeFacetIndex = (activities, responses, isPersonal, instrument) => {
+  const fields = instrument
+    ? ["answer", "answer_text"]
+    : isPersonal
+      ? PERSONAL_AXES.map(a => a.key)
+      : ["importance", "execution", "suggested_owner"];
+  const pages = pagesOf(activities, instrument);
   const untouched = (activity) => {
     const answer = responses[activity.id] || {};
     return !fields.some(k => answer[k]);
   };
-  const index = facets.findIndex(f =>
-    activities.filter(a => a.facet === f).some(untouched)
+  const index = pages.findIndex(p =>
+    activitiesOnPage(activities, p, instrument).some(untouched)
   );
-  return index === -1 ? Math.max(0, facets.length - 1) : index;
+  return index === -1 ? Math.max(0, pages.length - 1) : index;
 };
+
+// A survey page, for either kind of instrument: a facet for the two that draw
+// on the activity library, a named section for the four that carry their own
+// questions. One pair of helpers rather than a branch at every use, because
+// paging, resuming, saving and the blank-page warning all need the same answer
+// and drifting apart is how a page comes to save answers it did not show.
+function pagesOf(activities, instrument) {
+  if (!instrument) return facetsIn(activities);
+  return sectionsWithQuestions(instrument, activities);
+}
+
+function activitiesOnPage(activities, page, instrument) {
+  if (!instrument) return activities.filter(a => a.facet === page);
+  return activities
+    .filter(a => a.section === page)
+    .sort((a, b) => (a.section_sort ?? 0) - (b.section_sort ?? 0));
+}
 
 const HERO_IMAGE = "https://media.base44.com/images/public/6a29ff3bc8effbeb3d637555/2ffc15b8c_curated-lifestyle-H3ZVdxBRIW0-unsplash.jpg";
 
@@ -196,7 +216,36 @@ function RatingButton({ options, value, onChange, colorMap }) {
 // distribution, and the median of that beats anyone's guess.
 const SECONDS_PER_ACTIVITY = 40;
 
-function IntroPurpose({ isPersonal, activityCount, showOwnership, blurb }) {
+function IntroPurpose({ isPersonal, instrument, subject, activityCount, showOwnership, blurb }) {
+  // An instrument describes itself. Its own words are the ones the facilitator
+  // chose it by and the ones kept under review in the seed, so the intro cannot
+  // promise something the survey does not ask — which is the same reason the
+  // two library instruments build their list from the axes they render.
+  if (instrument) {
+    const scale = instrument.axes?.[0];
+    const minutes = Math.max(3, Math.round((activityCount * 20) / 60));
+    return (
+      <div className="mb-6 text-sm text-gray-600 space-y-3">
+        {instrument.description && <p>{instrument.description}</p>}
+        <p>
+          <span className="font-semibold text-gray-800">{activityCount} questions</span>, about{" "}
+          {minutes} minutes.
+          {scale && <> Each one is answered on the same scale: {scale.options.map(o => o.label).join(", ")}.</>}
+        </p>
+        {subject && (
+          <p>
+            You are answering about <span className="font-semibold text-gray-800">{subject}</span>.
+            Everyone else answering is scoring the same one.
+          </p>
+        )}
+        <p className="text-gray-500">
+          Answer quickly and honestly — a first reaction is usually the more useful one. Your answers
+          are read alongside your colleagues', and where you disagree is the part worth discussing.
+        </p>
+      </div>
+    );
+  }
+
   // The caller passes the same condition the activity card renders on, so the
   // intro cannot promise a question the survey does not ask.
   const questions = isPersonal
@@ -273,6 +322,10 @@ export default function Assessment() {
   const [title, setTitle] = useState("");
   const [respondent, setRespondent] = useState(null);
   const [activities, setActivities] = useState([]);
+  // The instrument this assessment runs, with its axes resolved, or null for
+  // every assessment made before instruments existed. Null is the signal to
+  // use the library path, so nothing here branches on assessment_type.
+  const [instrument, setInstrument] = useState(null);
   const [responses, setResponses] = useState({});
   const [currentFacetIndex, setCurrentFacetIndex] = useState(0);
   // The two closing questions. Held apart from `responses` because they are not
@@ -389,7 +442,15 @@ export default function Assessment() {
   // publicAssessment now returns only the rows belonging to the presented
   // token.
   const loadSurveyData = async (a, saved) => {
-    const acts = await getAssignedActivities(a);
+    const [rawActs, inst] = await Promise.all([
+      getAssignedActivities(a),
+      loadInstrument(a),
+    ]);
+    // Section order belongs to the instrument, so it is applied here rather
+    // than in getAssignedActivities — which deliberately returns an
+    // instrument's questions unsorted so this is the only place that decides.
+    const acts = inst ? orderQuestions(inst, rawActs) : rawActs;
+    setInstrument(inst);
     setActivities(acts);
     const titles = await base44.entities.JobTitle.filter({ active: true }, "sort_order");
     setAllTitles(titles.map(t => t.name));
@@ -398,7 +459,7 @@ export default function Assessment() {
     // Open on the first unfinished page rather than the first page. Set here
     // because this is the one place holding the activities and the saved
     // answers together, before anything renders.
-    setCurrentFacetIndex(resumeFacetIndex(acts, rebuilt, a.assessment_type === "personal"));
+    setCurrentFacetIndex(resumeFacetIndex(acts, rebuilt, a.assessment_type === "personal", inst));
   };
 
   const loadFromToken = async (t) => {
@@ -615,9 +676,34 @@ export default function Assessment() {
     ? "Your answers describe your own experience, skills and interests. The profile is yours to keep, and sharing it is your call."
     : "Your responses are confidential and will only be seen in aggregate by your team leader.";
 
-  const availableFacets = facetsIn(activities);
+  const availableFacets = pagesOf(activities, instrument);
   const currentFacet = availableFacets[currentFacetIndex];
-  const facetActivities = activities.filter(a => a.facet === currentFacet);
+  const facetActivities = activitiesOnPage(activities, currentFacet, instrument);
+
+  // The axes this survey asks about every question. An instrument carries its
+  // own — one for the four imported ones — and the two library instruments keep
+  // the constants they have always used, until phase five moves them onto
+  // Scale records too.
+  //
+  // Text questions have no axis at all and are filtered out of the rating loop
+  // rather than given an empty one.
+  const axes = instrument ? instrument.axes : (isPersonal ? PERSONAL_AXES : TEAM_GAP_AXES);
+
+  // An instrument's axes carry {label, points} objects; the library constants
+  // carry bare strings. RatingButton wants strings, so the labels come out here
+  // and the colour ramp is built from the same list — which is what lets a
+  // four-point challenge scale and a three-point risk scale both render without
+  // a colour map written for either.
+  const optionLabels = (axis) =>
+    instrument ? axis.options.map(o => o.label) : axis.options;
+  const colorsFor = (axis) =>
+    instrument
+      ? rampFor(optionLabels(axis))
+      : isPersonal
+        ? PERSONAL_COLORS[axis.key]
+        : axis.colors;
+  // Every instrument question stores its rating in the one `answer` column.
+  const axisKeyFor = (axis) => (instrument ? "answer" : axis.key);
 
   // What the ownership question offers. Derived from the activities this
   // assessment actually uses, plus the three product titles that appear in
@@ -637,6 +723,17 @@ export default function Assessment() {
   const answersForCurrentFacet = () =>
     facetActivities.map(activity => {
       const r = responses[activity.id] || {};
+      if (instrument) {
+        // One scale per question, plus the text of a written one. Both are sent
+        // every time, including as null: clearing an answer is a real thing to
+        // do, and saveResponses treats null as "unanswered" rather than
+        // ignoring it.
+        return {
+          activity_id: activity.id,
+          answer: r.answer || null,
+          answer_text: r.answer_text || null,
+        };
+      }
       return {
         activity_id: activity.id,
         ...(isPersonal
@@ -820,8 +917,10 @@ export default function Assessment() {
           </div>
           <IntroPurpose
             isPersonal={isPersonal}
+            instrument={instrument}
+            subject={assessment?.subject}
             activityCount={activities.length}
-            showOwnership={!isPersonal && ownerOptions.length > 0}
+            showOwnership={!instrument && !isPersonal && ownerOptions.length > 0}
             blurb={introBlurb}
           />
           <div className="space-y-4 mb-6">
@@ -904,8 +1003,10 @@ export default function Assessment() {
           </div>
           <IntroPurpose
             isPersonal={isPersonal}
+            instrument={instrument}
+            subject={assessment?.subject}
             activityCount={activities.length}
-            showOwnership={!isPersonal && ownerOptions.length > 0}
+            showOwnership={!instrument && !isPersonal && ownerOptions.length > 0}
             blurb={introBlurb}
           />
           <div className="space-y-4 mb-6">
@@ -984,26 +1085,52 @@ export default function Assessment() {
                       gray-500 rather than gray-400 deliberately. gray-400 on
                       white is a standing 2.43:1 contrast finding, and this text
                       is here to be read carefully by people who are unsure. */}
-                  {(isPersonal ? PERSONAL_AXES : TEAM_GAP_AXES).map(axis => (
-                    <div key={axis.key}>
-                      <p className="mb-2 leading-snug">
-                        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{axis.label}</span>
-                        <span className="text-xs text-gray-500"> · {axis.hint}</span>
-                      </p>
-                      <RatingButton
-                        options={axis.options}
-                        value={r[axis.key]}
-                        onChange={val => handleRatingChange(activity.id, axis.key, val)}
-                        colorMap={isPersonal ? PERSONAL_COLORS[axis.key] : axis.colors}
-                      />
-                    </div>
-                  ))}
+                  {activity.question_type === "text" ? (
+                    /* A written question. The four imported instruments each
+                       end with one, and Portfolio Health's is the reason the
+                       team report has a roll-up: seven people's answers to
+                       "where would you put an extra million" side by side is
+                       the page a facilitator actually uses.
+
+                       No character counter and no minimum. Somebody with
+                       nothing to add should be able to move on, which the
+                       blank-page warning already covers. */
+                    <textarea
+                      rows={4}
+                      value={r.answer_text || ""}
+                      onChange={e => handleRatingChange(activity.id, "answer_text", e.target.value)}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Your answer"
+                    />
+                  ) : (
+                    axes.map(axis => (
+                      <div key={axis.key}>
+                        {/* One axis needs no label — the question is the
+                            heading above, and "Challenge scale · " over a row
+                            of four buttons is a caption on the obvious. Two or
+                            three do need one, because the reader has to keep
+                            them apart. */}
+                        {axes.length > 1 && (
+                          <p className="mb-2 leading-snug">
+                            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{axis.label}</span>
+                            {axis.hint && <span className="text-xs text-gray-500"> · {axis.hint}</span>}
+                          </p>
+                        )}
+                        <RatingButton
+                          options={optionLabels(axis)}
+                          value={r[axisKeyFor(axis)]}
+                          onChange={val => handleRatingChange(activity.id, axisKeyFor(axis), val)}
+                          colorMap={colorsFor(axis)}
+                        />
+                      </div>
+                    ))
+                  )}
                   {/* Team gap only, and only when the assessment names roles.
                       Not an axis: a suggested owner is a choice among this
                       assessment's roles rather than a rating, which is why it
                       sits outside the loop above and asks its question in
                       words. */}
-                  {!isPersonal && ownerOptions.length > 0 && (
+                  {!instrument && !isPersonal && ownerOptions.length > 0 && (
                     <div>
                       <p className="mb-2 leading-snug">
                         <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{OWNERSHIP_QUESTION.label}</span>
@@ -1287,6 +1414,43 @@ export default function Assessment() {
               copiedLink={copiedLink}
               resources={resources}
             />
+          </div>
+        </div>
+      );
+    }
+
+    // An instrument's own summary — score, band, the commentary on what you
+    // said — arrives in the next step. Until then this confirms what was sent
+    // and hands over the resume link, which is the pair of things somebody who
+    // has just finished actually needs.
+    //
+    // Deliberately not the team gap confirmation below. That one reads
+    // importance against execution to sort what you said into buckets, and an
+    // instrument answer has neither: it would render an empty summary under a
+    // heading promising one, which is worse than a plain thank-you.
+    if (instrument) {
+      const answered = activities.filter(a => {
+        const r = responses[a.id] || {};
+        return r.answer || r.answer_text;
+      }).length;
+      return (
+        <div className="min-h-screen bg-gray-50">
+          <div className="max-w-2xl mx-auto px-4 py-16 text-center">
+            <h1 className="text-2xl font-bold text-gray-900">Thank you, {name.split(" ")[0]}</h1>
+            <p className="text-sm text-gray-500 mt-2">
+              Your answers to the {instrument.name} have been recorded — {answered} of {activities.length} questions.
+              {assessment?.subject && <> They are about <span className="font-medium text-gray-700">{assessment.subject}</span>.</>}
+            </p>
+            <p className="text-sm text-gray-500 mt-4">
+              They are read alongside everyone else's. What your team agrees and disagrees on is the
+              part worth discussing, and that is what your facilitator will bring to the session.
+            </p>
+            <div className="mt-8 text-left">
+              <ResumeLink
+                token={myToken}
+                description="Keep this link if you want to change an answer before the session."
+              />
+            </div>
           </div>
         </div>
       );

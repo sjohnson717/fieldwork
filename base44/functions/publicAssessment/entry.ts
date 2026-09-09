@@ -30,6 +30,12 @@ const PUBLIC_FIELDS = [
   "roles",
   "activity_ids",
   "created_date",
+  // Which instrument this runs, and what it is about. The survey and the
+  // report both need the first to know what to ask and how to score it; the
+  // second is the product or idea everyone answering has to be scoring, and it
+  // is shown to them for exactly that reason.
+  "instrument_id",
+  "subject",
 ];
 
 // Every field an answer can carry: the team gap's three, then the personal
@@ -44,6 +50,12 @@ const ANSWER_FIELDS = [
   "experience",
   "skills",
   "interest",
+  // Instruments that ask their own questions store one chosen option and, for
+  // a written question, the text. Listed here so the team dashboard's answer
+  // counts see them — a list covering only the six above reports every
+  // respondent on one of the four as untouched.
+  "answer",
+  "answer_text",
 ];
 
 const shape = (assessment, extraFields = []) => {

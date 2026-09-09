@@ -51,6 +51,14 @@ const FIELDS = {
 const TEAM_GAP_FIELDS = ["importance", "execution", "suggested_owner"];
 const PERSONAL_FIELDS = ["experience", "skills", "interest"];
 
+// Instruments that ask their own questions store the chosen option in `answer`
+// and any written answer in `answer_text`.
+const INSTRUMENT_FIELDS = ["answer", "answer_text"];
+
+// A written answer is a paragraph, not a role name, so it gets its own cap
+// rather than the 200 characters `suggested_owner` is held to.
+const MAX_ANSWER_TEXT = 5000;
+
 // One page of a long assessment is a handful of activities; the whole library
 // is under a hundred. A cap keeps a single call from turning into a bulk write.
 const MAX_ANSWERS = 200;
@@ -82,6 +90,17 @@ const notFound = () =>
 // this assessment.
 const assignedIds = async (svc, assessment) => {
   const all = await svc.Activity.filter({ active: true }, "sort_order", ALL);
+
+  // An instrument asks its own fixed list, every question every time — there is
+  // no per-assessment selection. Branching here matters more than it looks: the
+  // library rule below treats an empty activity_ids as "all of them", so an
+  // instrument assessment falling through to it would accept an answer to any
+  // activity in the library.
+  if (assessment.instrument_id) {
+    const mine = all.filter((a) => (a.instrument_ids || []).includes(assessment.instrument_id));
+    return new Set(mine.map((a) => a.id));
+  }
+
   const ids = assessment.activity_ids;
   const hasFilter = Array.isArray(ids) && ids.length > 0;
   const assigned = all.filter(
@@ -90,6 +109,23 @@ const assignedIds = async (svc, assessment) => {
       a.assessment_id === assessment.id,
   );
   return new Set(assigned.map((a) => a.id));
+};
+
+// The option labels an instrument's scales actually offer, for validating
+// `answer`. Read from ScaleOption rather than a list kept here: the options are
+// data, and a copy in this file is a second source of truth that would start
+// refusing real answers the day a scale gains a point.
+//
+// This endpoint is open — a caller holding a token can reach it directly — so
+// the check is the difference between storing an answer and storing anything.
+const instrumentLabels = async (svc, assessment) => {
+  if (!assessment.instrument_id) return null;
+  const instruments = await svc.Instrument.filter({ id: assessment.instrument_id });
+  const instrument = instruments?.[0];
+  if (!instrument) return new Set();
+  const options = await svc.ScaleOption.filter({}, "sort_order", ALL);
+  const scaleIds = new Set(instrument.scale_ids || []);
+  return new Set(options.filter((o) => scaleIds.has(o.scale_id)).map((o) => o.label));
 };
 
 Deno.serve(async (req) => {
@@ -156,7 +192,12 @@ Deno.serve(async (req) => {
     }
 
     const allowed = await assignedIds(svc, assessment);
-    const writable = isPersonal ? PERSONAL_FIELDS : TEAM_GAP_FIELDS;
+    const labels = await instrumentLabels(svc, assessment);
+    const writable = assessment.instrument_id
+      ? INSTRUMENT_FIELDS
+      : isPersonal
+        ? PERSONAL_FIELDS
+        : TEAM_GAP_FIELDS;
 
     // Only the fields this assessment type asks about are written. Sending the
     // other type's fields as null would be harmless on a fresh row but would
@@ -186,6 +227,20 @@ Deno.serve(async (req) => {
         }
         if (typeof value !== "string") {
           return Response.json({ error: `invalid ${field}` }, { status: 400 });
+        }
+        if (field === "answer") {
+          if (!labels || !labels.has(value)) {
+            return Response.json({ error: "invalid answer" }, { status: 400 });
+          }
+          payload.answer = value;
+          continue;
+        }
+        if (field === "answer_text") {
+          if (value.length > MAX_ANSWER_TEXT) {
+            return Response.json({ error: "invalid answer_text" }, { status: 400 });
+          }
+          payload.answer_text = value;
+          continue;
         }
         const options = FIELDS[field];
         if (options && !options.includes(value)) {
