@@ -160,7 +160,12 @@ export async function seedInstruments(base44, { onProgress } = {}) {
         // point in it, which makes it the least wrong constant; nothing reads
         // it for these questions, which page by `section`.
         facet: "LEARN",
-        active: true,
+        // Honours the seed rather than forcing true, which is what makes
+        // retiring a question possible at all: `active: false` is how one is
+        // taken out of the survey and the report without deleting the row that
+        // answers point at. Hardcoding true here would quietly revive every
+        // retired question on the next run.
+        active: q.active !== false,
       }, tally.questions);
   }
 
@@ -198,7 +203,7 @@ export async function seedInstruments(base44, { onProgress } = {}) {
   // in a client's report.
   for (const inst of seed.instruments) {
     if (inst.question_source !== "instrument") continue;
-    const qs = seed.questions.filter((q) => q.instrument_keys.includes(inst.key) && q.question_type === "rating");
+    const qs = seed.questions.filter((q) => q.instrument_keys.includes(inst.key) && q.question_type === "rating" && q.active !== false);
     const missing = qs.filter((q) => !q.commentary).length;
     if (missing) notes.push(`${inst.name}: ${missing} of ${qs.length} questions have no commentary yet.`);
   }

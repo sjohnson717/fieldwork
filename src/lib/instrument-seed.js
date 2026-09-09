@@ -32,6 +32,22 @@
 // linked articles could not come across: the export carries Wix post ids with
 // no titles or URLs, so those become Resource records once somebody resolves
 // them.
+//
+// Three comment questions are retired rather than deleted (active: false, which
+// is what the seeder writes and what getAssignedActivities filters on). They
+// asked "what else would you like to tell us?" immediately before the two
+// closing questions ask "what else do you want to tell us?" — the same sentence
+// twice, going to opposite audiences: the instrument's version is read by the
+// respondent's own team, and the closing pair are admin-only and say on screen
+// that they are not part of the team's report.
+//
+// Portfolio Health's magic-wand question stays. It is not a comments box: it
+// asks something specific, and several people's answers side by side are a page
+// a facilitator reads out.
+//
+// Retired, not removed, because Response rows key on the question and a delete
+// would take any answer to it with it. Restoring one is a matter of flipping
+// the flag back and applying the source again.
 
 export const INSTRUMENT_SEED = {
   "scales": [
@@ -308,8 +324,7 @@ export const INSTRUMENT_SEED = {
         "Your Product",
         "Performance",
         "Market Fit",
-        "Competitive",
-        "Comments"
+        "Competitive"
       ],
       "scale_keys": [
         "yes_no"
@@ -331,8 +346,7 @@ export const INSTRUMENT_SEED = {
       "sections": [
         "Market",
         "Capabilities",
-        "Competitive",
-        "Comments"
+        "Competitive"
       ],
       "scale_keys": [
         "yes_no_unknown"
@@ -352,8 +366,7 @@ export const INSTRUMENT_SEED = {
       "tagline": "Find out which obstacles are preventing you from consistently achieving product success.",
       "description": "What really prevents you from defining, developing, and delivering products people actually want to buy and use? Most organizations don’t fail because they lack talent or effort—they fail because chaos creeps in. Priorities shift, roles blur, customer input gets drowned out, and soon the team is running from fire drill to fire drill instead of moving forward with purpose.\n\nThis self-assessment will help you uncover whether you’re on a clear path to product success or stuck in a cycle of misalignment, disappointing launches, and endless churn. Answer honestly and quickly—don’t overthink it. Your first instinct usually reveals where the chaos lives.",
       "sections": [
-        "Your Challenges",
-        "Comments"
+        "Your Challenges"
       ],
       "scale_keys": [
         "challenge"
@@ -543,7 +556,8 @@ export const INSTRUMENT_SEED = {
       "commentary": "",
       "critical": false,
       "required": false,
-      "blog_id": ""
+      "blog_id": "",
+      "active": false
     },
     {
       "label": "Sales Experience",
@@ -704,7 +718,8 @@ export const INSTRUMENT_SEED = {
       "commentary": "",
       "critical": false,
       "required": false,
-      "blog_id": ""
+      "blog_id": "",
+      "active": false
     },
     {
       "label": "Project versus product",
