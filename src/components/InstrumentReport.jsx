@@ -262,14 +262,38 @@ function Distribution({ dist, expected }) {
   );
 }
 
+// Whether what the room agreed on is the worst answer the scale offers.
+//
+// `top` is the modal answer and is null on a tie, so this is only ever true
+// when there is a clear majority and that majority picked the bottom option.
+const agreedOnTheWorst = (dist) => {
+  if (!dist.top) return false;
+  const rated = dist.counts.filter(c => c.points !== null);
+  if (rated.length === 0) return false;
+  const worst = Math.min(...rated.map(c => c.points));
+  return rated.some(c => c.label === dist.top && c.points === worst);
+};
+
 // How split the room was, in words. A number between 0 and 1 is precise and
 // tells a facilitator nothing they can act on; these three bands are what the
 // agenda actually turns on.
-const splitLabel = (spread) => {
+//
+// The badge measures agreement, not health, and those two came apart at the
+// only place it mattered: eight people answering No to a non-negotiable — the
+// worst finding on the page — carried a green "Agreed" beside a solid red bar.
+// The word was right and the colour was not, so the word stays and unanimity on
+// the worst answer loses the green. Split and Some disagreement need no such
+// handling; nothing about rose or amber reads as reassurance.
+const splitLabel = (spread, grim) => {
   if (spread === null) return null;
   if (spread >= 0.6) return { text: "Split", tone: "text-rose-700 bg-rose-50 border-rose-200" };
   if (spread >= 0.25) return { text: "Some disagreement", tone: "text-amber-800 bg-amber-50 border-amber-200" };
-  return { text: "Agreed", tone: "text-emerald-700 bg-emerald-50 border-emerald-200" };
+  return {
+    text: "Agreed",
+    tone: grim
+      ? "text-gray-600 bg-gray-50 border-gray-200"
+      : "text-emerald-700 bg-emerald-50 border-emerald-200",
+  };
 };
 
 // `chart` picks the drawing, not the numbers.
@@ -355,7 +379,7 @@ export default function InstrumentReport({
       <ol className="space-y-8">
         {ordered.map((q, i) => {
           const d = distributions[q.id];
-          const split = splitLabel(d.spread);
+          const split = splitLabel(d.spread, agreedOnTheWorst(d));
           const worst = Math.min(...d.counts.filter(c => c.points !== null).map(c => c.points));
           const flagged = q.critical && d.counts.some(c => c.points === worst && c.n > 0);
           return (
