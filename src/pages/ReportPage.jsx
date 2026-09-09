@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { getAssignedActivities } from "@/lib/activities";
+import { loadInstrument, orderQuestions } from "@/lib/instruments";
+import InstrumentReport from "@/components/InstrumentReport";
 import { getBuyerReport } from "@/lib/public-assessment";
 import { ownerMatchesRecommendation } from "@/lib/ownership";
 import { usePrintSafeUrl } from "@/lib/print-safe-url";
@@ -421,6 +423,14 @@ export default function ReportPage() {
   usePrintSafeUrl();
   const [assessment, setAssessment] = useState(null);
   const [activities, setActivities] = useState([]);
+  // Set when this assessment runs one of the instruments that ask their own
+  // questions, which is what routes to the distribution report below.
+  const [instrument, setInstrument] = useState(null);
+  // Every answer, kept by question. computeActivityStats folds responses into
+  // per-activity averages, which is the wrong shape for a distribution: it
+  // needs to know that eight said one thing and two said another, not what
+  // those answers average to.
+  const [rowsByActivity, setRowsByActivity] = useState({});
   const [activityStats, setActivityStats] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -490,11 +500,14 @@ export default function ReportPage() {
       const responses = result.responses || [];
 
       // Load activities and discussion notes in parallel
-      const [acts, discussionNotes] = await Promise.all([
+      const [rawActs, discussionNotes, inst] = await Promise.all([
         getAssignedActivities(a),
         base44.entities.DiscussionNote.filter({ assessment_id: a.id }),
+        loadInstrument(a),
       ]);
 
+      const acts = inst ? orderQuestions(inst, rawActs) : rawActs;
+      setInstrument(inst);
       setActivities(acts);
 
       // Only completed submissions are scored. A half-finished set would
@@ -510,6 +523,12 @@ export default function ReportPage() {
 
       const stats = computeActivityStats(acts, scoredResponses);
       setActivityStats(stats);
+
+      const byActivity = {};
+      for (const row of scoredResponses) {
+        (byActivity[row.activity_id] ||= []).push(row);
+      }
+      setRowsByActivity(byActivity);
 
       const withDecisions = discussionNotes.filter(n => n.decision?.trim());
       setDecisions(withDecisions);
@@ -582,6 +601,26 @@ export default function ReportPage() {
   if (scoredCount < threshold) {
     return gateCard(
       `Results will appear here once at least ${threshold} ${threshold === 1 ? "person has" : "people have"} completed the assessment — ${scoredCount} of ${threshold} so far.`
+    );
+  }
+
+  // A distribution report is a different argument from a facet wheel over
+  // importance-against-execution, so it is a different renderer rather than a
+  // branch threaded through this one. It sits after the gates deliberately: the
+  // minimum-response rule is about protecting respondents, and it applies to
+  // every instrument equally.
+  if (instrument && instrument.report_style === "distribution") {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <InstrumentReport
+          instrument={instrument}
+          assessment={assessment}
+          questions={activities}
+          responsesByActivity={rowsByActivity}
+          respondentCount={participantCount}
+          completedCount={scoredCount}
+        />
+      </div>
     );
   }
 
