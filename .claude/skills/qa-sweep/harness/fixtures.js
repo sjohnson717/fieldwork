@@ -145,3 +145,57 @@ export const DISCUSSION_NOTES = [
 
 export const TEAM_TOKEN = "TOKEN-TEAM";
 export const BUYER_TOKEN = "TOKEN-BUYER";
+
+// ── An instrument that carries its own questions ─────────────────────────────
+//
+// Added after a Chaos report shipped with every bar empty and "1 didn't answer
+// this" under a header saying somebody had finished. The cause was that
+// publicAssessment's buyer payload named the team gap's three answer fields
+// inline, so rows for an instrument arrived carrying no answer at all — and no
+// route here exercised that shape, so nothing caught it.
+//
+// Deliberately awkward in the two ways that matter to a distribution: one
+// question everybody agrees on, one they split down the middle, and one person
+// who skipped a question so the blank count has something to report.
+export const CHAOS = {
+  id: "asmt-chaos",
+  title: "Chaos Assessment — Northwind",
+  instrument_id: "inst-chaos",
+  status: "active",
+  company_name: "Northwind Systems",
+  org_name: "Product Growth Leaders",
+  activity_ids: [],
+  roles: [],
+  access_code: "QA333",
+  created_date: "2026-09-01T10:00:00.000Z",
+};
+
+export const CHAOS_QUESTIONS = [
+  { id: "ch-1", name: "Prioritization Challenges", description: "We struggle to say \"no\" — our backlog is packed with stakeholder requests.", instrument_ids: ["inst-chaos"], section: "Your Challenges", section_sort: 1, question_type: "rating", active: true, facet: "LEARN", commentary: "Backlogs grow like weeds. Without a way to filter, you'll end up with decades worth of must-haves no team could ever deliver." },
+  { id: "ch-2", name: "Roles and Responsibilities", description: "There's constant friction because no one is sure who owns what.", instrument_ids: ["inst-chaos"], section: "Your Challenges", section_sort: 2, question_type: "rating", active: true, facet: "LEARN", commentary: "Ambiguity is the enemy of collaboration." },
+  { id: "ch-3", name: "Roadmap Communication", description: "Our roadmap changes frequently, and stakeholders are often confused.", instrument_ids: ["inst-chaos"], section: "Your Challenges", section_sort: 3, question_type: "rating", active: true, facet: "LEARN", commentary: "A roadmap isn't a task list; it's a strategic tool." },
+  { id: "ch-4", name: "Comments", description: "What else would you like to tell us?", instrument_ids: ["inst-chaos"], section: "Comments", section_sort: 99, question_type: "text", reportable_text: true, active: true, facet: "LEARN" },
+];
+
+// resp-c1 and resp-c2 finished; resp-c3 started and answered nothing, so the
+// report must count it on the roster and leave it out of the numbers.
+export const CHAOS_RESPONDENTS = [
+  { id: "resp-c1", assessment_id: CHAOS.id, name: "Ada Okonjo", title: "Head of Product", token: "TOKEN-CHAOS-1", status: "completed", completed_date: "2026-09-02T09:00:00.000Z", created_date: "2026-09-01T09:00:00.000Z" },
+  { id: "resp-c2", assessment_id: CHAOS.id, name: "Ben Iyer", title: "Product Manager", token: "TOKEN-CHAOS-2", status: "completed", completed_date: "2026-09-02T10:00:00.000Z", created_date: "2026-09-01T10:00:00.000Z" },
+  { id: "resp-c3", assessment_id: CHAOS.id, name: "Cara Diaz", title: "Engineering Lead", token: "TOKEN-CHAOS-3", status: "started", created_date: "2026-09-01T11:00:00.000Z" },
+];
+
+export const CHAOS_ANSWERS = [
+  // ch-1: the widest split the scale allows.
+  { respondent_id: "resp-c1", activity_id: "ch-1", answer: "Absolutely" },
+  { respondent_id: "resp-c2", activity_id: "ch-1", answer: "Never" },
+  // ch-2: unanimous, so it sorts last and reads "Agreed".
+  { respondent_id: "resp-c1", activity_id: "ch-2", answer: "Somewhat" },
+  { respondent_id: "resp-c2", activity_id: "ch-2", answer: "Somewhat" },
+  // ch-3: one of the two skipped it — the blank the report has to report.
+  { respondent_id: "resp-c1", activity_id: "ch-3", answer: "Not so much" },
+  // The written answer, which the report rolls up unattributed.
+  { respondent_id: "resp-c1", activity_id: "ch-4", answer_text: "Stop starting things." },
+];
+
+export const CHAOS_BUYER_TOKEN = "TOKEN-BUYER-CHAOS";

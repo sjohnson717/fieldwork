@@ -14,14 +14,21 @@
 //
 // window.__qa exposes that state to the driver.
 
-import { FACETS, ACTIVITIES, TEAM_GAP, PERSONAL, RESPONDENTS, ALL_ANSWERS, OWN_ANSWERS, PERSONAL_ANSWERS, DISCUSSION_NOTES, TEAM_TOKEN, BUYER_TOKEN } from "./fixtures.js";
+import { FACETS, ACTIVITIES, TEAM_GAP, PERSONAL, RESPONDENTS, ALL_ANSWERS, OWN_ANSWERS, PERSONAL_ANSWERS, DISCUSSION_NOTES, TEAM_TOKEN, BUYER_TOKEN,
+         CHAOS, CHAOS_QUESTIONS, CHAOS_RESPONDENTS, CHAOS_ANSWERS, CHAOS_BUYER_TOKEN } from "./fixtures.js";
 
-const ANSWER_FIELDS = ["importance", "execution", "suggested_owner", "experience", "skills", "interest"];
+// Mirrors publicAssessment's own list. The buyer payload used to name the team
+// gap's three fields inline, exactly as the real function did — which is why a
+// Chaos report shipped with every bar empty and "1 didn't answer this" under a
+// header saying somebody had finished. The stub is only useful while it is
+// wrong in the same ways the backend is.
+const ANSWER_FIELDS = ["importance", "execution", "suggested_owner", "experience", "skills", "interest", "answer", "answer_text"];
 
 const state = {
   assessments: [
     { ...TEAM_GAP, team_token: TEAM_TOKEN, buyer_token: BUYER_TOKEN, tag_ids: ["tag-1"] },
     { ...PERSONAL, team_token: TEAM_TOKEN + "-P", buyer_token: BUYER_TOKEN + "-P" },
+    { ...CHAOS, buyer_token: CHAOS_BUYER_TOKEN },
   ],
   respondents: RESPONDENTS.map(r => ({ ...r, assessment_id: TEAM_GAP.id })),
   responses: ALL_ANSWERS.map((a, i) => ({ id: `row-${i}`, assessment_id: TEAM_GAP.id, ...a })),
@@ -47,6 +54,11 @@ const state = {
       sections: FACETS, sort_order: 2, active: true,
       tagline: "What one person brings to the same activities",
       description: "An individual rates their own experience, skills and interest in each activity." },
+    { id: "inst-chaos", key: "chaos", name: "Chaos Assessment", question_source: "instrument",
+      report_style: "distribution", ask_ownership: false, scale_ids: ["sc-challenge"],
+      sections: ["Your Challenges", "Comments"], sort_order: 3, active: true,
+      tagline: "Find out which obstacles are preventing product success",
+      description: "What really prevents you from defining, developing, and delivering products people want?" },
   ],
   scales: [
     { id: "sc-imp", key: "importance", name: "Importance", sort_order: 0 },
@@ -54,6 +66,7 @@ const state = {
     { id: "sc-exp", key: "experience", name: "Experience", sort_order: 2 },
     { id: "sc-skill", key: "skills", name: "Skills", sort_order: 3 },
     { id: "sc-int", key: "interest", name: "Interest", sort_order: 4 },
+    { id: "sc-challenge", key: "challenge", name: "Challenge scale", sort_order: 5 },
   ],
   // The real option sets, so the survey rendered from Scale records is the one
   // the sweep actually checks. Left empty, every axis would fall back to the
@@ -65,6 +78,7 @@ const state = {
     ...["None", "Limited", "Some", "Extensive"].map((label, i) => ({ id: `o-exp-${i}`, scale_id: "sc-exp", label, points: [0,1,3,5][i], sort_order: i })),
     ...["None", "Basic", "Good", "Excellent"].map((label, i) => ({ id: `o-skill-${i}`, scale_id: "sc-skill", label, points: [0,1,3,5][i], sort_order: i })),
     ...["None", "Limited", "Moderate", "Passionate"].map((label, i) => ({ id: `o-int-${i}`, scale_id: "sc-int", label, points: [0,1,3,5][i], sort_order: i })),
+    ...["Absolutely", "Somewhat", "Not so much", "Never"].map((label, i) => ({ id: `o-ch-${i}`, scale_id: "sc-challenge", label, points: [1,3,5,8][i], sort_order: i })),
   ],
 };
 
@@ -76,6 +90,9 @@ state.responses.push(
 const personalRespondent = { id: "resp-p1", assessment_id: PERSONAL.id, name: "Jo Marsden", title: "Product Manager", token: "TOKEN-PERSONAL", status: "completed", completed_date: "2026-08-13T09:00:00.000Z", created_date: "2026-08-12T09:00:00.000Z" };
 state.respondents.push(personalRespondent);
 state.responses.push(...PERSONAL_ANSWERS.map((a, i) => ({ id: `pers-${i}`, assessment_id: PERSONAL.id, respondent_id: personalRespondent.id, ...a })));
+
+state.respondents.push(...CHAOS_RESPONDENTS.map(r => ({ ...r })));
+state.responses.push(...CHAOS_ANSWERS.map((a, i) => ({ id: `chaos-${i}`, assessment_id: CHAOS.id, ...a })));
 
 if (typeof window !== "undefined") {
   window.__qa = state;
@@ -108,7 +125,7 @@ export const base44 = {
   entities: {
     // `list` as well as `filter`: the admin sidebar counts each instrument's
     // questions from the whole table rather than trusting a stored count.
-    Activity: { filter: async () => readOnly(ACTIVITIES), list: async () => readOnly(ACTIVITIES) },
+    Activity: { filter: async () => readOnly([...ACTIVITIES, ...CHAOS_QUESTIONS]), list: async () => readOnly([...ACTIVITIES, ...CHAOS_QUESTIONS]) },
     JobTitle: { filter: async () => [{ name: "Product Management" }, { name: "Product Marketing" }, { name: "Engineering" }, { name: "Design" }] },
     Resource: { filter: async () => [] },
     // Admin reads these two directly. The sweep's own routes are public and
@@ -258,7 +275,7 @@ export const base44 = {
               respondents: mine.map(r => ({ id: r.id, status: r.status })),
               responses: state.responses
                 .filter(r => r.assessment_id === a.id)
-                .map(r => ({ respondent_id: r.respondent_id, activity_id: r.activity_id, importance: r.importance ?? null, execution: r.execution ?? null, suggested_owner: r.suggested_owner ?? null })),
+                .map(r => ({ respondent_id: r.respondent_id, activity_id: r.activity_id, ...answerFieldsOf(r) })),
             },
           };
         }

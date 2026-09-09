@@ -54,6 +54,23 @@ const ROUTES = [
   { name: "respondent-report", url: "/assess?t=TOKEN-RESP-1", review: true, expect: "where you'd focus first" },
   { name: "personal-profile", url: "/assess?t=TOKEN-PERSONAL", review: true, expect: "part one" },
   { name: "buyer-report", url: "/report/TOKEN-BUYER", expect: "executive summary" },
+  // The distribution report, which is a different renderer from the one above
+  // and went uncovered until it shipped broken: publicAssessment's buyer
+  // payload named the team gap's answer fields inline, so this page received
+  // rows with no answer and drew every question as empty bars reading
+  // "1 didn't answer this".
+  //
+  // The assertion has to be a sentence the page can only produce from real
+  // answers. Headings and option labels render either way; so does the word
+  // "split", which appears in the standing intro ("the splits worth an hour"),
+  // and so does "agreed", which is inside "disagreed" in the same paragraph.
+  // Matching is a case-insensitive substring, so all three would have passed
+  // against the very payload this route exists to catch.
+  //
+  // "came back genuinely split" is emitted only when some question scores a
+  // spread of 0.6 or more, which needs at least two people's answers to have
+  // arrived. ch-1 in the fixtures is a deliberate dead split for exactly this.
+  { name: "buyer-report-instrument", url: "/report/TOKEN-BUYER-CHAOS", expect: "came back genuinely split" },
   { name: "team-dashboard", url: "/team/TOKEN-TEAM" },
   { name: "survey-wrapup", url: "/assess?t=TOKEN-RESP-4", wrapup: true, expect: "two last questions" },
   { name: "dead-link", url: "/assess?t=NOT-A-TOKEN", expect: "no longer valid" },

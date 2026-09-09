@@ -289,15 +289,24 @@ Deno.serve(async (req) => {
           //
           // respondent_id comes along because the report scores completed
           // submissions only and counts distinct participants; it is an id, not
-          // a name, and this payload deliberately carries no names at all. Only
-          // the team gap's three fields: a buyer token for a personal
-          // assessment is refused by the page before it scores anything.
+          // a name, and this payload deliberately carries no names at all.
+          //
+          // Every answer field, from the one list, rather than the team gap's
+          // three named here. Those three were the whole story when there were
+          // two instruments and a buyer token for a personal assessment was
+          // refused before anything was scored. With six there is a third
+          // shape, and naming fields here meant a Chaos report received rows
+          // with no answer on them at all — it rendered every question as empty
+          // bars reading "1 didn't answer this" under a header saying one
+          // person had finished.
+          //
+          // The two other modes already build their payloads from ANSWER_FIELDS,
+          // which is why the survey and the resume link were unaffected and only
+          // the report was blank. This is the third.
           responses: responses.map((row) => ({
             respondent_id: row.respondent_id,
             activity_id: row.activity_id,
-            importance: row.importance ?? null,
-            execution: row.execution ?? null,
-            suggested_owner: row.suggested_owner ?? null,
+            ...Object.fromEntries(ANSWER_FIELDS.map((f) => [f, row[f] ?? null])),
           })),
         });
       }
