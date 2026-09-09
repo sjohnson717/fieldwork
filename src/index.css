@@ -120,6 +120,24 @@
     background: #fff !important;
   }
 
+  /* The same, for the page plane the report sits on rather than the report
+     itself. `body` and `.print-plain` were already white, but the buyer's link
+     wraps the report in a full-height grey div between the two, and that is
+     what printed: a white sheet of report floating on a grey one, because
+     print-color-adjust is exact and the browser dutifully lays down the toner.
+     Every full-page plane in the app carries min-h-screen, and none of them
+     means anything on paper.
+
+     The height goes with it. A hundred viewport-height units is the window, not
+     the sheet, and reserving a window's worth of it on a printed page is how a
+     document acquires a blank one. The cover that has to fill a sheet is sized
+     from the paper instead — see .print-cover above, and the reason it is not
+     sized in vh. */
+  .min-h-screen {
+    min-height: 0 !important;
+    background: #fff !important;
+  }
+
   /* Don't split an individual activity row across pages. Facet tables are
      allowed to flow — forcing each onto its own page turned 26 activities
      into five sparse pages. */
@@ -284,6 +302,10 @@
   body.preview-open .respondent-preview {
     position: static !important;
     overflow: visible !important;
+    /* Grey on screen because it is an overlay; white here because it is a
+       report somebody is putting on paper. It carries no min-h-screen of its
+       own — it is sized by inset-0 — so the rule above does not reach it. */
+    background: #fff !important;
   }
 
   /* Bottom padding is dropped, on the container and its immediate child. It
