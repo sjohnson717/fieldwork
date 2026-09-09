@@ -4,6 +4,7 @@ import { getAssignedActivities } from "@/lib/activities";
 import { ownerOptionsFor } from "@/lib/ownership";
 import { EXPERIENCE_OPTIONS, SKILLS_OPTIONS, INTEREST_OPTIONS } from "@/lib/personal-scoring";
 import { IMPORTANCE_LABEL, EXECUTION_LABEL } from "@/lib/scoring";
+import { orderQuestions } from "@/lib/instruments";
 
 // Same lists as the survey offers, from the file that scores them. Retyped
 // here, generated demo data could carry a label nothing knows how to score.
@@ -181,7 +182,138 @@ function generatePersonalResponse(activity, profile) {
   };
 }
 
-export default function AssessmentDemoData({ assessment }) {
+// The four instruments that ask their own questions. One scale, and a finding
+// that is not a gap but a spread — where a room disagrees with itself — so the
+// generator's job here is different from the two above. Uniform random answers
+// would split every question equally and make the agenda meaningless; a
+// per-respondent lean on its own would make every question equally agreed.
+//
+// So each question is given its own centre once per run, and each respondent a
+// lean applied across all of them. What comes out is a set the report can
+// actually say something about: questions the room lines up on, questions it
+// splits down the middle, and a score per person that lands in different bands.
+function questionPlan(questions) {
+  const plan = new Map();
+  for (const q of questions) {
+    plan.set(q.id, {
+      // Where the room sits on this question, 0 (worst) to 1 (best).
+      centre: 0.1 + Math.random() * 0.8,
+      // A third of the questions put the room in two camps rather than
+      // scattering it around the centre. That is what disagreement in a real
+      // team looks like — half of them call it the biggest problem they have
+      // and half have never noticed it — and it is also the only thing that
+      // reaches the report's "Split" badge at 0.6 spread. Widening a bell
+      // instead was tried and does not get there: the challenge scale scores
+      // 0/3/5/8, so a blurrier middle stays bunched on Somewhat and Not so
+      // much and every question came back Agreed.
+      camps: Math.random() < 0.35,
+    });
+  }
+  return plan;
+}
+
+// Box–Muller. A bell around the question's centre is what makes a distribution
+// look like a room rather than a dice roll — most people near the middle, a
+// couple out at the edges.
+function gaussian() {
+  const u = 1 - Math.random();
+  const v = Math.random();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+}
+
+const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
+
+// Written answers, so the report's free-text sections have something in them.
+//
+// Keyed by question name, falling back to the instrument's key and then to a
+// generic pool. Portfolio Health's magic wand is the only free-text question
+// any of these instruments currently asks, and it asks something specific —
+// generic filler under it would tell a reader nothing about whether that
+// section of the report reads well. The other three had their comments boxes
+// retired; if one is revived, give it a pool here.
+const TEXT_ANSWERS = {
+  "Magic wand": [
+    "Hire two more product managers. We have four products and two people, and the maths has never worked.",
+    "Customer research. We are guessing what people want and calling it a roadmap.",
+    "Pay down the platform debt so we can ship in weeks instead of quarters.",
+    "Sales enablement. The product is fine; nobody can explain it in a meeting.",
+    "Kill two of the products and put everything behind the one that is growing.",
+    "A proper analytics stack, so we stop arguing about what customers actually do.",
+  ],
+  default: [
+    "The biggest issue is that nobody agrees on what we are trying to achieve this year.",
+    "We are stretched thin. Everything gets some attention and nothing gets enough.",
+    "Honestly, the process is fine — it is the decisions that keep getting reopened.",
+    "We need to say no to more things. That is the whole answer.",
+    "Communication between product and sales is where most of this falls apart.",
+  ],
+};
+
+function writtenAnswer(question, instrumentKey) {
+  const pool = TEXT_ANSWERS[question.name] || TEXT_ANSWERS[instrumentKey] || TEXT_ANSWERS.default;
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+// One person's answer to one instrument question.
+//
+// `lean` is that respondent's own bias, -1 to 1 as a fraction of the scale:
+// the optimist and the person who has had a bad quarter both answer every
+// question, and the difference between them is what the spread is measuring.
+function generateInstrumentResponse(question, axis, plan, lean, instrumentKey) {
+  if (question.question_type === "text") {
+    return { answer: "", answer_text: writtenAnswer(question, instrumentKey) };
+  }
+
+  const options = axis?.options || [];
+  if (options.length === 0) return { answer: "", answer_text: "" };
+
+  // A non-required question somebody skipped. Left blank rather than omitted,
+  // which is the row saveResponses writes when a respondent moves past a
+  // question — and the case the report's "unanswered" count exists for.
+  if (!question.required && Math.random() < 0.08) return { answer: "", answer_text: "" };
+
+  const { centre, camps } = plan.get(question.id) || { centre: 0.5, camps: false };
+  const top = options.length - 1;
+  // Everything here is a fraction of the scale rather than a count of options,
+  // and only becomes a position at the end. These four instruments run scales
+  // of two, three and four points; a lean measured in options would be a nudge
+  // on the challenge scale and a coin flip on the Product Success yes/no, which
+  // is how half a demo room came to answer No to everything and land in Sunset.
+  //
+  // Which camp somebody falls in follows their lean, but not slavishly — the
+  // same people are not on the same side of every argument, and a room that
+  // divides identically on each split question reads as two blocs rather than
+  // as a team.
+  //
+  // The jitter inside a camp is what keeps somebody in the middle. Without it
+  // a split question comes back as two towers and a hollow centre on every
+  // run, which no real room produces and which reads immediately as generated.
+  const fraction = camps
+    ? centre + (lean + gaussian() * 0.45 >= 0 ? 0.4 : -0.4) + gaussian() * 0.12
+    : centre + lean * 0.2 + gaussian() * 0.07;
+  const position = top * fraction;
+  // Options are stored in the order a respondent reads them, worst first on
+  // all four of these scales, so a position is an index straight off.
+  return { answer: options[Math.round(clamp(position, 0, top))].label, answer_text: "" };
+}
+
+// Somebody has to answer a non-negotiable badly, or the Product Success veto —
+// critical questions first, ahead of whatever the spread says — never shows up
+// in a demo report at all. This forces the worst option onto a critical
+// question for one respondent in the set, which is also the honest case: a
+// product with one red flag and a decent total.
+function vetoTargets(questions, respondentIndex) {
+  if (respondentIndex !== 0) return new Set();
+  return new Set(questions.filter(q => q.critical && Math.random() < 0.6).map(q => q.id));
+}
+
+export default function AssessmentDemoData({ assessment, instrument }) {
+  // An instrument that asks its own questions scores them on one scale, which
+  // is the axis every generated answer is drawn from. Everything else — the
+  // library pair — keeps the two paths that were already here.
+  const isInstrument = instrument?.question_source === "instrument";
+  const axis = isInstrument ? instrument.axes?.[0] : null;
+
   const [respondentCount, setRespondentCount] = useState(6);
   const [generating, setGenerating] = useState(false);
   const [progress, setProgress] = useState("");
@@ -194,18 +326,31 @@ export default function AssessmentDemoData({ assessment }) {
     setDone(false);
     setProgress("Starting…");
 
-    const activities = await getAssignedActivities(assessment);
+    const raw = await getAssignedActivities(assessment);
+    // An instrument's questions come back unsorted on purpose — section order
+    // belongs to the instrument — and the survey applies that order itself.
+    // Doing the same here keeps the generated rows in the order a real
+    // respondent would have produced them.
+    const activities = isInstrument ? orderQuestions(instrument, raw) : raw;
     // Seeded answers should look like real ones, which means picking from what
     // the survey actually offers rather than from stored roles.
     const ownerOptions = ownerOptionsFor(activities, assessment.roles || []);
     if (activities.length === 0) {
-      setProgress("No activities assigned to this assessment. Add an activity set first.");
+      setProgress(isInstrument
+        ? "This instrument has no active questions. Apply the instrument seed from Settings › Instruments first."
+        : "No activities assigned to this assessment. Add an activity set first.");
+      setGenerating(false);
+      return;
+    }
+    if (isInstrument && !axis) {
+      setProgress("This instrument has no scale. Apply the instrument seed from Settings › Instruments first.");
       setGenerating(false);
       return;
     }
 
     const isPersonal = assessment.assessment_type === "personal";
     const facets = [...new Set(activities.map(a => a.facet).filter(Boolean))];
+    const plan = isInstrument ? questionPlan(activities) : null;
 
     const count = Math.min(respondentCount, FAKE_RESPONDENTS.length);
     const pool = [...FAKE_RESPONDENTS].sort(() => Math.random() - 0.5).slice(0, count);
@@ -227,10 +372,18 @@ export default function AssessmentDemoData({ assessment }) {
 
         setProgress(`Generating responses for ${name}…`);
         const personalProfile = isPersonal ? personalProfileFor(facets) : null;
+        // This respondent's own bias across the whole instrument, in scale
+        // positions, and the non-negotiables they answer badly.
+        const lean = isInstrument ? Math.random() * 2 - 1 : 0;
+        const vetoed = isInstrument ? vetoTargets(activities, i) : new Set();
         for (const activity of activities) {
-          const answers = isPersonal
-            ? generatePersonalResponse(activity, personalProfile)
-            : generateResponse(activity, title, ownerOptions);
+          const answers = isInstrument
+            ? (vetoed.has(activity.id)
+                ? { answer: axis.options[0].label, answer_text: "" }
+                : generateInstrumentResponse(activity, axis, plan, lean, instrument.key))
+            : isPersonal
+              ? generatePersonalResponse(activity, personalProfile)
+              : generateResponse(activity, title, ownerOptions);
           await base44.entities.Response.create({
             assessment_id: assessment.id,
             respondent_id: respondent.id,
@@ -279,8 +432,15 @@ export default function AssessmentDemoData({ assessment }) {
         </div>
 
         <div className="text-xs text-gray-400 space-y-1">
-          <p>{assessment.activity_ids?.length > 0 ? assessment.activity_ids.length : "All"} activities assigned · {assessment.roles?.length || 0} ownership roles configured</p>
-          {(!assessment.roles || assessment.roles.length === 0) && (
+          {isInstrument ? (
+            <p>{instrument.name} · its own questions, answered on {axis ? axis.label : "no scale"}</p>
+          ) : (
+            <p>{assessment.activity_ids?.length > 0 ? assessment.activity_ids.length : "All"} activities assigned · {assessment.roles?.length || 0} ownership roles configured</p>
+          )}
+          {/* Ownership is a library question. An instrument never asks it, so
+              the warning below would be an instruction to go and fix something
+              that is not missing. */}
+          {!isInstrument && (!assessment.roles || assessment.roles.length === 0) && (
             <p className="text-amber-500">⚠ No ownership roles set — suggested_owner will be blank. Add roles in the Ownership Roles tab first.</p>
           )}
         </div>

@@ -524,12 +524,11 @@ export default function AssessmentOverview({ assessment, instrument, onUpdate, o
       </section>
 
       {/* Demo data fabricates answers on the library axes against an
-          assessment's chosen activities. An instrument assessment has its own
-          fixed questions and a single scale, so there is nothing here for it to
-          generate until the instrument survey lands. */}
-      {instrument?.question_source !== "instrument" && (
-        <AssessmentDemoData assessment={assessment} />
-      )}
+          assessment's chosen activities, or on the instrument's own scale
+          against its own questions — which is the same tool, generating for
+          whichever survey this assessment runs. The instrument is handed down
+          rather than loaded again; this page already has it. */}
+      <AssessmentDemoData assessment={assessment} instrument={instrument} />
 
     </div>
   );
