@@ -212,7 +212,7 @@ export const INSTRUMENT_SEED = {
       "options": [
         {
           "label": "Absolutely",
-          "points": 1
+          "points": 0
         },
         {
           "label": "Somewhat",
