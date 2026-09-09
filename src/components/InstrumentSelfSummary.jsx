@@ -10,13 +10,17 @@ import PrintCredit from "@/components/PrintCredit";
 // exactly what a band was written about, and withholding it here would leave
 // the imported advice unused.
 //
-// It is still a courtesy, not the product. The engagement is the facilitated
-// session, so this says so: the score is theirs, the conversation is the team's.
+// A band, though, not a score on its own. Chaos and Portfolio Health have no
+// bands, and what this page showed them was a number over a paragraph
+// explaining that the number meant nothing on its own — so the pair went, and
+// those two now go straight from the thank-you to what the person actually
+// said. It is a courtesy either way, not the product: the engagement is the
+// facilitated session.
 
 // A quiet band. The bands already carry a verdict in their names — Sunset,
 // Discovery Required — and colouring them red would tell somebody their answers
 // were wrong when what they were is honest.
-function Score({ score, band, instrument }) {
+function Score({ score, band }) {
   const pct = score.possible ? Math.round((score.earned / score.possible) * 100) : 0;
   const partial = score.answered < score.of;
   return (
@@ -60,13 +64,6 @@ function Score({ score, band, instrument }) {
         </div>
       )}
 
-      {!band && instrument.bands?.length === 0 && (
-        <p className="text-sm text-gray-500 mt-4 leading-relaxed">
-          There is no single verdict for this one. What it is for is the pattern across your
-          answers, and how that compares with everyone else&rsquo;s — which is what your
-          facilitator will bring to the session.
-        </p>
-      )}
     </section>
   );
 }
@@ -115,18 +112,13 @@ export default function InstrumentSelfSummary({
           </p>
         </header>
 
-        {score && answeredAny && <Score score={score} band={band} instrument={instrument} />}
-
-        {/* Said before the answers rather than after, because it is the frame
-            they should be read in: this page is one person's, and the thing it
-            leads to is a room. */}
-        <section className="border-l-2 border-gray-300 pl-4">
-          <p className="text-sm text-gray-600 leading-relaxed">
-            This is your own copy. Your answers are read alongside everyone else&rsquo;s, and
-            where the team agrees and disagrees is the part worth an hour of the
-            room&rsquo;s time — that is what your facilitator works from, not this number.
-          </p>
-        </section>
+        {/* Only where a band applies. Chaos and Portfolio Health carry none, and
+            what this drew for them was a bare number over a paragraph saying
+            the number had no verdict — which is a fair description of a figure
+            worth removing rather than explaining. Where there is a band it
+            stays, because the band and its advice are the reason this page
+            exists for those two instruments. */}
+        {score && answeredAny && band && <Score score={score} band={band} />}
 
         <section>
           <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-3">
