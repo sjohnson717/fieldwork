@@ -6,6 +6,16 @@ import { INSTRUMENT_SEED } from "@/lib/instrument-seed";
 // partner version of the blog exists this is the line that points at it.
 const ARTICLE_BASE = "https://www.productgrowthleaders.com";
 
+// The path the reading links point at, built from the slug rather than stored
+// per article. The blog serves the same piece at more than one address, and the
+// one a report should open is the version without the "Talk to a coach" nav and
+// the newsletter capture — a report a fractional CPO hands their own client
+// should not open onto somebody else's booking page.
+//
+// Changing where that lives is this one line and a re-run.
+const ARTICLE_PREFIX = "/article/";
+const articlePath = (slug) => `${ARTICLE_PREFIX}${slug}`;
+
 // Applying the six instruments to the backend.
 //
 // Idempotent by construction, because it will be run more than once: the seed
@@ -218,20 +228,33 @@ export async function seedInstruments(base44, { onProgress } = {}) {
     // Matched to questions by label across every instrument that asks them, so
     // one article serving two questions is one row pointing at both — which is
     // how three of these arrived from Wix.
-    const ids = r.question_labels
+    const mine = r.question_labels
       .map((label) => questionRows.get(label)?.id)
       .filter(Boolean);
-    await upsert(e.Resource, existingResources, (row) => row.title === r.title, {
+
+    // Matched on url rather than title: a title can be edited on the blog and a
+    // url is what actually identifies the article. Two rows that genuinely are
+    // the same piece then reconcile instead of doubling.
+    const found = existingResources.find((row) => row.url === `${ARTICLE_BASE}${articlePath(r.slug)}`);
+
+    // Merged, never replaced. The same article can legitimately be offered for
+    // a library activity and for an instrument question, and the field is
+    // many-to-many for exactly that reason — overwriting would silently strip
+    // an article off every library activity somebody had curated it for, and
+    // the personal profile's reading list is built from those.
+    const activity_ids = [...new Set([...(found?.activity_ids || []), ...mine])];
+
+    await upsert(e.Resource, existingResources, (row) => row === found, {
       title: r.title,
       resource_type: "free_article",
       // The author, not the firm. Resource.source exists so attribution
-      // travels with the recommendation, and two of these are a partner's work
-      // — putting the practice's name on them would take the credit off the
-      // person who earned it. The footer already badges the framework.
+      // travels with the recommendation, and some of these are a partner's
+      // work — putting the practice's name on them would take the credit off
+      // the person who earned it. The footer already badges the framework.
       source: r.author || undefined,
-      url: `${ARTICLE_BASE}${r.path}`,
+      url: `${ARTICLE_BASE}${articlePath(r.slug)}`,
       note: r.note || undefined,
-      activity_ids: ids,
+      activity_ids,
       fallback: false,
       sort_order: i,
       active: true,
