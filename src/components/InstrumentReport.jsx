@@ -14,39 +14,173 @@ import PrintCredit from "@/components/PrintCredit";
 // Chaos Assessment's own closing advice tells a buyer to gather the team and
 // work out where perceptions differ, and this is that, computed.
 
-const BAR = ["bg-rose-400", "bg-amber-400", "bg-lime-400", "bg-emerald-500"];
+// The diverging ramp, worst answer to best.
+//
+// Red for the problem end, blue for the other, strong at the extremes and pale
+// in the middle, with a neutral grey for an option that sits exactly on the
+// scale's midpoint. Not the rose/amber/lime/emerald ramp this replaced: those
+// four were one row each with their label beside them, so colour carried
+// nothing. A stacked bar has no room for a label per segment, and measured,
+// amber-400 and lime-400 — the two middle options of the challenge scale, side
+// by side in every question — sit 1.4 apart under deuteranopia and 14.7 with
+// full colour vision, under the 15 floor for telling two colours apart at all.
+//
+// These clear it: worst adjacent pair 16.1 under protanopia, 22.0 normal
+// vision, on both the white sheet and the dark one.
+const PROBLEM_STRONG = "#a82a20";
+const PROBLEM_WEAK   = "#e8877c";
+const FINE_WEAK      = "#6da7ec";
+const FINE_STRONG    = "#184f95";
+const NEUTRAL        = "#9ca3af";
 
-// Colour by position on the scale rather than by label, so a four-point
-// challenge scale and a three-point risk scale both read worst-to-best without
-// either being named here.
-const toneFor = (i, total) =>
-  BAR[Math.round((total <= 1 ? 0 : i / (total - 1)) * (BAR.length - 1))];
+// Where the line falls, and what colour each option takes.
+//
+// Options are split by the scale's own midpoint in points: below it they belong
+// to the problem arm, above it to the other, and an option sitting exactly on
+// the midpoint straddles the line in grey — by the scale's own arithmetic it is
+// neither side. That rule is the same on all three scales these instruments
+// use. The challenge scale's four points (0/3/5/8) divide two and two; Yes/No
+// divides one and one; Yes/No/Unknown puts Unknown on the problem arm, Yes on
+// the other, and No — exactly midway — astride the line.
+//
+// An option carrying no points at all is not a position on the scale and gets
+// no place on the axis; it is counted beside the bar instead, with the people
+// who never answered.
+function armsFor(counts) {
+  const rated = counts.filter(c => c.points !== null);
+  if (rated.length === 0) return null;
+  const lo = Math.min(...rated.map(c => c.points));
+  const hi = Math.max(...rated.map(c => c.points));
+  const mid = (lo + hi) / 2;
+  const left = [];   // built outward from the centre
+  const right = [];
+  for (const c of rated) {
+    if (c.points < mid) left.unshift({ ...c, side: "left", share: 1 });
+    else if (c.points > mid) right.push({ ...c, side: "right", share: 1 });
+    else {
+      // Half a straddling option each side, so the bar stays centred on the
+      // line rather than the option picking a side it does not have.
+      left.unshift({ ...c, side: "left", share: 0.5, neutral: true });
+      right.unshift({ ...c, side: "right", share: 0.5, neutral: true });
+    }
+  }
+  // Strongest colour at each far end, palest beside the line. `left` runs
+  // outward from the centre, so its last entry is the extreme.
+  const paint = (arr, strong, weak) => arr.map((c, i) => ({
+    ...c,
+    color: c.neutral ? NEUTRAL : (i === arr.length - 1 ? strong : weak),
+  }));
+  return {
+    left: paint(left, PROBLEM_STRONG, PROBLEM_WEAK),
+    right: paint(right, FINE_STRONG, FINE_WEAK),
+  };
+}
 
+// The order the legend reads in: worst on the left, best on the right, which is
+// the order the bar itself is built in.
+function legendFor(counts) {
+  const arms = armsFor(counts);
+  if (!arms) return [];
+  const seen = new Set();
+  const out = [];
+  for (const c of [...arms.left].reverse().concat(arms.right)) {
+    if (seen.has(c.label)) continue;
+    seen.add(c.label);
+    out.push(c);
+  }
+  return out;
+}
+
+function Legend({ axis }) {
+  const counts = axis.options.map(o => ({ label: o.label, points: o.points ?? null, n: 0 }));
+  return (
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
+      {legendFor(counts).map(c => (
+        <span key={c.label} className="inline-flex items-center gap-1.5 text-xs text-gray-600">
+          <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ backgroundColor: c.color }} />
+          {c.label}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+// One question, as a bar centred on the line.
+//
+// The scale is the roster, not this question's own answers: one person is the
+// same width on every question, so a question two people skipped draws a
+// visibly shorter bar rather than stretching eight answers to the width of ten.
 function Distribution({ dist, expected }) {
   // Counted against the roster, not against the rows this question happens to
   // have. Someone who stopped before reaching the page leaves no row at all, so
   // a blank measured from the rows alone would report nobody skipped anything.
   const missing = Math.max(0, (expected ?? dist.given) - dist.given);
-  const max = Math.max(1, ...dist.counts.map(c => c.n));
+  const arms = armsFor(dist.counts);
+  if (!arms) return null;
+
+  // Half the track holds the whole roster, so both arms are on one scale and
+  // the widest possible bar still fits.
+  const people = Math.max(1, expected ?? dist.given);
+  const unit = 50 / people;
+  const width = (c) => c.n * c.share * unit;
+  const armWidth = (arm) => arm.reduce((s, c) => s + width(c), 0);
+
+  // Answers that are not a position on the scale — the team gap's "I don't
+  // know", and anything like it a later instrument adds.
+  const unrated = dist.counts.filter(c => c.points === null && c.n > 0);
+
+  const segments = (arm) => arm.map((c) => {
+    const w = width(c);
+    if (w <= 0) return null;
+    // Sized by flex rather than by a width percentage. A percentage inside the
+    // arm resolves against the arm, not against the track, so every segment
+    // came out as a fraction of a fraction; growing them in proportion puts
+    // each one back on the track's own scale.
+    return (
+      <div
+        key={`${c.label}-${c.side}`}
+        className="h-6 flex items-center justify-center text-[11px] font-semibold tabular-nums overflow-hidden"
+        style={{
+          flex: `${w} 0 0%`,
+          backgroundColor: c.color,
+          color: c.neutral || c.color === PROBLEM_WEAK || c.color === FINE_WEAK ? "#1f2937" : "#ffffff",
+        }}
+        title={`${c.label} — ${c.n}`}
+      >
+        {/* A straddling option is one block cut by the line, so its count is
+            written once, on the right half — printing it on both would read as
+            twice as many people as answered. */}
+        {w >= 4.5 && (c.share !== 0.5 || c.side === "right") ? c.n : ""}
+      </div>
+    );
+  });
+
   return (
     <div className="space-y-1.5">
-      {dist.counts.map((c, i) => (
-        <div key={c.label} className="flex items-center gap-3">
-          <span className="w-28 shrink-0 text-xs text-gray-500 text-right">{c.label}</span>
-          <div className="flex-1 h-5 bg-gray-100 rounded-sm overflow-hidden">
-            {c.n > 0 && (
-              <div
-                className={`h-5 ${c.points === null ? "bg-gray-300" : toneFor(i, dist.counts.length)}`}
-                style={{ width: `${(c.n / max) * 100}%` }}
-              />
-            )}
-          </div>
-          <span className="w-6 shrink-0 text-xs text-gray-600 tabular-nums">{c.n || ""}</span>
+      <div className="relative h-6">
+        {/* The line every question is measured against, and the reason this
+            drawing is worth more than four rows of bars. It has to be visible
+            in print: at gray-300 and a bar's own height it disappeared into the
+            page, leaving each bar floating with nothing to be centred on. */}
+        <div className="absolute left-1/2 -top-2 -bottom-2 w-px bg-gray-400" aria-hidden="true" />
+        <div
+          className="absolute top-0 h-6 flex flex-row-reverse gap-[2px] justify-start"
+          style={{ right: "50%", width: `${armWidth(arms.left)}%` }}
+        >
+          {segments(arms.left)}
         </div>
-      ))}
-      {missing > 0 && (
-        <p className="text-[11px] text-gray-400 pl-[7.75rem]">
-          {missing} didn&rsquo;t answer this
+        <div
+          className="absolute top-0 h-6 flex gap-[2px]"
+          style={{ left: "50%", width: `${armWidth(arms.right)}%` }}
+        >
+          {segments(arms.right)}
+        </div>
+      </div>
+      {(missing > 0 || unrated.length > 0) && (
+        <p className="text-[11px] text-gray-400">
+          {unrated.map(c => `${c.n} answered ${c.label.toLowerCase()}`).join(" · ")}
+          {unrated.length > 0 && missing > 0 && " · "}
+          {missing > 0 && `${missing} didn\u2019t answer this`}
         </p>
       )}
     </div>
@@ -120,6 +254,13 @@ export default function InstrumentReport({
           )}
         </p>
       </section>
+
+      {/* One key for the whole report. Colour is the only thing naming an
+          answer now that the options no longer each have their own labelled
+          row, so it is stated once here rather than repeated per question. */}
+      <div className="mb-6 pb-4 border-b border-gray-100">
+        <Legend axis={axis} />
+      </div>
 
       <ol className="space-y-8">
         {ordered.map((q, i) => {
