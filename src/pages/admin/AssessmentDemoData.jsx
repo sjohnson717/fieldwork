@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { getAssignedActivities } from "@/lib/activities";
 import { ownerOptionsFor } from "@/lib/ownership";
 import { EXPERIENCE_OPTIONS, SKILLS_OPTIONS, INTEREST_OPTIONS } from "@/lib/personal-scoring";
 import { IMPORTANCE_LABEL, EXECUTION_LABEL } from "@/lib/scoring";
-import { orderQuestions } from "@/lib/instruments";
+import { loadInstrument, orderQuestions } from "@/lib/instruments";
 
 // Same lists as the survey offers, from the file that scores them. Retyped
 // here, generated demo data could carry a label nothing knows how to score.
@@ -312,7 +312,23 @@ export default function AssessmentDemoData({ assessment, instrument }) {
   // is the axis every generated answer is drawn from. Everything else — the
   // library pair — keeps the two paths that were already here.
   const isInstrument = instrument?.question_source === "instrument";
-  const axis = isInstrument ? instrument.axes?.[0] : null;
+
+  // The instrument arrives as a raw row: AdminPage lists Instrument records and
+  // hands the matching one down, which carries `scale_ids` but not the scales
+  // themselves. `loadInstrument` is what turns those ids into axes with their
+  // options, so it is called here rather than assuming the row already has
+  // them — reading `instrument.axes` off the prop found nothing, and the panel
+  // reported a missing scale against an instrument whose scale was fine.
+  const [resolved, setResolved] = useState(null);
+  useEffect(() => {
+    if (!isInstrument) return;
+    let live = true;
+    loadInstrument(assessment)
+      .then(inst => { if (live) setResolved(inst); })
+      .catch(() => { if (live) setResolved(null); });
+    return () => { live = false; };
+  }, [isInstrument, assessment.id]);
+  const axis = resolved?.axes?.[0] || null;
 
   const [respondentCount, setRespondentCount] = useState(6);
   const [generating, setGenerating] = useState(false);
@@ -326,12 +342,17 @@ export default function AssessmentDemoData({ assessment, instrument }) {
     setDone(false);
     setProgress("Starting…");
 
+    // Belt and braces: generating before the effect above has landed would
+    // otherwise fail the no-scale check on an instrument that has one.
+    const inst = isInstrument ? (resolved || await loadInstrument(assessment)) : null;
+    const scale = inst?.axes?.[0] || null;
+
     const raw = await getAssignedActivities(assessment);
     // An instrument's questions come back unsorted on purpose — section order
     // belongs to the instrument — and the survey applies that order itself.
     // Doing the same here keeps the generated rows in the order a real
     // respondent would have produced them.
-    const activities = isInstrument ? orderQuestions(instrument, raw) : raw;
+    const activities = isInstrument ? orderQuestions(inst, raw) : raw;
     // Seeded answers should look like real ones, which means picking from what
     // the survey actually offers rather than from stored roles.
     const ownerOptions = ownerOptionsFor(activities, assessment.roles || []);
@@ -342,7 +363,7 @@ export default function AssessmentDemoData({ assessment, instrument }) {
       setGenerating(false);
       return;
     }
-    if (isInstrument && !axis) {
+    if (isInstrument && !scale) {
       setProgress("This instrument has no scale. Apply the instrument seed from Settings › Instruments first.");
       setGenerating(false);
       return;
@@ -379,8 +400,8 @@ export default function AssessmentDemoData({ assessment, instrument }) {
         for (const activity of activities) {
           const answers = isInstrument
             ? (vetoed.has(activity.id)
-                ? { answer: axis.options[0].label, answer_text: "" }
-                : generateInstrumentResponse(activity, axis, plan, lean, instrument.key))
+                ? { answer: scale.options[0].label, answer_text: "" }
+                : generateInstrumentResponse(activity, scale, plan, lean, inst.key))
             : isPersonal
               ? generatePersonalResponse(activity, personalProfile)
               : generateResponse(activity, title, ownerOptions);
@@ -433,7 +454,7 @@ export default function AssessmentDemoData({ assessment, instrument }) {
 
         <div className="text-xs text-gray-400 space-y-1">
           {isInstrument ? (
-            <p>{instrument.name} · its own questions, answered on {axis ? axis.label : "no scale"}</p>
+            <p>{instrument.name} · its own questions{axis ? `, answered on ${axis.label}` : ""}</p>
           ) : (
             <p>{assessment.activity_ids?.length > 0 ? assessment.activity_ids.length : "All"} activities assigned · {assessment.roles?.length || 0} ownership roles configured</p>
           )}
