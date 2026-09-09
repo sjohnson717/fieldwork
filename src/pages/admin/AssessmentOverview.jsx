@@ -17,7 +17,7 @@ const STATUS_LABELS = {
   closed: { active: "Reopen assessment" },
 };
 
-export default function AssessmentOverview({ assessment, onUpdate, onDelete, deleting }) {
+export default function AssessmentOverview({ assessment, instrument, onUpdate, onDelete, deleting }) {
   const { user: currentUser } = useAuth();
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [allUsers, setAllUsers] = useState([]);
@@ -247,11 +247,22 @@ export default function AssessmentOverview({ assessment, onUpdate, onDelete, del
             {assessment.tagline && <p className="text-xs text-gray-400">{assessment.tagline}</p>}
           </div>
         )}
+        {/* The instrument says what it is, when the assessment names one. The
+            two hard-coded sentences below it are the fallback for every
+            assessment created before instruments existed. */}
         <p className="text-xs text-gray-400 mt-3 pt-3 border-t border-gray-100">
-          {isPersonal
-            ? "Personal assessment — each person rates their own experience, skills and interest."
-            : "Team gap assessment — importance, execution and ownership of each activity."}
+          {instrument
+            ? `${instrument.name}${instrument.tagline ? ` — ${instrument.tagline.replace(/\.$/, "")}` : ""}`
+            : isPersonal
+              ? "Personal assessment — each person rates their own experience, skills and interest."
+              : "Team gap assessment — importance, execution and ownership of each activity."}
         </p>
+        {assessment.subject && (
+          <p className="text-xs text-gray-500 mt-2">
+            <span className="text-gray-400">Subject: </span>
+            <span className="font-medium">{assessment.subject}</span>
+          </p>
+        )}
       </section>
 
       {/* Tags */}
@@ -512,7 +523,13 @@ export default function AssessmentOverview({ assessment, onUpdate, onDelete, del
         )}
       </section>
 
-      <AssessmentDemoData assessment={assessment} />
+      {/* Demo data fabricates answers on the library axes against an
+          assessment's chosen activities. An instrument assessment has its own
+          fixed questions and a single scale, so there is nothing here for it to
+          generate until the instrument survey lands. */}
+      {instrument?.question_source !== "instrument" && (
+        <AssessmentDemoData assessment={assessment} />
+      )}
 
     </div>
   );

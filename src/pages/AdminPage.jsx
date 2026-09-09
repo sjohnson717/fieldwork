@@ -14,6 +14,7 @@ import TeamPage from "./admin/TeamPage";
 import OrganizationsPage from "./admin/OrganizationsPage";
 import TagsPage from "./admin/TagsPage";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import NewAssessmentPanel from "@/components/NewAssessmentPanel";
 import { functionErrorMessage } from "@/lib/utils";
 
 // If assessment_type ever starts arriving as undefined on freshly created
@@ -26,7 +27,19 @@ import { functionErrorMessage } from "@/lib/utils";
 // unused. Everything else is common to both types.
 const TEAM_TABS = ["Overview", "Activities", "Ownership Roles", "Results", "Discussion"];
 const PERSONAL_TABS = ["Overview", "Activities", "Results"];
-const tabsFor = (assessment) => (assessment?.assessment_type === "personal" ? PERSONAL_TABS : TEAM_TABS);
+
+// Instruments that ask their own fixed question list have no activity picker
+// and no ownership question, and their survey and report arrive in the next
+// step. Offering the tabs before then would be five links to empty panes.
+const INSTRUMENT_TABS = ["Overview"];
+
+const tabsFor = (assessment, instrument) => {
+  if (instrument && instrument.question_source === "instrument") return INSTRUMENT_TABS;
+  if (instrument) return instrument.report_style === "profile" ? PERSONAL_TABS : TEAM_TABS;
+  // Assessments predating instruments, which is every one of them until the
+  // library pair is migrated. Absent means team_gap, as the schema says.
+  return assessment?.assessment_type === "personal" ? PERSONAL_TABS : TEAM_TABS;
+};
 
 // Which assessment was open, so leaving the admin page and coming back doesn't
 // dump you on a different one. Session-scoped on purpose: restoring a
@@ -129,6 +142,22 @@ const TYPE_BADGE = {
 // existed, and the Assessment schema documents the same default.
 const assessmentType = (a) => (a.assessment_type === "personal" ? "personal" : "team_gap");
 
+// The badge an assessment carries in the list. An instrument names itself, and
+// the four imported ones are neither Team nor Personal — labelling a Chaos
+// Assessment "Team" because assessment_type is absent would be worse than the
+// unlabelled rows this badge was added to fix.
+//
+// Short, because the badge sits in a 250px column beside a status pill: the
+// first word of the instrument's name is enough to tell six apart, and the row
+// already carries the full title above it.
+const badgeFor = (assessment, instrument) => {
+  if (!instrument) return TYPE_BADGE[assessmentType(assessment)];
+  if (instrument.question_source === "library") {
+    return TYPE_BADGE[instrument.report_style === "profile" ? "personal" : "team_gap"];
+  }
+  return { label: instrument.name.split(" ")[0], tone: "text-amber-700 bg-amber-50" };
+};
+
 export default function AdminPage() {
   const { user, isAuthenticated, logout } = useAuth();
   const [assessments, setAssessments] = useState([]);
@@ -140,9 +169,6 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState("Overview");
   const [loading, setLoading] = useState(true);
   const [showNewForm, setShowNewForm] = useState(false);
-  const [newTitle, setNewTitle] = useState("");
-  const [newCompany, setNewCompany] = useState("");
-  const [newType, setNewType] = useState("team_gap");
   const [tags, setTags] = useState([]);
   // Narrows the sidebar list. Not persisted: a filter you set days ago and
   // forgot looks exactly like an assessment that has gone missing.
@@ -154,6 +180,11 @@ export default function AdminPage() {
   // Names for the two id-based axes. Empty maps are fine: groupAssessments
   // drops anything it cannot name into the leftovers bucket, so the sidebar
   // renders correctly while these are still loading or if either call fails.
+  // The six instruments, by id. Drives the New Assessment panel, the badge on
+  // each sidebar row, and which tabs an assessment gets. Read-open, so every
+  // role that can reach this page can load them.
+  const [instruments, setInstruments] = useState([]);
+  const [questionCounts, setQuestionCounts] = useState(() => new Map());
   const [orgNames, setOrgNames] = useState(() => new Map());
   const [ownerNames, setOwnerNames] = useState(() => new Map());
   // Collapsed by heading label, not index — regrouping or a new assessment
@@ -190,8 +221,38 @@ export default function AdminPage() {
       loadAssessments();
       loadTags();
       loadGroupNames();
+      loadInstruments();
     }
   }, [isAuthenticated, user]);
+
+  // Best-effort, like the grouping names: an assessment whose instrument will
+  // not load still lists and still opens, on the tabs its assessment_type
+  // implies. Before the first publish that creates the entity this simply
+  // returns nothing, and the New Assessment panel says so rather than
+  // presenting an empty list as a choice.
+  const loadInstruments = async () => {
+    try {
+      const rows = await base44.entities.Instrument.list("sort_order");
+      setInstruments(rows.filter(i => i.active !== false));
+    } catch (e) {
+      console.error("Could not load instruments", e);
+      return;
+    }
+    // How many questions each one asks, which is half of what a facilitator is
+    // choosing between. Counted here rather than stored on the instrument: a
+    // stored count is a second source of truth that goes stale the moment a
+    // question is added, which is exactly how Wix's MaxScore worked.
+    try {
+      const activities = await base44.entities.Activity.list();
+      const per = new Map();
+      for (const a of activities) {
+        for (const id of a.instrument_ids || []) per.set(id, (per.get(id) || 0) + 1);
+      }
+      setQuestionCounts(per);
+    } catch (e) {
+      console.error("Could not count instrument questions", e);
+    }
+  };
 
   useEffect(() => {
     sessionStorage.setItem(GROUP_BY_KEY, groupBy);
@@ -264,8 +325,8 @@ export default function AdminPage() {
     setLoading(false);
   };
 
-  const handleCreate = async () => {
-    if (!newTitle.trim()) return;
+  const handleCreate = async ({ instrument, title, company_name, subject }) => {
+    if (!title) return;
     setCreating(true);
     setCreateError("");
     try {
@@ -284,12 +345,21 @@ export default function AdminPage() {
         console.error("Could not seed org admins as collaborators", e);
       }
       const created = await base44.entities.Assessment.create({
-        title: newTitle.trim(),
-        company_name: newCompany.trim(),
+        title,
+        company_name,
         access_code: code,
         buyer_token: buyerToken,
         status: "draft",
-        assessment_type: newType,
+        instrument_id: instrument.id,
+        // Written alongside instrument_id, and only where it means something.
+        // The two library instruments keep it because everything still branches
+        // on it; the other four leave it unset rather than widening an enum
+        // that instrument_id is about to make redundant. Nothing reads it for
+        // them — tabsFor and the badge both go through the instrument.
+        assessment_type: instrument.question_source === "library"
+          ? (instrument.report_style === "profile" ? "personal" : "team_gap")
+          : undefined,
+        subject: subject || undefined,
         roles: [],
         collaborator_ids: collaboratorIds,
         org_id: user.org_id || undefined,
@@ -297,9 +367,6 @@ export default function AdminPage() {
       setAssessments(prev => [created, ...prev]);
       setSelectedId(created.id);
       setShowNewForm(false);
-      setNewTitle("");
-      setNewCompany("");
-      setNewType("team_gap");
       setActiveTab("Overview");
     } catch (e) {
       console.error("Failed to create assessment", e);
@@ -414,7 +481,10 @@ export default function AdminPage() {
   const canDeleteSelected = !!selected && (isAdmin || selected.created_by_id === user?.id);
   // Selecting a personal assessment while a team-only tab is active would
   // otherwise render an empty pane. Falling back beats blanking.
-  const visibleTabs = tabsFor(selected);
+  const instrumentById = new Map(instruments.map(i => [i.id, i]));
+  const instrumentOf = (a) => (a?.instrument_id ? instrumentById.get(a.instrument_id) : null);
+  const selectedInstrument = instrumentOf(selected);
+  const visibleTabs = tabsFor(selected, selectedInstrument);
   const effectiveTab = visibleTabs.includes(activeTab) ? activeTab : "Overview";
 
   return (
@@ -430,80 +500,19 @@ export default function AdminPage() {
           {/* Assessments section */}
           <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest px-3 mb-1.5 mt-1">Assessments</p>
 
-          {showNewForm ? (
-            <div className="px-3 mb-3 space-y-2">
-              {createError && (
-                <p className="text-xs text-red-500">{createError}</p>
-              )}
-              <input
-                autoFocus
-                type="text"
-                placeholder="Assessment title"
-                value={newTitle}
-                onChange={e => setNewTitle(e.target.value)}
-                onKeyDown={e => e.key === "Enter" && handleCreate()}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <input
-                type="text"
-                placeholder="Company name (optional)"
-                value={newCompany}
-                onChange={e => setNewCompany(e.target.value)}
-                onKeyDown={e => e.key === "Enter" && handleCreate()}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              {/* Set at creation and not editable afterwards: the type decides
-                  which questions were asked, so changing it on an assessment
-                  that already has responses would relabel answers that were
-                  given to a different question. */}
-              <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
-                {[
-                  { value: "team_gap", label: "Team gap" },
-                  { value: "personal", label: "Personal" },
-                ].map(t => (
-                  <button
-                    key={t.value}
-                    onClick={() => setNewType(t.value)}
-                    className={`flex-1 px-2 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                      newType === t.value ? "bg-white shadow-sm text-gray-900" : "text-gray-500 hover:text-gray-700"
-                    }`}
-                  >
-                    {t.label}
-                  </button>
-                ))}
-              </div>
-              <p className="text-[11px] text-gray-400 leading-snug">
-                {newType === "personal"
-                  ? "Each person rates their own experience, skills and interest in each activity."
-                  : "The team rates importance, execution and ownership of each activity."}
-              </p>
-              <div className="flex gap-2">
-                <button
-                  onClick={handleCreate}
-                  disabled={creating || !newTitle.trim()}
-                  className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-medium py-1.5 rounded-lg transition-colors"
-                >
-                  {creating ? "Creating…" : "Create"}
-                </button>
-                <button
-                  onClick={() => { setShowNewForm(false); setNewTitle(""); setNewCompany(""); setNewType("team_gap"); setCreateError(""); }}
-                  className="px-3 text-sm text-gray-400 hover:text-gray-600 transition-colors"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          ) : (
-            <button
-              onClick={() => setShowNewForm(true)}
-              className="w-full flex items-center gap-2 px-3 py-2 mb-2 text-sm text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              New assessment
-            </button>
-          )}
+          {/* Opens the panel rather than an inline form. Choosing among six
+              instruments, each with a description worth reading, does not fit
+              a 250px column — and the choice decides what every respondent is
+              asked. */}
+          <button
+            onClick={() => { setShowNewForm(true); setCreateError(""); }}
+            className="w-full flex items-center gap-2 px-3 py-2 mb-2 text-sm text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            New assessment
+          </button>
 
           {/* Search and grouping, at a threshold: below it the whole list is on
               screen at once, and a control that narrows four rows costs more
@@ -629,8 +638,8 @@ export default function AdminPage() {
                       </span>
                     </div>
                     <div className="flex items-center gap-1.5 mt-0.5">
-                      <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded shrink-0 ${TYPE_BADGE[assessmentType(a)].tone}`}>
-                        {TYPE_BADGE[assessmentType(a)].label}
+                      <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded shrink-0 ${badgeFor(a, instrumentOf(a)).tone}`}>
+                        {badgeFor(a, instrumentOf(a)).label}
                       </span>
                       {a.company_name && (
                         <p className="text-xs text-gray-400 truncate">{a.company_name}</p>
@@ -807,6 +816,7 @@ export default function AdminPage() {
             <div className="flex-1 overflow-y-auto">
               {effectiveTab === "Overview" && (
                 <AssessmentOverview
+                  instrument={selectedInstrument}
                   assessment={selected}
                   onUpdate={handleAssessmentUpdate}
                   // Deleting is creator-or-super-admin, matching both
@@ -855,6 +865,33 @@ export default function AdminPage() {
         onConfirm={performDeleteAssessment}
         onCancel={() => { setConfirmingDelete(false); setDeleteError(""); }}
       />
+
+      {showNewForm && (
+        instruments.length > 0 ? (
+          <NewAssessmentPanel
+            instruments={instruments.map(i => ({
+              ...i,
+              question_count: questionCounts.get(i.id) || 0,
+            }))}
+            creating={creating}
+            error={createError}
+            onCreate={handleCreate}
+            onCancel={() => { setShowNewForm(false); setCreateError(""); }}
+          />
+        ) : (
+          // Before the seed has been applied there is nothing to choose from,
+          // and an empty list presented as a choice reads as a broken page.
+          <ConfirmDialog
+            open
+            title="No instruments yet"
+            message="Apply the source in Settings → Instruments first. That creates the six an assessment can be built from."
+            confirmLabel="Go to Instruments"
+            cancelLabel="Close"
+            onConfirm={() => { setShowNewForm(false); setSelectedSection("instruments"); }}
+            onCancel={() => setShowNewForm(false)}
+          />
+        )
+      )}
     </div>
   );
 }
