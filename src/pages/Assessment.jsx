@@ -35,7 +35,7 @@ const facetsIn = (activities) => FACET_ORDER.filter(f => activities.some(a => a.
 // Everything answered means they finished the questions without submitting, so
 // open the last page — one Next from the wrap-up.
 const resumeFacetIndex = (activities, responses, isPersonal, instrument) => {
-  const fields = instrument
+  const fields = !usesLibrary(instrument)
     ? ["answer", "answer_text"]
     : isPersonal
       ? PERSONAL_AXES.map(a => a.key)
@@ -51,18 +51,28 @@ const resumeFacetIndex = (activities, responses, isPersonal, instrument) => {
   return index === -1 ? Math.max(0, pages.length - 1) : index;
 };
 
-// A survey page, for either kind of instrument: a facet for the two that draw
-// on the activity library, a named section for the four that carry their own
-// questions. One pair of helpers rather than a branch at every use, because
-// paging, resuming, saving and the blank-page warning all need the same answer
-// and drifting apart is how a page comes to save answers it did not show.
+// Whether an instrument draws its questions from the shared activity library.
+//
+// Every branch below asks this rather than "is there an instrument", which is
+// the distinction that matters now that team gap and personal resolve one too:
+// they page by facet and store answers in their own named columns, and only the
+// four that carry their own questions page by section and store an `answer`.
+// A missing instrument counts as library, because that is what the app did
+// before any of them existed.
+const usesLibrary = (instrument) => !instrument || instrument.question_source === "library";
+
+// A survey page: a facet for the instruments that draw on the library, a named
+// section for the ones that carry their own questions. One pair of helpers
+// rather than a branch at every use, because paging, resuming, saving and the
+// blank-page warning all need the same answer and drifting apart is how a page
+// comes to save answers it did not show.
 function pagesOf(activities, instrument) {
-  if (!instrument) return facetsIn(activities);
+  if (usesLibrary(instrument)) return facetsIn(activities);
   return sectionsWithQuestions(instrument, activities);
 }
 
 function activitiesOnPage(activities, page, instrument) {
-  if (!instrument) return activities.filter(a => a.facet === page);
+  if (usesLibrary(instrument)) return activities.filter(a => a.facet === page);
   return activities
     .filter(a => a.section === page)
     .sort((a, b) => (a.section_sort ?? 0) - (b.section_sort ?? 0));
@@ -164,6 +174,18 @@ const PERSONAL_COLORS = Object.fromEntries(
   PERSONAL_AXES.map(axis => [axis.key, rampFor(axis.options)])
 );
 
+// Bespoke colour by scale key. Importance and execution have hand-picked maps —
+// execution runs rose through green because "Not done" is a problem and
+// "Excellent" is not, which a neutral ramp cannot say — and the personal axes
+// use the generated ramp they always did. Keyed by scale rather than by
+// assessment type so the same table serves an axis whether it arrived from a
+// constant or from a Scale record.
+const SCALE_COLORS = {
+  importance: IMPORTANCE_COLORS,
+  execution: EXECUTION_COLORS,
+  ...PERSONAL_COLORS,
+};
+
 function RatingButton({ options, value, onChange, colorMap }) {
   return (
     <div className="flex gap-2 flex-wrap">
@@ -222,7 +244,7 @@ function IntroPurpose({ isPersonal, instrument, subject, activityCount, showOwne
   // chose it by and the ones kept under review in the seed, so the intro cannot
   // promise something the survey does not ask — which is the same reason the
   // two library instruments build their list from the axes they render.
-  if (instrument) {
+  if (instrument && instrument.question_source === "instrument") {
     const scale = instrument.axes?.[0];
     const minutes = Math.max(3, Math.round((activityCount * 20) / 60));
     return (
@@ -450,7 +472,7 @@ export default function Assessment() {
     // Section order belongs to the instrument, so it is applied here rather
     // than in getAssignedActivities — which deliberately returns an
     // instrument's questions unsorted so this is the only place that decides.
-    const acts = inst ? orderQuestions(inst, rawActs) : rawActs;
+    const acts = inst && inst.question_source === "instrument" ? orderQuestions(inst, rawActs) : rawActs;
     setInstrument(inst);
     setActivities(acts);
     const titles = await base44.entities.JobTitle.filter({ active: true }, "sort_order");
@@ -688,7 +710,12 @@ export default function Assessment() {
   //
   // Text questions have no axis at all and are filtered out of the rating loop
   // rather than given an empty one.
-  const axes = instrument ? instrument.axes : (isPersonal ? PERSONAL_AXES : TEAM_GAP_AXES);
+  // Axes come from the instrument's Scale records where they exist, and from
+  // the module constants only when no instrument could be loaded at all — which
+  // is the state before the seed has ever been applied.
+  const axes = instrument?.axes?.length
+    ? instrument.axes
+    : (isPersonal ? PERSONAL_AXES : TEAM_GAP_AXES);
 
   // An instrument's axes carry {label, points} objects; the library constants
   // carry bare strings. RatingButton wants strings, so the labels come out here
@@ -696,15 +723,20 @@ export default function Assessment() {
   // four-point challenge scale and a three-point risk scale both render without
   // a colour map written for either.
   const optionLabels = (axis) =>
-    instrument ? axis.options.map(o => o.label) : axis.options;
-  const colorsFor = (axis) =>
-    instrument
-      ? rampFor(optionLabels(axis))
-      : isPersonal
-        ? PERSONAL_COLORS[axis.key]
-        : axis.colors;
-  // Every instrument question stores its rating in the one `answer` column.
-  const axisKeyFor = (axis) => (instrument ? "answer" : axis.key);
+    // A scale's options are {label, points}; the module constants are strings.
+    axis.options.map(o => (typeof o === "string" ? o : o.label));
+  // Colour is keyed by the scale, not by where the axis came from, so a team
+  // gap survey rendered from Scale records looks exactly like the one rendered
+  // from the constants — rose through green on execution, blues on importance.
+  // Anything without a bespoke map gets the generated ramp, which is what lets
+  // a new scale render with no colour written for it.
+  const colorsFor = (axis) => SCALE_COLORS[axis.key] || rampFor(optionLabels(axis));
+
+  // Where an answer is stored. The four instruments that carry their own
+  // questions ask one scale and store it in `answer`; the library pair store
+  // theirs in the column the scale is named after, which is why the seeded
+  // keys are importance, execution, experience, skills and interest.
+  const axisKeyFor = (axis) => (usesLibrary(instrument) ? axis.key : "answer");
 
   // What the ownership question offers. Derived from the activities this
   // assessment actually uses, plus the three product titles that appear in
@@ -724,7 +756,7 @@ export default function Assessment() {
   const answersForCurrentFacet = () =>
     facetActivities.map(activity => {
       const r = responses[activity.id] || {};
-      if (instrument) {
+      if (!usesLibrary(instrument)) {
         // One scale per question, plus the text of a written one. Both are sent
         // every time, including as null: clearing an answer is a real thing to
         // do, and saveResponses treats null as "unanswered" rather than
@@ -921,7 +953,7 @@ export default function Assessment() {
             instrument={instrument}
             subject={assessment?.subject}
             activityCount={activities.length}
-            showOwnership={!instrument && !isPersonal && ownerOptions.length > 0}
+            showOwnership={(instrument ? instrument.ask_ownership : !isPersonal) && ownerOptions.length > 0}
             blurb={introBlurb}
           />
           <div className="space-y-4 mb-6">
@@ -1007,7 +1039,7 @@ export default function Assessment() {
             instrument={instrument}
             subject={assessment?.subject}
             activityCount={activities.length}
-            showOwnership={!instrument && !isPersonal && ownerOptions.length > 0}
+            showOwnership={(instrument ? instrument.ask_ownership : !isPersonal) && ownerOptions.length > 0}
             blurb={introBlurb}
           />
           <div className="space-y-4 mb-6">
@@ -1131,7 +1163,7 @@ export default function Assessment() {
                       assessment's roles rather than a rating, which is why it
                       sits outside the loop above and asks its question in
                       words. */}
-                  {!instrument && !isPersonal && ownerOptions.length > 0 && (
+                  {(instrument ? instrument.ask_ownership : !isPersonal) && ownerOptions.length > 0 && (
                     <div>
                       <p className="mb-2 leading-snug">
                         <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{OWNERSHIP_QUESTION.label}</span>
@@ -1432,7 +1464,7 @@ export default function Assessment() {
     // against execution to bucket what you said. An instrument answer has
     // neither, so that would render an empty summary under a heading promising
     // one.
-    if (instrument) {
+    if (instrument && instrument.question_source === "instrument") {
       return (
         <InstrumentSelfSummary
           instrument={instrument}

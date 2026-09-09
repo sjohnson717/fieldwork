@@ -31,18 +31,42 @@ const buildScale = (scale, options) => ({
 // null when the assessment names no instrument, which is every assessment made
 // before they existed — callers fall back to their old path on null rather than
 // branching on the assessment's type.
+// Assessments made before instruments existed carry no instrument_id — which
+// is every team gap and personal assessment currently running. Rather than
+// migrate live rows, the instrument is resolved from assessment_type at read
+// time: the seeded keys are exactly the two enum values, and a derived match is
+// indistinguishable from a stored one everywhere it is used.
+//
+// Nothing is written back. A backfill would touch every assessment in the app,
+// including ones half-answered in a client engagement, to store a value that
+// can be computed for free — and would have to be re-run for anything created
+// by an older bundle in the meantime.
+const KEY_FOR_TYPE = { personal: "personal", team_gap: "team_gap" };
+
 export async function loadInstrument(assessment) {
-  if (!assessment?.instrument_id) return null;
+  if (!assessment) return null;
+  const derivedKey = assessment.instrument_id
+    ? null
+    : KEY_FOR_TYPE[assessment.assessment_type || "team_gap"] || "team_gap";
+
   const [instruments, scales, options, bands] = await Promise.all([
-    base44.entities.Instrument.filter({ id: assessment.instrument_id }),
+    assessment.instrument_id
+      ? base44.entities.Instrument.filter({ id: assessment.instrument_id })
+      : base44.entities.Instrument.filter({ key: derivedKey }),
     base44.entities.Scale.list("sort_order"),
     base44.entities.ScaleOption.list("sort_order"),
     // Only two instruments have any, and an instrument with none simply shows
     // no band — which is what Chaos and Portfolio Health did on Wix too, minus
     // the bare unexplained number.
-    base44.entities.Band.filter({ instrument_id: assessment.instrument_id }, "sort_order"),
+    assessment.instrument_id
+      ? base44.entities.Band.filter({ instrument_id: assessment.instrument_id }, "sort_order")
+      : [],
   ]);
   const instrument = instruments?.[0];
+  // Before the seed has been applied there are no Instrument rows at all, and
+  // every caller falls back to the constants it has always used. That is the
+  // safety net for this whole migration: an instrument that will not load costs
+  // the old behaviour, not a broken survey.
   if (!instrument) return null;
 
   // Ordered as the instrument names them, not as the Scale table happens to
@@ -58,7 +82,15 @@ export async function loadInstrument(assessment) {
   // always readable bottom-to-top no matter what order it was authored in.
   const orderedBands = [...(bands || [])].sort((a, b) => (a.min_score ?? 0) - (b.min_score ?? 0));
 
-  return { ...instrument, axes, bands: orderedBands };
+  return {
+    ...instrument,
+    axes,
+    bands: orderedBands,
+    // True when this was matched from assessment_type rather than stored on the
+    // assessment. Nothing branches on it today; it is here so a later backfill
+    // can be told what it would be changing.
+    derived: !assessment.instrument_id,
+  };
 }
 
 // The questions an instrument asks, in survey order.

@@ -14,7 +14,7 @@
 //
 // window.__qa exposes that state to the driver.
 
-import { ACTIVITIES, TEAM_GAP, PERSONAL, RESPONDENTS, ALL_ANSWERS, OWN_ANSWERS, PERSONAL_ANSWERS, DISCUSSION_NOTES, TEAM_TOKEN, BUYER_TOKEN } from "./fixtures.js";
+import { FACETS, ACTIVITIES, TEAM_GAP, PERSONAL, RESPONDENTS, ALL_ANSWERS, OWN_ANSWERS, PERSONAL_ANSWERS, DISCUSSION_NOTES, TEAM_TOKEN, BUYER_TOKEN } from "./fixtures.js";
 
 const ANSWER_FIELDS = ["importance", "execution", "suggested_owner", "experience", "skills", "interest"];
 
@@ -32,6 +32,40 @@ const state = {
   flags: [],
   calls: [],
   violations: [],
+  // The two library instruments as records. The fixtures' assessments stay on
+  // assessment_type with no instrument_id, which is what every assessment made
+  // before instruments existed looks like — so these routes go on exercising
+  // the fallback path rather than quietly testing only the new one.
+  instruments: [
+    { id: "inst-team", key: "team_gap", name: "Team gap analysis", question_source: "library",
+      report_style: "gap", ask_ownership: true, scale_ids: ["sc-imp", "sc-exec"],
+      sections: FACETS, sort_order: 1, active: true,
+      tagline: "Where the work matters more than it is being done",
+      description: "A team rates every activity on how much it matters and how well it is done today." },
+    { id: "inst-personal", key: "personal", name: "Personal assessment", question_source: "library",
+      report_style: "profile", ask_ownership: false, scale_ids: ["sc-exp", "sc-skill", "sc-int"],
+      sections: FACETS, sort_order: 2, active: true,
+      tagline: "What one person brings to the same activities",
+      description: "An individual rates their own experience, skills and interest in each activity." },
+  ],
+  scales: [
+    { id: "sc-imp", key: "importance", name: "Importance", sort_order: 0 },
+    { id: "sc-exec", key: "execution", name: "Current execution", unknown_label: "I don't know", unknown_treatment: "excluded", sort_order: 1 },
+    { id: "sc-exp", key: "experience", name: "Experience", sort_order: 2 },
+    { id: "sc-skill", key: "skills", name: "Skills", sort_order: 3 },
+    { id: "sc-int", key: "interest", name: "Interest", sort_order: 4 },
+  ],
+  // The real option sets, so the survey rendered from Scale records is the one
+  // the sweep actually checks. Left empty, every axis would fall back to the
+  // module constants and this migration would pass untested.
+  scaleOptions: [
+    ...["Not needed", "Nice to have", "Important", "Critical"].map((label, i) => ({ id: `o-imp-${i}`, scale_id: "sc-imp", label, points: i, sort_order: i })),
+    ...["Not done", "Inconsistent", "Good", "Excellent"].map((label, i) => ({ id: `o-exec-${i}`, scale_id: "sc-exec", label, points: i, sort_order: i })),
+    { id: "o-exec-4", scale_id: "sc-exec", label: "I don't know", points: null, sort_order: 4 },
+    ...["None", "Limited", "Some", "Extensive"].map((label, i) => ({ id: `o-exp-${i}`, scale_id: "sc-exp", label, points: [0,1,3,5][i], sort_order: i })),
+    ...["None", "Basic", "Good", "Excellent"].map((label, i) => ({ id: `o-skill-${i}`, scale_id: "sc-skill", label, points: [0,1,3,5][i], sort_order: i })),
+    ...["None", "Limited", "Moderate", "Passionate"].map((label, i) => ({ id: `o-int-${i}`, scale_id: "sc-int", label, points: [0,1,3,5][i], sort_order: i })),
+  ],
 };
 
 // A respondent whose own answers are the awkward set, for the resume and revise
@@ -72,7 +106,9 @@ export const base44 = {
     me: async () => (state.user ? { ...state.user } : Promise.reject(new Error("not authenticated"))),
   },
   entities: {
-    Activity: { filter: async () => readOnly(ACTIVITIES) },
+    // `list` as well as `filter`: the admin sidebar counts each instrument's
+    // questions from the whole table rather than trusting a stored count.
+    Activity: { filter: async () => readOnly(ACTIVITIES), list: async () => readOnly(ACTIVITIES) },
     JobTitle: { filter: async () => [{ name: "Product Management" }, { name: "Product Marketing" }, { name: "Engineering" }, { name: "Design" }] },
     Resource: { filter: async () => [] },
     // Admin reads these two directly. The sweep's own routes are public and
@@ -98,7 +134,28 @@ export const base44 = {
         return { ...row };
       },
     },
-    Organization: { filter: async () => [{ id: "org-1", name: "Product Growth Leaders" }] },
+    // `list` as well as `filter`: the admin sidebar groups assessments by
+    // organization and owner, and reads the whole table to name them. Without
+    // it that load threw, was caught, and logged a console error on every admin
+    // route — a gate finding that was the stub's gap, not the app's.
+    Organization: {
+      filter: async () => [{ id: "org-1", name: "Product Growth Leaders" }],
+      list: async () => [
+        { id: "org-1", name: "Product Growth Leaders" },
+        { id: "org-2", name: "Northwind Advisory" },
+      ],
+    },
+    // The two library instruments. Enough for the admin page to name them, to
+    // decide an assessment's tabs, and to badge it — the four that carry their
+    // own questions have their own fixtures when a route needs them.
+    Instrument: {
+      list: async () => readOnly(state.instruments || []),
+      filter: async (q = {}) =>
+        readOnly((state.instruments || []).filter(i => Object.entries(q).every(([k, v]) => i[k] === v))),
+    },
+    Scale: { list: async () => readOnly(state.scales || []) },
+    ScaleOption: { list: async () => readOnly(state.scaleOptions || []) },
+    Band: { filter: async () => [] },
     DiscussionNote: { filter: async () => readOnly(state.notes) },
     TeamLeaderFlag: {
       filter: async () => readOnly(state.flags),
