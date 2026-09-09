@@ -43,6 +43,14 @@
       "default": "team_gap",
       "description": "team_gap: importance/execution/ownership. personal: experience/skills/interest. Absent means team_gap."
     },
+    "instrument_id": {
+      "type": "string",
+      "description": "The instrument this assessment runs. Supersedes assessment_type, which stays readable while the two library instruments are migrated and is then derived from this rather than deleted — a field dropped from this file vanishes silently on the next publish, taking every existing value with it."
+    },
+    "subject": {
+      "type": "string",
+      "description": "What this assessment is about, when the instrument asks about one named thing rather than the team: the product or idea being scored. A code name is fine and is what the Product Success Quiz already suggests. Required by those instruments because everyone answering has to be provably scoring the same subject."
+    },
     "parent_assessment_id": {
       "type": "string",
       "description": "Personal assessments only, and optional. Links this personal assessment to a team gap assessment so the report can cross capability against the team's gaps."

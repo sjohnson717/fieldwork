@@ -40,6 +40,49 @@
     "org_id": {
       "type": "string",
       "description": "Custom activities only: the organization whose assessment this belongs to, stamped from the assessment at create. Library activities carry none deliberately — they are shared authored content, and an absent org_id is what confines them to super-admin and their own creator. See this folder's README."
+    },
+    "instrument_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "Instruments that ask this question. Many-to-many because the Wix originals already were: one Final Thoughts question served both the Product Success Quiz and the Idea Reality Check. Empty means a library activity, which is selected per assessment instead."
+    },
+    "section": {
+      "type": "string",
+      "description": "The survey page this question sits on — Market, Capabilities, Your Challenges. Falls back to `facet` for library instruments, whose sections are the seven facets. Kept separate from facet rather than widening that enum, because FACET_ORDER drives the wheel, the paired themes and every sort in the gap report."
+    },
+    "section_sort": {
+      "type": "number",
+      "description": "Order of this question within its section."
+    },
+    "question_type": {
+      "type": "string",
+      "enum": [
+        "rating",
+        "text"
+      ],
+      "default": "rating",
+      "description": "text is a free-text question the instrument asks in its own right, such as Portfolio Health's magic-wand question. Distinct from Respondent.closing_comments, which is admin-only by construction and never reported."
+    },
+    "reportable_text": {
+      "type": "boolean",
+      "default": false,
+      "description": "Text questions only. Whether the answer appears in the team report as a roll-up. A property on the record rather than a judgement made at render time: the app's other free-text fields are unreportable by construction, and that safety came from the rule having no exceptions."
+    },
+    "commentary": {
+      "type": "string",
+      "description": "The authored paragraph shown under this question in a report. Explains the question rather than the answer given, which is why one paragraph serves a room as well as a person. Distinct from try_this, which is one concrete action and belongs to the library instruments."
+    },
+    "critical": {
+      "type": "boolean",
+      "default": false,
+      "description": "A question whose negative answer outranks the total. The Product Success Quiz recorded this as prose in a CMS field nothing read, so a product could answer No to all four of its non-negotiables, score 5 of 9 and be told to Maintain. Implemented as agenda placement rather than arithmetic: these sort to the top of the facilitator's list whatever the score says."
+    },
+    "required": {
+      "type": "boolean",
+      "default": false
     }
   },
   "required": [

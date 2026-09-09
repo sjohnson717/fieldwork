@@ -1,0 +1,50 @@
+{
+  "name": "Band",
+  "type": "object",
+  "properties": {
+    "instrument_id": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string",
+      "description": "Invest, Maintain, Reassess, Sunset. The verdict, in the words the coach uses."
+    },
+    "min_score": {
+      "type": "number",
+      "description": "Inclusive lower bound, in points."
+    },
+    "max_score": {
+      "type": "number",
+      "description": "Inclusive upper bound, in points. On Wix the range lived only inside the advice prose -- \"If your score is 13-18...\" -- with nothing able to select the band that applied, so both banded reports printed every band and left the reader to work out which was theirs. These two columns are the whole fix."
+    },
+    "advice": {
+      "type": "string",
+      "description": "What to do about landing here. Shown on an individual's own summary, never as a verdict on a team: a mean score placed in a band buries the disagreement the facilitated session exists to surface."
+    },
+    "sort_order": {
+      "type": "number"
+    }
+  },
+  "required": [
+    "instrument_id",
+    "name"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {},
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

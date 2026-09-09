@@ -1,0 +1,59 @@
+{
+  "name": "Scale",
+  "type": "object",
+  "properties": {
+    "key": {
+      "type": "string",
+      "description": "Stable slug: importance, execution, experience, skills, interest, challenge, yes_no, yes_no_unknown. What the seed matches on when it re-runs, and the only stable identity a scale has — two scales can legitimately share a name and differ in points, as Yes/No does across two instruments."
+    },
+    "name": {
+      "type": "string"
+    },
+    "hint": {
+      "type": "string",
+      "description": "Shown under the axis label on every question card, the way the personal axes describe themselves. Two axes a respondent reads as synonyms get rated identically, which does not look like bad data."
+    },
+    "unknown_label": {
+      "type": "string",
+      "description": "The option meaning the respondent cannot say, if this scale offers one. Named here rather than inferred, because 'Unknown' and 'I don't know' are the same answer under two spellings."
+    },
+    "unknown_treatment": {
+      "type": "string",
+      "enum": [
+        "scored",
+        "excluded"
+      ],
+      "default": "excluded",
+      "description": "What that option does to the score. The Idea Reality Check scores Unknown at zero, below No, deliberately: not knowing is worse than a known negative. The team gap drops 'I don't know' from the average instead, because it is an answer to the question but not a rating. Both are defensible, which is exactly why it is a property of the scale and not a rule of the app."
+    },
+    "sort_order": {
+      "type": "number"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "key",
+    "name"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {},
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

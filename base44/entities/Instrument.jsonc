@@ -1,0 +1,94 @@
+{
+  "name": "Instrument",
+  "type": "object",
+  "properties": {
+    "key": {
+      "type": "string",
+      "description": "Stable slug the code may name: team_gap, personal, chaos, portfolio_health, idea_reality, product_success. Records are matched on this when the importer re-runs, so it must never change once an assessment references the instrument."
+    },
+    "name": {
+      "type": "string"
+    },
+    "tagline": {
+      "type": "string",
+      "description": "One line under the name in the New Assessment panel."
+    },
+    "description": {
+      "type": "string",
+      "description": "What this instrument is for and what it produces, written for a facilitator choosing between six of them. This is the whole point of the panel; a name alone does not say when to reach for Portfolio Health over Chaos."
+    },
+    "question_source": {
+      "type": "string",
+      "enum": [
+        "library",
+        "instrument"
+      ],
+      "default": "instrument",
+      "description": "library: draws from the shared Activity library, and the assessment picks a subset. instrument: asks its own fixed question list, every question every time."
+    },
+    "sections": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "Ordered section names, one survey page each. For library instruments these are the facets; for the rest they are the categories the questions carry."
+    },
+    "scale_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "The axes asked about every question, in the order they are asked. One for the four imported instruments, two or three for team gap and personal."
+    },
+    "ask_ownership": {
+      "type": "boolean",
+      "default": false,
+      "description": "Team gap only: the third question, which is a choice among the assessment's roles rather than a rating and is scored by nothing."
+    },
+    "report_style": {
+      "type": "string",
+      "enum": [
+        "gap",
+        "profile",
+        "distribution"
+      ],
+      "default": "distribution",
+      "description": "Which report this instrument produces. A facet wheel over importance-against-execution, a personal capability profile, and a per-question distribution are three different arguments, so they stay three renderers behind one route."
+    },
+    "subject_label": {
+      "type": "string",
+      "description": "Set when the instrument is about one named thing rather than the team: 'Which product are you assessing?'. Everyone answering must be scoring the same subject, so it is a field on the assessment rather than a question anybody can skip."
+    },
+    "sort_order": {
+      "type": "number"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "key",
+    "name"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {},
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
