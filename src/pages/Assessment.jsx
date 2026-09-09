@@ -483,6 +483,10 @@ export default function Assessment() {
     // because this is the one place holding the activities and the saved
     // answers together, before anything renders.
     setCurrentFacetIndex(resumeFacetIndex(acts, rebuilt, a.assessment_type === "personal", inst));
+    // Handed back because the caller decides which screen a returning
+    // respondent lands on, and state set here is not readable until the next
+    // render — reading `instrument` there would see the previous value.
+    return inst;
   };
 
   const loadFromToken = async (t) => {
@@ -524,11 +528,16 @@ export default function Assessment() {
       if (r.status === "completed") {
         setReturningCompleted(true);
         if (r.title) setTitle(r.title);
-        await loadSurveyData(a, session.responses);
-        // Someone returning to a personal assessment came back for their
-        // profile, so hand it straight to them rather than making them click
-        // through a confirmation that tells them what they already know.
-        setStep(a.assessment_type === "personal" ? "done" : "already-done");
+        const inst = await loadSurveyData(a, session.responses);
+        // Straight to the summary for a personal assessment and for the four
+        // that carry their own questions: both hand the person something of
+        // their own — a profile, or a score and its band — and a confirmation
+        // screen in between only tells them what they already know. The team
+        // gap keeps its interstitial, because what it shows on "done" is a
+        // confirmation of what was sent rather than a document.
+        const goesStraightToSummary =
+          a.assessment_type === "personal" || inst?.question_source === "instrument";
+        setStep(goesStraightToSummary ? "done" : "already-done");
         return;
       }
 
@@ -1473,6 +1482,7 @@ export default function Assessment() {
           responses={responses}
           name={name}
           myToken={myToken}
+          onRevise={handleRevise}
         />
       );
     }

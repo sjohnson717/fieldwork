@@ -78,7 +78,11 @@ export default function InstrumentSelfSummary({
   responses,
   name,
   myToken,
+  onRevise,
 }) {
+  // A closed assessment is read-only for everyone: the numbers behind it have
+  // been presented, and a late edit would move them.
+  const closed = assessment?.status === "closed";
   const axis = instrument.axes?.[0];
   const rated = questions.filter(q => q.question_type !== "text");
   const score = axis ? scoreFor(questions, responses, axis) : null;
@@ -147,11 +151,39 @@ export default function InstrumentSelfSummary({
           </ol>
         </section>
 
+        {/* Revising is offered here, not only promised by the link below.
+            The other two instruments have always had it, and the resume link
+            says an answer can be changed — a page that only shows them makes
+            that sentence a lie.
+
+            Withheld once the assessment is closed. The aggregate has been
+            reported by then and a late change would move numbers already
+            presented; looking back at your own answers stays available, which
+            is the half that costs nobody anything. */}
+        {onRevise && !closed && (
+          <div className="no-print flex items-center justify-between gap-4 bg-white rounded-xl border border-gray-200 p-5">
+            <div>
+              <p className="text-sm font-medium text-gray-700">Changed your mind?</p>
+              <p className="text-xs text-gray-400 mt-0.5">
+                You can go back through the questions and submit again.
+              </p>
+            </div>
+            <button
+              onClick={onRevise}
+              className="shrink-0 text-sm font-medium px-4 py-2 rounded-lg border border-gray-300 text-gray-600 hover:border-gray-400 hover:text-gray-800 transition-colors"
+            >
+              Change my answers
+            </button>
+          </div>
+        )}
+
         {myToken && (
           <div className="no-print">
             <ResumeLink
               token={myToken}
-              description="Keep this link if you want to change an answer before the session."
+              description={closed
+                ? "Keep this link to look back at your answers."
+                : "Keep this link if you want to change an answer before the session."}
             />
           </div>
         )}
