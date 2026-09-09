@@ -1,5 +1,11 @@
 import { INSTRUMENT_SEED } from "@/lib/instrument-seed";
 
+// Where the reading lives. One constant, because the destination is a policy
+// decision rather than a property of any one article: the articles stay on the
+// site that owns them rather than being duplicated here, and when the CTA-free
+// partner version of the blog exists this is the line that points at it.
+const ARTICLE_BASE = "https://www.productgrowthleaders.com";
+
 // Applying the six instruments to the backend.
 //
 // Idempotent by construction, because it will be run more than once: the seed
@@ -61,6 +67,7 @@ export async function seedInstruments(base44, { onProgress } = {}) {
     options: { created: 0, updated: 0, unchanged: 0 },
     instruments: { created: 0, updated: 0, unchanged: 0 },
     questions: { created: 0, updated: 0, unchanged: 0 },
+    resources: { created: 0, updated: 0, unchanged: 0 },
     bands: { created: 0, updated: 0, unchanged: 0 },
   };
   const notes = [];
@@ -137,9 +144,15 @@ export async function seedInstruments(base44, { onProgress } = {}) {
   say("Questions");
   const existingActivities = await e.Activity.list();
   const seededKeys = new Set(seed.instruments.filter((i) => i.question_source === "instrument").map((i) => i.key));
+  // The rows as they end up, collected here because the reading below needs to
+  // attach itself to them. `existingActivities` is the snapshot taken before
+  // this loop, so on a first run it holds none of these — reading built from it
+  // would attach every article to nothing, then quietly fix itself on the
+  // second run and report thirteen updates for a seed nobody had touched.
+  const questionRows = new Map();
   for (const q of seed.questions) {
     const instIds = q.instrument_keys.map((k) => instrumentId.get(k));
-    await upsert(e.Activity, existingActivities,
+    const row = await upsert(e.Activity, existingActivities,
       (r) => r.name === q.label && (r.instrument_ids || []).some((id) => instIds.includes(id)),
       {
         name: q.label,
@@ -167,6 +180,7 @@ export async function seedInstruments(base44, { onProgress } = {}) {
         // retired question on the next run.
         active: q.active !== false,
       }, tally.questions);
+    questionRows.set(q.label, row);
   }
 
   // A question the seed no longer lists is reported, never removed — see the
@@ -180,6 +194,44 @@ export async function seedInstruments(base44, { onProgress } = {}) {
   });
   for (const o of orphans) {
     notes.push(`"${o.name}" is on an instrument but not in the seed. Left alone — deactivate it if it is finished with.`);
+  }
+
+  // ── Reading ────────────────────────────────────────────────────────────────
+  //
+  // The articles behind each question, as Resource rows attached to it.
+  //
+  // Stored as a path in the seed and composed against ARTICLE_BASE here, rather
+  // than fifteen absolute URLs. The plan is a partner version of the blog
+  // without the "Talk to a coach" nav and the newsletter capture — a report a
+  // fractional CPO hands their own client should not open onto somebody else's
+  // booking page. When that exists, this is one constant to change and a re-run,
+  // instead of thirteen rows to edit.
+  //
+  // free_article, deliberately and for all of them. The type is what tells a
+  // reader a free article from a paid course before they click, and it is also
+  // the natural switch for showing quartz_book and quartz_course only on our
+  // own engagements — asking a CPO to recommend our course to their client is a
+  // different thing from giving their client something worth reading.
+  say("Reading");
+  const existingResources = await e.Resource.list();
+  for (const [i, r] of (seed.resources || []).entries()) {
+    // Matched to questions by label across every instrument that asks them, so
+    // one article serving two questions is one row pointing at both — which is
+    // how three of these arrived from Wix.
+    const ids = r.question_labels
+      .map((label) => questionRows.get(label)?.id)
+      .filter(Boolean);
+    await upsert(e.Resource, existingResources, (row) => row.title === r.title, {
+      title: r.title,
+      resource_type: "free_article",
+      source: "Product Growth Leaders",
+      url: `${ARTICLE_BASE}${r.path}`,
+      note: r.note || undefined,
+      activity_ids: ids,
+      fallback: false,
+      sort_order: i,
+      active: true,
+    }, tally.resources);
   }
 
   // ── Bands ──────────────────────────────────────────────────────────────────
@@ -207,7 +259,21 @@ export async function seedInstruments(base44, { onProgress } = {}) {
     const missing = qs.filter((q) => !q.commentary).length;
     if (missing) notes.push(`${inst.name}: ${missing} of ${qs.length} questions have no commentary yet.`);
   }
-  notes.push("Linked articles were not imported — the export carries Wix post ids with no titles or URLs.");
+  const linked = new Set((seed.resources || []).flatMap((r) => r.question_labels));
+  const unlinked = seed.questions.filter(
+    (q) => q.question_type === "rating" && q.active !== false && (q.blog_id || "").trim() && !linked.has(q.label),
+  );
+  if (unlinked.length) {
+    notes.push(
+      `${unlinked.length} question${unlinked.length === 1 ? "" : "s"} reference an article that is not in Posts.csv — ` +
+      `${unlinked.map((q) => q.label).join(", ")}. Add the title and path to the seed to link them.`,
+    );
+  }
+  const noReading = seed.instruments.filter(
+    (i) => i.question_source === "instrument" &&
+      !seed.questions.some((q) => q.instrument_keys.includes(i.key) && linked.has(q.label)),
+  );
+  for (const i of noReading) notes.push(`${i.name}: no reading attached to any question yet.`);
 
   return { tally, notes };
 }

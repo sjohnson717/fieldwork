@@ -425,13 +425,19 @@ export default function Assessment() {
   }, [assessment?.title]);
 
   const isPersonalAssessment = assessment?.assessment_type === "personal";
+  // Reading is loaded for the personal profile and for the four instruments
+  // that carry their own questions. Both hand it to one person on their own
+  // copy; neither the team report nor the buyer report offers any, which is
+  // the existing rule and the right one — a reading list is advice to a
+  // reader, not a finding about a team.
+  const wantsResources = isPersonalAssessment || instrument?.question_source === "instrument";
   useEffect(() => {
-    if (!isPersonalAssessment || step !== "done") return;
+    if (!wantsResources || step !== "done") return;
     base44.entities.Resource
       .filter({ active: true }, "sort_order")
       .then(setResources)
       .catch(() => setResources([]));
-  }, [isPersonalAssessment, step]);
+  }, [wantsResources, step]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -1480,6 +1486,7 @@ export default function Assessment() {
           assessment={assessment}
           questions={activities}
           responses={responses}
+          resources={resources}
           name={name}
           myToken={myToken}
           onRevise={handleRevise}

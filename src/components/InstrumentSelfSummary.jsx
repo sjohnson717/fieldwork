@@ -79,10 +79,18 @@ export default function InstrumentSelfSummary({
   name,
   myToken,
   onRevise,
+  resources = [],
 }) {
   // A closed assessment is read-only for everyone: the numbers behind it have
   // been presented, and a late edit would move them.
   const closed = assessment?.status === "closed";
+
+  // The reading attached to each question, by question id. Resolved against the
+  // loaded list and silently dropping anything that will not resolve, the same
+  // way every other reference in this app is treated — an article retired since
+  // somebody answered should cost a link, not the page.
+  const readingFor = (questionId) =>
+    resources.filter((r) => (r.activity_ids || []).includes(questionId));
   const axis = instrument.axes?.[0];
   const rated = questions.filter(q => q.question_type !== "text");
   const score = axis ? scoreFor(questions, responses, axis) : null;
@@ -145,6 +153,25 @@ export default function InstrumentSelfSummary({
                       {q.commentary}
                     </p>
                   )}
+                  {/* Where to read more. On the person's own copy only — the
+                      team report carries none, because a reading list is advice
+                      to one reader rather than a finding about a room.
+
+                      A real anchor with the title as its text, so it survives
+                      being printed or pasted somewhere else. */}
+                  {readingFor(q.id).map(r => (
+                    <p key={r.id} className="text-sm mt-2">
+                      <a
+                        href={r.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-blue-600 hover:text-blue-700 print:text-gray-600 print:no-underline"
+                      >
+                        {r.title}
+                      </a>
+                      {r.note && <span className="text-gray-400"> — {r.note}</span>}
+                    </p>
+                  ))}
                 </li>
               );
             })}
