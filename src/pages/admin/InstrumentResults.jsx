@@ -12,9 +12,11 @@ import ConfirmDialog from "@/components/ConfirmDialog";
 //
 // Deliberately thin. It is the roster — who has answered, and the standing note
 // that individual answers stay in the room — followed by the same report the
-// buyer's link renders. There is no third view of the same numbers written for
-// this screen: a report the facilitator reads and a report the client reads
-// that disagree in any detail is worse than one report seen twice.
+// buyer's link renders, drawn the same way. There is no third view of the same
+// numbers written for this screen, and no second drawing of them either: a
+// report the facilitator reads and a report the client reads that disagree in
+// any detail — the numbers, or the picture of them — is worse than one report
+// seen twice.
 //
 // The gap tab next door offers importance/execution/gap views because those are
 // genuinely different cuts of a two-axis instrument. One axis has one cut.

@@ -76,9 +76,11 @@ function armsFor(counts) {
   };
 }
 
-// The order the legend reads in: worst on the left, best on the right, which is
-// the order the bar itself is built in.
-function legendFor(counts) {
+// Every option in scale order, worst on the left and best on the right, each
+// carrying the colour it takes in both drawings. One source for the key, the
+// diverging bar and the share bar, so a colour can never mean one thing in the
+// legend and another in the picture beneath it.
+function paletteFor(counts) {
   const arms = armsFor(counts);
   if (!arms) return [];
   const seen = new Set();
@@ -91,16 +93,89 @@ function legendFor(counts) {
   return out;
 }
 
+// Dark ink on the pale steps and the neutral, light on the strong ends, so a
+// count never sits on a colour it cannot be read against.
+const onColor = (c) =>
+  c.neutral || c.color === PROBLEM_WEAK || c.color === FINE_WEAK ? "#1f2937" : "#ffffff";
+
 function Legend({ axis }) {
   const counts = axis.options.map(o => ({ label: o.label, points: o.points ?? null, n: 0 }));
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
-      {legendFor(counts).map(c => (
+      {paletteFor(counts).map(c => (
         <span key={c.label} className="inline-flex items-center gap-1.5 text-xs text-gray-600">
           <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ backgroundColor: c.color }} />
           {c.label}
         </span>
       ))}
+    </div>
+  );
+}
+
+// Percentages that add up to a hundred.
+//
+// Rounding each share on its own gives three thirds of 33% and a reader who
+// adds them up and gets 99. Largest remainder hands the leftover points to the
+// shares that lost the most in the rounding, so the printed numbers total what
+// the reader expects them to.
+function wholePercents(values, total) {
+  if (!total) return values.map(() => 0);
+  const exact = values.map(v => (v / total) * 100);
+  const floors = exact.map(Math.floor);
+  let left = 100 - floors.reduce((a, b) => a + b, 0);
+  const order = exact
+    .map((v, i) => ({ i, rem: v - Math.floor(v) }))
+    .sort((a, b) => b.rem - a.rem);
+  const out = [...floors];
+  for (const { i } of order) {
+    if (left <= 0) break;
+    out[i] += 1;
+    left -= 1;
+  }
+  return out;
+}
+
+// One question, as a single bar divided by how the room answered.
+//
+// The buyer's drawing. Every bar is the same length, so what it compares is
+// composition — the shape of one question against the shape of the next — and
+// a percentage is the unit a client audience reads without translating.
+//
+// What it gives up is the denominator: a question two people skipped draws the
+// same length as one everybody answered, which is why the count of people who
+// did answer is printed beside it rather than left to the footnote.
+function ShareDistribution({ dist, expected }) {
+  const missing = Math.max(0, (expected ?? dist.given) - dist.given);
+  const options = paletteFor(dist.counts).filter(c => c.n > 0);
+  const total = options.reduce((s, c) => s + c.n, 0);
+  const unrated = dist.counts.filter(c => c.points === null && c.n > 0);
+  if (total === 0) return null;
+
+  const percents = wholePercents(options.map(c => c.n), total);
+
+  return (
+    <div className="space-y-1.5">
+      <div className="flex h-6 gap-[2px]">
+        {options.map((c, i) => (
+          <div
+            key={c.label}
+            className="h-6 flex items-center justify-center text-[11px] font-semibold tabular-nums overflow-hidden first:rounded-l-sm last:rounded-r-sm"
+            style={{
+              flex: `${c.n} 0 0%`,
+              backgroundColor: c.color,
+              color: onColor(c),
+            }}
+            title={`${c.label} — ${c.n} of ${total}`}
+          >
+            {percents[i] >= 12 ? `${percents[i]}%` : ""}
+          </div>
+        ))}
+      </div>
+      <p className="text-[11px] text-gray-400">
+        {total} of {expected ?? total} answered
+        {unrated.length > 0 && unrated.map(c => ` · ${c.n} answered ${c.label.toLowerCase()}`).join("")}
+        {missing > 0 && ` · ${missing} didn\u2019t answer this`}
+      </p>
     </div>
   );
 }
@@ -143,7 +218,7 @@ function Distribution({ dist, expected }) {
         style={{
           flex: `${w} 0 0%`,
           backgroundColor: c.color,
-          color: c.neutral || c.color === PROBLEM_WEAK || c.color === FINE_WEAK ? "#1f2937" : "#ffffff",
+          color: onColor(c),
         }}
         title={`${c.label} — ${c.n}`}
       >
@@ -197,6 +272,20 @@ const splitLabel = (spread) => {
   return { text: "Agreed", tone: "text-emerald-700 bg-emerald-50 border-emerald-200" };
 };
 
+// `chart` picks the drawing, not the numbers.
+//
+// **Nothing passes it today.** Both callers — the facilitator's results tab and
+// the buyer's link — take the default, deliberately: the two are the same
+// report seen twice, and that holds for the picture as much as for the figures.
+// The buyer's copy was drawn as "share" for one commit and pulled back before
+// it shipped, because a client and a facilitator looking at different pictures
+// of the same question in the same meeting is exactly the divergence
+// InstrumentResults warns about.
+//
+// "share" is kept because it is written, verified and one prop from being used
+// if a reader ever genuinely needs it — a slide, an export, a client who reads
+// percentages and nothing else. Wire it up only for a reader who is not in the
+// room with somebody holding the other version.
 export default function InstrumentReport({
   instrument,
   assessment,
@@ -204,6 +293,7 @@ export default function InstrumentReport({
   responsesByActivity,
   respondentCount,
   completedCount,
+  chart = "diverging",
 }) {
   const axis = instrument.axes?.[0];
   if (!axis) return null;
@@ -289,7 +379,9 @@ export default function InstrumentReport({
                 </div>
               </div>
               {q.description && <p className="text-sm text-gray-500 mb-3">{q.description}</p>}
-              <Distribution dist={d} expected={completedCount} />
+              {chart === "share"
+                ? <ShareDistribution dist={d} expected={completedCount} />
+                : <Distribution dist={d} expected={completedCount} />}
               {q.commentary && (
                 <p className="text-sm text-gray-600 leading-relaxed mt-3 pt-3 border-t border-gray-100">
                   {q.commentary}
