@@ -41,6 +41,13 @@
 // respondent's own team, and the closing pair are admin-only and say on screen
 // that they are not part of the team's report.
 //
+// The Product Success Quiz's "About You" is retired for a different reason: it
+// asked which product was being scored, and the assessment now carries that as
+// a required `subject`. The respondent is told which product on the intro
+// screen and again on their summary, so asking them to name it was asking for
+// something they had just been given — and two spellings of one product is the
+// shape that makes an aggregate stop being about one thing.
+//
 // Portfolio Health's magic-wand question stays. It is not a comments box: it
 // asks something specific, and several people's answers side by side are a page
 // a facilitator reads out.
@@ -321,7 +328,6 @@ export const INSTRUMENT_SEED = {
       "tagline": "Get insights on the health of your products and processes.",
       "description": "Need to assess the overall health and strategic value of a single product within your portfolio? This survey evaluates performance, market alignment, and competitive position using a set of straightforward yes/no questions. Each “Yes” indicates a positive attribute, while each “No” highlights a potential concern.\n\nBy reviewing these factors together, you’ll gain a clear, unbiased picture of whether the product is a strong candidate for continued investment, should be maintained with caution, needs a strategic reassessment, or may be approaching end-of-life.",
       "sections": [
-        "Your Product",
         "Performance",
         "Market Fit",
         "Competitive"
@@ -863,7 +869,8 @@ export const INSTRUMENT_SEED = {
       "commentary": "",
       "critical": false,
       "required": false,
-      "blog_id": ""
+      "blog_id": "",
+      "active": false
     },
     {
       "label": "Revenue Opportunity",
