@@ -224,7 +224,11 @@ export async function seedInstruments(base44, { onProgress } = {}) {
     await upsert(e.Resource, existingResources, (row) => row.title === r.title, {
       title: r.title,
       resource_type: "free_article",
-      source: "Product Growth Leaders",
+      // The author, not the firm. Resource.source exists so attribution
+      // travels with the recommendation, and two of these are a partner's work
+      // — putting the practice's name on them would take the credit off the
+      // person who earned it. The footer already badges the framework.
+      source: r.author || undefined,
       url: `${ARTICLE_BASE}${r.path}`,
       note: r.note || undefined,
       activity_ids: ids,

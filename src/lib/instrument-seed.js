@@ -1079,6 +1079,7 @@ export const INSTRUMENT_SEED = {
     {
       "title": "ASPIRE to Your Capabilities",
       "path": "/article/aspire-to-your-capabilities",
+      "author": "Steve Johnson",
       "note": "The likelihood of product success dramatically increases when you leverage existing competencies.",
       "question_labels": [
         "Strategy Alignment"
@@ -1087,6 +1088,7 @@ export const INSTRUMENT_SEED = {
     {
       "title": "Customer Discovery: the product leader's secret weapon",
       "path": "/article/customer-discovery-the-product-leader-s-secret-weapon",
+      "author": "Steve Johnson",
       "note": "Perhaps the product leader's most important responsibility is customer discovery.",
       "question_labels": [
         "Customer Centricity"
@@ -1095,6 +1097,7 @@ export const INSTRUMENT_SEED = {
     {
       "title": "Defining Your Product Vision",
       "path": "/article/defining-your-product-vision-the-foundation-for-strategy-roadmaps-and-success",
+      "author": "Steve Johnson",
       "note": "A well-defined product vision is the cornerstone of successful product management. It’s what separates products that merely ship features from those that create meaningful impact. Yet, despite its importance, product vision is often misunderstood or overlooked, leaving teams without a clear sense of purpose or direction.",
       "question_labels": [
         "Vision"
@@ -1103,6 +1106,7 @@ export const INSTRUMENT_SEED = {
     {
       "title": "Organizing a Product Portfolio",
       "path": "/article/organizing-a-product-portfolio",
+      "author": "Steve Johnson",
       "note": "A portfolio or suite of products must be managed like a product with a target persona, positioning, and pricing. Image by StockSnap from...",
       "question_labels": [
         "Competition",
@@ -1112,6 +1116,7 @@ export const INSTRUMENT_SEED = {
     {
       "title": "Prioritization using IDEAS",
       "path": "/article/prioritization-using-idea",
+      "author": "Steve Johnson",
       "note": "Prioritization is a critical skill used for many of the items in your product playbook.",
       "question_labels": [
         "Prioritization Challenges",
@@ -1121,6 +1126,7 @@ export const INSTRUMENT_SEED = {
     {
       "title": "Project Management Isn’t Product Management",
       "path": "/article/project-management-isn-t-product-management",
+      "author": "Steve Johnson",
       "note": "Learn the key differences between product management and project management. Discover why product managers are essential for long-term product success.",
       "question_labels": [
         "Project versus product"
@@ -1129,6 +1135,7 @@ export const INSTRUMENT_SEED = {
     {
       "title": "Release and Launch Planning with the Quad",
       "path": "/article/release-and-launch-planning-with-the-quad",
+      "author": "Steve Johnson",
       "note": "Product teams often rely on an outdated checklist, a set of Jira tickets or user stories, a countdown to a ship date, and a long list of promotional deliverables. But that approach fails to deliver the expected results.",
       "question_labels": [
         "Product Launch Readiness"
@@ -1137,6 +1144,7 @@ export const INSTRUMENT_SEED = {
     {
       "title": "Retiring a Product: How to Gracefully Say Goodbye",
       "path": "/article/retiring-a-product-how-to-gracefully-say-goodbye",
+      "author": "Steve Johnson",
       "note": "Deciding to retire a product isn't easy, but it's often necessary to keep your portfolio healthy. Here’s a comprehensive guide to making the call—and doing it right.",
       "question_labels": [
         "Too many products"
@@ -1145,6 +1153,7 @@ export const INSTRUMENT_SEED = {
     {
       "title": "Standardize your team with ProductOps",
       "path": "/article/standardize-your-team-with-productops",
+      "author": "Steve Johnson",
       "note": "ProductOps is a specialized role that normalizes the product function across all products and services.",
       "question_labels": [
         "Process Standardization"
@@ -1153,14 +1162,26 @@ export const INSTRUMENT_SEED = {
     {
       "title": "Stop Asking for Features: Start Hunting for Problems",
       "path": "/article/stop-asking-for-features-start-hunting-for-problems",
+      "author": "Steve Johnson",
       "note": "Customers are terrible at suggesting features but brilliant at revealing problems. Product managers who don’t hear those problems firsthand—and instead outsource discovery to AI dashboards, surveys, or sales teams—are flying blind. Success comes from discovering friction in the real world, not just crunching secondary data.",
       "question_labels": [
         "Saying No"
       ]
     },
     {
+      "title": "Strategic Investment in Product Management: The Time is Now",
+      "path": "/article/the-case-for-the-strategic-investment-in-product-management",
+      "author": "Grant Hunter",
+      "note": "It is time for the product management industry to step up and make the business case for the strategic investment in product management....",
+      "question_labels": [
+        "Magic wand",
+        "Product Success Consistency"
+      ]
+    },
+    {
       "title": "The Product Roadmap is about Strategy",
       "path": "/article/the-roadmap-is-a-prototype-of-strategy",
+      "author": "Steve Johnson",
       "note": "What some companies call a roadmap is actually a release plan. So, what's a roadmap anyway?",
       "question_labels": [
         "Roadmap Communication"
@@ -1169,14 +1190,25 @@ export const INSTRUMENT_SEED = {
     {
       "title": "The Three Roles of Product",
       "path": "/article/the-three-roles-of-product",
+      "author": "Steve Johnson",
       "note": "Titles are a mess. What one company calls a product manager, another calls a product owner. And another calls a product marketing manager.",
       "question_labels": [
         "Roles and Responsibilities"
       ]
     },
     {
+      "title": "The Ultimate Guide to Product Strategy",
+      "path": "/article/the-ultimate-guide-to-product-strategy",
+      "author": "Grant Hunter",
+      "note": "To have a good product strategy, identify and prioritize the product initiatives that result in company and product success.",
+      "question_labels": [
+        "Data-Driven Decision Making"
+      ]
+    },
+    {
       "title": "You Can’t Have Everything: Three Keys to Successful Products",
       "path": "/article/you-can-t-have-everything-three-keys-to-successful-products",
+      "author": "Steve Johnson",
       "note": "It seems many executives, salespeople, and marketing teams have little understanding of how product management contributes product success",
       "question_labels": [
         "What to build"
