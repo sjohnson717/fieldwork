@@ -239,6 +239,10 @@ const TEXT_ANSWERS = {
     "Sales enablement. The product is fine; nobody can explain it in a meeting.",
     "Kill two of the products and put everything behind the one that is growing.",
     "A proper analytics stack, so we stop arguing about what customers actually do.",
+    "Buy the small competitor whose onboarding everybody keeps comparing us to.",
+    "Two senior engineers on the integration nobody has had time to finish.",
+    "A real support team, so product stops being the escalation path.",
+    "Nothing. We would spend it badly, and that is the actual problem.",
   ],
   default: [
     "The biggest issue is that nobody agrees on what we are trying to achieve this year.",
@@ -246,12 +250,21 @@ const TEXT_ANSWERS = {
     "Honestly, the process is fine — it is the decisions that keep getting reopened.",
     "We need to say no to more things. That is the whole answer.",
     "Communication between product and sales is where most of this falls apart.",
+    "We measure activity rather than outcomes, and it shows in what gets celebrated.",
+    "Leadership changes its mind faster than we can ship, and nobody says so out loud.",
+    "The team is good. The context we give them is not.",
   ],
 };
 
-function writtenAnswer(question, instrumentKey) {
+// Dealt without replacement, not drawn at random: six draws from a six-entry
+// pool repeat about half the time, and two respondents writing the same
+// paragraph word for word is the one thing in a generated set that can never
+// happen in a real one. Rotating from a per-run offset means the pool has to be
+// exhausted before anything repeats, and both pools are longer than the largest
+// respondent count the panel offers.
+function writtenAnswer(question, instrumentKey, respondentIndex, offset) {
   const pool = TEXT_ANSWERS[question.name] || TEXT_ANSWERS[instrumentKey] || TEXT_ANSWERS.default;
-  return pool[Math.floor(Math.random() * pool.length)];
+  return pool[(offset + respondentIndex) % pool.length];
 }
 
 // One person's answer to one instrument question.
@@ -259,9 +272,9 @@ function writtenAnswer(question, instrumentKey) {
 // `lean` is that respondent's own bias, -1 to 1 as a fraction of the scale:
 // the optimist and the person who has had a bad quarter both answer every
 // question, and the difference between them is what the spread is measuring.
-function generateInstrumentResponse(question, axis, plan, lean, instrumentKey) {
+function generateInstrumentResponse(question, axis, plan, lean, instrumentKey, respondentIndex, textOffset) {
   if (question.question_type === "text") {
-    return { answer: "", answer_text: writtenAnswer(question, instrumentKey) };
+    return { answer: "", answer_text: writtenAnswer(question, instrumentKey, respondentIndex, textOffset) };
   }
 
   const options = axis?.options || [];
@@ -372,6 +385,9 @@ export default function AssessmentDemoData({ assessment, instrument }) {
     const isPersonal = assessment.assessment_type === "personal";
     const facets = [...new Set(activities.map(a => a.facet).filter(Boolean))];
     const plan = isInstrument ? questionPlan(activities) : null;
+    // Where in each written-answer pool this run starts, so two runs of the
+    // same instrument do not open with the same paragraph.
+    const textOffset = Math.floor(Math.random() * 100);
 
     const count = Math.min(respondentCount, FAKE_RESPONDENTS.length);
     const pool = [...FAKE_RESPONDENTS].sort(() => Math.random() - 0.5).slice(0, count);
@@ -401,7 +417,7 @@ export default function AssessmentDemoData({ assessment, instrument }) {
           const answers = isInstrument
             ? (vetoed.has(activity.id)
                 ? { answer: scale.options[0].label, answer_text: "" }
-                : generateInstrumentResponse(activity, scale, plan, lean, inst.key))
+                : generateInstrumentResponse(activity, scale, plan, lean, inst.key, i, textOffset))
             : isPersonal
               ? generatePersonalResponse(activity, personalProfile)
               : generateResponse(activity, title, ownerOptions);
