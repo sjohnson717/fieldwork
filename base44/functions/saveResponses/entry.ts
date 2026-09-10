@@ -289,9 +289,38 @@ Deno.serve(async (req) => {
     const latest = new Map();
     for (const { activityId, payload } of clean) latest.set(activityId, payload);
 
+    // Completion is part of the same call as the last page's answers. Held
+    // apart, a respondent whose final save succeeded and whose status update
+    // failed was left permanently "started" with a full set of answers, which
+    // reads on the facilitator's roster as someone who never finished.
+    //
+    // The closing feedback rides along in the same update for the same reason,
+    // though it never gates completion: it is asked on a page *after* the last
+    // one that marks a respondent finished, and someone who closes the tab
+    // rather than answering an optional question has still completed the
+    // survey.
+    //
+    // On a first pass the update waits for the answer writes, so completion can
+    // never land without the answers it vouches for. A revision is different:
+    // the respondent is already complete and the update only moves
+    // completed_date, so it goes out alongside the writes instead of after
+    // them — one write's wait off every save during a revision. Should an
+    // answer write then fail, the date moves for a save that did not land; the
+    // browser shows the error, and the retry lands it.
+    const respondentPatch = { ...feedbackPayload };
+    if (complete === true) {
+      respondentPatch.status = "completed";
+      respondentPatch.completed_date = new Date().toISOString();
+    }
+    const patching = Object.keys(respondentPatch).length > 0;
+    const earlyPatch = patching && r.status === "completed"
+      ? svc.Respondent.update(r.id, respondentPatch)
+      : null;
+    earlyPatch?.catch(() => {});
+
     // Concurrently, because each write touches a different row and in turn
     // each one added its own round trip to the save. A failure rejects the
-    // batch and the call returns an error before completion is recorded below,
+    // batch and the call returns an error before a first pass records completion,
     // exactly as a failure part-way through the old loop did; the upsert makes
     // the browser's retry of the whole page safe.
     let created = 0;
@@ -315,24 +344,8 @@ Deno.serve(async (req) => {
       }));
     }
 
-    // Completion is part of the same call as the last page's answers. Held
-    // apart, a respondent whose final save succeeded and whose status update
-    // failed was left permanently "started" with a full set of answers, which
-    // reads on the facilitator's roster as someone who never finished.
-    //
-    // The closing feedback rides along in the same update for the same reason,
-    // though it never gates completion: it is asked on a page *after* the last
-    // one that marks a respondent finished, and someone who closes the tab
-    // rather than answering an optional question has still completed the
-    // survey.
-    const respondentPatch = { ...feedbackPayload };
-    if (complete === true) {
-      respondentPatch.status = "completed";
-      respondentPatch.completed_date = new Date().toISOString();
-    }
-    if (Object.keys(respondentPatch).length > 0) {
-      await svc.Respondent.update(r.id, respondentPatch);
-    }
+    if (earlyPatch) await earlyPatch;
+    else if (patching) await svc.Respondent.update(r.id, respondentPatch);
 
     return Response.json({ created, updated, skipped: answers.length - clean.length });
   } catch (e) {
