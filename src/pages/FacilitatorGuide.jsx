@@ -260,7 +260,7 @@ The report appears as soon as they finish — they don't have to come back for i
 
 | Part | Contains |
 |------|----------|
-| **1 · Your product profile** | Opens with *the shape of your answers* — every activity as one band of colour, then the same band per phase of product work — then their activities sorted into the five categories |
+| **1 · Your product profile** | Opens with *the shape of your answers* — every activity as one band of colour, then the same band per phase of product work — then their activities sorted into the five categories. A long category is grouped by phase, and a long list of strengths opens with the few rated top on both skill and interest |
 | **2 · Your Quartz profile** | Experience, skills and interest per facet, as three separate bars |
 | **3 · Development opportunities** | A shortlist of up to five, each with the reason it was chosen and one concrete **Try this** step, plus questions to take into a development conversation |
 | **4 · Suggested resources** | Reading and practice for those opportunities. Only appears if resources have been attached to the recommended activities |

@@ -405,6 +405,53 @@ export function computeFacetProfile(profile, facetOrder) {
     .filter(Boolean);
 }
 
+// ── Laying a long category out so it can be read ────────────────────────────
+//
+// A category list is ranked strongest first, which is invisible on the page:
+// the phase tags beside each name jump about and twenty rows read as random.
+// Past a handful of rows it is grouped by phase instead, in lifecycle order —
+// the order the shape bars above and Part two below already use — so the reader
+// meets seven short lists rather than one long one. Ranking survives inside
+// each phase, because filtering a sorted list keeps its order.
+//
+// A heading has to earn its line. Short categories stay a plain list, and so
+// does a long one spread thinly — seven strengths in seven phases would put a
+// heading over every name, which doubles the list and groups nothing. Grouping
+// needs at least half again as many names as phases.
+export const GROUP_BY_PHASE_FROM = 6;
+const NAMES_PER_PHASE = 1.5;
+
+export function groupByFacet(rows, facetOrder) {
+  const rank = (f) => { const i = facetOrder.indexOf(f); return i === -1 ? facetOrder.length : i; };
+  const facets = [...new Set(rows.map(r => r.activity.facet))].sort((a, b) => rank(a) - rank(b));
+  return facets.map(facet => ({ facet, rows: rows.filter(r => r.activity.facet === facet) }));
+}
+
+// The phase groups when grouping earns its keep, otherwise null for a plain list.
+export function phaseGroups(rows, facetOrder) {
+  if (rows.length < GROUP_BY_PHASE_FROM) return null;
+  const groups = groupByFacet(rows, facetOrder);
+  return rows.length >= groups.length * NAMES_PER_PHASE ? groups : null;
+}
+
+// The few that stand out in a long strengths list: top marks on both skill and
+// interest. Grouping by phase hides the ranking, and this puts the top of it
+// back where it can be seen.
+//
+// Only for strengths the person enjoys — "strongest" means nothing in the other
+// categories. Capped at five, because a highlight holding eight names is a
+// second list. When too many tie, extensive experience narrows it; if that
+// still leaves more than five, or the highlight would be the whole category,
+// the line is left out rather than cut at an arbitrary name.
+const STRONGEST_MAX = 5;
+
+export function strongestOf(bucket, key) {
+  if (key !== "enjoy" || bucket.length < GROUP_BY_PHASE_FROM) return [];
+  let top = bucket.filter(r => r.skills === 1 && r.interest === 1);
+  if (top.length > STRONGEST_MAX) top = top.filter(r => r.experience === 1);
+  return top.length > 0 && top.length <= STRONGEST_MAX && top.length < bucket.length ? top : [];
+}
+
 // ── The shape of the profile, whole and by phase ───────────────────────────
 //
 // Counts only — the same classification the lists below are built from, laid

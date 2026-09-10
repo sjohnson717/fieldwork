@@ -5,6 +5,8 @@ import {
   computeFacetProfile,
   computeDevelopmentOpportunities,
   dominantBucket,
+  phaseGroups,
+  strongestOf,
   DOMINANT_SUMMARY,
 } from "@/lib/personal-scoring";
 import { FACET_ORDER, FACET_SUBTITLES } from "@/lib/scoring";
@@ -345,6 +347,8 @@ export default function PersonalProfileReport({
         {Object.entries(CATEGORIES).map(([key, c]) => {
           const bucket = profile.buckets[key];
           if (!bucket || bucket.length === 0) return null;
+          const groups = phaseGroups(bucket, FACET_ORDER);
+          const strongest = strongestOf(bucket, key);
           return (
             /* No break-inside-avoid, for the same reason the team gap report
                dropped it: a seventeen-row bucket that cannot fit in what's left
@@ -355,14 +359,44 @@ export default function PersonalProfileReport({
             <div key={key} className={`bg-white rounded-xl border border-gray-200 border-l-4 ${c.selfAccent} p-5`}>
               <h3 className={`text-base font-bold ${c.selfHeading}`}>{c.selfLabel}</h3>
               <p className="text-xs text-gray-500 mt-1 mb-3 leading-relaxed">{c.selfHint}</p>
-              <div className="space-y-1.5">
-                {bucket.map(row => (
-                  <div key={row.activity.id} className="flex items-baseline justify-between gap-4">
-                    <span className="text-sm text-gray-800">{row.activity.name}</span>
-                    <span className="text-[10px] uppercase tracking-widest text-gray-400 shrink-0">{row.activity.facet}</span>
-                  </div>
-                ))}
-              </div>
+              {strongest.length > 0 && (
+                <div className="bg-gray-50 rounded-lg px-3 py-2.5 mb-4 break-inside-avoid">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1">Strongest of all</p>
+                  <p className="text-sm text-gray-800 leading-relaxed">
+                    {strongest.map(r => r.activity.name).join(" · ")}
+                  </p>
+                  <p className="text-[11px] text-gray-500 mt-1">Where you rated both your skill and your interest at the top of the scale.</p>
+                </div>
+              )}
+              {groups ? (
+                /* Grouped by phase, in lifecycle order, once the list is long
+                   enough to need it. The phase moves from a tag on every row to
+                   a heading over its rows. */
+                <div className="space-y-3">
+                  {groups.map(group => (
+                    <div key={group.facet}>
+                      <div className="facet-heading flex items-baseline gap-2 mb-1">
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-gray-900">{group.facet}</span>
+                        <span className="text-[10px] text-gray-400">{FACET_SUBTITLES[group.facet]}</span>
+                      </div>
+                      <div className="space-y-1">
+                        {group.rows.map(row => (
+                          <p key={row.activity.id} className="text-sm text-gray-800">{row.activity.name}</p>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="space-y-1.5">
+                  {bucket.map(row => (
+                    <div key={row.activity.id} className="flex items-baseline justify-between gap-4">
+                      <span className="text-sm text-gray-800">{row.activity.name}</span>
+                      <span className="text-[10px] uppercase tracking-widest text-gray-400 shrink-0">{row.activity.facet}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           );
         })}
