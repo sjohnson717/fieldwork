@@ -187,7 +187,7 @@ Answers are saved page by page, in both instruments. Every facet page ends on **
 
 Someone is recorded as complete when they finish the last facet, *before* the wrap-up. So a person who closes the tab on those two optional questions has still completed the assessment, and will show as completed on your roster.
 
-Respondents can still revise. Their own link — the one **Save and finish later** hands out, or the one on their summary — reopens their answers until the assessment closes; on a personal assessment, indefinitely.
+Respondents can still revise. Their own link — the one **Save and finish later** hands out, or the one on their summary — reopens their answers until the assessment closes; on a personal assessment, indefinitely. Revising shows a strip of sections across the top, so they can go straight to the answer they want to change, and **Save and return to my report** takes them back without paging through the rest. Opening Revise doesn't mark anyone unfinished: the roster keeps showing them as complete, and their completion date moves to when their answers last changed.
 
 ## Saving it as a PDF
 

@@ -53,6 +53,11 @@ const ROUTES = [
   { name: "resume-partial", url: "/assess?t=TOKEN-RESP-4", expect: "DESCRIBE" },
   { name: "respondent-report", url: "/assess?t=TOKEN-RESP-1", review: true, expect: "where you'd focus first" },
   { name: "personal-profile", url: "/assess?t=TOKEN-PERSONAL", review: true, expect: "part one" },
+  // Revise mode carries the section strip, which is the widest thing on the
+  // survey page at a phone width. One library assessment, one instrument —
+  // instrument section names run longer than facet names.
+  { name: "revise-team-gap", url: "/assess?t=TOKEN-RESP-1", revise: true, expect: "Save and return" },
+  { name: "revise-instrument", url: "/assess?t=TOKEN-CHAOS-1", revise: true, expect: "Save and return" },
   { name: "buyer-report", url: "/report/TOKEN-BUYER", expect: "executive summary" },
   // The distribution report, which is a different renderer from the one above
   // and went uncovered until it shipped broken: publicAssessment's buyer
@@ -104,6 +109,19 @@ const openReview = async (page) => {
     return false;
   });
   if (clicked) await wait(700);
+};
+// The survey in revise mode: the finished report, then Revise — which the
+// instrument report labels "Change my answers". Returns whether the button was
+// there, so a flow can fail with a reason rather than a mysterious count.
+const openRevise = async (page) => {
+  await openReview(page);
+  const clicked = await page.evaluate(() => {
+    const b = [...document.querySelectorAll("button")].find(x => /Revise|Change my answers/.test(x.textContent));
+    if (b) { b.click(); return true; }
+    return false;
+  });
+  if (clicked) await wait(900);
+  return clicked;
 };
 
 // The wrap-up page is reachable only by finishing the survey, so the layout
@@ -174,6 +192,7 @@ for (const route of ROUTES) {
     await page.goto(baseUrl + route.url, { waitUntil: "networkidle0" });
     if (route.admin) await openAdminTab(page, route.admin);
     if (route.review) await openReview(page);
+    if (route.revise) await openRevise(page);
     if (route.wrapup) await pageToWrapup(page);
     await wait(400);
 
@@ -420,11 +439,11 @@ await flow("revise re-reads and rewrites", async (page) => {
   };
 });
 
-// Revising without changing anything writes only the last page. Every earlier
-// page is already stored exactly as it stands, and saving it again only made
-// someone wait at each Next. The last page still saves: completion travels with
-// it, and Revise has marked the respondent started again.
-await flow("revising without changes saves only the last page", async (page) => {
+// Revising without changing anything writes nothing at all. Saving an untouched
+// page again only made someone wait at each Next. resp-1's act-8 row is stored
+// with every answer blank, so even its blank page is unchanged. The respondent
+// stays complete throughout, because Revise no longer marks them started.
+await flow("revising without changes saves nothing", async (page) => {
   await page.goto(baseUrl + "/assess?t=TOKEN-RESP-1", { waitUntil: "networkidle0" });
   await openReview(page);
   if (!(await clickText(page, "Revise"))) return { pass: false, detail: "no Revise button on the report" };
@@ -450,8 +469,96 @@ await flow("revising without changes saves only the last page", async (page) => 
   });
   const made = state.saves - before;
   return {
-    pass: state.wrapup && made === 1 && state.complete === true && state.status === "completed",
-    detail: `${made} save(s) across the revision (expected 1, the last page), complete flag=${state.complete}, status=${state.status}, reached wrap-up=${state.wrapup}`,
+    pass: state.wrapup && made === 0 && state.status === "completed",
+    detail: `${made} save(s) across the revision (expected 0), status=${state.status}, reached wrap-up=${state.wrapup}`,
+  };
+});
+
+const saveCount = (page) => page.evaluate(() => window.__qa.calls.filter(c => c.name === "fn:saveResponses").length);
+const act1Of = (page, respondentId) => page.evaluate((id) =>
+  window.__qa.responses.find(r => r.respondent_id === id && r.activity_id === "act-1")?.importance, respondentId);
+
+// The section strip. Leaving a page for another saves it only when it changed,
+// and lands on the section asked for.
+await flow("jumping sections saves only a changed page", async (page) => {
+  await page.goto(baseUrl + "/assess?t=TOKEN-RESP-1", { waitUntil: "networkidle0" });
+  if (!(await openRevise(page))) return { pass: false, detail: "no Revise button on the report" };
+  const before = await saveCount(page);
+  const target = (await act1Of(page, "resp-1")) === "Critical" ? "Nice to have" : "Critical";
+  await clickText(page, target);
+  await clickText(page, "LEARN");
+  await wait(900);
+  const mid = { saves: await saveCount(page), h1: await page.evaluate(() => document.querySelector("h1")?.textContent), act1: await act1Of(page, "resp-1") };
+  await clickText(page, "COMMIT");
+  await wait(700);
+  const end = { saves: await saveCount(page), h1: await page.evaluate(() => document.querySelector("h1")?.textContent) };
+  return {
+    pass: mid.saves - before === 1 && mid.h1 === "LEARN" && mid.act1 === target && end.saves === mid.saves && end.h1 === "COMMIT",
+    detail: `changed page: ${mid.saves - before} save(s), landed on ${mid.h1}, act-1=${mid.act1} (wanted ${target}); untouched page: ${end.saves - mid.saves} save(s), landed on ${end.h1}`,
+  };
+});
+
+// The way back to the report without walking the rest of the pages: one save
+// for the changed page, carrying completion, then the report.
+await flow("save and return finishes a revision in one save", async (page) => {
+  await page.goto(baseUrl + "/assess?t=TOKEN-RESP-1", { waitUntil: "networkidle0" });
+  if (!(await openRevise(page))) return { pass: false, detail: "no Revise button on the report" };
+  const before = await saveCount(page);
+  const target = (await act1Of(page, "resp-1")) === "Critical" ? "Nice to have" : "Critical";
+  await clickText(page, target);
+  if (!(await clickText(page, "Save and return to my report"))) return { pass: false, detail: "no Save and return button while revising" };
+  await wait(900);
+  const state = await page.evaluate(() => ({
+    complete: window.__qa.calls.filter(c => c.name === "fn:saveResponses").slice(-1)[0]?.payload?.complete,
+    status: window.__qa.respondents.find(x => x.id === "resp-1")?.status,
+    onReport: !document.querySelector('nav[aria-label="Sections"]') && [...document.querySelectorAll("button")].some(b => /Revise/.test(b.textContent)),
+  }));
+  const made = (await saveCount(page)) - before;
+  const act1 = await act1Of(page, "resp-1");
+  return {
+    pass: made === 1 && state.complete === true && state.status === "completed" && state.onReport && act1 === target,
+    detail: `${made} save(s), complete flag=${state.complete}, status=${state.status}, back on report=${state.onReport}, act-1=${act1} (wanted ${target})`,
+  };
+});
+
+// Opening Revise must not mark the respondent unfinished. It used to, and
+// anyone who opened it and closed the tab stayed "started" on the roster.
+await flow("abandoning a revision leaves the respondent finished", async (page) => {
+  await page.goto(baseUrl + "/assess?t=TOKEN-RESP-1", { waitUntil: "networkidle0" });
+  if (!(await openRevise(page))) return { pass: false, detail: "no Revise button on the report" };
+  const state = await page.evaluate(() => ({
+    status: window.__qa.respondents.find(x => x.id === "resp-1")?.status,
+    updates: window.__qa.calls.filter(c => c.name === "Respondent.update").length,
+    strip: !!document.querySelector('nav[aria-label="Sections"]'),
+  }));
+  return {
+    pass: state.status === "completed" && state.updates === 0 && state.strip,
+    detail: `status=${state.status}, Respondent.update calls=${state.updates}, strip shown=${state.strip}`,
+  };
+});
+
+// Back saves a page it is leaving when that page changed. It used to save
+// nothing and rely on a later Next, so an answer changed and then left by Back
+// was lost if the tab closed.
+await flow("back saves a changed page", async (page) => {
+  await page.goto(baseUrl + "/assess?t=TOKEN-RESP-4", { waitUntil: "networkidle0" });
+  const before = await saveCount(page);
+  const h1Before = await page.evaluate(() => document.querySelector("h1")?.textContent);
+  await clickText(page, "Important");
+  if (!(await clickText(page, "Back"))) return { pass: false, detail: "no Back button on the resumed page" };
+  await wait(900);
+  const state = await page.evaluate(() => {
+    const last = window.__qa.calls.filter(c => c.name === "fn:saveResponses").slice(-1)[0];
+    const id = last?.payload?.answers?.[0]?.activity_id;
+    return {
+      h1: document.querySelector("h1")?.textContent,
+      stored: window.__qa.responses.find(r => r.respondent_id === "resp-4" && r.activity_id === id)?.importance,
+    };
+  });
+  const made = (await saveCount(page)) - before;
+  return {
+    pass: made === 1 && state.h1 !== h1Before && state.stored === "Important",
+    detail: `${made} save(s), moved ${h1Before}→${state.h1}, stored importance=${state.stored}`,
   };
 });
 

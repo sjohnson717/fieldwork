@@ -35,11 +35,7 @@ const facetsIn = (activities) => FACET_ORDER.filter(f => activities.some(a => a.
 // Everything answered means they finished the questions without submitting, so
 // open the last page — one Next from the wrap-up.
 const resumeFacetIndex = (activities, responses, isPersonal, instrument) => {
-  const fields = !usesLibrary(instrument)
-    ? ["answer", "answer_text"]
-    : isPersonal
-      ? PERSONAL_AXES.map(a => a.key)
-      : ["importance", "execution", "suggested_owner"];
+  const fields = askedFields(isPersonal, instrument);
   const pages = pagesOf(activities, instrument);
   const untouched = (activity) => {
     const answer = responses[activity.id] || {};
@@ -50,6 +46,20 @@ const resumeFacetIndex = (activities, responses, isPersonal, instrument) => {
   );
   return index === -1 ? Math.max(0, pages.length - 1) : index;
 };
+
+// The answer fields a page asks for. Shared by resuming and by the section
+// strip's status, so "untouched" means the same thing to both.
+const askedFields = (isPersonal, instrument) =>
+  !usesLibrary(instrument)
+    ? ["answer", "answer_text"]
+    : isPersonal
+      ? PERSONAL_AXES.map(a => a.key)
+      : ["importance", "execution", "suggested_owner"];
+
+// A section's state in the revise strip. The word is for screen readers; the
+// dot alone would be colour carrying meaning.
+const STATUS_DOT = { answered: "bg-emerald-500", partial: "bg-amber-400", blank: "bg-gray-300" };
+const STATUS_WORD = { answered: "answered", partial: "partly answered", blank: "not answered" };
 
 // What the server holds for each activity, in the shape the survey sends:
 // every answer field, a blank one as null. Only activities with a stored row
@@ -374,6 +384,11 @@ export default function Assessment() {
   // A ref rather than state: nothing renders from it, and it must be current
   // the instant a save resolves, not a render later.
   const savedAnswers = useRef({});
+  // Set by Revise. A revision is a different job from a first pass — changing a
+  // few answers, not answering in order — so it gets a strip of sections to
+  // jump between and a way straight back to the report.
+  const [revising, setRevising] = useState(false);
+  const stripRef = useRef(null);
   const [saving, setSaving] = useState(false);
   // One request at a time, latched in a ref rather than in `saving`.
   //
@@ -689,8 +704,15 @@ export default function Assessment() {
     // They're answering again, so the end of the flow should read as a fresh
     // submission rather than a look-back.
     setReturningCompleted(false);
-    await base44.entities.Respondent.update(respondent.id, { status: "started" });
+    // Revise used to mark the respondent "started" again, so that the last
+    // page's save could complete them afresh. Anyone who opened it and closed
+    // the tab then showed as unfinished on the team leader's roster for good,
+    // though their answers were whole. Answers save page by page, so a
+    // revision left halfway is still a complete set; each save during one
+    // carries completion instead, which keeps completed_date at the moment the
+    // answers last changed.
     await loadExistingResponses();
+    setRevising(true);
     setCurrentFacetIndex(0);
     setStep("rating");
   };
@@ -822,6 +844,63 @@ export default function Assessment() {
     }
   };
 
+  // On a first pass only the last page completes the respondent. During a
+  // revision every save does: they never stopped being complete, and it keeps
+  // completed_date at the moment their answers last changed.
+  const saveOptions = (isLastFacet) => ({ complete: revising || isLastFacet });
+
+  // Writes the page on screen if it differs from what is stored. False when the
+  // write failed, so the caller stays put with the error showing rather than
+  // moving on from an edit that never landed.
+  const saveIfChanged = async (options) => {
+    const answers = answersForCurrentFacet();
+    if (pageUnchanged(answers)) return true;
+    setSaving(true);
+    setError("");
+    try {
+      await saveRespondentAnswers(myToken, answers, options);
+      rememberSaved(answers);
+      return true;
+    } catch (e) {
+      console.error("saveIfChanged error:", e);
+      setError("Error saving responses. Please try again.");
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Leaving a page for another: Back, or a section in the revise strip. Back
+  // used to save nothing and rely on a later Next, so an answer changed and
+  // then left by Back was lost if the tab closed before that Next came.
+  const goToPage = once(async (index) => {
+    if (!(await saveIfChanged(saveOptions(false)))) return;
+    setError("");
+    setCurrentFacetIndex(index);
+    window.scrollTo(0, 0);
+  });
+
+  // Straight back to the report from any page of a revision, instead of paging
+  // through the rest. Every other page was saved as it was left, so only this
+  // one can be outstanding. Skips the wrap-up, which they answered the first
+  // time and can still reach with Next.
+  const handleSaveAndReturn = once(async () => {
+    if (!(await saveIfChanged(saveOptions(false)))) return;
+    setError("");
+    setStep("done");
+    window.scrollTo(0, 0);
+  });
+
+  // How much of a section has been answered, for its chip in the strip. An
+  // activity counts once anything on it is answered — the same test resuming
+  // uses to decide where someone stopped.
+  const pageStatus = (page) => {
+    const fields = askedFields(isPersonal, instrument);
+    const acts = activitiesOnPage(activities, page, instrument);
+    const touched = acts.filter(a => fields.some(k => responses[a.id]?.[k])).length;
+    return touched === 0 ? "blank" : touched === acts.length ? "answered" : "partial";
+  };
+
   // "Save and finish later". The survey already writes a page of answers when
   // Next is pressed, but only then — so someone interrupted halfway down a
   // facet has answers on screen that no save has seen, and no way to get their
@@ -890,12 +969,14 @@ export default function Assessment() {
   // was as slow as answering. A page already stored exactly as it stands now
   // just moves on.
   //
-  // Never the last page. Completion travels with its save, and Revise has
-  // marked the respondent as started again, so skipping it would leave someone
-  // who changed nothing looking unfinished on the roster.
-  if (!isLastFacet && pageUnchanged(answers)) {
+  // On a first pass the last page always saves, because completion travels
+  // with it. A revision has nothing to complete — the respondent never stopped
+  // being complete — so there an unchanged last page moves on to the wrap-up
+  // like any other.
+  if ((revising || !isLastFacet) && pageUnchanged(answers)) {
     setError("");
-    setCurrentFacetIndex(i => i + 1);
+    if (isLastFacet) setStep("wrapup");
+    else setCurrentFacetIndex(i => i + 1);
     window.scrollTo(0, 0);
     return;
   }
@@ -913,7 +994,7 @@ export default function Assessment() {
     // assessment type asks about are sent; the function writes no others.
     // Completion travels with the last page's answers rather than as a second
     // call after it.
-    await saveRespondentAnswers(myToken, answers, { complete: isLastFacet });
+    await saveRespondentAnswers(myToken, answers, saveOptions(isLastFacet));
     rememberSaved(answers);
 
     if (!isLastFacet) {
@@ -956,6 +1037,17 @@ export default function Assessment() {
     setStep("done");
     window.scrollTo(0, 0);
   });
+
+  // Keeps the current section in view in the revise strip. The strip scrolls
+  // sideways at a phone width, and a jump from DEFINE to LEARN would otherwise
+  // leave the highlighted chip off the edge. Moves the strip only, never the
+  // page.
+  useEffect(() => {
+    const strip = stripRef.current;
+    const chip = strip?.querySelector('[aria-current="step"]');
+    if (!strip || !chip) return;
+    strip.scrollLeft = chip.offsetLeft - (strip.clientWidth - chip.offsetWidth) / 2;
+  }, [currentFacetIndex, step, revising]);
 
   // ── Loading state ─────────────────────────────────────────────────────────
   if (step === "loading") return (
@@ -1153,17 +1245,63 @@ export default function Assessment() {
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-3xl mx-auto px-4 py-8">
         <div className="mb-6">
-          <p className="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-1">Quartz · Product Assessment</p>
-          <div className="flex items-center justify-between">
-            <h1 className="text-xl font-bold text-gray-900">{currentFacet}</h1>
-            <span className="text-sm text-gray-400">{currentFacetIndex + 1} of {availableFacets.length}</span>
-          </div>
-          <div className="mt-3 h-1.5 bg-gray-200 rounded-full">
-            <div
-              className="h-1.5 bg-blue-500 rounded-full transition-all"
-              style={{ width: `${((currentFacetIndex + 1) / availableFacets.length) * 100}%` }}
-            />
-          </div>
+          {revising ? (
+            /* Revising is changing a few answers, not answering in order, so
+               the progress bar gives way to the sections themselves: tap one
+               to go straight there. The way back to the report sits up here as
+               well as at the foot of the page, so nobody has to scroll past a
+               page of questions to leave it. */
+            <>
+              <div className="flex flex-wrap items-baseline justify-between gap-x-3 mb-1">
+                <p className="text-sm font-semibold text-blue-600 uppercase tracking-wide">Revising your answers</p>
+                <button
+                  onClick={handleSaveAndReturn}
+                  disabled={saving}
+                  className="text-sm font-medium text-blue-600 hover:text-blue-800 disabled:opacity-50 py-2 transition-colors"
+                >
+                  Save and return to my report
+                </button>
+              </div>
+              <h1 className="text-xl font-bold text-gray-900">{currentFacet}</h1>
+              <nav aria-label="Sections" ref={stripRef} className="relative mt-3 -mx-4 px-4 overflow-x-auto">
+                <div className="flex gap-2 w-max pb-1">
+                  {availableFacets.map((page, i) => {
+                    const status = pageStatus(page);
+                    const current = i === currentFacetIndex;
+                    return (
+                      <button
+                        key={page}
+                        onClick={() => { if (!current) goToPage(i); }}
+                        disabled={saving}
+                        aria-current={current ? "step" : undefined}
+                        className={`flex items-center gap-2 min-h-[44px] px-3 rounded-full border text-xs font-semibold uppercase tracking-wide whitespace-nowrap transition-colors disabled:opacity-50 ${
+                          current ? "bg-blue-600 border-blue-600 text-white" : "bg-white border-gray-300 text-gray-700 hover:border-blue-400"
+                        }`}
+                      >
+                        <span aria-hidden="true" className={`w-2 h-2 rounded-full ${STATUS_DOT[status]} ${current ? "ring-1 ring-white" : ""}`} />
+                        {page}
+                        <span className="sr-only">, {STATUS_WORD[status]}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </nav>
+            </>
+          ) : (
+            <>
+              <p className="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-1">Quartz · Product Assessment</p>
+              <div className="flex items-center justify-between">
+                <h1 className="text-xl font-bold text-gray-900">{currentFacet}</h1>
+                <span className="text-sm text-gray-400">{currentFacetIndex + 1} of {availableFacets.length}</span>
+              </div>
+              <div className="mt-3 h-1.5 bg-gray-200 rounded-full">
+                <div
+                  className="h-1.5 bg-blue-500 rounded-full transition-all"
+                  style={{ width: `${((currentFacetIndex + 1) / availableFacets.length) * 100}%` }}
+                />
+              </div>
+            </>
+          )}
         </div>
 
         <div className="space-y-4">
@@ -1316,7 +1454,20 @@ export default function Assessment() {
             Not in the address bar, and not a bookmark — see
             src/lib/token-address.js. The link is text on the page, marked
             no-print, and it appears only after the write succeeds. */}
-        {pausedLink ? (
+        {revising ? (
+          /* While revising, "finish later" makes no sense — every page is saved
+             as it is left, and they already hold their link. What they want is
+             the report. */
+          <div className="mt-6">
+            <button
+              onClick={handleSaveAndReturn}
+              disabled={saving}
+              className="w-full border border-blue-600 text-blue-700 hover:bg-blue-50 disabled:opacity-50 font-semibold px-6 py-3 rounded-lg transition-colors"
+            >
+              {saving ? "Saving…" : "Save and return to my report"}
+            </button>
+          </div>
+        ) : pausedLink ? (
           <div className="mt-6 bg-white border border-gray-200 rounded-xl p-5">
             <p className="text-sm font-semibold text-gray-900 mb-1">Your answers so far are saved</p>
             <p className="text-xs text-gray-500 mb-3">
@@ -1354,16 +1505,12 @@ export default function Assessment() {
           <div>
             {currentFacetIndex > 0 && (
               <button
-                onClick={() => {
-                  // Paging away clears any failed-save message. Back saves
-                  // nothing, so a message left over from the page they are
-                  // leaving would sit under a page it never described — which
-                  // is how a save failure came to look like a Back button that
-                  // reports an error.
-                  setError("");
-                  setCurrentFacetIndex(i => i - 1);
-                  window.scrollTo(0, 0);
-                }}
+                // Saves this page first if it changed, through the same path as
+                // the revise strip. goToPage clears any failed-save message on
+                // the way out, so an error from this page never sits under the
+                // one before it — which is how a save failure once came to look
+                // like a Back button that reports an error.
+                onClick={() => goToPage(currentFacetIndex - 1)}
                 disabled={saving}
                 className="text-gray-500 hover:text-gray-800 disabled:opacity-50 font-medium px-4 py-3 rounded-lg transition-colors"
               >
