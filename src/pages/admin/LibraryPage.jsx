@@ -409,7 +409,7 @@ function ActivitiesTab() {
                     <span
                       title={usage === null
                         ? "Usage is still loading"
-                        : `In use — ${usageTotal(activity.id)} reference${usageTotal(activity.id) === 1 ? "" : "s"} across assessments, sets and answers`}
+                        : `In use — ${usageTotal(activity.id)} reference${usageTotal(activity.id) === 1 ? "" : "s"} across assessments, sets, and answers`}
                       className="text-xs text-gray-200 cursor-default"
                     >
                       In use

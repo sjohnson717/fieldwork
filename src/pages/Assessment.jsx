@@ -711,7 +711,7 @@ export default function Assessment() {
   // still suggests a manager or a coach, once the profile exists and the choice
   // is concrete.
   const introBlurb = isPersonal
-    ? "Your answers describe your own experience, skills and interests. The profile is yours to keep, and sharing it is your call."
+    ? "Your answers describe your own experience, skills, and interests. The profile is yours to keep, and sharing it is your call."
     : "Your responses are confidential and will only be seen in aggregate by your team leader.";
 
   const availableFacets = pagesOf(activities, instrument);

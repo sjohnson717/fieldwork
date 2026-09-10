@@ -535,7 +535,7 @@ export default function AdminPage() {
                   value={search}
                   onChange={e => setSearch(e.target.value)}
                   placeholder="Search assessments"
-                  aria-label="Search assessments by title, company or tag"
+                  aria-label="Search assessments by title, company, or tag"
                   className="w-full border border-gray-200 rounded-lg pl-2 pr-7 py-1.5 text-xs text-gray-700 bg-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
                 {search && (

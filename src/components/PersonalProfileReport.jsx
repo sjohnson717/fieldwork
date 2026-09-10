@@ -328,7 +328,7 @@ export default function PersonalProfileReport({
         first
         eyebrow="Part one"
         title="Your product profile"
-        blurb="Your answers sorted by what they suggest you might do next. Experience, skills and interest are kept apart on purpose — they tell you different things, and combining them into a single score would hide the most useful findings."
+        blurb="Your answers sorted by what they suggest you might do next. Experience, skills, and interest are kept apart on purpose — they tell you different things, and combining them into a single score would hide the most useful findings."
       />
 
       {/* Before the prose, not after it: the paragraph below is a sentence about

@@ -210,7 +210,7 @@ export const CATEGORIES = {
   },
   lower: {
     label: "Poor fit",
-    hint: "Little experience, skill or interest — don't assign",
+    hint: "Little experience, skill, or interest — don't assign",
     selfLabel: "Lower-priority development areas",
     selfHint: "You report relatively little experience, skill, or interest in these activities. They may not be priorities for your development right now.",
     color: "bg-gray-100 text-gray-600 border-gray-200",
@@ -255,7 +255,7 @@ export const DOMINANT_SUMMARY = {
   strengthen: (n, total) =>
     `Across ${portion(n, total)} activities here you have both the experience and the appetite, and rate your own skill below either. That pattern is rarely a training gap in the usual sense — it more often means the practice was learned on the job without anyone ever showing you a better version of it.`,
   lower: (n, total) =>
-    `Most of this scope — ${portion(n, total)} activities — sits outside your experience, skills and interest alike. That says more about the shape of this role than about you: the question worth asking is whether this scope is the work you actually want, and if not, which parts of it you'd keep.`,
+    `Most of this scope — ${portion(n, total)} activities — sits outside your experience, skills, and interest alike. That says more about the shape of this role than about you: the question worth asking is whether this scope is the work you actually want, and if not, which parts of it you'd keep.`,
 };
 
 // Skill and interest choose the bucket; experience only separates the two

@@ -254,8 +254,8 @@ export default function AssessmentOverview({ assessment, instrument, onUpdate, o
           {instrument
             ? `${instrument.name}${instrument.tagline ? ` — ${instrument.tagline.replace(/\.$/, "")}` : ""}`
             : isPersonal
-              ? "Personal assessment — each person rates their own experience, skills and interest."
-              : "Team gap assessment — importance, execution and ownership of each activity."}
+              ? "Personal assessment — each person rates their own experience, skills, and interest."
+              : "Team gap assessment — importance, execution, and ownership of each activity."}
         </p>
         {assessment.subject && (
           <p className="text-xs text-gray-500 mt-2">

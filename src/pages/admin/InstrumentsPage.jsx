@@ -94,7 +94,7 @@ export default function InstrumentsPage() {
         </div>
 
         <p className="text-xs text-gray-400 px-6 py-3 border-b border-gray-100">
-          The questions, scales and bands live in the repository, not in this
+          The questions, scales, and bands live in the repository, not in this
           screen. Applying brings the app up to date with them: safe to repeat,
           and it never deletes — a question dropped from the source is named
           below and left in place, because answers point at it.

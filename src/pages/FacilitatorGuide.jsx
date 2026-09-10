@@ -26,7 +26,7 @@ const sections = [
 | Type | Asks | Produces |
 |------|------|----------|
 | **Team gap** | How important is this activity, how well is it done today, and who should own it? | The gap analysis and the buyer report. Reported in aggregate — no individual is ever identified. |
-| **Personal** | How much experience, skill and interest do *you* have in this activity? | A development profile belonging to each person. Attributed, not anonymous. |
+| **Personal** | How much experience, skill, and interest do *you* have in this activity? | A development profile belonging to each person. Attributed, not anonymous. |
 
 ## Tags
 
@@ -121,7 +121,7 @@ You can print from the preview, which is how to get a copy of someone's report w
     title: "What participants see",
     content: `## Before they start
 
-The intro screen says what the assessment is for, what it will ask, roughly how long it takes and what comes out at the end — then names each question with a one-line definition. Every activity card repeats those definitions beside the labels.
+The intro screen says what the assessment is for, what it will ask, roughly how long it takes, and what comes out at the end — then names each question with a one-line definition. Every activity card repeats those definitions beside the labels.
 
 On a team gap that names ownership roles, the intro covers that question too: the answer is the role that **should** be accountable, not whoever does the work today. Worth stating, because a respondent describing the status quo produces a tidy answer that reports what the room already knows. An assessment with no roles configured is never told about a question it will not ask.
 
@@ -147,7 +147,7 @@ That last part matters. A summary that graded anyone would make the next answer 
 |---|---|---|
 | **Opens with** | *The shape of your answers* — every activity as one band of colour, then the same band split by phase | The same card, over the four gap buckets |
 | **Part one** | *Your product profile* — activities sorted into the five categories | *Where you'd focus first* — activities bucketed by the distance between how much they matter and how well they're done |
-| **Part two** | *Your Quartz profile* — experience, skills and interest per facet, three separate bars | *Your view by phase* — importance and execution per facet, two bars |
+| **Part two** | *Your Quartz profile* — experience, skills, and interest per facet, three separate bars | *Your view by phase* — importance and execution per facet, two bars |
 | **Part three** | *Development opportunities* — up to five, each with a **Try this** step | — |
 | **Part four** | *Suggested resources* for those opportunities | — |
 | **Also carries** | Questions to take into a development conversation | Anything they marked **"I don't know"**, named as a sightline rather than a gap |
@@ -206,7 +206,7 @@ The cover carries the Quartz mark, not a PGL logo: this is the respondent's docu
   {
     id: "personal",
     title: "Personal assessments",
-    content: `A personal assessment asks each person about their own experience, skills and interest in the same activities the team rates. It produces a development profile for the individual and a capability picture for you.
+    content: `A personal assessment asks each person about their own experience, skills, and interest in the same activities the team rates. It produces a development profile for the individual and a capability picture for you.
 
 ## What the three axes mean
 
@@ -250,7 +250,7 @@ The five categories come from all three axes read separately. Skill and interest
 
 ## No overall score, ever
 
-There is deliberately no "73% Product Manager" number, and there will not be one. A single score would be read as a grade, quoted without its context, and would require experience, skills and interest to mean the same kind of thing — which is exactly what this instrument exists to keep apart.
+There is deliberately no "73% Product Manager" number, and there will not be one. A single score would be read as a grade, quoted without its context, and would require experience, skills, and interest to mean the same kind of thing — which is exactly what this instrument exists to keep apart.
 
 If a client asks for one, the honest answer is that the three axes disagreeing with each other *is* the finding. High skill with low interest, or long experience with low self-rated skill, are the two most useful things this assessment produces, and both of them vanish into an average.
 
@@ -261,7 +261,7 @@ The report appears as soon as they finish — they don't have to come back for i
 | Part | Contains |
 |------|----------|
 | **1 · Your product profile** | Opens with *the shape of your answers* — every activity as one band of colour, then the same band per phase of product work — then their activities sorted into the five categories. A long category is grouped by phase, and a long list of strengths opens with the few rated top on both skill and interest |
-| **2 · Your Quartz profile** | Experience, skills and interest per facet, as three separate bars |
+| **2 · Your Quartz profile** | Experience, skills, and interest per facet, as three separate bars |
 | **3 · Development opportunities** | A shortlist of up to five, each with the reason it was chosen and one concrete **Try this** step, plus questions to take into a development conversation |
 | **4 · Suggested resources** | Reading and practice for those opportunities. Only appears if resources have been attached to the recommended activities |
 | | *When that shortlist comes to one or two items*, anything in the library ticked **"also offer when a shortlist is thin"** is added under a heading of its own. It never pads a longer list, and never makes the section appear on its own |

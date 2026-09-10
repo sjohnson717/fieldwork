@@ -38,7 +38,7 @@ const typeLabel = (type) => (type === "personal" ? "Personal assessment" : "Gap 
 
 const typeBlurb = (type) =>
   type === "personal"
-    ? "Each person rates their own experience, skills and interest in each activity."
+    ? "Each person rates their own experience, skills, and interest in each activity."
     : "The team rates how important each activity is and how well it's being done today.";
 
 // Received = they pressed submit. Partial answers are visible in the roster

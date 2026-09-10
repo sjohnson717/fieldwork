@@ -299,7 +299,7 @@ export const INSTRUMENT_SEED = {
       "subject_label": null,
       "sort_order": 2,
       "tagline": "What one person brings to the same activities",
-      "description": "An individual rates their own experience, skills and interest in each activity. The output is a development profile belonging to that person, and it can be crossed against a team gap assessment to show what a team needs against what its people can actually do."
+      "description": "An individual rates their own experience, skills, and interest in each activity. The output is a development profile belonging to that person, and it can be crossed against a team gap assessment to show what a team needs against what its people can actually do."
     },
     {
       "key": "portfolio_health",
