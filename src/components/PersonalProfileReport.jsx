@@ -425,7 +425,12 @@ export default function PersonalProfileReport({
                 <h3 className="text-sm font-bold text-gray-900 flex-1">{o.activity.name}</h3>
                 <span className="text-[10px] uppercase tracking-widest text-gray-400 shrink-0">{o.activity.facet}</span>
               </div>
-              <p className="text-xs text-gray-600 leading-relaxed pl-6">{o.reason}</p>
+              {o.answers && (
+                <p className="text-xs text-gray-600 leading-relaxed pl-6">{o.answers}</p>
+              )}
+              {o.advice && (
+                <p className="text-xs text-gray-600 leading-relaxed pl-6 mt-1.5">{o.advice}</p>
+              )}
               {o.activity.description && (
                 <p className="text-xs text-gray-400 leading-relaxed pl-6 mt-1.5">{o.activity.description}</p>
               )}

@@ -464,21 +464,42 @@ export function computeCategoryMix(profile, facetOrder) {
 // Ranked by interest first, then by how far skill trails it. Interest leads
 // because it is the thing the person controls least and predicts follow-through
 // most; the gap breaks ties by where effort would show up soonest.
+// The advice for each kind of opportunity. It explains the category, not the
+// activity, so it is said once — on the first card of that kind — rather than
+// word for word on every card, where a shortlist of three identical paragraphs
+// reads as a template rather than something written for the person.
+const OPPORTUNITY_ADVICE = {
+  strengthen: "You already do this work and want to keep doing it, but rate your own skill below both. Sharpening an established practice usually pays off faster than starting a new one.",
+  develop: "You want this work and have had little chance at it so far. The first move here is exposure — a real example to work on, with someone to learn from.",
+};
+
+// What sets each card apart is what the person actually said about it, in the
+// survey's own words. Interest first, because it is why the card is here at all.
+// "None" is written as "no … yet": a card only exists because the person wants
+// the work, so the absence is where they are starting from, not a verdict.
+const ANSWER_ORDER = [["interest", "interest"], ["experience", "experience"], ["skills", "skill"]];
+const answerPhrase = (label, noun) => (label === "None" ? `no ${noun} yet` : `${label.toLowerCase()} ${noun}`);
+const answerSummary = (resp) => {
+  const parts = ANSWER_ORDER.filter(([key]) => resp?.[key]).map(([key, noun]) => answerPhrase(resp[key], noun));
+  return parts.length === 0 ? null : `You reported ${parts.join(", ").replace(/, ([^,]*)$/, " and $1")}.`;
+};
+
 export function computeDevelopmentOpportunities(profile, limit = 5) {
   const candidates = [...profile.buckets.strengthen, ...profile.buckets.develop];
 
-  return candidates
-    .map(row => ({
-      ...row,
-      gap: (row.interest ?? 0) - (row.skills ?? 0),
-      // Why this one, in the person's own terms. The two categories are
-      // different recommendations, not two grades of the same one.
-      reason: row.category === "strengthen"
-        ? "You already do this work and want to keep doing it, but rate your own skill below both. Sharpening an established practice usually pays off faster than starting a new one."
-        : "You want this work and have had little chance at it so far. The first move here is exposure — a real example to work on, with someone to learn from.",
-    }))
+  const ranked = candidates
+    .map(row => ({ ...row, gap: (row.interest ?? 0) - (row.skills ?? 0) }))
     .sort((a, b) => (b.interest ?? 0) - (a.interest ?? 0) || b.gap - a.gap)
     .slice(0, limit);
+
+  // Advice goes on the first card of each category after ranking, so it lands
+  // wherever the reader first meets that kind of opportunity.
+  const advised = new Set();
+  return ranked.map(row => {
+    const advice = advised.has(row.category) ? null : OPPORTUNITY_ADVICE[row.category];
+    advised.add(row.category);
+    return { ...row, answers: answerSummary(row.response), advice };
+  });
 }
 
 // ── Crossing a personal assessment against its parent team assessment ───────
