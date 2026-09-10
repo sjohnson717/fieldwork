@@ -63,6 +63,12 @@ const MAX_ANSWER_TEXT = 5000;
 // is under a hundred. A cap keeps a single call from turning into a bulk write.
 const MAX_ANSWERS = 200;
 
+// Writes run concurrently, this many at a time. A survey page is well under
+// it, so a page's answers go in one round trip; the cap only matters to a
+// direct caller sending the maximum, who should not be able to open two
+// hundred requests at once.
+const WRITE_BATCH = 10;
+
 // The closing questions, asked once at the end of the survey and stored on
 // Respondent rather than Response — they are about the instrument, not about
 // any one activity. Admin-only: nothing here reaches a buyer report, a team
@@ -177,6 +183,16 @@ Deno.serve(async (req) => {
     const r = respondents?.[0];
     if (!r) return notFound();
 
+    // Every read below needs only the respondent, and each is a round trip of
+    // its own. Made one after another — and followed by one write per answer,
+    // also in turn — a single page took twenty seconds to save. So the
+    // respondent's existing rows load alongside the assessment rather than
+    // after it; they are only used if the assessment accepts the write. The
+    // no-op catch keeps an early return below from leaving the rejection
+    // unhandled; awaiting it later still throws.
+    const existingRows = svc.Response.filter({ respondent_id: r.id }, null, ALL);
+    existingRows.catch(() => {});
+
     const assessment = await svc.Assessment.get(r.assessment_id);
     if (!assessment) return notFound();
 
@@ -191,8 +207,10 @@ Deno.serve(async (req) => {
       return Response.json({ error: "closed" }, { status: 409 });
     }
 
-    const allowed = await assignedIds(svc, assessment);
-    const labels = await instrumentLabels(svc, assessment);
+    const [allowed, labels] = await Promise.all([
+      assignedIds(svc, assessment),
+      instrumentLabels(svc, assessment),
+    ]);
     const writable = assessment.instrument_id
       ? INSTRUMENT_FIELDS
       : isPersonal
@@ -254,35 +272,47 @@ Deno.serve(async (req) => {
       clean.push({ activityId, payload });
     }
 
-    // One read, then one write per answer. Keyed by activity because that is
-    // what the browser sends and what makes a row unique for a respondent;
-    // should duplicates for one activity already exist, the first is the one
-    // kept current rather than a second copy being added to the pile.
-    const existing = await svc.Response.filter({ respondent_id: r.id }, null, ALL);
+    // One read, then the writes. Keyed by activity because that is what the
+    // browser sends and what makes a row unique for a respondent; should
+    // duplicates for one activity already exist, the first is the one kept
+    // current rather than a second copy being added to the pile.
+    const existing = await existingRows;
     const byActivity = new Map();
     for (const row of existing) {
       if (!byActivity.has(row.activity_id)) byActivity.set(row.activity_id, row);
     }
 
+    // Two answers for the same activity in one call — which the survey never
+    // sends, but a direct caller could — collapse to the last, as they did when
+    // the writes ran in turn. Concurrent writes need it done up front: two
+    // creates in flight at once would make two rows.
+    const latest = new Map();
+    for (const { activityId, payload } of clean) latest.set(activityId, payload);
+
+    // Concurrently, because each write touches a different row and in turn
+    // each one added its own round trip to the save. A failure rejects the
+    // batch and the call returns an error before completion is recorded below,
+    // exactly as a failure part-way through the old loop did; the upsert makes
+    // the browser's retry of the whole page safe.
     let created = 0;
     let updated = 0;
-    for (const { activityId, payload } of clean) {
-      const row = byActivity.get(activityId);
-      if (row) {
-        await svc.Response.update(row.id, payload);
-        updated++;
-      } else {
-        const made = await svc.Response.create({
-          assessment_id: assessment.id,
-          respondent_id: r.id,
-          activity_id: activityId,
-          ...payload,
-        });
-        // So two answers for the same activity in one call — which the survey
-        // never sends, but a direct caller could — update rather than double.
-        if (made) byActivity.set(activityId, made);
-        created++;
-      }
+    const pending = [...latest];
+    for (let i = 0; i < pending.length; i += WRITE_BATCH) {
+      await Promise.all(pending.slice(i, i + WRITE_BATCH).map(async ([activityId, payload]) => {
+        const row = byActivity.get(activityId);
+        if (row) {
+          await svc.Response.update(row.id, payload);
+          updated++;
+        } else {
+          await svc.Response.create({
+            assessment_id: assessment.id,
+            respondent_id: r.id,
+            activity_id: activityId,
+            ...payload,
+          });
+          created++;
+        }
+      }));
     }
 
     // Completion is part of the same call as the last page's answers. Held
