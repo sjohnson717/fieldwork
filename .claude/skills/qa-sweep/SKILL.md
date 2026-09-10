@@ -59,6 +59,7 @@ actually rendered, so a blank screen cannot pass as clean.
 | next is single-submit | duplicate saves from a double tap |
 | finishing completes the respondent | a full set of answers stuck at "started" |
 | revise re-reads and rewrites | a revision that starts blank, or writes a second row |
+| revising without changes saves only the last page | every untouched page re-saved on a revision, or the last page skipped and the respondent left unfinished |
 | wrap-up saves feedback, never gates completion | free text lost, or an optional page costing someone their submission |
 | skipping the wrap-up writes nothing | a Skip that saves anyway, or strands the respondent |
 

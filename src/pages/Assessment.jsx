@@ -5,7 +5,7 @@ import { loadInstrument, orderQuestions, sectionsWithQuestions } from "@/lib/ins
 import { ownerOptionsFor } from "@/lib/ownership";
 import { getAssessmentByCode, getRespondentSession, saveRespondentAnswers } from "@/lib/public-assessment";
 import { PERSONAL_AXES, computePersonProfile } from "@/lib/personal-scoring";
-import { rebuildResponses } from "@/lib/responses";
+import { ANSWER_FIELDS, rebuildResponses } from "@/lib/responses";
 import { usePrintSafeUrl } from "@/lib/print-safe-url";
 import { claimToken, resumeLinkFor } from "@/lib/token-address";
 import ResumeLink from "@/components/ResumeLink";
@@ -50,6 +50,13 @@ const resumeFacetIndex = (activities, responses, isPersonal, instrument) => {
   );
   return index === -1 ? Math.max(0, pages.length - 1) : index;
 };
+
+// What the server holds for each activity, in the shape the survey sends:
+// every answer field, a blank one as null. Only activities with a stored row
+// appear, so an activity that has never been saved always counts as a change.
+const snapshotOf = (rows) => Object.fromEntries(
+  rows.map(row => [row.activity_id, Object.fromEntries(ANSWER_FIELDS.map(f => [f, row[f] || null]))])
+);
 
 // Whether an instrument draws its questions from the shared activity library.
 //
@@ -363,6 +370,10 @@ export default function Assessment() {
   // blank page reached. The index is what lets the notice clear itself on the
   // way out; `null` is what stops a second one ever appearing.
   const [blankWarnedFor, setBlankWarnedFor] = useState(null);
+  // The answers as last stored, so a page nobody changed is not written again.
+  // A ref rather than state: nothing renders from it, and it must be current
+  // the instant a save resolves, not a render later.
+  const savedAnswers = useRef({});
   const [saving, setSaving] = useState(false);
   // One request at a time, latched in a ref rather than in `saving`.
   //
@@ -485,6 +496,7 @@ export default function Assessment() {
     setAllTitles(titles.map(t => t.name));
     const rebuilt = rebuildResponses(saved || []);
     setResponses(rebuilt);
+    savedAnswers.current = snapshotOf(saved || []);
     // Open on the first unfinished page rather than the first page. Set here
     // because this is the one place holding the activities and the saved
     // answers together, before anything renders.
@@ -665,6 +677,7 @@ export default function Assessment() {
   const loadExistingResponses = async () => {
     const session = await getRespondentSession(myToken);
     setResponses(rebuildResponses(session?.responses || []));
+    savedAnswers.current = snapshotOf(session?.responses || []);
     // The wrap-up answers come back for the same reason the ratings do: a
     // revision that started from stale text would re-save the old text over
     // whatever is stored now.
@@ -794,6 +807,21 @@ export default function Assessment() {
       };
     });
 
+  // Every activity on the page already stored, with exactly these answers.
+  // Compared field by field over what the page would send, so a field this
+  // assessment type never asks about cannot make a page look changed.
+  const pageUnchanged = (answers) =>
+    answers.every(({ activity_id, ...fields }) => {
+      const stored = savedAnswers.current[activity_id];
+      return !!stored && Object.entries(fields).every(([k, v]) => (stored[k] ?? null) === v);
+    });
+
+  const rememberSaved = (answers) => {
+    for (const { activity_id, ...fields } of answers) {
+      savedAnswers.current[activity_id] = { ...savedAnswers.current[activity_id], ...fields };
+    }
+  };
+
   // "Save and finish later". The survey already writes a page of answers when
   // Next is pressed, but only then — so someone interrupted halfway down a
   // facet has answers on screen that no save has seen, and no way to get their
@@ -804,10 +832,19 @@ export default function Assessment() {
   // this page, and moving them on would mean returning to a page they never
   // completed with no sign of where they stopped.
   const handleSaveAndPause = once(async () => {
+    const answers = answersForCurrentFacet();
+    // Nothing on this page has changed since it was stored, so there is nothing
+    // to write — the link is all they need.
+    if (pageUnchanged(answers)) {
+      setError("");
+      setPausedLink(true);
+      return;
+    }
     setSaving(true);
     setError("");
     try {
-      await saveRespondentAnswers(myToken, answersForCurrentFacet());
+      await saveRespondentAnswers(myToken, answers);
+      rememberSaved(answers);
       setPausedLink(true);
     } catch (e) {
       console.error("handleSaveAndPause error:", e);
@@ -845,10 +882,27 @@ export default function Assessment() {
     return;
   }
 
+  const isLastFacet = currentFacetIndex >= availableFacets.length - 1;
+  const answers = answersForCurrentFacet();
+
+  // A participant revising their answers pressed Next through every page and
+  // waited on a save at each one, though they had changed nothing: revisiting
+  // was as slow as answering. A page already stored exactly as it stands now
+  // just moves on.
+  //
+  // Never the last page. Completion travels with its save, and Revise has
+  // marked the respondent as started again, so skipping it would leave someone
+  // who changed nothing looking unfinished on the roster.
+  if (!isLastFacet && pageUnchanged(answers)) {
+    setError("");
+    setCurrentFacetIndex(i => i + 1);
+    window.scrollTo(0, 0);
+    return;
+  }
+
   setSaving(true);
   setError("");
   try {
-    const isLastFacet = currentFacetIndex >= availableFacets.length - 1;
 
     // Answers keyed by activity, not by row id. The browser used to hold the
     // Response id and choose create or update for itself, which is how this
@@ -857,11 +911,10 @@ export default function Assessment() {
     // second save of a page was refused. saveResponses resolves the token
     // server-side and upserts by activity instead. Only the fields this
     // assessment type asks about are sent; the function writes no others.
-    const answers = answersForCurrentFacet();
-
     // Completion travels with the last page's answers rather than as a second
     // call after it.
     await saveRespondentAnswers(myToken, answers, { complete: isLastFacet });
+    rememberSaved(answers);
 
     if (!isLastFacet) {
       setCurrentFacetIndex(i => i + 1);

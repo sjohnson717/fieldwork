@@ -420,6 +420,41 @@ await flow("revise re-reads and rewrites", async (page) => {
   };
 });
 
+// Revising without changing anything writes only the last page. Every earlier
+// page is already stored exactly as it stands, and saving it again only made
+// someone wait at each Next. The last page still saves: completion travels with
+// it, and Revise has marked the respondent started again.
+await flow("revising without changes saves only the last page", async (page) => {
+  await page.goto(baseUrl + "/assess?t=TOKEN-RESP-1", { waitUntil: "networkidle0" });
+  await openReview(page);
+  if (!(await clickText(page, "Revise"))) return { pass: false, detail: "no Revise button on the report" };
+  await wait(900);
+  const before = await page.evaluate(() => window.__qa.calls.filter(c => c.name === "fn:saveResponses").length);
+
+  // Next until the wrap-up. act-8 is unrated, so its page is blank and costs a
+  // second press.
+  for (let i = 0; i < 20; i++) {
+    if (await page.evaluate(() => !!document.getElementById("closing-comments"))) break;
+    if (!(await clickText(page, "Next"))) break;
+    await wait(500);
+  }
+
+  const state = await page.evaluate(() => {
+    const saves = window.__qa.calls.filter(c => c.name === "fn:saveResponses");
+    return {
+      saves: saves.length,
+      complete: saves.slice(-1)[0]?.payload?.complete,
+      status: window.__qa.respondents.find(x => x.id === "resp-1")?.status,
+      wrapup: !!document.getElementById("closing-comments"),
+    };
+  });
+  const made = state.saves - before;
+  return {
+    pass: state.wrapup && made === 1 && state.complete === true && state.status === "completed",
+    detail: `${made} save(s) across the revision (expected 1, the last page), complete flag=${state.complete}, status=${state.status}, reached wrap-up=${state.wrapup}`,
+  };
+});
+
 await browser.close();
 
 // ── Report ──────────────────────────────────────────────────────────────────
