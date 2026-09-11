@@ -1,6 +1,13 @@
 import { base44 } from "@/api/base44Client";
 import { facetRank } from "@/lib/scoring";
 
+// A library activity: shared across assessments, and not an instrument's own
+// question. Instrument questions carry no assessment_id either, so testing
+// that alone handed all of them to any assessment that uses the whole library,
+// and listed them in Library → Activities under LEARN, where editing them
+// fought the Instruments screen.
+export const isLibraryActivity = (a) => !a.assessment_id && !(a.instrument_ids || []).length;
+
 /**
  * Returns the activities assigned to an assessment:
  * - Library activities (no assessment_id) filtered by activity_ids if set,
@@ -25,7 +32,7 @@ export async function getAssignedActivities(assessmentRecord) {
 
   const ids = assessmentRecord.activity_ids;
   const hasFilter = Array.isArray(ids) && ids.length > 0;
-  const library = all.filter(a => !a.assessment_id && (!hasFilter || ids.includes(a.id)));
+  const library = all.filter(a => isLibraryActivity(a) && (!hasFilter || ids.includes(a.id)));
   const custom = all.filter(a => a.assessment_id === assessmentRecord.id);
   return [...library, ...custom].sort((a, b) => {
     const facetDiff = facetRank(a.facet) - facetRank(b.facet);

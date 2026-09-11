@@ -98,6 +98,16 @@ const ROUTES = [
     widths: [768, 1280],
     expect: "capability",
   },
+  {
+    // The content editor on Settings → Instruments, on the fixture's small
+    // Product Success instrument: sections, commentary, reading chips, bands.
+    name: "admin-instrument-editor",
+    url: "/admin",
+    signIn: { email: "qa@example.com", role: "admin" },
+    admin: { section: "Instruments", edit: "Product Success Quiz" },
+    widths: [768, 1280],
+    expect: "maximum score 3",
+  },
 ];
 
 const wait = (ms) => new Promise(r => setTimeout(r, ms));
@@ -155,6 +165,25 @@ const pageToWrapup = async (page) => {
 // in the sidebar, then open a tab. They were outside this sweep entirely, which
 // left the two results tabs — the screens holding every respondent's answers —
 // checked at no width at all.
+// Settings → Instruments, then an instrument's content editor when `edit`
+// names one. The sidebar sections are buttons like the assessments, but they
+// open a page of their own rather than an assessment's tabs.
+const openAdminSection = async (page, { section, edit }) => {
+  await page.evaluate((label) => {
+    const b = [...document.querySelectorAll("aside button")].find(x => x.textContent.trim() === label);
+    if (b) b.click();
+  }, section);
+  await wait(700);
+  if (edit) {
+    await page.evaluate((name) => {
+      const li = [...document.querySelectorAll("li")].find(x =>
+        x.textContent.includes(name) && [...x.querySelectorAll("button")].some(b => b.textContent.trim() === "Edit content"));
+      if (li) [...li.querySelectorAll("button")].find(b => b.textContent.trim() === "Edit content").click();
+    }, edit);
+    await wait(900);
+  }
+};
+
 const openAdminTab = async (page, { assessment, tab }) => {
   await page.evaluate((title) => {
     const b = [...document.querySelectorAll("aside li button")]
@@ -190,7 +219,7 @@ for (const route of ROUTES) {
       await page.evaluate((u) => window.qaSignIn(u), route.signIn);
     }
     await page.goto(baseUrl + route.url, { waitUntil: "networkidle0" });
-    if (route.admin) await openAdminTab(page, route.admin);
+    if (route.admin) await (route.admin.section ? openAdminSection(page, route.admin) : openAdminTab(page, route.admin));
     if (route.review) await openReview(page);
     if (route.revise) await openRevise(page);
     if (route.wrapup) await pageToWrapup(page);
@@ -560,6 +589,126 @@ await flow("back saves a changed page", async (page) => {
     pass: made === 1 && state.h1 !== h1Before && state.stored === "Important",
     detail: `${made} save(s), moved ${h1Before}→${state.h1}, stored importance=${state.stored}`,
   };
+});
+
+// ── The Instruments content editor ──────────────────────────────────────────
+// Signed in as an admin, on the fixture's Product Success instrument. Each flow
+// asserts against the stub's state, not the screen: "the page shows the edit"
+// and "the row changed" are different claims.
+const openEditor = async (page) => {
+  await page.goto(baseUrl + "/landing", { waitUntil: "domcontentloaded" });
+  await page.evaluate(() => window.qaSignIn({ email: "qa@example.com", role: "admin" }));
+  await page.goto(baseUrl + "/admin", { waitUntil: "networkidle0" });
+  await openAdminSection(page, { section: "Instruments", edit: "Product Success Quiz" });
+};
+// A button in the row whose name is `row` (a question or a band), by its text
+// or its aria-label.
+const inRow = (page, row, label) => page.evaluate((r, l) => {
+  const li = [...document.querySelectorAll("li")].find(x => x.querySelector("p")?.textContent === r);
+  const b = li && [...li.querySelectorAll("button")].find(x => x.textContent.trim() === l || x.getAttribute("aria-label") === l);
+  if (!b) return false;
+  b.click();
+  return true;
+}, row, label);
+// Sets a controlled field the way typing would, so React sees the change.
+const setField = (page, selector, value) => page.evaluate((sel, v) => {
+  const el = document.querySelector(sel);
+  if (!el) return false;
+  const proto = el.tagName === "TEXTAREA" ? HTMLTextAreaElement.prototype : el.tagName === "SELECT" ? HTMLSelectElement.prototype : HTMLInputElement.prototype;
+  Object.getOwnPropertyDescriptor(proto, "value").set.call(el, v);
+  el.dispatchEvent(new Event(el.tagName === "SELECT" ? "change" : "input", { bubbles: true }));
+  return true;
+}, selector, value);
+const qa = (page, fn) => page.evaluate(fn);
+
+await flow("instrument editor saves a question edit", async (page) => {
+  await openEditor(page);
+  if (!(await inRow(page, "Support Costs", "Edit"))) return { pass: false, detail: "no Edit on Support Costs" };
+  await wait(300);
+  await setField(page, "textarea[placeholder^='Why this question matters']", "Every product carries a tax.");
+  await clickText(page, "Save");
+  await wait(700);
+  const c = await qa(page, () => window.__qa.activities.find(a => a.id === "ps-2").commentary);
+  return { pass: c === "Every product carries a tax.", detail: `ps-2 commentary=${JSON.stringify(c)}` };
+});
+
+await flow("instrument editor retires and restores a question", async (page) => {
+  await openEditor(page);
+  await inRow(page, "Market Growth", "Retire");
+  await wait(600);
+  const retired = await qa(page, () => window.__qa.activities.find(a => a.id === "ps-3").active);
+  await inRow(page, "Market Growth", "Restore");
+  await wait(600);
+  const restored = await qa(page, () => window.__qa.activities.find(a => a.id === "ps-3").active);
+  return { pass: retired === false && restored === true, detail: `after Retire active=${retired}, after Restore active=${restored}` };
+});
+
+await flow("adding a question warns about the bands and lands last", async (page) => {
+  await openEditor(page);
+  await clickText(page, "+ Add a question");
+  await wait(300);
+  await setField(page, "input[placeholder^='Short label']", "Pricing Power");
+  await setField(page, "textarea:not([placeholder])", "Can this product hold its price?");
+  await wait(200);
+  const warned = await qa(page, () => /raises the maximum score from 3 to 4/.test(document.body.innerText));
+  await clickText(page, "Add question");
+  await wait(700);
+  const made = await qa(page, () => window.__qa.activities.find(a => a.name === "Pricing Power"));
+  const bandGap = await qa(page, () => /Scores 4–4 fall in no band/.test(document.body.innerText));
+  return {
+    pass: warned && made?.section === "Performance" && made?.section_sort === 3 && (made?.instrument_ids || []).includes("inst-ps") && bandGap,
+    detail: `warned=${warned}, section=${made?.section}, position=${made?.section_sort}, band gap flagged=${bandGap}`,
+  };
+});
+
+await flow("reordering renumbers the section", async (page) => {
+  await openEditor(page);
+  await inRow(page, "Revenue Opportunity", "Move Revenue Opportunity down");
+  await wait(700);
+  const s = await qa(page, () => Object.fromEntries(window.__qa.activities.filter(a => ["ps-1", "ps-2"].includes(a.id)).map(a => [a.id, a.section_sort])));
+  return { pass: s["ps-1"] === 2 && s["ps-2"] === 1, detail: `positions ${JSON.stringify(s)}` };
+});
+
+await flow("reading attaches to a question and comes off again", async (page) => {
+  await openEditor(page);
+  await setField(page, "select[aria-label='Add reading to Market Growth']", "res-ms");
+  await wait(700);
+  const on = await qa(page, () => window.__qa.resources.find(r => r.id === "res-ms").activity_ids.includes("ps-3"));
+  await inRow(page, "Market Growth", "Remove Market Sizing That Doesn't Suck from Market Growth");
+  await wait(700);
+  const off = await qa(page, () => !window.__qa.resources.find(r => r.id === "res-ms").activity_ids.includes("ps-3"));
+  return { pass: on && off, detail: `attached=${on}, detached=${off}` };
+});
+
+await flow("delete is offered only on an unreferenced question, and works", async (page) => {
+  await openEditor(page);
+  const offered = await qa(page, () => {
+    const has = (name) => {
+      const li = [...document.querySelectorAll("li")].find(x => x.querySelector("p")?.textContent === name);
+      return !!li && [...li.querySelectorAll("button")].some(b => b.textContent.trim() === "Delete");
+    };
+    return { answered: has("Revenue Opportunity"), unanswered: has("Market Growth") };
+  });
+  await inRow(page, "Market Growth", "Delete");
+  await wait(300);
+  await page.evaluate(() => { const bs = [...document.querySelectorAll("button")].filter(b => b.textContent.trim() === "Delete"); bs[bs.length - 1]?.click(); });
+  await wait(800);
+  const gone = await qa(page, () => !window.__qa.activities.some(a => a.id === "ps-3"));
+  return {
+    pass: !offered.answered && offered.unanswered && gone,
+    detail: `Delete on the answered question=${offered.answered}, on the unanswered one=${offered.unanswered}, deleted=${gone}`,
+  };
+});
+
+await flow("band edits save", async (page) => {
+  await openEditor(page);
+  if (!(await inRow(page, "Invest", "Edit"))) return { pass: false, detail: "no Edit on the Invest band" };
+  await wait(300);
+  await setField(page, "textarea", "Keep investing, and say why in the plan.");
+  await clickText(page, "Save");
+  await wait(700);
+  const advice = await qa(page, () => window.__qa.bands.find(b => b.id === "band-ps-high").advice);
+  return { pass: advice === "Keep investing, and say why in the plan.", detail: `advice=${JSON.stringify(advice)}` };
 });
 
 await browser.close();

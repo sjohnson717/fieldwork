@@ -66,6 +66,13 @@ actually rendered, so a blank screen cannot pass as clean.
 | back saves a changed page | an answer changed and then left by Back, lost when the tab closes |
 | wrap-up saves feedback, never gates completion | free text lost, or an optional page costing someone their submission |
 | skipping the wrap-up writes nothing | a Skip that saves anyway, or strands the respondent |
+| instrument editor saves a question edit | commentary typed on Settings → Instruments that never reaches the row |
+| instrument editor retires and restores a question | a retire that deletes, or a restore that does nothing |
+| adding a question warns about the bands and lands last | a new question in the wrong section or position, or a maximum score the bands no longer cover without a word |
+| reordering renumbers the section | two questions left tied on one position, which the survey orders arbitrarily |
+| reading attaches to a question and comes off again | a reading link that cannot be removed, or one removed from the wrong question |
+| delete is offered only on an unreferenced question, and works | Delete on a question with answers behind it |
+| band edits save | band advice edited on screen and never written |
 
 **Permissions.** The stub enforces the real rules: `Response.update`,
 `Response.create` and unauthenticated reads of `Response` all throw, exactly as

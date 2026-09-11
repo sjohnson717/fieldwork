@@ -15,7 +15,7 @@
 // window.__qa exposes that state to the driver.
 
 import { FACETS, ACTIVITIES, TEAM_GAP, PERSONAL, RESPONDENTS, ALL_ANSWERS, OWN_ANSWERS, PERSONAL_ANSWERS, DISCUSSION_NOTES, TEAM_TOKEN, BUYER_TOKEN,
-         CHAOS, CHAOS_QUESTIONS, CHAOS_RESPONDENTS, CHAOS_ANSWERS, CHAOS_BUYER_TOKEN } from "./fixtures.js";
+         CHAOS, CHAOS_QUESTIONS, CHAOS_RESPONDENTS, CHAOS_ANSWERS, CHAOS_BUYER_TOKEN, PS_INSTRUMENT, PS_QUESTIONS, PS_BANDS, PS_RESOURCES} from "./fixtures.js";
 
 // Mirrors publicAssessment's own list. The buyer payload used to name the team
 // gap's three fields inline, exactly as the real function did — which is why a
@@ -37,6 +37,11 @@ const state = {
   // the chip on a tagged row and the absence of one on an untagged row.
   tags: [{ id: "tag-1", name: "Northwind Systems" }],
   flags: [],
+  // Questions, bands, and reading as state rather than constants, because the
+  // Instruments editor writes them and the sweep reads the result back.
+  activities: [...ACTIVITIES, ...CHAOS_QUESTIONS, ...PS_QUESTIONS].map(a => ({ ...a })),
+  bands: PS_BANDS.map(b => ({ ...b })),
+  resources: PS_RESOURCES.map(r => ({ ...r })),
   calls: [],
   violations: [],
   // The two library instruments as records. The fixtures' assessments stay on
@@ -61,6 +66,7 @@ const state = {
       description: "What really prevents you from defining, developing, and delivering products people want?" },
   ],
   scales: [
+    { id: "sc-yesno", key: "yes_no", name: "Yes / No", sort_order: 6 },
     { id: "sc-imp", key: "importance", name: "Importance", sort_order: 0 },
     { id: "sc-exec", key: "execution", name: "Current execution", unknown_label: "I don't know", unknown_treatment: "excluded", sort_order: 1 },
     { id: "sc-exp", key: "experience", name: "Experience", sort_order: 2 },
@@ -79,6 +85,7 @@ const state = {
     ...["None", "Basic", "Good", "Excellent"].map((label, i) => ({ id: `o-skill-${i}`, scale_id: "sc-skill", label, points: [0,1,3,5][i], sort_order: i })),
     ...["None", "Limited", "Moderate", "Passionate"].map((label, i) => ({ id: `o-int-${i}`, scale_id: "sc-int", label, points: [0,1,3,5][i], sort_order: i })),
     ...["Absolutely", "Somewhat", "Not so much", "Never"].map((label, i) => ({ id: `o-ch-${i}`, scale_id: "sc-challenge", label, points: [1,3,5,8][i], sort_order: i })),
+    ...["No", "Yes"].map((label, i) => ({ id: `o-yn-${i}`, scale_id: "sc-yesno", label, points: i, sort_order: i })),
   ],
 };
 
@@ -92,6 +99,8 @@ state.respondents.push(personalRespondent);
 state.responses.push(...PERSONAL_ANSWERS.map((a, i) => ({ id: `pers-${i}`, assessment_id: PERSONAL.id, respondent_id: personalRespondent.id, ...a })));
 
 state.respondents.push(...CHAOS_RESPONDENTS.map(r => ({ ...r })));
+state.responses.push({ id: "ps-answer", assessment_id: "asmt-ps-none", respondent_id: "resp-ps-none", activity_id: "ps-1", answer: "Yes" });
+state.instruments.push({ ...PS_INSTRUMENT });
 state.responses.push(...CHAOS_ANSWERS.map((a, i) => ({ id: `chaos-${i}`, assessment_id: CHAOS.id, ...a })));
 
 if (typeof window !== "undefined") {
@@ -115,6 +124,32 @@ const ownRowsFor = (respondentId) =>
   state.responses.filter(r => r.respondent_id === respondentId).map(r => ({ activity_id: r.activity_id, ...answerFieldsOf(r) }));
 
 const readOnly = (rows) => rows.map(r => ({ ...r }));
+const matches = (q) => (row) => Object.entries(q || {}).every(([k, v]) => row[k] === v);
+// Writes the real rules reserve for staff. Band is admin-only there too.
+const staffOnly = (what) => {
+  if (!state.user || !["admin", "org_admin", "facilitator"].includes(state.user.role)) forbid(what);
+};
+const adminOnly = (what) => {
+  if (!state.user || state.user.role !== "admin") forbid(what);
+};
+const editable = (name, rowsKey, guard) => ({
+  list: async () => readOnly(state[rowsKey]),
+  filter: async (q) => readOnly(state[rowsKey].filter(matches(q))),
+  create: async (p) => {
+    guard(`${name}.create`);
+    const made = { id: `${name.toLowerCase()}-new-${state[rowsKey].length}`, ...JSON.parse(JSON.stringify(p)) };
+    state[rowsKey].push(made);
+    log(`${name}.create`, p);
+    return { ...made };
+  },
+  update: async (id, p) => {
+    guard(`${name}.update`);
+    const row = state[rowsKey].find(r => r.id === id);
+    Object.assign(row, JSON.parse(JSON.stringify(p)));
+    log(`${name}.update`, { id, ...p });
+    return { ...row };
+  },
+});
 
 export const base44 = {
   auth: {
@@ -125,9 +160,9 @@ export const base44 = {
   entities: {
     // `list` as well as `filter`: the admin sidebar counts each instrument's
     // questions from the whole table rather than trusting a stored count.
-    Activity: { filter: async () => readOnly([...ACTIVITIES, ...CHAOS_QUESTIONS]), list: async () => readOnly([...ACTIVITIES, ...CHAOS_QUESTIONS]) },
+    Activity: editable("Activity", "activities", staffOnly),
     JobTitle: { filter: async () => [{ name: "Product Management" }, { name: "Product Marketing" }, { name: "Engineering" }, { name: "Design" }] },
-    Resource: { filter: async () => [] },
+    Resource: editable("Resource", "resources", staffOnly),
     // Admin reads these two directly. The sweep's own routes are public and
     // reach an assessment through publicAssessment, so the stub went without
     // them for a long time — which meant /admin threw on mount and no admin
@@ -172,7 +207,7 @@ export const base44 = {
     },
     Scale: { list: async () => readOnly(state.scales || []) },
     ScaleOption: { list: async () => readOnly(state.scaleOptions || []) },
-    Band: { filter: async () => [] },
+    Band: editable("Band", "bands", adminOnly),
     DiscussionNote: { filter: async () => readOnly(state.notes) },
     TeamLeaderFlag: {
       filter: async () => readOnly(state.flags),
@@ -216,6 +251,39 @@ export const base44 = {
     invoke: async (name, body) => {
       log(`fn:${name}`, body);
       const notFound = () => { const e = new Error("not_found"); e.status = 404; e.response = { status: 404 }; throw e; };
+
+      // The two admin functions the Instruments editor calls, with the real
+      // ones' rules: admin only, and delete refuses anything referenced.
+      if (name === "listLibraryActivityUsage") {
+        adminOnly("fn:listLibraryActivityUsage");
+        const usage = {};
+        const bump = (id, key) => {
+          if (!id) return;
+          usage[id] ||= { assessments: 0, sets: 0, responses: 0, notes: 0, flags: 0 };
+          usage[id][key] += 1;
+        };
+        for (const a of state.assessments) for (const id of a.activity_ids || []) bump(id, "assessments");
+        for (const r of state.responses) bump(r.activity_id, "responses");
+        for (const n of state.notes) bump(n.activity_id, "notes");
+        for (const f of state.flags) bump(f.activity_id, "flags");
+        return { data: { usage } };
+      }
+      if (name === "deleteLibraryActivity") {
+        adminOnly("fn:deleteLibraryActivity");
+        const id = body.activityId;
+        const referenced = state.responses.some(r => r.activity_id === id) ||
+          state.assessments.some(a => (a.activity_ids || []).includes(id)) ||
+          state.notes.some(n => n.activity_id === id) || state.flags.some(f => f.activity_id === id);
+        if (referenced) {
+          const e = new Error("referenced");
+          e.status = 409;
+          e.response = { status: 409, data: { error: "That question is used. Deactivate it instead." } };
+          throw e;
+        }
+        state.activities = state.activities.filter(a => a.id !== id);
+        for (const r of state.resources) r.activity_ids = (r.activity_ids || []).filter(x => x !== id);
+        return { data: { deleted: { id } } };
+      }
 
       if (name === "publicAssessment") {
         const { mode, token } = body;

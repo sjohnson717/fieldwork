@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { isLibraryActivity } from "@/lib/activities";
 import { base44 } from "@/api/base44Client";
 import { FACET_ORDER } from "@/lib/scoring";
 import ConfirmDialog from "@/components/ConfirmDialog";
@@ -61,6 +62,11 @@ function ActivityPicker({ activities, selectedIds, onToggle }) {
 }
 
 function ResourceForm({ draft, setDraft, activities, onSave, onCancel, saving, saveLabel }) {
+  // The picker lists library activities only. A link to anything else — an
+  // instrument's question, or a retired activity — is kept, and counted apart
+  // so the number matches what the picker shows.
+  const listedCount = draft.activity_ids.filter(id => activities.some(a => a.id === id)).length;
+  const unlistedCount = draft.activity_ids.length - listedCount;
   const toggle = (id) => setDraft(d => ({
     ...d,
     activity_ids: d.activity_ids.includes(id)
@@ -107,7 +113,8 @@ function ResourceForm({ draft, setDraft, activities, onSave, onCancel, saving, s
       />
       <div>
         <p className="text-xs text-gray-500 mb-1.5">
-          Offered for these activities ({draft.activity_ids.length} selected).{" "}
+          Offered for these activities ({listedCount} selected
+          {unlistedCount > 0 ? `, plus ${unlistedCount} not listed here — instrument questions are set on the Instruments screen` : ""}).{" "}
           {draft.fallback
             ? "Attached to nothing, this still reaches a report whose shortlist comes out thin."
             : "A resource attached to nothing never appears on a report."}
@@ -147,6 +154,7 @@ export default function ResourcesTab() {
   const [resources, setResources] = useState([]);
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [allActivities, setAllActivities] = useState([]);
   const [editingId, setEditingId] = useState(null);
   const [draft, setDraft] = useState(EMPTY);
   const [saving, setSaving] = useState(false);
@@ -165,7 +173,11 @@ export default function ResourcesTab() {
           .then(all => all.filter(a => !a.assessment_id)),
       ]);
       setResources(res);
-      setActivities(acts);
+      // The picker offers library activities only; an instrument's questions
+      // get their reading on the Instruments screen. Names are looked up from
+      // both, so an article's line below still says where it is offered.
+      setActivities(acts.filter(isLibraryActivity));
+      setAllActivities(acts);
     } catch (e) { console.error(e); }
     setLoading(false);
   };
@@ -223,7 +235,7 @@ export default function ResourcesTab() {
     }
   };
 
-  const activityName = (id) => activities.find(a => a.id === id)?.name;
+  const activityName = (id) => allActivities.find(a => a.id === id)?.name;
 
   if (loading) return (
     <div className="flex justify-center py-16">

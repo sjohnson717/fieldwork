@@ -111,7 +111,8 @@ const assignedIds = async (svc, assessment) => {
   const hasFilter = Array.isArray(ids) && ids.length > 0;
   const assigned = all.filter(
     (a) =>
-      (!a.assessment_id && (!hasFilter || ids.includes(a.id))) ||
+      // Not an instrument's own question: those carry no assessment_id either.
+      (!a.assessment_id && !(a.instrument_ids || []).length && (!hasFilter || ids.includes(a.id))) ||
       a.assessment_id === assessment.id,
   );
   return new Set(assigned.map((a) => a.id));

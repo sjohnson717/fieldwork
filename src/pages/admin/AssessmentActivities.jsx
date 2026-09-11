@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { isLibraryActivity } from "@/lib/activities";
 import { base44 } from "@/api/base44Client";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { FACET_ORDER } from "@/lib/scoring";
@@ -108,7 +109,7 @@ export default function AssessmentActivities({ assessment, onUpdate }) {
         base44.entities.TeamLeaderFlag.filter({ assessment_id: assessment.id }),
       ]);
       setActivitySets(sets);
-      setLibraryActivities(allActive.filter(a => !a.assessment_id));
+      setLibraryActivities(allActive.filter(isLibraryActivity));
       setCustomActivities(allActive.filter(a => a.assessment_id === assessment.id));
       setJobTitleNames(new Set(titles.map(t => t.name)));
       const flagMap = {};

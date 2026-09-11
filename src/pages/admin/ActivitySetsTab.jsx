@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { isLibraryActivity } from "@/lib/activities";
 import { base44 } from "@/api/base44Client";
 import { FACET_ORDER } from "@/lib/scoring";
 import DraggableList from "@/components/DraggableList";
@@ -113,7 +114,7 @@ export default function ActivitySetsTab() {
     try {
       const [allSets, allActivities] = await Promise.all([
         base44.entities.ActivitySet.list("sort_order"),
-        base44.entities.Activity.filter({ active: true }, "sort_order").then(all => all.filter(a => !a.assessment_id)),
+        base44.entities.Activity.filter({ active: true }, "sort_order").then(all => all.filter(isLibraryActivity)),
       ]);
       setSets(allSets);
       setActivities(allActivities);

@@ -158,6 +158,20 @@ export async function seedInstruments(base44, { onProgress } = {}) {
   // happens to share a name.
   say("Questions");
   const existingActivities = await e.Activity.list();
+
+  // Instruments whose content now lives in the app. Once an instrument has
+  // questions, they, its bands, and its reading are edited on the Instruments
+  // screen and the seed stops speaking for them: re-applying would revert every
+  // edit, and matching by label would turn a renamed question into a second
+  // copy under its old name. The seed still brings a new instrument in, and
+  // still owns the scales and the instrument records themselves.
+  const adopted = new Set(
+    seed.instruments
+      .filter((i) => i.question_source === "instrument")
+      .map((i) => instrumentId.get(i.key))
+      .filter((id) => existingActivities.some((a) => (a.instrument_ids || []).includes(id))),
+  );
+  const adoptedKeys = new Set(seed.instruments.filter((i) => adopted.has(instrumentId.get(i.key))).map((i) => i.key));
   const seededKeys = new Set(seed.instruments.filter((i) => i.question_source === "instrument").map((i) => i.key));
   // The rows as they end up, collected here because the reading below needs to
   // attach itself to them. `existingActivities` is the snapshot taken before
@@ -167,6 +181,10 @@ export async function seedInstruments(base44, { onProgress } = {}) {
   const questionRows = new Map();
   for (const q of seed.questions) {
     const instIds = q.instrument_keys.map((k) => instrumentId.get(k));
+    if (instIds.some((id) => adopted.has(id))) {
+      tally.questions.unchanged++;
+      continue;
+    }
     const row = await upsert(e.Activity, existingActivities,
       (r) => r.name === q.label && (r.instrument_ids || []).some((id) => instIds.includes(id)),
       {
@@ -204,7 +222,7 @@ export async function seedInstruments(base44, { onProgress } = {}) {
     const ids = a.instrument_ids || [];
     if (ids.length === 0) return false;
     const keys = [...instrumentId.entries()].filter(([, id]) => ids.includes(id)).map(([k]) => k);
-    if (!keys.some((k) => seededKeys.has(k))) return false;
+    if (!keys.some((k) => seededKeys.has(k) && !adoptedKeys.has(k))) return false;
     return !seed.questions.some((q) => q.label === a.name && q.instrument_keys.some((k) => keys.includes(k)));
   });
   for (const o of orphans) {
@@ -230,7 +248,15 @@ export async function seedInstruments(base44, { onProgress } = {}) {
   say("Reading");
   const existingResources = await e.Resource.list();
   const duplicates = [];
+  let readingSeeded = 0;
   for (const [i, r] of (seed.resources || []).entries()) {
+    // Reading on an instrument edited in the app is the app's too: a link
+    // removed there must stay removed.
+    if (!r.question_labels.some((label) => questionRows.has(label))) {
+      tally.resources.unchanged++;
+      continue;
+    }
+    readingSeeded++;
     // Matched to questions by label across every instrument that asks them, so
     // one article serving two questions is one row pointing at both — which is
     // how three of these arrived from Wix.
@@ -322,6 +348,10 @@ export async function seedInstruments(base44, { onProgress } = {}) {
   const existingBands = await e.Band.list();
   for (const b of seed.bands) {
     const iid = instrumentId.get(b.instrument_key);
+    if (adopted.has(iid)) {
+      tally.bands.unchanged++;
+      continue;
+    }
     await upsert(e.Band, existingBands,
       (r) => r.instrument_id === iid && r.name === b.name,
       {
@@ -336,8 +366,12 @@ export async function seedInstruments(base44, { onProgress } = {}) {
 
   // Content gaps worth naming on the screen rather than leaving to be noticed
   // in a client's report.
+  if (adoptedKeys.size) {
+    const names = seed.instruments.filter((i) => adoptedKeys.has(i.key)).map((i) => i.name);
+    notes.push(`Edited in the app, so left as they are: ${names.join(", ")} — their questions, bands, and reading.`);
+  }
   for (const inst of seed.instruments) {
-    if (inst.question_source !== "instrument") continue;
+    if (inst.question_source !== "instrument" || adoptedKeys.has(inst.key)) continue;
     const qs = seed.questions.filter((q) => q.instrument_keys.includes(inst.key) && q.question_type === "rating" && q.active !== false);
     const missing = qs.filter((q) => !q.commentary).length;
     if (missing) notes.push(`${inst.name}: ${missing} of ${qs.length} questions have no commentary yet.`);
@@ -349,13 +383,14 @@ export async function seedInstruments(base44, { onProgress } = {}) {
       `${titles.slice(0, 4).join(", ")}${titles.length > 4 ? `, and ${titles.length - 4} more` : ""}. ` +
       `Their links are on the rows that were kept. Delete them in Library > Resources; this note goes away when they are gone.`,
     );
-  } else if ((seed.resources || []).length) {
+  } else if (readingSeeded) {
     notes.push("No duplicate reading rows — one row per article.");
   }
 
   const linked = new Set((seed.resources || []).flatMap((r) => r.question_labels));
   const unlinked = seed.questions.filter(
-    (q) => q.question_type === "rating" && q.active !== false && (q.blog_id || "").trim() && !linked.has(q.label),
+    (q) => q.question_type === "rating" && q.active !== false && (q.blog_id || "").trim() && !linked.has(q.label) &&
+      !q.instrument_keys.some((k) => adoptedKeys.has(k)),
   );
   if (unlinked.length) {
     notes.push(
@@ -364,7 +399,7 @@ export async function seedInstruments(base44, { onProgress } = {}) {
     );
   }
   const noReading = seed.instruments.filter(
-    (i) => i.question_source === "instrument" &&
+    (i) => i.question_source === "instrument" && !adoptedKeys.has(i.key) &&
       !seed.questions.some((q) => q.instrument_keys.includes(i.key) && linked.has(q.label)),
   );
   for (const i of noReading) notes.push(`${i.name}: no reading attached to any question yet.`);

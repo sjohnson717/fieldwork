@@ -198,4 +198,29 @@ export const CHAOS_ANSWERS = [
   { respondent_id: "resp-c1", activity_id: "ch-4", answer_text: "Stop starting things." },
 ];
 
+// An instrument with bands and reading, for the content editor on
+// Settings → Instruments. No assessment uses it, so no survey or report route
+// changes. Three yes/no questions make a maximum of 3, which the two bands
+// cover exactly; adding a question is what the editor must then warn about.
+// ps-1 carries an answer, so it is the one question Delete must not offer.
+export const PS_INSTRUMENT = {
+  id: "inst-ps", key: "product_success", name: "Product Success Quiz", question_source: "instrument",
+  report_style: "distribution", ask_ownership: false, scale_ids: ["sc-yesno"],
+  sections: ["Performance", "Market Fit"], sort_order: 4, active: true,
+  tagline: "Is this product still worth the investment?",
+};
+export const PS_QUESTIONS = [
+  { id: "ps-1", name: "Revenue Opportunity", description: "Does this product generate sufficient revenue opportunity to justify continued investment?", instrument_ids: ["inst-ps"], section: "Performance", section_sort: 1, question_type: "rating", facet: "LEARN", active: true, critical: false, required: true, commentary: "Revenue isn't the only measure of a product, but it's the one the business eventually asks about." },
+  { id: "ps-2", name: "Support Costs", description: "Are engineering, support, and operational demands reasonable relative to the value it delivers?", instrument_ids: ["inst-ps"], section: "Performance", section_sort: 2, question_type: "rating", facet: "LEARN", active: true, critical: true, required: true, commentary: "" },
+  { id: "ps-3", name: "Market Growth", description: "Is the target market for this product stable or growing?", instrument_ids: ["inst-ps"], section: "Market Fit", section_sort: 1, question_type: "rating", facet: "LEARN", active: true, critical: false, required: true, commentary: "A great product in a shrinking market is still a shrinking business." },
+];
+export const PS_BANDS = [
+  { id: "band-ps-low", instrument_id: "inst-ps", name: "Reassess", min_score: 0, max_score: 1, advice: "Look hard at whether this product still earns its place.", sort_order: 1 },
+  { id: "band-ps-high", instrument_id: "inst-ps", name: "Invest", min_score: 2, max_score: 3, advice: "Keep investing.", sort_order: 2 },
+];
+export const PS_RESOURCES = [
+  { id: "res-bc", title: "Never Write Another Business Case", resource_type: "free_article", source: "Steve Johnson", url: "https://www.productgrowthleaders.com/reading/never-write-another-business-case", activity_ids: ["ps-1"], fallback: false, sort_order: 1, active: true },
+  { id: "res-ms", title: "Market Sizing That Doesn't Suck", resource_type: "free_article", source: "Steve Johnson", url: "https://www.productgrowthleaders.com/reading/market-sizing-that-doesn-t-suck-ditch-tam-sam-som-for-something-useful", activity_ids: [], fallback: false, sort_order: 2, active: true },
+];
+
 export const CHAOS_BUYER_TOKEN = "TOKEN-BUYER-CHAOS";

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { isLibraryActivity } from "@/lib/activities";
 import { base44 } from "@/api/base44Client";
 import ActivitySetsTab from "./ActivitySetsTab";
 import ResourcesTab from "./ResourcesTab";
@@ -80,7 +81,7 @@ function ActivitiesTab() {
     setError("");
     try {
       const [all, titles, usageRes] = await Promise.all([
-        base44.entities.Activity.list("sort_order").then(all => all.filter(a => !a.assessment_id)),
+        base44.entities.Activity.list("sort_order").then(all => all.filter(isLibraryActivity)),
         base44.entities.JobTitle.list("sort_order"),
         // Counted server-side across every assessment, set and response — see
         // listLibraryActivityUsage. Counting here would mean listing every

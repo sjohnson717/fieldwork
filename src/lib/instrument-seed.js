@@ -1,13 +1,15 @@
 // The six instruments, as data.
 //
-// Generated from the Wix CMS exports and then hand-checked; this file is the
-// source of truth now that those surveys are retired. It is committed rather
-// than uploaded because it is authored content — forty questions and their
-// commentary, the scales, the bands — and it belongs in version control where a
-// change to a question shows up in a diff.
+// Generated from the Wix CMS exports and then hand-checked. This file was the
+// source of truth until September 2026; the app is now. Settings → Instruments
+// edits each instrument's questions, commentary, bands, and reading, and
+// `seedInstruments` in src/lib/instrument-seed-apply.js uses this file only to
+// bring in an instrument the app does not have yet and to keep the scales and
+// the instrument records current. It is matched on the keys below, so it can
+// be re-run without duplicating anything.
 //
-// `seedInstruments` in src/lib/instrument-seed-apply.js applies it, matched on
-// the keys below, so it can be re-run without duplicating anything.
+// Editing a question, a band, or reading here changes nothing live once its
+// instrument has questions in the app. Edit it on that screen instead.
 //
 // Four things were corrected on the way in, each diagnosed before the import:
 //
