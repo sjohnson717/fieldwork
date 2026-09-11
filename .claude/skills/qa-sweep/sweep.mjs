@@ -804,7 +804,7 @@ md.push(`\n## What this run did not cover\n`);
 md.push(`- Real Safari or iOS WebKit. Chromium only. See SKILL.md for the manual pass.`);
 md.push(`- Real Android hardware.`);
 md.push(`- Print output: run print-check.mjs and read the PDFs.`);
-md.push(`- Admin pages other than the two results tabs. Those two now run, signed in as an admin, at desktop widths only.`);
+md.push(`- Admin pages other than the two results tabs and the instrument editor. Those run signed in as an admin, at desktop widths only.`);
 md.push(`- The live backend. This sweep runs against the stub, which enforces the RLS rules but holds fixture data.`);
 
 await writeFile(path.join(outDir, "report.md"), md.join("\n") + "\n");

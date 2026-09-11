@@ -183,7 +183,7 @@ Partly answered pages say nothing at all: leaving one activity alone is a normal
 
 ## Nothing is submitted at the end
 
-Answers are saved page by page, in both instruments. Every facet page ends on **Next**, the wrap-up below says **Finish and review**, and the button under the team gap summary says **Done** rather than "Submit" — by then the submission has already happened, and a button promising otherwise implied that closing the tab would lose the work.
+Answers are saved page by page, in both instruments. A page is written when someone leaves it with a change — by Next, by Back, or by a section while revising — and a page nobody changed is not written again, so paging through finished answers is quick. Every facet page ends on **Next**, the wrap-up below says **Finish and review**, and the button under the team gap summary says **Done** rather than "Submit" — by then the submission has already happened, and a button promising otherwise implied that closing the tab would lose the work.
 
 Someone is recorded as complete when they finish the last facet, *before* the wrap-up. So a person who closes the tab on those two optional questions has still completed the assessment, and will show as completed on your roster.
 
@@ -262,7 +262,7 @@ The report appears as soon as they finish — they don't have to come back for i
 |------|----------|
 | **1 · Your product profile** | Opens with *the shape of your answers* — every activity as one band of colour, then the same band per phase of product work — then their activities sorted into the five categories. A long category is grouped by phase, and a long list of strengths opens with the few rated top on both skill and interest |
 | **2 · Your Quartz profile** | Experience, skills, and interest per facet, as three separate bars |
-| **3 · Development opportunities** | A shortlist of up to five, each with the reason it was chosen and one concrete **Try this** step, plus questions to take into a development conversation |
+| **3 · Development opportunities** | A shortlist of up to five. Each states what the person answered about that activity and carries one concrete **Try this** step; the advice for each kind of opportunity is said once, on the first card of its kind rather than on every card. Questions to take into a development conversation follow |
 | **4 · Suggested resources** | Reading and practice for those opportunities. Only appears if resources have been attached to the recommended activities |
 | | *When that shortlist comes to one or two items*, anything in the library ticked **"also offer when a shortlist is thin"** is added under a heading of its own. It never pads a longer list, and never makes the section appear on its own |
 | **Appendix** | Every answer they gave |
@@ -277,7 +277,7 @@ The survey says the same thing before anyone answers: *"The profile is yours to 
 
 ## Suggested resources
 
-Resources are managed in **Library → Resources**. Each one is typed — free article, external resource, book, or course or workshop — and attached to the activities it serves. The type is shown to the reader, so they know what they're being sent before they click.
+Resources are managed in **Library → Resources**. Its picker lists library activities only: reading for the four instruments' own questions is attached question by question on **Settings → Instruments** (admin only). Each one is typed — free article, external resource, book, or course or workshop — and attached to the activities it serves. The type is shown to the reader, so they know what they're being sent before they click.
 
 **The library is loaded.** All 65 activities carry a resource: 35 Product Growth Leaders articles and 10 third-party books, attached to the activities they serve. One activity — Staff Promotional Events — deliberately has none, and shows only its Try this step. A resource serving several activities is listed **once**, under the highest-ranked opportunity that claims it, so a shortlist doesn't repeat the same article three times.
 

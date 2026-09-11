@@ -92,7 +92,7 @@ Be straight about this in any report you write from it.
 | Edge | Chromium, same engine as the sweep. Covered in substance. |
 | Real printers | Only PDFs are produced. |
 | `/readme`, `/facilitator-guide` | The harness does not mount them, so they render as its index page. Both need nothing but a `MemoryRouter` — router hooks and no backend — so a throwaway harness alongside this one is enough. |
-| Admin pages other than the two results tabs | `/admin` is mounted and the Results tab of each assessment type is swept, signed in as an admin. The other tabs — Overview, Activities, Ownership Roles, Discussion — are not, and adding one is a `ROUTES` entry with `signIn` and `admin: { assessment, tab }`. |
+| Admin pages other than the two results tabs and the instrument editor | `/admin` is mounted, and the Results tab of each assessment type and Settings → Instruments → Edit content (on the fixture's small Product Success instrument) are swept, signed in as an admin. The other tabs — Overview, Activities, Ownership Roles, Discussion — are not, and adding one is a `ROUTES` entry with `signIn` and `admin: { assessment, tab }`. |
 | The live backend | The sweep runs against fixtures. It proves the app's behaviour, not the deployment's — see the live checks at the end. |
 
 Playwright's WebKit is worth adding if cross-engine coverage matters, but it is
@@ -151,6 +151,9 @@ not mistaken for a new regression:
   the fixed sidebar, not the tables. Both carry contrast findings on the
   `text-gray-300` Remove control and the `text-gray-400` tag name, same class as
   everything else in this list.
+- Three routes joined on 2026-09-10 and 2026-09-11 and open clean at every
+  width they run at: `revise-team-gap` and `revise-instrument` (the section
+  strip a revision shows) and `admin-instrument-editor` (768 and 1280 only).
 - The buyer report's overlap counts rose again on 2026-08-20, to 8 at 320, 375
   and 390 and 1 at 430, with clipping up in step. Nothing on that page changed:
   the fixtures gained `preferred_owner` on four activities, so rows now carry a
