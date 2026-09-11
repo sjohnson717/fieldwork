@@ -883,7 +883,7 @@ export const INSTRUMENT_SEED = {
       "sort": "1",
       "question_type": "rating",
       "scale_key": "yes_no",
-      "commentary": "",
+      "commentary": "Revenue isn't the only measure of a product, but it's the one the business eventually asks about. The question isn't whether the product makes money today—it's whether the opportunity it serves is large enough to earn its share of people and budget. A product that can't pay its own way is being subsidized by the rest of the portfolio. That should be a deliberate decision, not an accident nobody has explored in years.",
       "critical": false,
       "required": true,
       "blog_id": ""
@@ -899,14 +899,14 @@ export const INSTRUMENT_SEED = {
       "sort": "2",
       "question_type": "rating",
       "scale_key": "yes_no",
-      "commentary": "",
+      "commentary": "Every product carries a tax: bug fixes, support tickets, infrastructure, security patches, and the few engineers who still remember how the product internals work. Healthy products pay that tax easily. Struggling ones consume more of it every year, pulling people away from work that would move the business forward. When maintenance crowds out improvement, the product isn't just standing still—it's getting more expensive to keep standing.",
       "critical": true,
       "required": true,
       "blog_id": ""
     },
     {
       "label": "Customer Usage",
-      "text": "Are customers  relying on this product?",
+      "text": "Are customers relying on this product?",
       "instrument_keys": [
         "product_success"
       ],
@@ -915,7 +915,7 @@ export const INSTRUMENT_SEED = {
       "sort": "3",
       "question_type": "rating",
       "scale_key": "yes_no",
-      "commentary": "",
+      "commentary": "Purchase is not adoption. A product customers bought but don't use is a renewal waiting to fail. Adoption shows up in behavior: regular use, workflows built around the product, and complaints when it's down. If customers could switch it off tomorrow without noticing, the revenue behind it is far less secure than the sales report suggests.",
       "critical": true,
       "required": true,
       "blog_id": ""
@@ -931,7 +931,7 @@ export const INSTRUMENT_SEED = {
       "sort": "4",
       "question_type": "rating",
       "scale_key": "yes_no",
-      "commentary": "",
+      "commentary": "A great product in a shrinking market is still a shrinking business. Markets contract when buyers consolidate, or a new approach makes the old problem disappear. You can win share in a declining market for a while, but you're fighting over a smaller pie every year. Know which direction your market is moving before deciding how much to continue investing.",
       "critical": false,
       "required": true,
       "blog_id": ""
@@ -947,7 +947,7 @@ export const INSTRUMENT_SEED = {
       "sort": "5",
       "question_type": "rating",
       "scale_key": "yes_no",
-      "commentary": "",
+      "commentary": "Customer problems don't stand still, and neither do expectations. What delighted buyers five years ago is table stakes today, and the workarounds customers tolerated at launch start to look like neglect. The only reliable way to know whether you're keeping pace is regular contact with customers and prospects—not simply the feature requests that happen to reach you.",
       "critical": false,
       "required": true,
       "blog_id": ""
@@ -963,7 +963,7 @@ export const INSTRUMENT_SEED = {
       "sort": "6",
       "question_type": "rating",
       "scale_key": "yes_no",
-      "commentary": "",
+      "commentary": "A product can be profitable and still be in the wrong place. When the company's strategy moves and a product doesn't, the product competes for resources against the priorities leadership actually cares about—and it usually loses. That isn't a verdict on the product's quality. It signals that someone needs to decide whether the product should change direction, be repositioned, or find a better home.",
       "critical": true,
       "required": true,
       "blog_id": ""
@@ -979,7 +979,7 @@ export const INSTRUMENT_SEED = {
       "sort": "7",
       "question_type": "rating",
       "scale_key": "yes_no",
-      "commentary": "",
+      "commentary": "Your competition includes more than rival vendors. It also includes spreadsheets, internal tools, and the option of doing nothing. Advantages that mattered at launch erode as competitors catch up and features become commodities. If buyers can't explain why they'd choose your product over the alternatives, salespeople end up competing on price, which is the most expensive way to win.",
       "critical": true,
       "required": true,
       "blog_id": ""
@@ -995,7 +995,7 @@ export const INSTRUMENT_SEED = {
       "sort": "8",
       "question_type": "rating",
       "scale_key": "yes_no",
-      "commentary": "",
+      "commentary": "Products that stop receiving investment rarely fail overnight. They decline slowly, as competitors ship improvements while your product ages. Starving a product can be the right call for one you intend to retire, but it should be a decision, not neglect. The warning sign is a product that's called strategic in every planning meeting and funded like it's on its way out.",
       "critical": false,
       "required": false,
       "blog_id": ""
@@ -1011,7 +1011,7 @@ export const INSTRUMENT_SEED = {
       "sort": "9",
       "question_type": "rating",
       "scale_key": "yes_no",
-      "commentary": "",
+      "commentary": "Salespeople vote with their time. If they aren't confident in a product, they'll lead with something else, and the product’s pipeline dries up regardless of its merits. Low confidence usually has a cause: unclear positioning, weak references, pricing that's hard to defend, or a history of deals that went badly. Ask sales teams directly—the answer tells you whether the problem is the product or how you're taking it to market.",
       "critical": false,
       "required": false,
       "blog_id": ""
