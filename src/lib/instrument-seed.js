@@ -1081,7 +1081,9 @@ export const INSTRUMENT_SEED = {
       "author": "Steve Johnson",
       "note": "The likelihood of product success dramatically increases when you leverage existing competencies.",
       "question_labels": [
-        "Strategy Alignment"
+        "Strategy Alignment",
+        "Domain Expertise",
+        "Category Experience"
       ],
       "slug": "aspire-to-your-capabilities"
     },
@@ -1109,7 +1111,8 @@ export const INSTRUMENT_SEED = {
       "note": "A portfolio or suite of products must be managed like a product with a target persona, positioning, and pricing. Image by StockSnap from...",
       "question_labels": [
         "Competition",
-        "Cross-Functional Collaboration"
+        "Cross-Functional Collaboration",
+        "Strategic Alignment"
       ],
       "slug": "organizing-a-product-portfolio"
     },
@@ -1146,7 +1149,8 @@ export const INSTRUMENT_SEED = {
       "author": "Steve Johnson",
       "note": "Deciding to retire a product isn't easy, but it's often necessary to keep your portfolio healthy. Here’s a comprehensive guide to making the call—and doing it right.",
       "question_labels": [
-        "Too many products"
+        "Too many products",
+        "Support Costs"
       ],
       "slug": "retiring-a-product-how-to-gracefully-say-goodbye"
     },
@@ -1213,6 +1217,115 @@ export const INSTRUMENT_SEED = {
         "What to build"
       ],
       "slug": "you-can-t-have-everything-three-keys-to-successful-products"
+    },
+    {
+      "title": "Never Write Another Business Case",
+      "author": "Steve Johnson",
+      "note": "Strategic product management doesn’t have to mean writing a full business case for every product idea that comes through your door.",
+      "question_labels": [
+        "Revenue Opportunity"
+      ],
+      "slug": "never-write-another-business-case"
+    },
+    {
+      "title": "Metrics for Product Professionals",
+      "author": "Steve Johnson",
+      "note": "It’s difficult to determine relevant metrics for products and product managers because the product management role is inconsistent from company to company.",
+      "question_labels": [
+        "Customer Usage"
+      ],
+      "slug": "product-metrics"
+    },
+    {
+      "title": "Market Sizing That Doesn’t Suck: Ditch TAM/SAM/SOM for Something Useful",
+      "author": "Steve Johnson",
+      "note": "Tired of the TAM/SAM/SOM theater? Explore two practical, persona-first alternatives to market sizing that go beyond inflated top-down estimates.",
+      "question_labels": [
+        "Market Growth"
+      ],
+      "slug": "market-sizing-that-doesn-t-suck-ditch-tam-sam-som-for-something-useful"
+    },
+    {
+      "title": "Customer Conversations: They’re Not Research, They’re Your Job.",
+      "author": "Steve Johnson",
+      "note": "Customer conversations are not a research technique. They are a leadership behavior.",
+      "question_labels": [
+        "Customer Needs"
+      ],
+      "slug": "customer-conversations-they-re-not-research-they-re-your-job"
+    },
+    {
+      "title": "The Importance of Value-Based Positioning",
+      "author": "Grant Hunter",
+      "note": "Positioning isn’t a tactical marketing to-do item; positioning is a key deliverable in your product strategy.",
+      "question_labels": [
+        "Differentiation"
+      ],
+      "slug": "the-importance-of-value-based-positioning"
+    },
+    {
+      "title": "The Secrets to Product Success",
+      "author": "Steve Johnson",
+      "note": "In general, we’ve gotten better at building products right, but many have not had success in building the right products.",
+      "question_labels": [
+        "Innovation Health"
+      ],
+      "slug": "the-secrets-to-product-success"
+    },
+    {
+      "title": "Improve Your Sales Results with Better Sales Enablement",
+      "author": "Steve Johnson",
+      "note": "Product managers can improve collaboration with sales teams by prioritizing prevention over firefighting.",
+      "question_labels": [
+        "Sales Alignment"
+      ],
+      "slug": "improve-your-sales-results-with-better-sales-enablement"
+    },
+    {
+      "title": "Assess Risk in Entering New Markets",
+      "author": "Steve Johnson",
+      "note": "Your leadership team wants to know what’s next: how will you grow revenue and increase product adoption? You must balance business objectives, product strategy, and risk tolerance.",
+      "question_labels": [
+        "Sales Experience",
+        "Market Track Record"
+      ],
+      "slug": "assess-risk-in-entering-new-markets"
+    },
+    {
+      "title": "Rant on Risk in Product Management",
+      "author": "Steve Johnson",
+      "note": "One of the key factors in prioritizing new product ideas and potential markets is the element of risk.",
+      "question_labels": [
+        "Technology Familiarity"
+      ],
+      "slug": "rant-on-risk"
+    },
+    {
+      "title": "Sales Battlecards: The Power Tool in Your Product Growth Playbook",
+      "author": "Steve Johnson",
+      "note": "The sales battlecard or “kill” sheet is a crucial part of your product playbook. Salespeople love these but beware, battlecards can also come back to haunt you!",
+      "question_labels": [
+        "Competitive Awareness"
+      ],
+      "slug": "sales-battlecards-the-power-tool-in-your-product-growth-playbook"
+    },
+    {
+      "title": "Research for Discovery and Validation",
+      "author": "Steve Johnson",
+      "note": "Qualitative research methods, such as interviews and observation, reveal what you don’t know. Quantitative research methods, such as surveys and experiments, reveal how many.",
+      "question_labels": [
+        "Proven Demand"
+      ],
+      "slug": "research-for-discovery-and-validation"
+    },
+    {
+      "title": "Unleash the Power of Win-Loss Analysis",
+      "author": "Steve Johnson",
+      "note": "Win-loss analysis is one of the most powerful sources of product insights.",
+      "question_labels": [
+        "Lost Deals"
+      ],
+      "slug": "unleashing-the-power-of-win-loss-analysis"
     }
   ]
 };
