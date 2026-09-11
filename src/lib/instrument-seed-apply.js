@@ -263,21 +263,45 @@ export async function seedInstruments(base44, { onProgress } = {}) {
     // at, and its links have been folded into it above. Retired rather than
     // deleted, like everything else here.
     const [keep, ...extras] = sameArticle;
-    await upsert(e.Resource, existingResources, (row) => row === keep, {
-      title: r.title,
-      resource_type: "free_article",
-      // The author, not the firm. Resource.source exists so attribution
-      // travels with the recommendation, and some of these are a partner's
-      // work — putting the practice's name on them would take the credit off
-      // the person who earned it. The footer already badges the framework.
-      source: r.author || undefined,
-      url: `${ARTICLE_BASE}${articlePath(r.slug)}`,
-      note: r.note || undefined,
-      activity_ids,
-      fallback: false,
-      sort_order: i,
-      active: true,
-    }, tally.resources);
+    const url = `${ARTICLE_BASE}${articlePath(r.slug)}`;
+
+    // An article already in the library is the library's. The seed used to
+    // write every field on a match, and nine blog articles someone had added
+    // through Library → Resources had their notes replaced, their order moved
+    // to the end of every reading list, and would have lost a fallback flag or
+    // been switched back on had anyone set one. Now it touches only what it
+    // owns: the address, because where reading points is this file's policy
+    // and moving it is one line and a re-run; and the questions, merged in
+    // above. A note or author is filled only when the library left it blank.
+    // Title, type, order, fallback, and active stay as someone set them — so
+    // an article switched off in the library stays off.
+    //
+    // A new article gets the lot, as before.
+    const blank = (v) => v === null || v === undefined || (typeof v === "string" && !v.trim());
+    const patch = keep
+      ? {
+          url,
+          activity_ids,
+          ...(blank(keep.note) && r.note ? { note: r.note } : {}),
+          ...(blank(keep.source) && r.author ? { source: r.author } : {}),
+        }
+      : {
+          title: r.title,
+          resource_type: "free_article",
+          // The author, not the firm. Resource.source exists so attribution
+          // travels with the recommendation, and some of these are a partner's
+          // work — putting the practice's name on them would take the credit
+          // off the person who earned it. The footer already badges the
+          // framework.
+          source: r.author || undefined,
+          url,
+          note: r.note || undefined,
+          activity_ids,
+          fallback: false,
+          sort_order: i,
+          active: true,
+        };
+    await upsert(e.Resource, existingResources, (row) => row === keep, patch, tally.resources);
 
     // Every extra row is reported, not only the ones retired on this run.
     // Reporting only what it just changed made the note vanish the moment a

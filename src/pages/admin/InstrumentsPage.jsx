@@ -97,7 +97,10 @@ export default function InstrumentsPage() {
           The questions, scales, and bands live in the repository, not in this
           screen. Applying brings the app up to date with them: safe to repeat,
           and it never deletes — a question dropped from the source is named
-          below and left in place, because answers point at it.
+          below and left in place, because answers point at it. Reading already
+          in Library → Resources keeps your edits: applying only adds its
+          questions to an article, points it at the reading address, and fills
+          a note or author left blank.
         </p>
 
         {loadError && <p className="text-xs text-red-500 px-6 py-3">{loadError}</p>}
