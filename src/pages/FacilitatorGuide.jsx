@@ -279,7 +279,20 @@ The survey says the same thing before anyone answers: *"The profile is yours to 
 
 Resources are managed in **Library → Resources**. Its picker lists library activities only: reading for the four instruments' own questions is attached question by question on **Settings → Instruments** (admin only). Each one is typed — free article, external resource, book, or course or workshop — and attached to the activities it serves. The type is shown to the reader, so they know what they're being sent before they click.
 
-**The library is loaded.** All 65 activities carry a resource: 35 Product Growth Leaders articles and 10 third-party books, attached to the activities they serve. One activity — Staff Promotional Events — deliberately has none, and shows only its Try this step. A resource serving several activities is listed **once**, under the highest-ranked opportunity that claims it, so a shortlist doesn't repeat the same article three times.
+**The library is loaded.** 61 of the 65 activities carry a resource: 48 Product Growth Leaders articles, 11 third-party books and external resources, and the *Customer Conversations* book, attached to the activities they serve. Staff Promotional Events deliberately has none, and shows only its Try this step. Product Roadmap, Portfolio Management, and Readiness Planning have none yet, so they show only their Try this step too. A resource serving several activities is listed **once**, under the highest-ranked opportunity that claims it, so a shortlist doesn't repeat the same article three times.
+
+**The chaos limericks.** 23 of those articles are the short "chaos" pieces from productgrowthleaders.com/i/ (Squeaky Wheel, Too Many Cooks, Field of Dreams, and the rest). Each names one recognisable dysfunction and carries a note beginning *Chaos ensues when…*. On the website they are grouped into four categories, and the categories decide where they attach in the library:
+
+| Website category | Attached to activities in |
+|---|---|
+| Strategy | DEFINE and COMMIT |
+| Planning | DESCRIBE and CREATE |
+| Growth | PREPARE and DELIVER |
+| Teams | No phase of its own — attached where a role or process activity fits, and mainly to the instruments' questions |
+
+The categories are a starting point, not a fence. A limerick whose subject belongs to another phase gets that activity too: *Making it Up In Volume* is Growth but also serves Pricing and Packaging, and *Land of the Lost* is Planning but also serves Understand the Market. The categories stay at four rather than splitting into the six phases they cover, because most limericks span two phases and several phases would hold one piece or none.
+
+Limericks are also reading on the four instruments' questions, alongside the longer articles, wherever one names the exact problem a question describes: *Who's on First* on Roles and Responsibilities, *Choose Your Own Adventure* on Process Standardization, *Squeaky Wheel* on Saying No. Where a limerick fits a question better than the article that was there, it replaces it rather than joining it. **When you add a new limerick, check the instruments' questions as well as the library.** Idea Reality's Customer Proof still has no reading on purpose, because nothing written fits it yet.
 
 ## Try this
 
