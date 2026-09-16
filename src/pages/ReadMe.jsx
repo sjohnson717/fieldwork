@@ -52,7 +52,7 @@ Built-in fields on every entity: \`id\`, \`created_date\`, \`updated_date\`, \`c
 
 | Route | Purpose |
 |---|---|
-| \`/admin\` | Everything the facilitator does. Opens on the Assessments page (\`AssessmentsHome\`) — a searchable table with response counts and unread badges — with a ⌘K switcher (\`AssessmentSwitcher\`) and Pinned and Recent lists in the sidebar. Then setup, results, discussion, instruments, library, tags, organizations, and facilitators. The only route behind \`ProtectedRoute\`. |
+| \`/admin\` | Everything the facilitator does. Opens on the Assessments page (\`AssessmentsHome\`) — a searchable table with response counts and unread badges — with a ⌘K switcher (\`AssessmentSwitcher\`) and Pinned and Recent lists in the sidebar. Below the \`md\` breakpoint the sidebar becomes a drawer behind a menu button — the same element, not a copy. Then setup, results, discussion, instruments, library, tags, organizations, and facilitators. The only route behind \`ProtectedRoute\`. |
 
 ## Token-authenticated — no account needed
 

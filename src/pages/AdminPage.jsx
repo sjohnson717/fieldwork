@@ -64,7 +64,8 @@ const SELECTED_ASSESSMENT_KEY = "qa_admin_selected_assessment";
 
 // The sidebar's height and sticky offset while the release notes bar is showing:
 // the bar's h-10, taken off the top. Spelt out whole so Tailwind finds it.
-const RELEASE_BAR_OFFSET = "h-[calc(100vh-2.5rem)] top-10";
+// Desktop only: on a phone the sidebar is a drawer over everything, bar included.
+const RELEASE_BAR_OFFSET = "md:h-[calc(100vh-2.5rem)] md:top-10";
 
 // The list used to live in this sidebar, grouped by client, organization or
 // owner. It moved to AssessmentsHome, which has the width for a table; the
@@ -111,6 +112,9 @@ export default function AdminPage() {
   // client's list, not on everything. null is all clients.
   const [clientChoice, setClientChoice] = useState(null);
   const [switcherOpen, setSwitcherOpen] = useState(false);
+  // Below md the sidebar is a drawer behind a menu button: at phone width a
+  // 256px column leaves the page under 150px to work in.
+  const [menuOpen, setMenuOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState("");
 
@@ -367,6 +371,13 @@ export default function AdminPage() {
     }
   }, []);
   useEffect(() => {
+    if (!menuOpen) return;
+    const closeOnEscape = (e) => { if (e.key === "Escape") setMenuOpen(false); };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [menuOpen]);
+
+  useEffect(() => {
     if (!canAccessAdmin) return;
     window.addEventListener("keydown", toggleSwitcher);
     return () => window.removeEventListener("keydown", toggleSwitcher);
@@ -435,13 +446,31 @@ export default function AdminPage() {
           rather than under it, or Log out would drop off the bottom. */}
       <ReleaseNotesBar unread={unreadNotes} onOpen={whatsNew.openDialog} onDismiss={markNotesRead} />
       <div className="flex">
-        {/* Sidebar */}
-        <aside className={`w-64 shrink-0 bg-white border-r border-gray-200 flex flex-col sticky ${
-          unreadNotes.length > 0 ? RELEASE_BAR_OFFSET : "h-screen top-0"
-        }`}>
-          <div className="px-5 py-5 border-b border-gray-100">
-            <p className="text-xs font-semibold text-blue-600 uppercase tracking-wide mb-0.5">Quartz Assessment</p>
-            <h1 className="text-base font-bold text-gray-900">Admin</h1>
+        {menuOpen && (
+          <div className="fixed inset-0 z-40 bg-black/40 md:hidden" onClick={() => setMenuOpen(false)} aria-hidden="true" />
+        )}
+        {/* Sidebar. One element at every width rather than a copy in a sheet,
+            so the menu on a phone cannot drift from the sidebar on a laptop.
+            Below md it is a fixed drawer; inset-y-0 rather than h-screen, which
+            on iOS Safari runs under the toolbar and hides Log out. Any button or
+            link inside closes it, since every one of them goes somewhere. */}
+        <aside
+          id="admin-menu"
+          onClick={(e) => { if (e.target.closest("button, a")) setMenuOpen(false); }}
+          className={`w-64 shrink-0 bg-white border-r border-gray-200 flex flex-col fixed inset-y-0 left-0 z-50 transition-transform md:sticky md:inset-auto md:z-auto md:translate-x-0 md:transition-none ${
+            menuOpen ? "translate-x-0 shadow-xl" : "-translate-x-full"
+          } ${unreadNotes.length > 0 ? RELEASE_BAR_OFFSET : "md:h-screen md:top-0"}`}
+        >
+          <div className="px-5 py-5 border-b border-gray-100 flex items-start justify-between">
+            <div>
+              <p className="text-xs font-semibold text-blue-600 uppercase tracking-wide mb-0.5">Quartz Assessment</p>
+              <h1 className="text-base font-bold text-gray-900">Admin</h1>
+            </div>
+            <button aria-label="Close menu" className="md:hidden -mr-2 p-2 rounded-lg text-gray-400 hover:bg-gray-50 hover:text-gray-700">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
           </div>
 
           <div className="flex-1 overflow-y-auto py-3 px-3">
@@ -593,6 +622,25 @@ export default function AdminPage() {
 
         {/* Main */}
         <div className="flex-1 flex flex-col min-w-0">
+          {/* Phones only: the way into the sidebar. Carries the unread total,
+              which is otherwise inside the closed drawer where nobody sees it. */}
+          <div className={`md:hidden sticky z-20 h-12 px-2 flex items-center gap-2 bg-white border-b border-gray-200 ${
+            unreadNotes.length > 0 ? "top-10" : "top-0"
+          }`}>
+            <button
+              onClick={() => setMenuOpen(true)}
+              aria-label="Open menu"
+              aria-expanded={menuOpen}
+              aria-controls="admin-menu"
+              className="p-2 rounded-lg text-gray-600 hover:bg-gray-50"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+            <span className="text-sm font-bold text-gray-900">Admin</span>
+            <UnreadBadge count={totalUnread} />
+          </div>
           {selectedSection === "organizations" ? (
             <OrganizationsPage
               onViewTeam={orgId => { setTeamOrgFilter(orgId); setSelectedSection("team"); }}
