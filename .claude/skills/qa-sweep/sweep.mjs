@@ -80,6 +80,15 @@ const ROUTES = [
   { name: "survey-wrapup", url: "/assess?t=TOKEN-RESP-4", wrapup: true, expect: "two last questions" },
   { name: "dead-link", url: "/assess?t=NOT-A-TOKEN", expect: "no longer valid" },
   {
+    // Where /admin opens: the table of assessments with its search, filters,
+    // response counts and unread badges.
+    name: "admin-assessments-home",
+    url: "/admin",
+    signIn: { email: "qa@example.com", role: "admin" },
+    widths: [768, 1280],
+    expect: "last activity",
+  },
+  {
     name: "admin-results-team-gap",
     url: "/admin",
     signIn: { email: "qa@example.com", role: "admin" },
@@ -184,9 +193,17 @@ const openAdminSection = async (page, { section, edit }) => {
   }
 };
 
+// Assessments are picked from the table on the Assessments page, which /admin
+// opens on. "All" first, so a closed fixture assessment is not hidden by the
+// page's default Open filter.
 const openAdminTab = async (page, { assessment, tab }) => {
   await page.evaluate((title) => {
-    const b = [...document.querySelectorAll("aside li button")]
+    const all = [...document.querySelectorAll("button")].find(x => /^All · \d+$/.test(x.textContent.trim()));
+    if (all) all.click();
+  }, assessment);
+  await wait(200);
+  await page.evaluate((title) => {
+    const b = [...document.querySelectorAll("table td button")]
       .find(x => x.textContent.includes(title));
     if (b) b.click();
   }, assessment);
@@ -591,6 +608,70 @@ await flow("back saves a changed page", async (page) => {
   };
 });
 
+// ── The Assessments page ────────────────────────────────────────────────────
+// Signed in with a seen-state older than two of the team gap's completions, so
+// the page has unread responses to show. The user owns none of the fixture
+// assessments, which also exercises the page falling back to Everyone's rather
+// than opening on an empty Mine. Asserted against the stub: the badge
+// on screen and the seen time written to the user are separate claims.
+const openHomeWithUnread = async (page) => {
+  await page.goto(baseUrl + "/landing", { waitUntil: "domcontentloaded" });
+  await page.evaluate(() => window.qaSignIn({
+    id: "user-1", email: "qa@example.com", role: "admin",
+    responses_seen_at: { since: "2026-08-12T16:00:00.000Z", assessments: {} },
+  }));
+  await page.goto(baseUrl + "/admin", { waitUntil: "networkidle0" });
+  await wait(500);
+};
+
+await flow("assessments page counts new responses, and Results clears them", async (page) => {
+  await openHomeWithUnread(page);
+  const badge = await page.evaluate(() => {
+    const row = [...document.querySelectorAll("tr")].find(r => r.textContent.includes("Product Team Effectiveness"));
+    return row?.querySelector("[aria-label$='new responses'], [aria-label$='new response']")?.textContent || null;
+  });
+  const title = await page.evaluate(() => document.title);
+  // A row with news opens on Results, which is what marks it seen.
+  await page.evaluate(() => {
+    const b = [...document.querySelectorAll("table td button")].find(x => x.textContent.includes("Product Team Effectiveness"));
+    if (b) b.click();
+  });
+  await wait(900);
+  const after = await page.evaluate(() => ({
+    onResults: [...document.querySelectorAll("button")].some(b => b.textContent.trim() === "Results" && b.className.includes("bg-blue-600")),
+    seen: window.__qa.user?.responses_seen_at?.assessments || {},
+    title: document.title,
+  }));
+  const seenIt = Object.keys(after.seen).length === 1;
+  // The tab title counts every visible assessment, so it drops by this row's
+  // two rather than to zero.
+  const before = Number((title.match(/^\((\d+)\)/) || [])[1] || 0);
+  const left = Number((after.title.match(/^\((\d+)\)/) || [])[1] || 0);
+  return {
+    pass: badge === "2" && before >= 2 && left === before - 2 && after.onResults && seenIt,
+    detail: `badge ${badge}, title "${title}" → on Results ${after.onResults}, seen ${JSON.stringify(after.seen)}, title "${after.title}"`,
+  };
+});
+
+await flow("switcher opens an assessment from the keyboard", async (page) => {
+  await openHomeWithUnread(page);
+  await page.keyboard.down("Control");
+  await page.keyboard.press("k");
+  await page.keyboard.up("Control");
+  await wait(300);
+  const opened = await page.evaluate(() => !!document.querySelector("[cmdk-input]"));
+  await page.keyboard.type("self assessment");
+  await wait(300);
+  const hits = await page.evaluate(() => [...document.querySelectorAll("[cmdk-item]")].map(i => i.textContent));
+  await page.keyboard.press("Enter");
+  await wait(900);
+  const heading = await page.evaluate(() => document.querySelector("h2")?.textContent || "");
+  return {
+    pass: opened && heading === "Product Manager Self-Assessment",
+    detail: `dialog ${opened}, ${hits.length} item(s): ${hits.map(h => h.slice(0, 40)).join(" | ")}, opened "${heading}"`,
+  };
+});
+
 // ── The Instruments content editor ──────────────────────────────────────────
 // Signed in as an admin, on the fixture's Product Success instrument. Each flow
 // asserts against the stub's state, not the screen: "the page shows the edit"
@@ -804,7 +885,7 @@ md.push(`\n## What this run did not cover\n`);
 md.push(`- Real Safari or iOS WebKit. Chromium only. See SKILL.md for the manual pass.`);
 md.push(`- Real Android hardware.`);
 md.push(`- Print output: run print-check.mjs and read the PDFs.`);
-md.push(`- Admin pages other than the two results tabs and the instrument editor. Those run signed in as an admin, at desktop widths only.`);
+md.push(`- Admin pages other than the Assessments page, the two results tabs and the instrument editor. Those run signed in as an admin, at desktop widths only.`);
 md.push(`- The live backend. This sweep runs against the stub, which enforces the RLS rules but holds fixture data.`);
 
 await writeFile(path.join(outDir, "report.md"), md.join("\n") + "\n");

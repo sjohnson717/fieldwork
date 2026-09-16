@@ -57,7 +57,7 @@ export default function AssessmentSwitcher({
           filter={matchKeywords}
           className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:text-[11px] [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wide [&_[cmdk-group-heading]]:text-gray-400"
         >
-          <CommandInput placeholder="Find an assessment by name, client, tag or code" />
+          <CommandInput placeholder="Find an assessment by name, client, tag, or code" />
           <CommandList className="max-h-[420px]">
             <CommandEmpty>No assessments match.</CommandEmpty>
             <SearchAware>

@@ -73,6 +73,8 @@ actually rendered, so a blank screen cannot pass as clean.
 | reading attaches to a question and comes off again | a reading link that cannot be removed, or one removed from the wrong question |
 | delete is offered only on an unreferenced question, and works | Delete on a question with answers behind it |
 | band edits save | band advice edited on screen and never written |
+| assessments page counts new responses, and Results clears them | a badge that never appears, never clears, or clears without recording what was seen |
+| switcher opens an assessment from the keyboard | ⌘K/Ctrl+K doing nothing, or a search that cannot reach an assessment |
 
 **Permissions.** The stub enforces the real rules: `Response.update`,
 `Response.create` and unauthenticated reads of `Response` all throw, exactly as
@@ -92,7 +94,7 @@ Be straight about this in any report you write from it.
 | Edge | Chromium, same engine as the sweep. Covered in substance. |
 | Real printers | Only PDFs are produced. |
 | `/readme`, `/facilitator-guide` | The harness does not mount them, so they render as its index page. Both need nothing but a `MemoryRouter` — router hooks and no backend — so a throwaway harness alongside this one is enough. |
-| Admin pages other than the two results tabs and the instrument editor | `/admin` is mounted, and the Results tab of each assessment type and Settings → Instruments → Edit content (on the fixture's small Product Success instrument) are swept, signed in as an admin. The other tabs — Overview, Activities, Ownership Roles, Discussion — are not, and adding one is a `ROUTES` entry with `signIn` and `admin: { assessment, tab }`. |
+| Admin pages other than the Assessments page, the two results tabs and the instrument editor | `/admin` is mounted, and the Assessments page it opens on, the Results tab of each assessment type and Settings → Instruments → Edit content (on the fixture's small Product Success instrument) are swept, signed in as an admin. The other tabs — Overview, Activities, Ownership Roles, Discussion — are not, and adding one is a `ROUTES` entry with `signIn` and `admin: { assessment, tab }`. |
 | The live backend | The sweep runs against fixtures. It proves the app's behaviour, not the deployment's — see the live checks at the end. |
 
 Playwright's WebKit is worth adding if cross-engine coverage matters, but it is
@@ -154,6 +156,10 @@ not mistaken for a new regression:
 - Three routes joined on 2026-09-10 and 2026-09-11 and open clean at every
   width they run at: `revise-team-gap` and `revise-instrument` (the section
   strip a revision shows) and `admin-instrument-editor` (768 and 1280 only).
+- `admin-assessments-home` joined on 2026-09-16, when the Assessments page
+  replaced the sidebar list, and opens clean at 768 and 1280. Its one contrast
+  finding is the `text-gray-400` count beside the Assessments link, same class
+  as the rest.
 - The buyer report's overlap counts rose again on 2026-08-20, to 8 at 320, 375
   and 390 and 1 at 430, with clipping up in step. Nothing on that page changed:
   the fixtures gained `preferred_owner` on four activities, so rows now carry a
@@ -182,7 +188,7 @@ matters.
 
 **Admin pages:** add a `ROUTES` entry with `signIn: { email, role }` and
 `admin: { assessment, tab }` — the driver signs in through the auth stub, picks
-that assessment in the sidebar and opens that tab. Give it
+that assessment from the table on the Assessments page and opens that tab. Give it
 `widths: [768, 1280]`: admin sits behind a 256px fixed sidebar and is used on a
 laptop, so phone widths report sideways scroll nobody intends to fix.
 

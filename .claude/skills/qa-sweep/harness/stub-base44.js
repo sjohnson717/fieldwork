@@ -156,6 +156,16 @@ export const base44 = {
     // Overridden per run by the driver when a staff role is wanted; anonymous
     // by default, which is what every public route sees.
     me: async () => (state.user ? { ...state.user } : Promise.reject(new Error("not authenticated"))),
+    // The Assessments page records which results each user has seen here.
+    // Written back to the signed-in session as well, so a reload sees it the
+    // way the real User record would.
+    updateMe: async (p) => {
+      if (!state.user) return forbid("auth.updateMe");
+      Object.assign(state.user, JSON.parse(JSON.stringify(p)));
+      log("auth.updateMe", p);
+      try { sessionStorage.setItem("qa.user", JSON.stringify(state.user)); } catch { /* single page load */ }
+      return { ...state.user };
+    },
   },
   entities: {
     // `list` as well as `filter`: the admin sidebar counts each instrument's
@@ -379,6 +389,24 @@ export const base44 = {
         }
         if (complete === true) { r.status = "completed"; r.completed_date = new Date().toISOString(); }
         return { data: { created, updated, skipped: 0 } };
+      }
+
+      // Counts and completion times only, with the real function's shape. Staff
+      // only; the real one scopes to the caller's assessments, and every
+      // fixture assessment is visible to the admin the sweep signs in as.
+      if (name === "summarizeRespondents") {
+        staffOnly("fn:summarizeRespondents");
+        const summary = {};
+        for (const a of state.assessments) summary[a.id] = { started: 0, completed: 0, completed_dates: [], last_activity: null };
+        for (const r of state.respondents) {
+          const s = summary[r.assessment_id];
+          if (!s) continue;
+          const done = r.status === "completed";
+          const when = done ? r.completed_date : r.created_date;
+          if (done) { s.completed += 1; if (when) s.completed_dates.push(when); } else s.started += 1;
+          if (when && (!s.last_activity || when > s.last_activity)) s.last_activity = when;
+        }
+        return { data: { summary } };
       }
 
       if (name === "listRespondents") {

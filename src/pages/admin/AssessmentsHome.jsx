@@ -36,7 +36,8 @@ export default function AssessmentsHome({
   // typed yesterday gets reported as assessments going missing.
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("open");
-  const [ownerFilter, setOwnerFilter] = useState("mine");
+  // null until someone picks one; see ownerFilter below.
+  const [ownerChoice, setOwnerChoice] = useState(null);
   const [sort, setSort] = useState({ key: "activity", dir: "desc" });
 
   const mine = (a) => a.created_by_id === userId || (a.collaborator_ids || []).includes(userId);
@@ -45,6 +46,11 @@ export default function AssessmentsHome({
   // only ever sees their own and what they were invited to, so for them the
   // control would be a switch between two identical lists.
   const showOwnerFilter = assessments.some(a => !mine(a));
+  // Mine by default, but only when there is something that is yours. A
+  // super-admin who has created nothing would otherwise open on an empty page
+  // while the sidebar counts new responses on assessments they cannot see.
+  const ownerFilter = ownerChoice ?? (assessments.some(mine) ? "mine" : "all");
+  const setOwnerFilter = setOwnerChoice;
   const ownerScoped = showOwnerFilter && ownerFilter === "mine" ? assessments.filter(mine) : assessments;
 
   // Search matches what the row shows — title, client, tag names — plus the
@@ -129,7 +135,7 @@ export default function AssessmentsHome({
               type="search"
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="Search by name, client, tag or access code"
+              placeholder="Search by name, client, tag, or access code"
               aria-label="Search assessments"
               className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 bg-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
