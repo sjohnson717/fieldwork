@@ -8,6 +8,12 @@ Each entry is a `##` title, a `Released: YYYY-MM-DD` line, and a short
 explanation written for the people using the app. The title is the entry's
 identity — renaming one announces it again to everyone who already read it.
 
+## Discussion for instruments
+
+Released: 2026-09-16
+
+The Chaos Assessment, Portfolio Health Check, Product Success Quiz, and Idea Reality Check now have a **Discussion** tab, like the team gap analysis. Questions come in the report's order, most split first, and each one takes a flag, a status, notes, a decision, and who owns it. Close the assessment and the report adds the team's decisions and open issues after the questions.
+
 ## Admin on your phone
 
 Released: 2026-09-16

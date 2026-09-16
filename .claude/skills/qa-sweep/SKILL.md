@@ -96,7 +96,7 @@ Be straight about this in any report you write from it.
 | Edge | Chromium, same engine as the sweep. Covered in substance. |
 | Real printers | Only PDFs are produced. |
 | `/readme`, `/facilitator-guide` | The harness does not mount them, so they render as its index page. Both need nothing but a `MemoryRouter` — router hooks and no backend — so a throwaway harness alongside this one is enough. |
-| Admin pages other than the Assessments page, the two results tabs and the instrument editor | `/admin` is mounted, and the Assessments page it opens on, the Results tab of each assessment type and Settings → Instruments → Edit content (on the fixture's small Product Success instrument) are swept, signed in as an admin. The other tabs — Overview, Activities, Ownership Roles, Discussion — are not, and adding one is a `ROUTES` entry with `signIn` and `admin: { assessment, tab }`. |
+| Admin pages other than the Assessments page, the two results tabs and the instrument editor | `/admin` is mounted, and the Assessments page it opens on, the Results tab of each assessment type and Settings → Instruments → Edit content (on the fixture's small Product Success instrument) and the Chaos fixture's Discussion tab are swept, signed in as an admin. The other tabs — Overview, Activities, Ownership Roles, and the gap analysis's Discussion — are not, and adding one is a `ROUTES` entry with `signIn` and `admin: { assessment, tab }`. |
 | The live backend | The sweep runs against fixtures. It proves the app's behaviour, not the deployment's — see the live checks at the end. |
 
 Playwright's WebKit is worth adding if cross-engine coverage matters, but it is

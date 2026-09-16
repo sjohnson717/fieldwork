@@ -218,7 +218,9 @@ export const base44 = {
     Scale: { list: async () => readOnly(state.scales || []) },
     ScaleOption: { list: async () => readOnly(state.scaleOptions || []) },
     Band: editable("Band", "bands", adminOnly),
-    DiscussionNote: { filter: async () => readOnly(state.notes) },
+    // Filtered and writable, so both Discussion tabs can be driven. The filter
+    // stays open, as the real read rule is: the buyer report reads decisions.
+    DiscussionNote: editable("DiscussionNote", "notes", staffOnly),
     TeamLeaderFlag: {
       filter: async () => readOnly(state.flags),
       create: async (p) => { const made = { id: `flag-${state.flags.length}`, ...p }; state.flags.push(made); log("TeamLeaderFlag.create", p); return { ...made }; },

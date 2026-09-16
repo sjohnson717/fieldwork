@@ -110,6 +110,16 @@ const ROUTES = [
     expect: "capability",
   },
   {
+    // The Discussion tab on an instrument that asks its own questions: the
+    // report's agenda order and bars, with the gap tab's notes and decisions.
+    name: "admin-discussion-instrument",
+    url: "/admin",
+    signIn: { email: "qa@example.com", role: "admin" },
+    admin: { assessment: "Chaos Assessment — Northwind", tab: "Discussion" },
+    widths: [375, 768, 1280],
+    expect: "flagged for discussion",
+  },
+  {
     // The content editor on Settings → Instruments, on the fixture's small
     // Product Success instrument: sections, commentary, reading chips, bands.
     name: "admin-instrument-editor",

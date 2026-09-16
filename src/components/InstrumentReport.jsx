@@ -119,7 +119,7 @@ function paletteFor(counts) {
 // deep green is dark enough to take white, at 5.40.
 const onColor = (c) => (c.color === DEEP_GREEN ? "#ffffff" : "#111827");
 
-function Legend({ axis }) {
+export function Legend({ axis }) {
   const counts = axis.options.map(o => ({ label: o.label, points: o.points ?? null, n: 0 }));
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
@@ -206,7 +206,7 @@ function ShareDistribution({ dist, expected }) {
 // The scale is the roster, not this question's own answers: one person is the
 // same width on every question, so a question two people skipped draws a
 // visibly shorter bar rather than stretching eight answers to the width of ten.
-function Distribution({ dist, expected }) {
+export function Distribution({ dist, expected }) {
   // Counted against the roster, not against the rows this question happens to
   // have. Someone who stopped before reaching the page leaves no row at all, so
   // a blank measured from the rows alone would report nobody skipped anything.
@@ -300,7 +300,7 @@ function Distribution({ dist, expected }) {
 //
 // `top` is the modal answer and is null on a tie, so this is only ever true
 // when there is a clear majority and that majority picked the bottom option.
-const agreedOnTheWorst = (dist) => {
+export const agreedOnTheWorst = (dist) => {
   if (!dist.top) return false;
   const rated = dist.counts.filter(c => c.points !== null);
   if (rated.length === 0) return false;
@@ -318,7 +318,7 @@ const agreedOnTheWorst = (dist) => {
 // The word was right and the colour was not, so the word stays and unanimity on
 // the worst answer loses the green. Split and Some disagreement need no such
 // handling; nothing about rose or amber reads as reassurance.
-const splitLabel = (spread, grim) => {
+export const splitLabel = (spread, grim) => {
   if (spread === null) return null;
   if (spread >= 0.6) return { text: "Split", tone: "text-rose-700 bg-rose-50 border-rose-200" };
   if (spread >= 0.25) return { text: "Some disagreement", tone: "text-amber-800 bg-amber-50 border-amber-200" };
@@ -352,6 +352,7 @@ export default function InstrumentReport({
   respondentCount,
   completedCount,
   chart = "diverging",
+  notes = [],
 }) {
   const axis = instrument.axes?.[0];
   if (!axis) return null;
@@ -472,6 +473,57 @@ export default function InstrumentReport({
           </section>
         );
       })}
+
+      {/* Workshop outcomes, from the Discussion tab, once the assessment is
+          closed — the gap report's rule, so a half-written decision typed
+          mid-session never reaches the client. In agenda order, the order the
+          room worked through them. */}
+      {assessment.status === "closed" && (() => {
+        const noteFor = new Map(notes.map(n => [n.activity_id, n]));
+        const decided = ordered
+          .map(q => ({ q, n: noteFor.get(q.id) }))
+          .filter(({ n }) => n?.decision?.trim());
+        const parked = ordered
+          .map(q => ({ q, n: noteFor.get(q.id) }))
+          .filter(({ n }) => n?.status === "parked");
+        return (
+          <>
+            {decided.length > 0 && (
+              <section className="mt-12 pt-8 border-t-2 border-gray-200">
+                <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1">Workshop outcomes</p>
+                <h2 className="text-xl font-bold text-gray-900 mb-4">Team decisions and next steps</h2>
+                <ul className="space-y-4">
+                  {decided.map(({ q, n }) => (
+                    <li key={q.id} className="break-inside-avoid border-l-2 border-gray-200 pl-3">
+                      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">{q.name}</p>
+                      <p className="text-sm text-gray-800 leading-relaxed">{n.decision.trim()}</p>
+                      {n.decision_role?.trim() && (
+                        <p className="text-xs text-gray-500 mt-1">Responsible: {n.decision_role.trim()}</p>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+            {parked.length > 0 && (
+              <section className="mt-12 pt-8 border-t-2 border-gray-200">
+                <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1">Follow-up</p>
+                <h2 className="text-xl font-bold text-gray-900 mb-4">Open issues</h2>
+                <ul className="space-y-4">
+                  {parked.map(({ q, n }) => (
+                    <li key={q.id} className="break-inside-avoid border-l-2 border-gray-200 pl-3">
+                      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">{q.name}</p>
+                      <p className="text-sm text-gray-800 leading-relaxed">
+                        {n.note?.trim() || "Parked for follow-up after the workshop."}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+          </>
+        );
+      })()}
 
       <PrintCredit orgName={assessment.org_name} />
     </div>

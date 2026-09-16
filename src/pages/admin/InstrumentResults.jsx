@@ -24,6 +24,7 @@ export default function InstrumentResults({ assessment }) {
   const [questions, setQuestions] = useState([]);
   const [respondents, setRespondents] = useState([]);
   const [responses, setResponses] = useState([]);
+  const [notes, setNotes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [removingRespondent, setRemovingRespondent] = useState(null);
@@ -38,10 +39,12 @@ export default function InstrumentResults({ assessment }) {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [{ activities, respondents: resps, responses: ress }, inst] = await Promise.all([
+      const [{ activities, respondents: resps, responses: ress }, inst, discussionNotes] = await Promise.all([
         loadResultsData(assessment),
         loadInstrument(assessment),
+        base44.entities.DiscussionNote.filter({ assessment_id: assessment.id }),
       ]);
+      setNotes(discussionNotes);
       setInstrument(inst);
       setQuestions(inst ? orderQuestions(inst, activities) : activities);
       setRespondents(resps);
@@ -128,6 +131,7 @@ export default function InstrumentResults({ assessment }) {
             responsesByActivity={rowsByActivity}
             respondentCount={respondents.length}
             completedCount={completed.length}
+            notes={notes}
           />
         </div>
       )}

@@ -9,6 +9,7 @@ import AssessmentResults from "./admin/AssessmentResults";
 import PersonalResults from "./admin/PersonalResults";
 import InstrumentResults from "./admin/InstrumentResults";
 import AssessmentDiscussion from "./admin/AssessmentDiscussion";
+import InstrumentDiscussion from "./admin/InstrumentDiscussion";
 import LibraryPage from "./admin/LibraryPage";
 import InstrumentsPage from "./admin/InstrumentsPage";
 import TeamPage from "./admin/TeamPage";
@@ -41,11 +42,9 @@ const PERSONAL_TABS = ["Overview", "Activities", "Results"];
 
 // Instruments that ask their own fixed question list have no activity picker
 // and no ownership question — the questions are the instrument's, not the
-// assessment's. Discussion is left out for now rather than for good: it is the
-// facilitated workspace, DiscussionNote already keys on assessment plus
-// question and knows nothing about axes, and pointing it here is the next
-// piece of work rather than a line in this list.
-const INSTRUMENT_TABS = ["Overview", "Results"];
+// assessment's. Discussion stays: DiscussionNote keys on assessment plus
+// question, and a question is an Activity row like any other.
+const INSTRUMENT_TABS = ["Overview", "Results", "Discussion"];
 
 const tabsFor = (assessment, instrument) => {
   if (instrument && instrument.question_source === "instrument") return INSTRUMENT_TABS;
@@ -757,7 +756,9 @@ export default function AdminPage() {
                       : <AssessmentResults assessment={selected} />
                 )}
                 {effectiveTab === "Discussion" && (
-                  <AssessmentDiscussion assessment={selected} />
+                  selectedInstrument?.question_source === "instrument"
+                    ? <InstrumentDiscussion assessment={selected} />
+                    : <AssessmentDiscussion assessment={selected} />
                 )}
               </div>
             </>

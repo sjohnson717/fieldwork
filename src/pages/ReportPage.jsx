@@ -619,6 +619,7 @@ export default function ReportPage() {
           responsesByActivity={rowsByActivity}
           respondentCount={participantCount}
           completedCount={scoredCount}
+          notes={[...decisions, ...parkedItems]}
         />
       </div>
     );
