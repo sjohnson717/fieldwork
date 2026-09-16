@@ -272,6 +272,19 @@ function Distribution({ dist, expected }) {
           {segments(arms.right)}
         </div>
       </div>
+      {/* Which way is which, on every bar. A bar is centred on the line, not on
+          itself, so a room that leans one way draws off to that side — and
+          without saying what each side means, that reads as a layout fault
+          rather than the finding. Repeated per question rather than stated once
+          in the key, because the key has scrolled away by question four.
+
+          Worded for the scale rather than for any one instrument's questions:
+          left is always the lower-scoring answers, so the same two phrases hold
+          for Chaos's "Absolutely" and Portfolio Health's "No" alike. */}
+      <div className="relative h-4 text-[11px] leading-4 text-gray-500">
+        <span className="absolute right-1/2 pr-2 whitespace-nowrap">&larr; Needs attention</span>
+        <span className="absolute left-1/2 pl-2 whitespace-nowrap">In good shape &rarr;</span>
+      </div>
       {(missing > 0 || unrated.length > 0) && (
         <p className="text-[11px] text-gray-400">
           {unrated.map(c => `${c.n} answered ${c.label.toLowerCase()}`).join(" · ")}
