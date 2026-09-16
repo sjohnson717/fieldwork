@@ -14,7 +14,7 @@ import InstrumentsPage from "./admin/InstrumentsPage";
 import TeamPage from "./admin/TeamPage";
 import OrganizationsPage from "./admin/OrganizationsPage";
 import TagsPage from "./admin/TagsPage";
-import AssessmentsHome from "./admin/AssessmentsHome";
+import AssessmentsHome, { scopeByOwner } from "./admin/AssessmentsHome";
 import { UnreadBadge, PinButton } from "./admin/assessment-labels";
 import AssessmentSwitcher from "@/components/AssessmentSwitcher";
 import {
@@ -92,6 +92,11 @@ export default function AdminPage() {
   const [seen, setSeen] = useState(null);
   const [recentIds, setRecentIds] = useState([]);
   const [pinnedIds, setPinnedIds] = useState([]);
+  // Mine or Everyone's on the Assessments page. Held here rather than on the
+  // page because the sidebar's count and unread total follow it too, and so it
+  // survives opening an assessment and coming back. Not persisted across
+  // reloads, like the page's other filters. null means the default.
+  const [ownerChoice, setOwnerChoice] = useState(null);
   const [switcherOpen, setSwitcherOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState("");
@@ -350,7 +355,11 @@ export default function AdminPage() {
   }, [canAccessAdmin, toggleSwitcher]);
 
   const unreadFor = (a) => unreadCount(respondentSummary?.[a.id], seen, a.id);
-  const totalUnread = assessments.reduce((n, a) => n + unreadFor(a), 0);
+  // The sidebar's count and unread total cover what the Assessments page lists
+  // under its current Mine or Everyone's, never more, so the two cannot
+  // disagree about how many there are.
+  const { ownerScoped } = scopeByOwner(assessments, user?.id, ownerChoice);
+  const totalUnread = ownerScoped.reduce((n, a) => n + unreadFor(a), 0);
 
   // Reading Results is what clears the badge, however you got there — the
   // table, the switcher, or the tab bar of an assessment already open.
@@ -428,7 +437,7 @@ export default function AdminPage() {
             <span className="ml-auto">
               {totalUnread > 0
                 ? <UnreadBadge count={totalUnread} />
-                : <span className="text-xs font-normal text-gray-400">{assessments.length || ""}</span>}
+                : <span className="text-xs font-normal text-gray-400">{ownerScoped.length || ""}</span>}
             </span>
           </button>
 
@@ -586,6 +595,8 @@ export default function AdminPage() {
               onNew={openNewForm}
               isPinned={isPinned}
               onTogglePin={togglePin}
+              ownerChoice={ownerChoice}
+              onOwnerChoice={setOwnerChoice}
             />
           )
         ) : (

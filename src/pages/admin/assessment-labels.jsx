@@ -64,11 +64,14 @@ export function UnreadBadge({ count, className = "" }) {
 // themselves — a control on a one-line link is a mis-click waiting to happen,
 // and the header of the assessment you just opened is one click away.
 //
-// Says what it will do, in words beside the icon in the header, and in its
-// accessible name everywhere, because a pin icon alone reads as a location
-// marker to anyone who has not met the convention.
+// Shows the state at rest and the action on hover. A pinned assessment carries
+// a solid blue pin; the slashed pin appears only while the pointer or keyboard
+// focus is on the button, as the preview of what a click will do. Drawn the
+// other way round, a slashed icon beside a pinned title read as "not pinned".
+// The accessible name always says the action, and the header adds words,
+// because a pin icon alone reads as a location marker to anyone who has not met
+// the convention.
 export function PinButton({ pinned, onToggle, compact = false, className = "" }) {
-  const Icon = pinned ? PinOff : Pin;
   const label = pinned ? "Unpin from sidebar" : "Pin to sidebar";
   return (
     <button
@@ -77,7 +80,7 @@ export function PinButton({ pinned, onToggle, compact = false, className = "" })
       aria-pressed={pinned}
       aria-label={label}
       title={label}
-      className={`inline-flex items-center gap-1 rounded-md transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+      className={`group/pin inline-flex items-center gap-1 rounded-md transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
         compact ? "p-1" : "px-2 py-1 text-xs font-medium border"
       } ${
         pinned
@@ -85,7 +88,14 @@ export function PinButton({ pinned, onToggle, compact = false, className = "" })
           : `text-gray-400 hover:text-gray-700 ${compact ? "" : "border-gray-200 bg-white hover:border-gray-300"}`
       } ${className}`}
     >
-      <Icon className="w-3.5 h-3.5" aria-hidden="true" />
+      {pinned ? (
+        <>
+          <Pin className="w-3.5 h-3.5 fill-current group-hover/pin:hidden group-focus-visible/pin:hidden" aria-hidden="true" />
+          <PinOff className="w-3.5 h-3.5 hidden group-hover/pin:block group-focus-visible/pin:block" aria-hidden="true" />
+        </>
+      ) : (
+        <Pin className="w-3.5 h-3.5" aria-hidden="true" />
+      )}
       {!compact && (pinned ? "Pinned" : "Pin")}
     </button>
   );

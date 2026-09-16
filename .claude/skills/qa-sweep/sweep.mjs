@@ -685,6 +685,26 @@ await flow("pinning puts an assessment in the sidebar, survives a reload, and un
   });
   await wait(300);
   const afterPin = await sidebarPinned();
+  // At rest a pinned row shows the solid pin; the slashed one is only the
+  // hover preview of unpinning.
+  const restingIcon = await page.evaluate(() => {
+    const row = [...document.querySelectorAll("tr")].find(r => r.textContent.includes("Product Manager Self-Assessment"));
+    const svg = [...(row?.querySelectorAll("button[aria-label='Unpin from sidebar'] svg") || [])].find(el => getComputedStyle(el).display !== "none");
+    return svg ? svg.getAttribute("class") : null;
+  });
+  // Beside Assessments the sidebar shows the unread total when there is one,
+  // and the count otherwise. Either way it must agree with the page under the
+  // same Mine or Everyone's: the unread total with the page's "N new
+  // responses", the count with its All filter.
+  const counts = await page.evaluate(() => {
+    const nav = [...document.querySelectorAll("aside button")].find(b => b.textContent.trim().startsWith("Assessments"));
+    const badge = nav?.querySelector("[aria-label*='new response']");
+    const sidebar = nav?.textContent.replace("Assessments", "").trim();
+    const page = badge
+      ? (document.body.innerText.match(/(\d+) new responses? since you last looked/) || [])[1]
+      : [...document.querySelectorAll("button")].map(b => b.textContent.trim()).find(t => /^All · \d+$/.test(t))?.replace("All · ", "");
+    return { kind: badge ? "unread" : "count", sidebar, page };
+  });
   const stored = await page.evaluate(() => window.__qa.user?.pinned_assessment_ids || null);
   // The stub writes the user back to the session, as the real User record
   // would persist, so a reload is the cross-load check.
@@ -709,8 +729,10 @@ await flow("pinning puts an assessment in the sidebar, survives a reload, and un
   const one = (list) => list.length === 1 && list[0].includes("Product Manager Self-Assessment");
   return {
     pass: one(afterPin) && JSON.stringify(stored) === '["asmt-personal"]' && one(afterReload) && !recentRepeats
+      && /lucide-pin(\s|$)/.test(restingIcon || "") && !/pin-off/.test(restingIcon || "")
+      && !!counts.sidebar && counts.sidebar === counts.page
       && afterUnpin.length === 0 && Array.isArray(storedAfter) && storedAfter.length === 0,
-    detail: `pinned ${JSON.stringify(afterPin)} stored ${JSON.stringify(stored)}, after reload ${JSON.stringify(afterReload)}, repeated in Recent ${recentRepeats}, after unpin ${JSON.stringify(afterUnpin)} stored ${JSON.stringify(storedAfter)}`,
+    detail: `pinned ${JSON.stringify(afterPin)} stored ${JSON.stringify(stored)}, resting icon "${restingIcon}", counts ${JSON.stringify(counts)}, after reload ${JSON.stringify(afterReload)}, repeated in Recent ${recentRepeats}, after unpin ${JSON.stringify(afterUnpin)} stored ${JSON.stringify(storedAfter)}`,
   };
 });
 

@@ -46,12 +46,12 @@ Admin opens on the **Assessments** page: one table of every assessment you can s
 
 - **Search** matches the title, client, tag names, and access code, in any order — "sas roles" finds *Product Team Roles* at SAS.
 - **Open**, **Closed**, and **All** filter by status. Open is the default, so finished engagements stay out of the way until you ask for them.
-- **Mine** and **Everyone's** appear only when the list includes other people's work, which is mostly for admins. Mine means assessments you created or were added to as a collaborator, and it is the default whenever you have any.
+- **Mine** and **Everyone's** appear only when the list includes other people's work, which is mostly for admins. Mine means assessments you created or were added to as a collaborator, and it is the default whenever you have any. The count and red total beside **Assessments** in the navigation panel follow whichever you've chosen, so they always match the page.
 - Click a column heading to sort. Assessments with new responses always sit at the top.
 
 The navigation panel keeps your five most **Recent** assessments, so moving between two engagements never needs a trip back to the list.
 
-**Pin the ones you're running.** Click **Pin** beside an assessment's title, or the pin that appears when you hover its row on the Assessments page, and it stays at the top of the navigation panel under **Pinned** until you unpin it — even on days you don't open it, which is when Recent lets it slip. Pins are saved to your account, so they follow you to another device. A pinned assessment isn't repeated under Recent.
+**Pin the ones you're running.** Click **Pin** beside an assessment's title, or the pin that appears when you hover its row on the Assessments page. A pinned assessment shows a solid blue pin; hovering it shows the pin crossed out, which is what clicking will do. A pinned assessment stays at the top of the navigation panel under **Pinned** until you unpin it — even on days you don't open it, which is when Recent lets it slip. Pins are saved to your account, so they follow you to another device. A pinned assessment isn't repeated under Recent.
 
 > **Jump straight to one with ⌘K** (Ctrl+K on Windows), or click **Find assessment** at the top of the navigation panel. It opens on your pinned and recent assessments; start typing to search all of them the same way the Assessments page does, then press Enter.
 

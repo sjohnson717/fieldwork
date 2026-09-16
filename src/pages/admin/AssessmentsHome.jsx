@@ -27,31 +27,40 @@ const SORTS = {
   activity: (a, b) => (a._activity || "").localeCompare(b._activity || ""),
 };
 
+// Mine or Everyone's, decided in one place because two things read it: this
+// page's list, and the count and unread total beside Assessments in the
+// sidebar. When they were computed separately the sidebar said 10 while the
+// page said 5, which reads as five assessments gone missing.
+//
+// Mine is assessments you created or were added to as a collaborator — yours to
+// work on. The switch is only offered once there is somebody else's work in the
+// list; a facilitator only ever sees their own and what they were invited to,
+// so for them it would switch between two identical lists. Mine is the default,
+// but only when something is yours: a super-admin who has created nothing
+// would otherwise open on an empty page.
+export const scopeByOwner = (assessments, userId, choice) => {
+  const mine = (a) => a.created_by_id === userId || (a.collaborator_ids || []).includes(userId);
+  const showOwnerFilter = assessments.some(a => !mine(a));
+  const ownerFilter = choice ?? (assessments.some(mine) ? "mine" : "all");
+  const ownerScoped = showOwnerFilter && ownerFilter === "mine" ? assessments.filter(mine) : assessments;
+  return { showOwnerFilter, ownerFilter, ownerScoped };
+};
+
 export default function AssessmentsHome({
   assessments, tags, instrumentOf, ownerNames, userId,
   summary, seen, onOpen, onNew, isPinned, onTogglePin,
+  ownerChoice, onOwnerChoice,
 }) {
   // Search and filters are not remembered, for the reason the sidebar never
   // remembered its search: coming back to a list silently narrowed by something
   // typed yesterday gets reported as assessments going missing.
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("open");
-  // null until someone picks one; see ownerFilter below.
-  const [ownerChoice, setOwnerChoice] = useState(null);
   const [sort, setSort] = useState({ key: "activity", dir: "desc" });
 
-  const mine = (a) => a.created_by_id === userId || (a.collaborator_ids || []).includes(userId);
-
-  // Only offered once there is somebody else's work in the list. A facilitator
-  // only ever sees their own and what they were invited to, so for them the
-  // control would be a switch between two identical lists.
-  const showOwnerFilter = assessments.some(a => !mine(a));
-  // Mine by default, but only when there is something that is yours. A
-  // super-admin who has created nothing would otherwise open on an empty page
-  // while the sidebar counts new responses on assessments they cannot see.
-  const ownerFilter = ownerChoice ?? (assessments.some(mine) ? "mine" : "all");
-  const setOwnerFilter = setOwnerChoice;
-  const ownerScoped = showOwnerFilter && ownerFilter === "mine" ? assessments.filter(mine) : assessments;
+  // Held by AdminPage, which also counts from it; see scopeByOwner.
+  const { showOwnerFilter, ownerFilter, ownerScoped } = scopeByOwner(assessments, userId, ownerChoice);
+  const setOwnerFilter = onOwnerChoice;
 
   // Search matches what the row shows — title, client, tag names — plus the
   // access code, which is what a respondent reads out when they cannot get in.
