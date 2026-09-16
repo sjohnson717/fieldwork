@@ -13,7 +13,7 @@ const sections = [
 
 | Step | Action | Details |
 |------|--------|---------|
-| 1 | **Create the assessment** | Click **New Assessment** in the navigation panel. Enter a title and client company name, then choose the type — **Team gap** or **Personal**. |
+| 1 | **Create the assessment** | Click **New assessment** on the Assessments page or in the navigation panel. Enter a title and client company name, then choose the type — **Team gap** or **Personal**. |
 | 2 | **Choose an activity preset** | Go to the **Activities** tab. Click a preset — Default (36), Extended (65), Brief (22), or Executive (6). Each card says what the set is for. Ownership roles are pre-populated automatically. |
 | 3 | **Review ownership roles** | Open the **Ownership Roles** tab. Add or remove roles to match the client's actual team structure. Team gap assessments only. |
 | 4 | **Tag it** | In the **Overview** tab, add tags — the client, a cohort, whatever groups this with related work. |
@@ -30,7 +30,7 @@ const sections = [
 
 ## Tags
 
-Tags group related assessments — a client, a cohort, a support group. An assessment can carry several, and they're only for finding things: they don't affect who can see what. Once you have a few assessments, a tag filter appears above the list in the navigation panel.
+Tags group related assessments — a client, a cohort, a support group. An assessment can carry several, and they're only for finding things: they don't affect who can see what. The search box on the Assessments page matches tag names, so typing a tag finds everything that carries it.
 
 Pick an existing tag rather than typing a new one where you can. The picker only offers to create when nothing matches, which keeps "Alert Media" and "AlertMedia" from becoming two separate groups.
 
@@ -39,6 +39,19 @@ Removing a tag from an assessment leaves the tag itself alone — it's still off
 ## Facilitators & Collaborators
 
 Each facilitator only sees assessments they created themselves, plus any they've been explicitly added to as a collaborator — admins see every assessment across every client. If another facilitator or admin needs to help run this specific engagement (for example, a colleague co-leading the debrief), add them from the **Overview** tab → **Collaborators** section. Collaborators can fully manage the assessment (Setup, Results, Discussion) the same as the original creator, but can't delete it.
+
+## Finding an assessment
+
+Admin opens on the **Assessments** page: one table of every assessment you can see, with its client, type, responses so far, last activity, and status. Click a row to open it, and **← Assessments** above an assessment's title to come back.
+
+- **Search** matches the title, client, tag names, and access code, in any order — "sas roles" finds *Product Team Roles* at SAS.
+- **Open**, **Closed**, and **All** filter by status. Open is the default, so finished engagements stay out of the way until you ask for them.
+- **Mine** and **Everyone's** appear only when the list includes other people's work, which is mostly for admins. Mine means assessments you created or were added to as a collaborator, and it is the default whenever you have any.
+- Click a column heading to sort. Assessments with new responses always sit at the top.
+
+The navigation panel keeps your five most **Recent** assessments, so moving between two engagements never needs a trip back to the list.
+
+> **Jump straight to one with ⌘K** (Ctrl+K on Windows), or click **Find assessment** at the top of the navigation panel. It opens on your recent assessments; start typing to search all of them the same way the Assessments page does, then press Enter.
 
 ## Activity Presets
 
@@ -103,6 +116,10 @@ LEARN is in **Default** and **Extended**. Executive and Brief deliberately leave
 ## Monitoring Completion
 
 Check the **Respondents table** in the Results tab. It shows each participant's name, title, status (completed or pending), response count, and completion date. This information is confidential. *Do not share this page with team leaders*.
+
+You don't have to open each assessment to see how fielding is going. The **Responses** column on the Assessments page shows how many people have finished and how many are part way through, and clicking the count opens that assessment's Results.
+
+**A red number means new responses.** It counts people who finished since you last opened that assessment's Results — the same idea as unread messages. It appears on the row, beside it in **Recent** and the ⌘K search, as a total beside **Assessments** in the navigation panel, and in the browser tab's title, so a tab left open in the background shows when someone finishes. Clicking an assessment with a red number opens it on Results, and opening Results clears it. What you've seen is saved to your account, so a number cleared on your laptop stays cleared on your phone.
 
 ## Reading one person's answers
 
@@ -372,7 +389,27 @@ The other shape worth naming is a profile heavy in **Under-skilled** — experie
 - Send the team leader the **Report link**. It now includes the "What we decided" section.
 - Optionally share the report link more broadly with participants.
 
-> **Timing tip:** Close the assessment and send the report link within 24 hours of the debrief while the conversation is still fresh.`,
+> **Timing tip:** Close the assessment and send the report link within 24 hours of the debrief while the conversation is still fresh.
+
+## Reading a Chaos, Portfolio Health, Idea Reality, or Product Success report
+
+These four instruments share one report: a bar per question, ordered by how much the team disagreed with itself. There is no team score.
+
+**Each bar is centred on the grey line, not on itself.** Answers that point to a problem grow left from the line, and answers that don't grow right, with the milder answers touching the line and the strongest at the ends. Every bar is labelled **← Needs attention** and **In good shape →** so nobody has to remember which side is which. A bar that sits off to one side is the finding, not a layout fault: the room leans that way.
+
+| Instrument scale | Left of the line | Right of the line |
+|---|---|---|
+| Chaos | Absolutely, Somewhat | Not so much, Never |
+| Yes / No | No | Yes |
+| Yes / No / Unknown | Unknown, and half of No | half of No, Yes |
+
+On a scale with a true middle answer — No, between Unknown and Yes — that answer is split across the line, and its count is printed once.
+
+**One person is always the same width.** Half the bar's track holds everyone who finished, so a bar only reaches the edge when the whole room gave the same strong answer, and a question some people skipped draws visibly shorter, with "*n* didn't answer this" beneath it.
+
+**The badges name how split the room was.** **Split** means answers were spread far apart across the scale, and the most split questions come first — they are what the session is for. **Some disagreement** is worth a question; **Agreed** usually is not, unless what the room agreed on is the worst answer, in which case the badge turns grey rather than green. **Non-negotiable** marks a question the instrument treats as critical where anyone chose its worst answer.
+
+> **Suggested question for a split bar:** "Some of you see this every week and some of you never do. What's different about where you sit?"`,
   },
 ];
 

@@ -65,7 +65,9 @@ production, which makes them the fastest way to check a change end to end.
 ## Publishing
 
 Pushing to this repo reflects the code into the Base44 Builder; publishing from
-[Base44](https://base44.com) deploys it.
+[Base44](https://base44.com) deploys it. **Only `main` is reflected** — a branch
+or an open pull request never reaches the Builder, so merge before expecting to
+see a change there.
 
 **Publishing also re-applies every entity schema from `base44/entities/*.jsonc`.**
 Those files are the source of truth. A field added through the platform API
