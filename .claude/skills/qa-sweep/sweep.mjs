@@ -672,6 +672,48 @@ await flow("switcher opens an assessment from the keyboard", async (page) => {
   };
 });
 
+await flow("pinning puts an assessment in the sidebar, survives a reload, and unpins", async (page) => {
+  await openHomeWithUnread(page);
+  const sidebarPinned = () => page.evaluate(() => {
+    const heading = [...document.querySelectorAll("aside p")].find(p => p.textContent.trim() === "Pinned");
+    return heading ? [...heading.parentElement.querySelectorAll("li")].map(li => li.textContent.trim()) : [];
+  });
+  // Pinned from its row on the Assessments page.
+  await page.evaluate(() => {
+    const row = [...document.querySelectorAll("tr")].find(r => r.textContent.includes("Product Manager Self-Assessment"));
+    row?.querySelector("button[aria-label='Pin to sidebar']")?.click();
+  });
+  await wait(300);
+  const afterPin = await sidebarPinned();
+  const stored = await page.evaluate(() => window.__qa.user?.pinned_assessment_ids || null);
+  // The stub writes the user back to the session, as the real User record
+  // would persist, so a reload is the cross-load check.
+  await page.reload({ waitUntil: "networkidle0" });
+  await wait(500);
+  const afterReload = await sidebarPinned();
+  // Recent must not repeat a pinned assessment.
+  const recentRepeats = await page.evaluate(() => {
+    const heading = [...document.querySelectorAll("aside p")].find(p => p.textContent.trim() === "Recent");
+    return heading ? [...heading.parentElement.querySelectorAll("li")].some(li => li.textContent.includes("Product Manager Self-Assessment")) : false;
+  });
+  // Unpinned from the assessment's own header.
+  await page.evaluate(() => {
+    const heading = [...document.querySelectorAll("aside p")].find(p => p.textContent.trim() === "Pinned");
+    heading?.parentElement.querySelector("li button")?.click();
+  });
+  await wait(600);
+  await page.evaluate(() => document.querySelector("button[aria-label='Unpin from sidebar']")?.click());
+  await wait(300);
+  const afterUnpin = await sidebarPinned();
+  const storedAfter = await page.evaluate(() => window.__qa.user?.pinned_assessment_ids || null);
+  const one = (list) => list.length === 1 && list[0].includes("Product Manager Self-Assessment");
+  return {
+    pass: one(afterPin) && JSON.stringify(stored) === '["asmt-personal"]' && one(afterReload) && !recentRepeats
+      && afterUnpin.length === 0 && Array.isArray(storedAfter) && storedAfter.length === 0,
+    detail: `pinned ${JSON.stringify(afterPin)} stored ${JSON.stringify(stored)}, after reload ${JSON.stringify(afterReload)}, repeated in Recent ${recentRepeats}, after unpin ${JSON.stringify(afterUnpin)} stored ${JSON.stringify(storedAfter)}`,
+  };
+});
+
 // ── The Instruments content editor ──────────────────────────────────────────
 // Signed in as an admin, on the fixture's Product Success instrument. Each flow
 // asserts against the stub's state, not the screen: "the page shows the edit"

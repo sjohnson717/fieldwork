@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { STATUS_COLORS, badgeFor, UnreadBadge } from "./assessment-labels";
+import { STATUS_COLORS, badgeFor, UnreadBadge, PinButton } from "./assessment-labels";
 import { unreadCount, relativeDate } from "@/lib/unread-responses";
 
 // The Assessments page: where /admin opens, and where the list of assessments
@@ -29,7 +29,7 @@ const SORTS = {
 
 export default function AssessmentsHome({
   assessments, tags, instrumentOf, ownerNames, userId,
-  summary, seen, onOpen, onNew,
+  summary, seen, onOpen, onNew, isPinned, onTogglePin,
 }) {
   // Search and filters are not remembered, for the reason the sidebar never
   // remembered its search: coming back to a list silently narrowed by something
@@ -209,7 +209,7 @@ export default function AssessmentsHome({
                     <tr
                       key={a.id}
                       onClick={() => onOpen(a.id, a._unread ? "Results" : "Overview")}
-                      className="cursor-pointer hover:bg-blue-50/40 transition-colors"
+                      className="group cursor-pointer hover:bg-blue-50/40 transition-colors"
                     >
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
@@ -222,6 +222,15 @@ export default function AssessmentsHome({
                             {a.title}
                           </button>
                           <UnreadBadge count={a._unread} />
+                          {/* Faint until the row is hovered or focused, and
+                              always shown once pinned, so the table does not
+                              carry a column of icons nobody asked about. */}
+                          <PinButton
+                            compact
+                            pinned={isPinned(a.id)}
+                            onToggle={() => onTogglePin(a.id)}
+                            className={isPinned(a.id) ? "" : "opacity-0 group-hover:opacity-100 focus-visible:opacity-100"}
+                          />
                         </div>
                         {(a.tag_ids || []).length > 0 && (
                           <div className="flex flex-wrap gap-1 mt-1">

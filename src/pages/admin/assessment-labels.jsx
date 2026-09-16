@@ -1,3 +1,5 @@
+import { Pin, PinOff } from "lucide-react";
+
 // The labels an assessment carries wherever it is listed — the Assessments
 // page, the sidebar's recent list and the ⌘K switcher. One copy, so the three
 // cannot drift into calling the same assessment different things.
@@ -54,5 +56,37 @@ export function UnreadBadge({ count, className = "" }) {
     >
       {count > 99 ? "99+" : count}
     </span>
+  );
+}
+
+// Pin and unpin, wherever an assessment is shown with room for a control: its
+// own header, and its row on the Assessments page. Not in the sidebar rows
+// themselves — a control on a one-line link is a mis-click waiting to happen,
+// and the header of the assessment you just opened is one click away.
+//
+// Says what it will do, in words beside the icon in the header, and in its
+// accessible name everywhere, because a pin icon alone reads as a location
+// marker to anyone who has not met the convention.
+export function PinButton({ pinned, onToggle, compact = false, className = "" }) {
+  const Icon = pinned ? PinOff : Pin;
+  const label = pinned ? "Unpin from sidebar" : "Pin to sidebar";
+  return (
+    <button
+      type="button"
+      onClick={e => { e.stopPropagation(); onToggle(); }}
+      aria-pressed={pinned}
+      aria-label={label}
+      title={label}
+      className={`inline-flex items-center gap-1 rounded-md transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+        compact ? "p-1" : "px-2 py-1 text-xs font-medium border"
+      } ${
+        pinned
+          ? `text-blue-700 ${compact ? "" : "border-blue-200 bg-blue-50 hover:bg-blue-100"}`
+          : `text-gray-400 hover:text-gray-700 ${compact ? "" : "border-gray-200 bg-white hover:border-gray-300"}`
+      } ${className}`}
+    >
+      <Icon className="w-3.5 h-3.5" aria-hidden="true" />
+      {!compact && (pinned ? "Pinned" : "Pin")}
+    </button>
   );
 }

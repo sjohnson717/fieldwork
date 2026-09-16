@@ -15,12 +15,13 @@ import TeamPage from "./admin/TeamPage";
 import OrganizationsPage from "./admin/OrganizationsPage";
 import TagsPage from "./admin/TagsPage";
 import AssessmentsHome from "./admin/AssessmentsHome";
-import { UnreadBadge } from "./admin/assessment-labels";
+import { UnreadBadge, PinButton } from "./admin/assessment-labels";
 import AssessmentSwitcher from "@/components/AssessmentSwitcher";
 import {
   loadRespondentSummary, ensureSeenState, unreadCount, markSeen,
   readRecent, pushRecent, visibleRecent,
 } from "@/lib/unread-responses";
+import { readPinned, togglePinned, pinnedIn } from "@/lib/pinned-assessments";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import NewAssessmentPanel from "@/components/NewAssessmentPanel";
 import { functionErrorMessage } from "@/lib/utils";
@@ -61,7 +62,7 @@ const SELECTED_ASSESSMENT_KEY = "qa_admin_selected_assessment";
 
 // The list used to live in this sidebar, grouped by client, organization or
 // owner. It moved to AssessmentsHome, which has the width for a table; the
-// sidebar keeps a Recent list and the ⌘K switcher, so moving between two
+// sidebar keeps Pinned and Recent lists and the ⌘K switcher, so moving between two
 // assessments never needs a trip back through the list.
 
 export default function AdminPage() {
@@ -90,6 +91,7 @@ export default function AdminPage() {
   const [respondentSummary, setRespondentSummary] = useState(null);
   const [seen, setSeen] = useState(null);
   const [recentIds, setRecentIds] = useState([]);
+  const [pinnedIds, setPinnedIds] = useState([]);
   const [switcherOpen, setSwitcherOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState("");
@@ -121,6 +123,7 @@ export default function AdminPage() {
       loadInstruments();
       loadResponseBadges();
       setRecentIds(readRecent(user.id));
+      setPinnedIds(readPinned(user));
     }
   }, [isAuthenticated, user]);
 
@@ -378,8 +381,18 @@ export default function AdminPage() {
   const selectedInstrument = instrumentOf(selected);
   const visibleTabs = tabsFor(selected, selectedInstrument);
   const effectiveTab = visibleTabs.includes(activeTab) ? activeTab : "Overview";
-  const recent = visibleRecent(recentIds, assessments);
+  const pinned = pinnedIn(pinnedIds, assessments);
+  const isPinned = (id) => pinned.some(a => a.id === id);
+  const togglePin = (id) => setPinnedIds(togglePinned(pinnedIds, id, assessments));
+  // Recent leaves out what is pinned. The same title twice in a six-row
+  // sidebar reads as two assessments, and it pushes a genuinely recent one off.
+  const recent = visibleRecent(recentIds.filter(id => !pinnedIds.includes(id)), assessments);
   const onHome = selectedSection === "assessments" && !selected;
+  // Opens the panel rather than an inline form: choosing among six instruments,
+  // each with a description worth reading, needs the room, and the choice
+  // decides what every respondent is asked. Reached from the Assessments page
+  // and the ⌘K switcher. The sidebar no longer carries it — the page's own
+  // button sits beside the list the new assessment joins.
   const openNewForm = () => { setShowNewForm(true); setCreateError(""); };
   const isMac = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform);
 
@@ -419,28 +432,16 @@ export default function AdminPage() {
             </span>
           </button>
 
-          {/* Opens the panel rather than an inline form. Choosing among six
-              instruments, each with a description worth reading, does not fit
-              a 250px column — and the choice decides what every respondent is
-              asked. */}
-          <button
-            onClick={openNewForm}
-            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            New assessment
-          </button>
-
-          {/* Five at most, whatever the size of the list — which is what keeps
-              the sidebar quiet for a super-admin with a hundred assessments.
-              One line per row: the title and its unread count, nothing else. */}
-          {recent.length > 0 && (
-            <>
-              <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest px-3 mb-1 mt-5">Recent</p>
+          {/* Pinned first, then Recent. Recent is five at most whatever the
+              size of the list, which is what keeps the sidebar quiet for a
+              super-admin with a hundred assessments; Pinned is only as long as
+              someone chose to make it. One line per row: the title and its
+              unread count, nothing else. */}
+          {[["Pinned", pinned], ["Recent", recent]].map(([heading, rows]) => rows.length > 0 && (
+            <div key={heading}>
+              <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest px-3 mb-1 mt-5">{heading}</p>
               <ul className="space-y-0.5">
-                {recent.map(a => (
+                {rows.map(a => (
                   <li key={a.id}>
                     <button
                       onClick={() => openAssessment(a.id, unreadFor(a) ? "Results" : "Overview")}
@@ -453,8 +454,8 @@ export default function AdminPage() {
                   </li>
                 ))}
               </ul>
-            </>
-          )}
+            </div>
+          ))}
 
           {/* Settings section */}
           {(isAdmin || isOrgAdmin) && (
@@ -583,6 +584,8 @@ export default function AdminPage() {
               seen={seen}
               onOpen={openAssessment}
               onNew={openNewForm}
+              isPinned={isPinned}
+              onTogglePin={togglePin}
             />
           )
         ) : (
@@ -594,7 +597,10 @@ export default function AdminPage() {
                 <button onClick={goHome} className="text-xs text-gray-400 hover:text-blue-600 transition-colors mb-0.5">
                   ← Assessments
                 </button>
-                <h2 className="text-lg font-bold text-gray-900">{selected.title}</h2>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-lg font-bold text-gray-900">{selected.title}</h2>
+                  <PinButton pinned={isPinned(selected.id)} onToggle={() => togglePin(selected.id)} />
+                </div>
                 {selected.company_name && (
                   <p className="text-sm text-gray-400">{selected.company_name}</p>
                 )}
@@ -681,6 +687,7 @@ export default function AdminPage() {
         onOpenChange={setSwitcherOpen}
         assessments={assessments}
         recent={recent}
+        pinned={pinned}
         tags={tags}
         instrumentOf={instrumentOf}
         unreadFor={unreadFor}

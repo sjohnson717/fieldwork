@@ -8,12 +8,12 @@ import { STATUS_COLORS, badgeFor, UnreadBadge } from "@/pages/admin/assessment-l
 // is for when you already know which one you want and are halfway through
 // something else — reading one client's Results and needing another's.
 //
-// Opens on Recent with nothing typed, because "the one I was just in" is the
-// commonest answer. Typing searches every assessment the user can see on the
+// Opens on Pinned and Recent with nothing typed, because "the one I'm running"
+// and "the one I was just in" are the commonest answers. Typing searches every assessment the user can see on the
 // same fields as the Assessments page.
 
 export default function AssessmentSwitcher({
-  open, onOpenChange, assessments, recent, tags, instrumentOf, unreadFor,
+  open, onOpenChange, assessments, pinned = [], recent, tags, instrumentOf, unreadFor,
   onOpenAssessment, onGoHome, onNew,
 }) {
   const choose = (fn) => { onOpenChange(false); fn(); };
@@ -63,6 +63,11 @@ export default function AssessmentSwitcher({
             <SearchAware>
               {(query) => (
                 <>
+                  {!query && pinned.length > 0 && (
+                    <CommandGroup heading="Pinned">
+                      {pinned.map(a => renderRow(a, "pinned"))}
+                    </CommandGroup>
+                  )}
                   {!query && recent.length > 0 && (
                     <CommandGroup heading="Recent">
                       {recent.map(a => renderRow(a, "recent"))}

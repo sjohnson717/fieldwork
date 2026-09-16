@@ -13,7 +13,7 @@ const sections = [
 
 | Step | Action | Details |
 |------|--------|---------|
-| 1 | **Create the assessment** | Click **New assessment** on the Assessments page or in the navigation panel. Enter a title and client company name, then choose the type — **Team gap** or **Personal**. |
+| 1 | **Create the assessment** | Click **New assessment** on the Assessments page, or press ⌘K (Ctrl+K on Windows) and choose **New assessment** from anywhere in admin. Enter a title and client company name, then choose the type — **Team gap** or **Personal**. |
 | 2 | **Choose an activity preset** | Go to the **Activities** tab. Click a preset — Default (36), Extended (65), Brief (22), or Executive (6). Each card says what the set is for. Ownership roles are pre-populated automatically. |
 | 3 | **Review ownership roles** | Open the **Ownership Roles** tab. Add or remove roles to match the client's actual team structure. Team gap assessments only. |
 | 4 | **Tag it** | In the **Overview** tab, add tags — the client, a cohort, whatever groups this with related work. |
@@ -51,7 +51,9 @@ Admin opens on the **Assessments** page: one table of every assessment you can s
 
 The navigation panel keeps your five most **Recent** assessments, so moving between two engagements never needs a trip back to the list.
 
-> **Jump straight to one with ⌘K** (Ctrl+K on Windows), or click **Find assessment** at the top of the navigation panel. It opens on your recent assessments; start typing to search all of them the same way the Assessments page does, then press Enter.
+**Pin the ones you're running.** Click **Pin** beside an assessment's title, or the pin that appears when you hover its row on the Assessments page, and it stays at the top of the navigation panel under **Pinned** until you unpin it — even on days you don't open it, which is when Recent lets it slip. Pins are saved to your account, so they follow you to another device. A pinned assessment isn't repeated under Recent.
+
+> **Jump straight to one with ⌘K** (Ctrl+K on Windows), or click **Find assessment** at the top of the navigation panel. It opens on your pinned and recent assessments; start typing to search all of them the same way the Assessments page does, then press Enter.
 
 ## Activity Presets
 

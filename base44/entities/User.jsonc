@@ -46,6 +46,14 @@
     "responses_seen_at": {
       "type": "object",
       "description": "When this user last looked at each assessment's results, as { since, assessments: { [assessmentId]: ISO date } }. Drives the unread-responses badges in /admin. 'since' is stamped the first time the badges load, so nothing reads as new on day one. Deliberately writable by the user themself and given no per-field rule: it only decides which badges they see, and grants nothing."
+    },
+    "pinned_assessment_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "Assessments this user pinned to the top of the /admin sidebar, in the order they were pinned. Holding an id grants nothing: the sidebar only shows pins that resolve against assessments the user can already see. Self-writable with no per-field rule, like responses_seen_at, for the same reason."
     }
   },
   "required": [
