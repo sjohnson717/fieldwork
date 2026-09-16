@@ -46,10 +46,47 @@ export const scopeByOwner = (assessments, userId, choice) => {
   return { showOwnerFilter, ownerFilter, ownerScoped };
 };
 
+// One entry per client, from the Client company typed on each assessment.
+//
+// Matched ignoring case and surrounding spaces, so "Public" and "public " are
+// one client; the name shown is the spelling most of its assessments use.
+// Nothing cleverer than that — "Alert Media" and "AlertMedia" stay two entries,
+// the same limit tags had before the picker. The dropdown is where that shows
+// up, which is also where someone can see it and fix the name.
+//
+// Assessments with no client get an entry of their own, last, rather than
+// vanishing from every choice but "All clients".
+const NO_CLIENT = "__none__";
+const clientKey = (a) => (a.company_name || "").trim().toLowerCase() || NO_CLIENT;
+
+export const clientsIn = (assessments) => {
+  const byKey = new Map();
+  for (const a of assessments) {
+    const key = clientKey(a);
+    if (!byKey.has(key)) byKey.set(key, { key, count: 0, spellings: new Map() });
+    const entry = byKey.get(key);
+    entry.count += 1;
+    const name = (a.company_name || "").trim();
+    if (name) entry.spellings.set(name, (entry.spellings.get(name) || 0) + 1);
+  }
+  const clients = [...byKey.values()].map(e => ({
+    key: e.key,
+    count: e.count,
+    // Most-used spelling; on a tie, the one with capitals, since "public"
+    // beside "Public" is the lapse rather than the intent.
+    label: e.key === NO_CLIENT ? "No client" : [...e.spellings.entries()]
+      .sort((x, y) => (y[1] - x[1]) || (x[0] < y[0] ? -1 : x[0] > y[0] ? 1 : 0))[0][0],
+  }));
+  return clients.sort((x, y) => {
+    if ((x.key === NO_CLIENT) !== (y.key === NO_CLIENT)) return x.key === NO_CLIENT ? 1 : -1;
+    return x.label.localeCompare(y.label, undefined, { sensitivity: "base" });
+  });
+};
+
 export default function AssessmentsHome({
   assessments, tags, instrumentOf, ownerNames, userId,
   summary, seen, onOpen, onNew, isPinned, onTogglePin,
-  ownerChoice, onOwnerChoice,
+  ownerChoice, onOwnerChoice, clientChoice, onClientChoice,
 }) {
   // Search and filters are not remembered, for the reason the sidebar never
   // remembered its search: coming back to a list silently narrowed by something
@@ -61,6 +98,15 @@ export default function AssessmentsHome({
   // Held by AdminPage, which also counts from it; see scopeByOwner.
   const { showOwnerFilter, ownerFilter, ownerScoped } = scopeByOwner(assessments, userId, ownerChoice);
   const setOwnerFilter = onOwnerChoice;
+
+  // Clients are counted within Mine or Everyone's, so the numbers in the
+  // dropdown are the rows you will get. Offered only when there are two or
+  // more: a filter with one choice is a label. A chosen client that is no
+  // longer in the list — switching to Mine can remove it — falls back to all.
+  const clients = clientsIn(ownerScoped);
+  const showClientFilter = clients.length > 1;
+  const activeClient = showClientFilter ? clients.find(c => c.key === clientChoice) || null : null;
+  const clientScoped = activeClient ? ownerScoped.filter(a => clientKey(a) === activeClient.key) : ownerScoped;
 
   // Search matches what the row shows — title, client, tag names — plus the
   // access code, which is what a respondent reads out when they cannot get in.
@@ -77,7 +123,7 @@ export default function AssessmentsHome({
     ].join(" ").toLowerCase();
     return terms.every(t => haystack.includes(t));
   };
-  const searched = ownerScoped.filter(matches);
+  const searched = clientScoped.filter(matches);
 
   const statusCount = (f) => searched.filter(f.test).length;
   const activeFilter = STATUS_FILTERS.find(f => f.key === statusFilter);
@@ -155,6 +201,22 @@ export default function AssessmentsHome({
               className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 bg-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
+          {showClientFilter && (
+            <select
+              id="assessments-client"
+              aria-label="Filter by client"
+              value={activeClient?.key || ""}
+              onChange={e => onClientChoice(e.target.value || null)}
+              className={`border rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                activeClient ? "border-gray-900 text-gray-900 font-medium" : "border-gray-200 text-gray-600"
+              }`}
+            >
+              <option value="">All clients · {ownerScoped.length}</option>
+              {clients.map(c => (
+                <option key={c.key} value={c.key}>{c.label} · {c.count}</option>
+              ))}
+            </select>
+          )}
           {showOwnerFilter && (
             <div className="inline-flex rounded-lg border border-gray-200 bg-white p-0.5" role="group" aria-label="Whose assessments">
               {[["mine", "Mine"], ["all", "Everyone's"]].map(([key, label]) => (
@@ -170,6 +232,13 @@ export default function AssessmentsHome({
             </div>
           )}
         </div>
+
+        {/* What one client's work adds up to, once you are looking at one
+            client. Counted from every status, not the chip below it: "how is
+            SAS going" is about the whole engagement. */}
+        {activeClient && (
+          <ClientSummary client={activeClient} assessments={clientScoped} summary={summary} onClear={() => onClientChoice(null)} />
+        )}
 
         <div className="flex items-center gap-2 flex-wrap" role="group" aria-label="Filter by status">
           {STATUS_FILTERS.map(f => (
@@ -192,6 +261,9 @@ export default function AssessmentsHome({
           <EmptyState
             assessments={assessments}
             ownerScoped={ownerScoped}
+            clientScoped={clientScoped}
+            clientLabel={activeClient?.label}
+            onClearClient={() => onClientChoice(null)}
             searched={searched}
             search={search}
             statusLabel={activeFilter.label}
@@ -312,7 +384,7 @@ export default function AssessmentsHome({
 // Every empty list says which filter emptied it and offers the one click that
 // undoes it. "No assessments" against a list the user knows is full is a
 // puzzle, and the likeliest answer is a filter they forgot they had on.
-function EmptyState({ assessments, ownerScoped, searched, search, statusLabel, onClearSearch, onShowEveryone, onShowAll, onNew }) {
+function EmptyState({ assessments, ownerScoped, clientScoped, clientLabel, onClearClient, searched, search, statusLabel, onClearSearch, onShowEveryone, onShowAll, onNew }) {
   const box = "bg-white border border-dashed border-gray-200 rounded-xl py-12 px-6 text-center text-sm text-gray-500";
   const link = "text-blue-600 hover:underline";
   if (assessments.length === 0) {
@@ -331,11 +403,13 @@ function EmptyState({ assessments, ownerScoped, searched, search, statusLabel, o
       </div>
     );
   }
-  if (searched.length === 0) {
+  if (searched.length === 0 && clientScoped.length > 0) {
     return (
       <div className={box}>
-        Nothing matching <span className="font-medium text-gray-700">{search.trim()}</span>.{" "}
+        Nothing matching <span className="font-medium text-gray-700">{search.trim()}</span>
+        {clientLabel && <> for <span className="font-medium text-gray-700">{clientLabel}</span></>}.{" "}
         <button onClick={onClearSearch} className={link}>Clear search</button>
+        {clientLabel && <> · <button onClick={onClearClient} className={link}>Show all clients</button></>}
       </div>
     );
   }
@@ -343,6 +417,32 @@ function EmptyState({ assessments, ownerScoped, searched, search, statusLabel, o
     <div className={box}>
       No {statusLabel.toLowerCase()} assessments here.{" "}
       <button onClick={onShowAll} className={link}>Show all</button>
+    </div>
+  );
+}
+
+// "Public · 3 assessments · 4 done · 2 in progress". Unknown is not zero: while
+// the counts are loading or failed to load, the response half is left off
+// rather than claiming nobody has answered.
+function ClientSummary({ client, assessments, summary, onClear }) {
+  let done = 0;
+  let inProgress = 0;
+  for (const a of assessments) {
+    done += summary?.[a.id]?.completed || 0;
+    inProgress += summary?.[a.id]?.started || 0;
+  }
+  const n = assessments.length;
+  return (
+    <div className="flex items-center gap-2 flex-wrap text-sm text-gray-500">
+      <span className="font-semibold text-gray-900">{client.label}</span>
+      <span>· {n} {n === 1 ? "assessment" : "assessments"}</span>
+      {summary && (
+        <>
+          <span>· <span className="font-medium text-gray-900 tabular-nums">{done}</span> done</span>
+          {inProgress > 0 && <span>· <span className="tabular-nums">{inProgress}</span> in progress</span>}
+        </>
+      )}
+      <button onClick={onClear} className="text-blue-600 hover:underline text-sm ml-1">Show all clients</button>
     </div>
   );
 }

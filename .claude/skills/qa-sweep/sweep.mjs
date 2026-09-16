@@ -736,6 +736,54 @@ await flow("pinning puts an assessment in the sidebar, survives a reload, and un
   };
 });
 
+await flow("client filter narrows the list, merges spellings, and survives opening an assessment", async (page) => {
+  await openHomeWithUnread(page);
+  // Every fixture assessment is Northwind Systems, which would hide the
+  // filter. Give one a second client and one a lower-case copy of the first,
+  // then remount /admin in-page so it reloads from the stub's state.
+  await page.evaluate(() => {
+    const byId = Object.fromEntries(window.__qa.assessments.map(a => [a.id, a]));
+    byId["asmt-personal"].company_name = "Acme";
+    byId["asmt-gap"].company_name = "  northwind systems ";
+    const go = (path) => { window.history.pushState({}, "", path); window.dispatchEvent(new PopStateEvent("popstate")); };
+    go("/landing");
+    setTimeout(() => go("/admin"), 50);
+  });
+  await wait(1200);
+  const options = await page.evaluate(() => [...(document.querySelector("#assessments-client")?.options || [])].map(o => o.textContent));
+  const setClient = (label) => page.evaluate((l) => {
+    const sel = document.querySelector("#assessments-client");
+    const opt = [...sel.options].find(o => o.textContent.startsWith(l));
+    Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value").set.call(sel, opt.value);
+    sel.dispatchEvent(new Event("change", { bubbles: true }));
+  }, label);
+  const titles = () => page.evaluate(() => [...document.querySelectorAll("table td button")].map(b => b.textContent.trim()).filter(t => t && !/done|^\d+$/.test(t)));
+  // "All" first, so the default Open chip cannot hide a row.
+  await page.evaluate(() => [...document.querySelectorAll("button")].find(b => /^All · \d+$/.test(b.textContent.trim()))?.click());
+  await setClient("Northwind");
+  await wait(300);
+  const northwind = await titles();
+  const summaryLine = await page.evaluate(() => document.body.innerText.match(/Northwind Systems\n?\s*· \d+ assessments?[^\n]*/)?.[0] || null);
+  // Open one of that client's assessments and come back.
+  await page.evaluate(() => [...document.querySelectorAll("table td button")].find(b => b.textContent.includes("Product Team Effectiveness"))?.click());
+  await wait(700);
+  await page.evaluate(() => [...document.querySelectorAll("button")].find(b => b.textContent.trim() === "← Assessments")?.click());
+  await wait(700);
+  const kept = await page.evaluate(() => document.querySelector("#assessments-client")?.selectedOptions[0]?.textContent || null);
+  await setClient("Acme");
+  await wait(300);
+  const acme = await titles();
+  const ok = options.length === 3 && options[0].startsWith("All clients · 3")
+    && options.some(o => o === "Northwind Systems · 2") && options.some(o => o === "Acme · 1")
+    && northwind.length === 2 && !northwind.some(t => t.includes("Self-Assessment"))
+    && !!summaryLine && (kept || "").startsWith("Northwind Systems")
+    && acme.length === 1 && acme[0].includes("Product Manager Self-Assessment");
+  return {
+    pass: ok,
+    detail: `options ${JSON.stringify(options)}, Northwind rows ${JSON.stringify(northwind)}, summary "${summaryLine}", kept after opening "${kept}", Acme rows ${JSON.stringify(acme)}`,
+  };
+});
+
 // ── The Instruments content editor ──────────────────────────────────────────
 // Signed in as an admin, on the fixture's Product Success instrument. Each flow
 // asserts against the stub's state, not the screen: "the page shows the edit"

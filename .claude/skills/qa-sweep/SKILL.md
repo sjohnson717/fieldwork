@@ -75,6 +75,7 @@ actually rendered, so a blank screen cannot pass as clean.
 | band edits save | band advice edited on screen and never written |
 | assessments page counts new responses, and Results clears them | a badge that never appears, never clears, or clears without recording what was seen |
 | switcher opens an assessment from the keyboard | ⌘K/Ctrl+K doing nothing, or a search that cannot reach an assessment |
+| client filter narrows the list, merges spellings, and survives opening an assessment | a client listed twice for a capital letter, rows from the wrong client, or the choice lost on coming back |
 | pinning puts an assessment in the sidebar, survives a reload, and unpins | a pin that is lost on reload, repeated under Recent, or cannot be taken off |
 
 **Permissions.** The stub enforces the real rules: `Response.update`,

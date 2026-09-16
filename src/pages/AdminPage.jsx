@@ -97,6 +97,10 @@ export default function AdminPage() {
   // survives opening an assessment and coming back. Not persisted across
   // reloads, like the page's other filters. null means the default.
   const [ownerChoice, setOwnerChoice] = useState(null);
+  // The client chosen on the Assessments page, held here for the same reason:
+  // opening one of a client's assessments and coming back should land on that
+  // client's list, not on everything. null is all clients.
+  const [clientChoice, setClientChoice] = useState(null);
   const [switcherOpen, setSwitcherOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState("");
@@ -597,6 +601,8 @@ export default function AdminPage() {
               onTogglePin={togglePin}
               ownerChoice={ownerChoice}
               onOwnerChoice={setOwnerChoice}
+              clientChoice={clientChoice}
+              onClientChoice={setClientChoice}
             />
           )
         ) : (
