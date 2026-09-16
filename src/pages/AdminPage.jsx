@@ -468,7 +468,7 @@ export default function AdminPage() {
               <p className="text-xs font-semibold text-blue-600 uppercase tracking-wide mb-0.5">Quartz Assessment</p>
               <h1 className="text-base font-bold text-gray-900">Admin</h1>
             </div>
-            <button aria-label="Close menu" className="md:hidden -mr-2 p-2 rounded-lg text-gray-400 hover:bg-gray-50 hover:text-gray-700">
+            <button aria-label="Close menu" className="md:hidden -mr-3 -mt-2 w-11 h-11 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-50 hover:text-gray-700 active:bg-gray-100">
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
@@ -626,7 +626,7 @@ export default function AdminPage() {
         <div className="flex-1 flex flex-col min-w-0">
           {/* Phones only: the way into the sidebar. Carries the unread total,
               which is otherwise inside the closed drawer where nobody sees it. */}
-          <div className={`md:hidden sticky z-20 h-12 px-2 flex items-center gap-2 bg-white border-b border-gray-200 ${
+          <div className={`md:hidden sticky z-20 h-12 pr-2 flex items-center gap-1 bg-white border-b border-gray-200 ${
             unreadNotes.length > 0 ? "top-10" : "top-0"
           }`}>
             <button
@@ -634,13 +634,15 @@ export default function AdminPage() {
               aria-label="Open menu"
               aria-expanded={menuOpen}
               aria-controls="admin-menu"
-              className="p-2 rounded-lg text-gray-600 hover:bg-gray-50"
+              // The icon and the word together, the full height of the bar: a
+              // 36px icon alone was hard to hit with a thumb on an iPhone.
+              className="h-12 pl-3 pr-4 flex items-center gap-3 text-gray-600 active:bg-gray-100"
             >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               </svg>
+              <span className="text-sm font-bold text-gray-900">Admin</span>
             </button>
-            <span className="text-sm font-bold text-gray-900">Admin</span>
             <UnreadBadge count={totalUnread} />
           </div>
           {selectedSection === "organizations" ? (
