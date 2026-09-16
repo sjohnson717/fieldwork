@@ -72,6 +72,8 @@ export default defineConfig({
     ],
   },
   appType: 'spa',
+  // The app's static files, such as release-notes.md, which /admin fetches.
+  publicDir: REPO + '/public',
   server: { port: ${PORT}, fs: { allow: [REPO, DIR] } },
 })
 `);

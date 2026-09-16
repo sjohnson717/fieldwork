@@ -2,10 +2,10 @@ import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { RELEASE_NOTES, formatReleaseDate } from "@/lib/release-notes";
+import { formatReleaseDate } from "@/lib/release-notes";
 
 // The announcement bar across the top of /admin. Shown while anything in
-// RELEASE_NOTES.md is unread, and names the newest of it rather than listing it
+// public/release-notes.md is unread, and names the newest of it rather than listing it
 // all: a bar is one line, and What's new is where the rest is read.
 export function ReleaseNotesBar({ unread, onOpen, onDismiss }) {
   if (unread.length === 0) return null;
@@ -47,7 +47,7 @@ export function ReleaseNotesBar({ unread, onOpen, onDismiss }) {
 // Every release note, newest first. `newIds` is what was unread when the dialog
 // opened, held by the caller: opening marks everything read, and badges that
 // vanished the moment they rendered would tell nobody anything.
-export function ReleaseNotesDialog({ open, onOpenChange, newIds }) {
+export function ReleaseNotesDialog({ notes, open, onOpenChange, newIds }) {
   const isNew = new Set(newIds);
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -57,7 +57,7 @@ export function ReleaseNotesDialog({ open, onOpenChange, newIds }) {
           <DialogDescription>The major capabilities we've added, newest first.</DialogDescription>
         </DialogHeader>
         <ol className="divide-y divide-gray-100">
-          {RELEASE_NOTES.map(note => (
+          {notes.map(note => (
             <li key={note.id} className="py-4 first:pt-0">
               <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1 mb-1.5">
                 <h3 className="text-base font-bold text-gray-900">{note.title}</h3>

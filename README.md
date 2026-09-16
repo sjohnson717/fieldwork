@@ -26,7 +26,7 @@ Most of what you need is inside the running app:
 |---|---|
 | `/readme` | Architecture, entities, pages, and developer notes — things that have already bitten |
 | `/facilitator-guide` | Running an engagement: setup, fielding, delivery, and what to tell participants |
-| `RELEASE_NOTES.md` | Major capabilities for customers, newest first. Admin announces any entry a user hasn't read, so adding one here is how a release is announced |
+| `public/release-notes.md` | Major capabilities for customers, newest first. Admin announces any entry a user hasn't read, so adding one here is how a release is announced |
 | `base44/entities/README.md` | The data model and its security rules. **Read this before changing any entity** |
 
 ## Local development

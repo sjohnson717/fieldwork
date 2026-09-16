@@ -1,7 +1,7 @@
 # Quartz Assessment release notes
 
-Major capabilities, newest first. The admin screen reads this file: every entry
-appears in **What's new**, and one a signed-in person hasn't seen yet puts the
+Major capabilities, newest first. The admin screen fetches this file from
+/release-notes.md when it loads: every entry appears in **What's new**, and one a signed-in person hasn't seen yet puts the
 announcement bar across the top of Admin until they read or dismiss it.
 
 Each entry is a `##` title, a `Released: YYYY-MM-DD` line, and a short

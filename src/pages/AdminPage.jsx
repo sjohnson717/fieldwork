@@ -22,7 +22,7 @@ import {
   readRecent, pushRecent, visibleRecent,
 } from "@/lib/unread-responses";
 import { readPinned, togglePinned, pinnedIn } from "@/lib/pinned-assessments";
-import { readReleaseNotes, unreadReleaseNotes, markAllReleaseNotesRead } from "@/lib/release-notes";
+import { loadReleaseNotes, readReleaseNotes, unreadReleaseNotes, markAllReleaseNotesRead } from "@/lib/release-notes";
 import { ReleaseNotesBar, ReleaseNotesDialog, useReleaseNotesDialog } from "@/components/ReleaseNotes";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import NewAssessmentPanel from "@/components/NewAssessmentPanel";
@@ -102,6 +102,7 @@ export default function AdminPage() {
   // Release note titles this user has read or dismissed. null until the user
   // loads, so the bar never flashes up for someone who has read everything.
   const [readNoteIds, setReadNoteIds] = useState(null);
+  const [releaseNotes, setReleaseNotes] = useState([]);
   // Mine or Everyone's on the Assessments page. Held here rather than on the
   // page because the sidebar's count and unread total follow it too, and so it
   // survives opening an assessment and coming back. Not persisted across
@@ -147,6 +148,7 @@ export default function AdminPage() {
       setRecentIds(readRecent(user.id));
       setPinnedIds(readPinned(user));
       setReadNoteIds(readReleaseNotes(user));
+      loadReleaseNotes().then(setReleaseNotes);
     }
   }, [isAuthenticated, user]);
 
@@ -358,8 +360,8 @@ export default function AdminPage() {
     loadResponseBadges();
   };
 
-  const unreadNotes = readNoteIds ? unreadReleaseNotes(readNoteIds) : [];
-  const markNotesRead = () => setReadNoteIds(markAllReleaseNotesRead());
+  const unreadNotes = readNoteIds ? unreadReleaseNotes(releaseNotes, readNoteIds) : [];
+  const markNotesRead = () => setReadNoteIds(markAllReleaseNotesRead(releaseNotes));
   const whatsNew = useReleaseNotesDialog(unreadNotes, markNotesRead);
 
   // ⌘K on a Mac, Ctrl+K elsewhere, from anywhere on the admin page — including
@@ -761,7 +763,7 @@ export default function AdminPage() {
         </div>
       </div>
 
-      <ReleaseNotesDialog open={whatsNew.open} onOpenChange={whatsNew.setOpen} newIds={whatsNew.newIds} />
+      <ReleaseNotesDialog notes={releaseNotes} open={whatsNew.open} onOpenChange={whatsNew.setOpen} newIds={whatsNew.newIds} />
 
       <ConfirmDialog
         open={confirmingDelete}

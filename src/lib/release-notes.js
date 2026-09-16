@@ -1,11 +1,14 @@
 import { base44 } from "@/api/base44Client";
-import source from "../../RELEASE_NOTES.md?raw";
 
 // Release notes for the announcement bar and What's new in /admin.
 //
-// RELEASE_NOTES.md at the repo root is the only copy: bundled as text at build
-// time and parsed here, so adding an entry there is the whole of announcing it.
-// Everything above the first `##` is for whoever edits the file and is ignored.
+// public/release-notes.md is the only copy, fetched when /admin loads and parsed
+// here, so adding an entry there is the whole of announcing it. Everything above
+// the first `##` is for whoever edits the file and is ignored.
+//
+// Fetched rather than imported with ?raw: Base44's publish runs its own import
+// analysis, which reads a .md?raw import as JavaScript and refuses to build.
+// Anything under public/ ships as a static file with no bundler involved.
 //
 // Each entry is keyed by its title. The key is what a user's read list holds,
 // so renaming an entry announces it again — deliberate, since a rename is
@@ -31,7 +34,21 @@ export const parseReleaseNotes = (text) =>
     // the same day keep the file's order.
     .sort((a, b) => b.date.localeCompare(a.date));
 
-export const RELEASE_NOTES = parseReleaseNotes(source);
+// Once per page load. Best-effort like the rest of the admin page's side
+// loads: a failed fetch means no bar, never a broken page. The "#" check is for
+// a host that answers a missing file with index.html, which parses to nothing
+// useful and would otherwise be read as a file with no entries in it.
+let loading = null;
+export const loadReleaseNotes = () => {
+  if (!loading) loading = fetch("/release-notes.md", { cache: "no-cache" })
+    .then((r) => (r.ok ? r.text() : ""))
+    .then((text) => (text.trimStart().startsWith("#") ? parseReleaseNotes(text) : []))
+    .catch((e) => {
+      console.error("Could not load release notes", e);
+      return [];
+    });
+  return loading;
+};
 
 // Dates are calendar days, not instants, so they are formatted in UTC: parsing
 // "2026-09-16" gives UTC midnight, which is the 15th anywhere west of London.
@@ -46,9 +63,9 @@ export const formatReleaseDate = (date) =>
 export const readReleaseNotes = (user) =>
   Array.isArray(user?.release_notes_read) ? user.release_notes_read : [];
 
-export const unreadReleaseNotes = (readIds) => {
+export const unreadReleaseNotes = (notes, readIds) => {
   const read = new Set(readIds);
-  return RELEASE_NOTES.filter((n) => !read.has(n.id));
+  return notes.filter((n) => !read.has(n.id));
 };
 
 // Reading and dismissing are the same act: either way the person has decided
@@ -56,8 +73,8 @@ export const unreadReleaseNotes = (readIds) => {
 // Ids of entries since removed from the file are dropped rather than kept
 // forever. Returned before the write lands so the bar goes on click; a failed
 // write only means it comes back on the next load.
-export const markAllReleaseNotesRead = () => {
-  const next = RELEASE_NOTES.map((n) => n.id);
+export const markAllReleaseNotesRead = (notes) => {
+  const next = notes.map((n) => n.id);
   base44.auth.updateMe({ release_notes_read: next })
     .catch((e) => console.error("Could not save read release notes", e));
   return next;
