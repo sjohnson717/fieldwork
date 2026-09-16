@@ -583,17 +583,6 @@ export default function PersonalProfileReport({
           skipped an activity was told "all 6 activities" above a table of 7 and
           had to wonder which answer had gone missing. Skipped rows are still
           shown, as a dash, so the count has to include them. */}
-      <SectionHeading
-        eyebrow="Appendix"
-        title="Your responses"
-        blurb={
-          activities.length === profile.answeredCount
-            ? `All ${activities.length} ${activities.length === 1 ? "activity" : "activities"}, and how you rated each one.`
-            : activities.length - profile.answeredCount === 1
-              ? `All ${activities.length} activities. The one you didn't rate shows as a dash.`
-              : `All ${activities.length} activities. The ${activities.length - profile.answeredCount} you didn't rate show as a dash.`
-        }
-      />
       {/* Answers come from profile.rows; the shared table wants them keyed by
           activity, so they are mapped here rather than teaching the table a
           second shape. */}
@@ -601,6 +590,19 @@ export default function PersonalProfileReport({
         activities={activities}
         responses={Object.fromEntries(profile.rows.map(r => [r.activity.id, r.response || {}]))}
         isPersonal
+        heading={
+          <SectionHeading
+            eyebrow="Appendix"
+            title="Your responses"
+            blurb={
+              activities.length === profile.answeredCount
+                ? `All ${activities.length} ${activities.length === 1 ? "activity" : "activities"}, and how you rated each one.`
+                : activities.length - profile.answeredCount === 1
+                  ? `All ${activities.length} activities. The one you didn't rate shows as a dash.`
+                  : `All ${activities.length} activities. The ${activities.length - profile.answeredCount} you didn't rate show as a dash.`
+            }
+          />
+        }
       />
 
       {/* Screen only — the printed pointer rides on the cover's credit. */}

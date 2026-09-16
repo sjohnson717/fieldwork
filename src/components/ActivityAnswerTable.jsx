@@ -14,15 +14,31 @@ import { PERSONAL_AXES, heatClass, normalize } from "@/lib/personal-scoring";
 // `responses` is keyed by activity id. The personal report holds its answers as
 // profile rows instead and maps them on the way in, rather than this component
 // learning two shapes.
-export default function ActivityAnswerTable({ activities, responses, isPersonal = false, hasOwners = false }) {
+const KEEP_WHOLE_ROWS = 10;
+
+// `heading` is the section heading that introduces the tables. It is rendered
+// inside the first phase's block rather than above the component, so on paper
+// it travels with that table: printed separately, Safari left "Appendix · Your
+// responses" alone at the foot of a page, for the same reason as the phase
+// labels below.
+export default function ActivityAnswerTable({ activities, responses, isPersonal = false, hasOwners = false, heading = null }) {
   const availableFacets = FACET_ORDER.filter(f => activities.some(a => a.facet === f));
 
   return (
     <>
-    {availableFacets.map(facet => {
+    {availableFacets.map((facet, facetIndex) => {
       const facetActs = activities.filter(a => a.facet === facet);
       return (
-        <div key={facet} className="mb-6">
+        /* Printed as one block when it fits on a sheet. The label is pinned to
+           its table with break-after: avoid, which Safari ignores — an iPhone
+           PDF ended a page on "DEFINE" and the table's top edge, with every row
+           overleaf. break-inside: avoid holds in every engine, but only where
+           the whole table fits a page; a longer phase is left to split between
+           rows, as it always has, rather than jumping to a new sheet. Ten rows
+           is about two thirds of the printable height on an iPhone's Letter
+           sheet. */
+        <div key={facet} className={`mb-6 ${facetActs.length <= KEEP_WHOLE_ROWS ? "break-inside-avoid" : ""}`}>
+          {facetIndex === 0 && heading}
           <div className="facet-heading text-xs font-bold uppercase tracking-widest text-blue-600 mb-2 px-1">{facet}</div>
           {/* Three columns fit a phone once the widths below stop being
               fixed; four — the role that owns it today, or the personal report's three

@@ -224,49 +224,41 @@
   /* The title block gets the first sheet to itself. This is the one forced
      break worth keeping: it means a report left on a desk or handed across a
      table shows a name and a title rather than someone's answers. */
-  /* The cover fills its sheet so the credit can sit at the foot of it rather
-     than floating under the date. */
+  /* The title block gets the first sheet to itself, with the credit directly
+     under the name and date. */
   .print-cover {
     display: flex !important;
     flex-direction: column;
-    /* Sized off the paper, not the window. This was `100vh` minus the padding,
-       which is only the page height if the engine resolves viewport units
-       against the page box. Chrome's headless PDF does; a browser printing from
-       a tall window does not, and there 100vh is the window — 317mm from a
-       1200px-high window against a 279mm sheet. The cover then ran 35mm past
-       the trim and pushed the credit onto a second sheet, alone.
+    /* No height, and that is the fix, not an omission.
 
-       So: 11in of paper, less the 28mm the page margins now take from it —
-       14mm at the head and 14mm at the foot — less the column's own 2.5rem.
-       A4 is taller than Letter, so sizing to the shorter sheet can only leave
-       the credit a little high — never overflow, and never a blank page.
+       The cover used to fill its sheet so the credit could sit at the foot of
+       it: first 100vh (the window, not the page), then 11in less margins, then
+       that less 22mm for Safari. Every one of those was a guess at the printable
+       height, and an iPhone guessed differently again — its printable area on
+       Letter measures about 8in, so the cover overran and the credit took page
+       two by itself.
 
-       The arithmetic is unchanged from when this subtracted the container's
-       top padding and a matching bottom trim instead: the same 28mm, moved
-       from the container to the page box. Only the reason it is 28mm changed.
+       Shortening the cover to fit made it worse. Measured in the iOS Simulator:
+       with a 7.25in cover, Safari's print preview counted one page fewer than
+       the report needed and the saved PDF simply ended — the last phases of the
+       appendix were not on any page. The fixed-height cover, followed by a
+       forced page break, is what threw iOS's page count; with the cover sized
+       by its content the same report printed complete, cover included.
 
-       The last 22mm is for browsers that reserve more than they are asked to.
-       Chrome takes the 14mm and no more; Safari reserves its own and prints a
-       header and footer band besides, so the cover ran past the shorter
-       printable area and split the credit across two pages — the second line
-       stranded alone overleaf. Sized for the browser that gives the least
-       room: on Chrome the credit sits low rather than flush, which is the cost
-       of it holding together everywhere. */
-    /* That 22mm was still not enough for an iPhone. iOS Safari's printable
-       area on Letter measured 8in tall — 3in of the sheet go to its margins
-       and its header and footer — so the cover overran it and the credit took
-       page two by itself. The cover is now sized to fit inside that with a
-       margin to spare, rather than derived from the paper: 7.25in including
-       the column's own 2.5rem. On Chrome the credit sits about two inches
-       higher than it could; on every engine it stays on the cover. */
-    height: calc(7.25in - 2.5rem);
+       So the credit sits under the date rather than at the foot of the sheet.
+       On paper that reads as a title page, and it is the only arrangement that
+       held on Chrome, desktop Safari's arithmetic, and an iPhone. Check a
+       change here with a PDF saved from iOS Safari (the simulator will do), and
+       read its last page: the failure is a report that stops, not one that looks
+       wrong. */
+    height: auto;
     margin-bottom: 0 !important;
     break-after: page;
     page-break-after: always;
   }
 
   .print-cover .print-footer {
-    margin-top: auto;
+    margin-top: 3rem;
     margin-bottom: 0;
   }
 
