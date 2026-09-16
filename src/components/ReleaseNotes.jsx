@@ -13,29 +13,39 @@ export function ReleaseNotesBar({ unread, onOpen, onDismiss }) {
   const more = unread.length - 1;
   return (
     <div className="sticky top-0 z-30 bg-blue-600 text-white print:hidden" role="region" aria-label="New in Quartz Assessment">
-      {/* A fixed height, because AdminPage sizes the sticky sidebar below it
-          by exactly this much. Change one, change RELEASE_BAR_OFFSET too. */}
-      <div className="flex items-center gap-3 h-10 px-4 sm:px-6 text-sm">
-        <span className="shrink-0 rounded-full bg-white/20 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide">New</span>
-        {/* The count only where there is room for it: on a phone "and 15 more
-            updates" is cut off anyway, and a title cut short to fit it reads
-            worse than the title alone. */}
-        <p className="min-w-0 flex-1 truncate font-semibold">
-          {newest.title}
-          {more > 0 && <span className="hidden sm:inline font-normal text-blue-100"> and {more} more {more === 1 ? "update" : "updates"}</span>}
-        </p>
+      {/* A fixed height, because AdminPage places things below it by exactly
+          this much: the desktop sidebar (RELEASE_BAR_OFFSET, h-10) and the
+          phone's menu bar (top-12). Change one, change those too.
+
+          Every control fills the bar's height. The visible buttons were 24px
+          tall directly under the iPhone status bar, and on a real phone neither
+          could be tapped reliably. The title opens the notes as well, so most
+          of the bar is one generous target. */}
+      <div className="flex items-stretch h-12 md:h-10 text-sm">
         <button
           onClick={onOpen}
-          className="shrink-0 rounded-md bg-white px-3 py-1 text-xs font-semibold text-blue-700 hover:bg-blue-50 transition-colors"
+          className="min-w-0 flex-1 flex items-center gap-3 pl-4 sm:pl-6 text-left active:bg-white/10"
         >
-          What's new
+          <span className="shrink-0 rounded-full bg-white/20 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide">New</span>
+          {/* The count only where there is room for it: on a phone "and 15 more
+              updates" is cut off anyway, and a title cut short to fit it reads
+              worse than the title alone. */}
+          <span className="min-w-0 truncate font-semibold">
+            {newest.title}
+            {more > 0 && <span className="hidden sm:inline font-normal text-blue-100"> and {more} more {more === 1 ? "update" : "updates"}</span>}
+          </span>
+        </button>
+        <button onClick={onOpen} className="group shrink-0 flex items-center px-2">
+          <span className="rounded-md bg-white px-3 py-1 text-xs font-semibold text-blue-700 group-hover:bg-blue-50 group-active:bg-blue-100 transition-colors">
+            What's new
+          </span>
         </button>
         <button
           onClick={onDismiss}
           aria-label="Dismiss"
-          className="shrink-0 rounded-md p-1 text-blue-100 hover:bg-white/10 hover:text-white transition-colors"
+          className="shrink-0 w-12 md:w-10 flex items-center justify-center text-blue-100 hover:bg-white/10 hover:text-white active:bg-white/20 transition-colors"
         >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
@@ -51,7 +61,14 @@ export function ReleaseNotesDialog({ notes, open, onOpenChange, newIds }) {
   const isNew = new Set(newIds);
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+      {/* The shared dialog's close button is a 16px icon; the arbitrary variants
+          give this one a 44px target without changing every other dialog.
+          Focus goes to the dialog itself on open rather than to that button:
+          focused, it draws a 44px ring, which on a phone looks like a stray box.
+          Tab still reaches it, ring and all. */}
+      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto [&>button.absolute]:right-1 [&>button.absolute]:top-1 [&>button.absolute]:p-3 [&>button.absolute>svg]:h-5 [&>button.absolute>svg]:w-5 focus:outline-none"
+        onOpenAutoFocus={e => { e.preventDefault(); e.currentTarget.focus(); }}
+      >
         <DialogHeader>
           <DialogTitle>What's new in Quartz Assessment</DialogTitle>
           <DialogDescription>The major capabilities we've added, newest first.</DialogDescription>

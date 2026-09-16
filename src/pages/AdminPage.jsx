@@ -627,7 +627,7 @@ export default function AdminPage() {
           {/* Phones only: the way into the sidebar. Carries the unread total,
               which is otherwise inside the closed drawer where nobody sees it. */}
           <div className={`md:hidden sticky z-20 h-12 pr-2 flex items-center gap-1 bg-white border-b border-gray-200 ${
-            unreadNotes.length > 0 ? "top-10" : "top-0"
+            unreadNotes.length > 0 ? "top-12" : "top-0"
           }`}>
             <button
               onClick={() => setMenuOpen(true)}
