@@ -152,10 +152,13 @@ export default function AssessmentsHome({
       return sort.dir === "asc" ? c : -c;
     });
 
+  // The default direction for each sort, shared by the column headers and the
+  // phone's sort menu: names A to Z, numbers and dates biggest or newest first.
+  const defaultDir = (key) => (key === "title" || key === "client" ? "asc" : "desc");
   const toggleSort = (key) =>
     setSort(prev => prev.key === key
       ? { key, dir: prev.dir === "asc" ? "desc" : "asc" }
-      : { key, dir: key === "title" || key === "client" ? "asc" : "desc" });
+      : { key, dir: defaultDir(key) });
 
   const SortHeader = ({ k, children, className = "" }) => (
     <th className={`px-4 py-2.5 font-semibold ${className}`} aria-sort={sort.key === k ? (sort.dir === "asc" ? "ascending" : "descending") : "none"}>
@@ -170,7 +173,7 @@ export default function AssessmentsHome({
 
   return (
     <div className="flex-1 overflow-y-auto">
-      <div className="max-w-6xl mx-auto px-8 py-6 space-y-4">
+      <div className="max-w-6xl mx-auto px-4 md:px-8 py-6 space-y-4">
         <div className="flex items-center gap-3 flex-wrap">
           <h2 className="text-xl font-bold text-gray-900">Assessments</h2>
           {totalUnread > 0 && (
@@ -190,7 +193,7 @@ export default function AssessmentsHome({
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
-          <div className="relative flex-1 min-w-[16rem]">
+          <div className="relative flex-1 min-w-full sm:min-w-[16rem]">
             <input
               id="assessments-search"
               type="search"
@@ -255,6 +258,19 @@ export default function AssessmentsHome({
               {f.label} · {statusCount(f)}
             </button>
           ))}
+          {/* Phones have no column headers to click, so the sort is a menu.
+              Choosing one takes that sort's natural direction. */}
+          <select
+            aria-label="Sort assessments"
+            value={sort.key}
+            onChange={e => setSort({ key: e.target.value, dir: defaultDir(e.target.value) })}
+            className="md:hidden ml-auto border border-gray-200 rounded-lg px-2 py-1 text-xs text-gray-600 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="activity">Last activity</option>
+            <option value="title">Name</option>
+            <option value="client">Client</option>
+            <option value="responses">Responses</option>
+          </select>
         </div>
 
         {rows.length === 0 ? (
@@ -273,111 +289,169 @@ export default function AssessmentsHome({
             onNew={onNew}
           />
         ) : (
-          <div className="bg-white border border-gray-200 rounded-xl overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-200 text-left text-[11px] text-gray-500">
-                <tr>
-                  <SortHeader k="title">Assessment</SortHeader>
-                  <SortHeader k="client">Client</SortHeader>
-                  <th className="px-4 py-2.5 font-semibold uppercase tracking-wide">Type</th>
-                  {showOwnerFilter && ownerFilter === "all" && (
-                    <th className="px-4 py-2.5 font-semibold uppercase tracking-wide">Owner</th>
-                  )}
-                  <SortHeader k="responses">Responses</SortHeader>
-                  <SortHeader k="activity">Last activity</SortHeader>
-                  <th className="px-4 py-2.5 font-semibold uppercase tracking-wide">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {rows.map(a => {
-                  const badge = badgeFor(a, instrumentOf(a));
-                  const s = a._summary;
-                  return (
-                    <tr
-                      key={a.id}
-                      onClick={() => onOpen(a.id, a._unread ? "Results" : "Overview")}
-                      className="group cursor-pointer hover:bg-blue-50/40 transition-colors"
-                    >
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          {/* A real button for keyboard users; the row click is
-                              a convenience for the mouse. */}
-                          <button
-                            onClick={e => { e.stopPropagation(); onOpen(a.id, a._unread ? "Results" : "Overview"); }}
-                            className="font-medium text-gray-900 text-left hover:text-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded"
-                          >
-                            {a.title}
-                          </button>
-                          <UnreadBadge count={a._unread} />
-                          {/* Faint until the row is hovered or focused, and
-                              always shown once pinned, so the table does not
-                              carry a column of icons nobody asked about. */}
-                          <PinButton
-                            compact
-                            pinned={isPinned(a.id)}
-                            onToggle={() => onTogglePin(a.id)}
-                            className={isPinned(a.id) ? "" : "opacity-0 group-hover:opacity-100 focus-visible:opacity-100"}
-                          />
-                        </div>
-                        {(a.tag_ids || []).length > 0 && (
-                          <div className="flex flex-wrap gap-1 mt-1">
-                            {(a.tag_ids || [])
-                              .map(id => tags.find(t => t.id === id))
-                              .filter(Boolean)
-                              .map(t => (
-                                <span key={t.id} className="text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">{t.name}</span>
-                              ))}
+          <>
+            {/* Phones: one card per assessment. Seven columns do not fit in 375px,
+                and a table that scrolls sideways hides responses and status — the
+                two things this page is opened to check — off the right edge. Same
+                rows, same order, same facts. */}
+            <ul className="md:hidden space-y-2">
+              {rows.map(a => {
+                const badge = badgeFor(a, instrumentOf(a));
+                const open = () => onOpen(a.id, a._unread ? "Results" : "Overview");
+                return (
+                  <li
+                    key={a.id}
+                    onClick={open}
+                    className="bg-white border border-gray-200 rounded-xl px-4 py-3 cursor-pointer active:bg-blue-50/40"
+                  >
+                    <div className="flex items-start gap-2">
+                      <button
+                        onClick={e => { e.stopPropagation(); open(); }}
+                        className="font-medium text-gray-900 text-left min-w-0 break-words focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded"
+                      >
+                        {a.title}
+                      </button>
+                      <UnreadBadge count={a._unread} className="shrink-0 mt-0.5" />
+                      {/* Always shown: there is no hover on a phone to reveal it. */}
+                      <PinButton compact pinned={isPinned(a.id)} onToggle={() => onTogglePin(a.id)} className="ml-auto shrink-0" />
+                    </div>
+                    <div className="mt-1 flex items-center gap-2 flex-wrap text-sm">
+                      <span className="text-gray-600">{a.company_name || <span className="text-gray-300">No client</span>}</span>
+                      <span className={`text-[11px] font-semibold px-1.5 py-0.5 rounded ${badge.tone}`}>{badge.label}</span>
+                      <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${STATUS_COLORS[a.status] || STATUS_COLORS.draft}`}>
+                        {a.status}
+                      </span>
+                    </div>
+                    {(a.tag_ids || []).length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-1.5">
+                        {(a.tag_ids || [])
+                          .map(id => tags.find(t => t.id === id))
+                          .filter(Boolean)
+                          .map(t => (
+                            <span key={t.id} className="text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">{t.name}</span>
+                          ))}
+                      </div>
+                    )}
+                    <div className="mt-2 pt-2 border-t border-gray-100 flex items-center gap-x-3 gap-y-1 flex-wrap text-sm tabular-nums">
+                      <ResponseCount loading={summary === null} s={a._summary} onOpenResults={() => onOpen(a.id, "Results")} />
+                      <span className="ml-auto text-gray-500 whitespace-nowrap">{relativeDate(a._activity)}</span>
+                    </div>
+                    {showOwnerFilter && ownerFilter === "all" && (
+                      <p className="mt-1 text-xs text-gray-400">Owner: {ownerNames.get(a.created_by_id) || "—"}</p>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+
+            <div className="hidden md:block bg-white border border-gray-200 rounded-xl overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50 border-b border-gray-200 text-left text-[11px] text-gray-500">
+                  <tr>
+                    <SortHeader k="title">Assessment</SortHeader>
+                    <SortHeader k="client">Client</SortHeader>
+                    <th className="px-4 py-2.5 font-semibold uppercase tracking-wide">Type</th>
+                    {showOwnerFilter && ownerFilter === "all" && (
+                      <th className="px-4 py-2.5 font-semibold uppercase tracking-wide">Owner</th>
+                    )}
+                    <SortHeader k="responses">Responses</SortHeader>
+                    <SortHeader k="activity">Last activity</SortHeader>
+                    <th className="px-4 py-2.5 font-semibold uppercase tracking-wide">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {rows.map(a => {
+                    const badge = badgeFor(a, instrumentOf(a));
+                    const s = a._summary;
+                    return (
+                      <tr
+                        key={a.id}
+                        onClick={() => onOpen(a.id, a._unread ? "Results" : "Overview")}
+                        className="group cursor-pointer hover:bg-blue-50/40 transition-colors"
+                      >
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            {/* A real button for keyboard users; the row click is
+                                a convenience for the mouse. */}
+                            <button
+                              onClick={e => { e.stopPropagation(); onOpen(a.id, a._unread ? "Results" : "Overview"); }}
+                              className="font-medium text-gray-900 text-left hover:text-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded"
+                            >
+                              {a.title}
+                            </button>
+                            <UnreadBadge count={a._unread} />
+                            {/* Faint until the row is hovered or focused, and
+                                always shown once pinned, so the table does not
+                                carry a column of icons nobody asked about. */}
+                            <PinButton
+                              compact
+                              pinned={isPinned(a.id)}
+                              onToggle={() => onTogglePin(a.id)}
+                              className={isPinned(a.id) ? "" : "opacity-0 group-hover:opacity-100 focus-visible:opacity-100"}
+                            />
                           </div>
+                          {(a.tag_ids || []).length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {(a.tag_ids || [])
+                                .map(id => tags.find(t => t.id === id))
+                                .filter(Boolean)
+                                .map(t => (
+                                  <span key={t.id} className="text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">{t.name}</span>
+                                ))}
+                            </div>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-gray-600">{a.company_name || <span className="text-gray-300">—</span>}</td>
+                        <td className="px-4 py-3">
+                          <span className={`text-[11px] font-semibold px-1.5 py-0.5 rounded ${badge.tone}`}>{badge.label}</span>
+                        </td>
+                        {showOwnerFilter && ownerFilter === "all" && (
+                          <td className="px-4 py-3 text-gray-500">{ownerNames.get(a.created_by_id) || "—"}</td>
                         )}
-                      </td>
-                      <td className="px-4 py-3 text-gray-600">{a.company_name || <span className="text-gray-300">—</span>}</td>
-                      <td className="px-4 py-3">
-                        <span className={`text-[11px] font-semibold px-1.5 py-0.5 rounded ${badge.tone}`}>{badge.label}</span>
-                      </td>
-                      {showOwnerFilter && ownerFilter === "all" && (
-                        <td className="px-4 py-3 text-gray-500">{ownerNames.get(a.created_by_id) || "—"}</td>
-                      )}
-                      <td className="px-4 py-3 tabular-nums">
-                        {/* Unknown is not zero. A summary that failed to load
-                            must not tell a consultant nobody has responded. */}
-                        {summary === null ? (
-                          <span className="text-gray-300">…</span>
-                        ) : !s ? (
-                          <span className="text-gray-300">—</span>
-                        ) : s.completed + s.started === 0 ? (
-                          <span className="text-gray-400">None yet</span>
-                        ) : (
-                          <button
-                            onClick={e => { e.stopPropagation(); onOpen(a.id, "Results"); }}
-                            className="text-left hover:text-blue-700"
-                            title="Open results"
-                          >
-                            <span className="font-medium text-gray-900">{s.completed}</span>
-                            <span className="text-gray-500"> done</span>
-                            {s.started > 0 && <span className="text-gray-400"> · {s.started} in progress</span>}
-                          </button>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-gray-500 whitespace-nowrap" title={a._activity ? new Date(a._activity).toLocaleString() : ""}>
-                        {relativeDate(a._activity)}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${STATUS_COLORS[a.status] || STATUS_COLORS.draft}`}>
-                          {a.status}
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                        <td className="px-4 py-3 tabular-nums">
+                          <ResponseCount loading={summary === null} s={s} onOpenResults={() => onOpen(a.id, "Results")} />
+                        </td>
+                        <td className="px-4 py-3 text-gray-500 whitespace-nowrap" title={a._activity ? new Date(a._activity).toLocaleString() : ""}>
+                          {relativeDate(a._activity)}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${STATUS_COLORS[a.status] || STATUS_COLORS.draft}`}>
+                            {a.status}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
         {summary === undefined && (
           <p className="text-xs text-gray-400">Response counts could not be loaded. Open an assessment's Results to see them.</p>
         )}
       </div>
     </div>
+  );
+}
+
+// "3 done · 2 in progress", which opens Results. Unknown is not zero: a summary
+// still loading or that failed to load must not tell a consultant nobody has
+// responded.
+function ResponseCount({ loading, s, onOpenResults }) {
+  if (loading) return <span className="text-gray-300">…</span>;
+  if (!s) return <span className="text-gray-300">—</span>;
+  if (s.completed + s.started === 0) return <span className="text-gray-400">None yet</span>;
+  return (
+    <button
+      onClick={e => { e.stopPropagation(); onOpenResults(); }}
+      className="text-left hover:text-blue-700"
+      title="Open results"
+    >
+      <span className="font-medium text-gray-900">{s.completed}</span>
+      <span className="text-gray-500"> done</span>
+      {s.started > 0 && <span className="text-gray-400"> · {s.started} in progress</span>}
+    </button>
   );
 }
 

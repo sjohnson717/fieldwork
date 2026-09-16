@@ -17,9 +17,12 @@ export function ReleaseNotesBar({ unread, onOpen, onDismiss }) {
           by exactly this much. Change one, change RELEASE_BAR_OFFSET too. */}
       <div className="flex items-center gap-3 h-10 px-4 sm:px-6 text-sm">
         <span className="shrink-0 rounded-full bg-white/20 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide">New</span>
-        <p className="min-w-0 flex-1 truncate">
-          <span className="font-semibold">{newest.title}</span>
-          {more > 0 && <span className="text-blue-100"> and {more} more {more === 1 ? "update" : "updates"}</span>}
+        {/* The count only where there is room for it: on a phone "and 15 more
+            updates" is cut off anyway, and a title cut short to fit it reads
+            worse than the title alone. */}
+        <p className="min-w-0 flex-1 truncate font-semibold">
+          {newest.title}
+          {more > 0 && <span className="hidden sm:inline font-normal text-blue-100"> and {more} more {more === 1 ? "update" : "updates"}</span>}
         </p>
         <button
           onClick={onOpen}

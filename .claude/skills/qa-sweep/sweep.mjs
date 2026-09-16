@@ -81,21 +81,23 @@ const ROUTES = [
   { name: "dead-link", url: "/assess?t=NOT-A-TOKEN", expect: "no longer valid" },
   {
     // Where /admin opens: the table of assessments with its search, filters,
-    // response counts and unread badges.
+    // response counts and unread badges. Every width, unlike the admin routes
+    // below: below 768 the sidebar is a menu and the table becomes one card per
+    // assessment, so a phone is a width this page is meant to work at.
     name: "admin-assessments-home",
     url: "/admin",
     signIn: { email: "qa@example.com", role: "admin" },
-    widths: [768, 1280],
-    expect: "last activity",
+    expect: "Product Team Effectiveness",
   },
   {
     name: "admin-results-team-gap",
     url: "/admin",
     signIn: { email: "qa@example.com", role: "admin" },
     admin: { assessment: "Product Team Effectiveness", tab: "Results" },
-    // Desktop only. Admin sits behind a 256px fixed sidebar and is used on a
-    // laptop; measuring it at phone widths reports sideways scroll nobody
-    // intends to fix, which is how a gate stops being read.
+    // Desktop only. The sidebar collapses on a phone, but the tabs inside an
+    // assessment are still laid out for a laptop; measuring them at phone
+    // widths reports sideways scroll nobody intends to fix yet, which is how a
+    // gate stops being read.
     widths: [768, 1280],
     expect: "respondents",
   },
@@ -997,7 +999,7 @@ md.push(`\n## What this run did not cover\n`);
 md.push(`- Real Safari or iOS WebKit. Chromium only. See SKILL.md for the manual pass.`);
 md.push(`- Real Android hardware.`);
 md.push(`- Print output: run print-check.mjs and read the PDFs.`);
-md.push(`- Admin pages other than the Assessments page, the two results tabs and the instrument editor. Those run signed in as an admin, at desktop widths only.`);
+md.push(`- Admin pages other than the Assessments page, the two results tabs and the instrument editor. Those run signed in as an admin; the Assessments page at every width, the rest at desktop widths only.`);
 md.push(`- The live backend. This sweep runs against the stub, which enforces the RLS rules but holds fixture data.`);
 
 await writeFile(path.join(outDir, "report.md"), md.join("\n") + "\n");
