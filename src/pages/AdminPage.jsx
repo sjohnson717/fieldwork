@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Navigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
@@ -14,6 +14,13 @@ import InstrumentsPage from "./admin/InstrumentsPage";
 import TeamPage from "./admin/TeamPage";
 import OrganizationsPage from "./admin/OrganizationsPage";
 import TagsPage from "./admin/TagsPage";
+import AssessmentsHome from "./admin/AssessmentsHome";
+import { UnreadBadge } from "./admin/assessment-labels";
+import AssessmentSwitcher from "@/components/AssessmentSwitcher";
+import {
+  loadRespondentSummary, ensureSeenState, unreadCount, markSeen,
+  readRecent, pushRecent, visibleRecent,
+} from "@/lib/unread-responses";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import NewAssessmentPanel from "@/components/NewAssessmentPanel";
 import { functionErrorMessage } from "@/lib/utils";
@@ -46,121 +53,16 @@ const tabsFor = (assessment, instrument) => {
 };
 
 // Which assessment was open, so leaving the admin page and coming back doesn't
-// dump you on a different one. Session-scoped on purpose: restoring a
-// selection from days ago would be more surprising than helpful.
+// dump you somewhere else. Session-scoped on purpose: restoring a selection
+// from days ago would be more surprising than helpful. Cleared on going back to
+// the Assessments page, so a return visit lands where you left rather than on
+// the last assessment you happened to open before that.
 const SELECTED_ASSESSMENT_KEY = "qa_admin_selected_assessment";
 
-// How the sidebar list is grouped, remembered the same way and for the same
-// reason: coming back to a differently-shaped list is disorienting.
-const GROUP_BY_KEY = "qa_admin_group_by";
-
-// One axis at a time rather than a fixed nesting of all three. Organization →
-// owner → client company is four levels deep before you reach an assessment,
-// in a column narrow enough that titles already truncate — and most of those
-// groups would hold one or two rows. Choosing the axis keeps the tree one level
-// deep whichever question is being asked today.
-//
-// `client` is the default because it is the only axis that means something to
-// every role. An org admin or facilitator sees one organization, and a
-// facilitator usually owns most of what they can see, so those two axes are a
-// single heading wrapping everything unless you are the super-admin.
-const GROUP_OPTIONS = [
-  { key: "client", label: "Client company" },
-  { key: "org", label: "Organization" },
-  { key: "owner", label: "Owner" },
-  { key: "none", label: "Nothing" },
-];
-
-// What the leftovers bucket is called, per axis — the assessments the axis
-// cannot name at all.
-const UNGROUPED_LABEL = { client: "No company", org: "No organization", owner: "Unknown owner" };
-
-// Assessments already arrive newest-first and stay that way inside each group,
-// so the grouping only decides the headings and their order.
-//
-// Labels are resolved through the maps rather than stored on the assessment:
-// org_id and created_by_id are plain id strings that nothing enforces, so an
-// id with no row behind it has to degrade to the leftovers bucket instead of
-// printing a raw uuid as though it were a company name.
-//
-// Group keys are prefixed by kind rather than being the label itself. They are
-// React keys and the identity the collapsed set remembers, so a client actually
-// called "No company" must not land on the leftovers bucket's key — and the
-// prefix removes the need for a sentinel value that has to be unlike every
-// possible company name.
-export const groupAssessments = (assessments, groupBy, { orgNames, ownerNames }) => {
-  if (groupBy === "none") return [{ key: "all", label: null, items: assessments }];
-
-  const nameFor = (a) => {
-    if (groupBy === "client") return (a.company_name || "").trim();
-    if (groupBy === "org") return orgNames.get(a.org_id) || "";
-    if (groupBy === "owner") return ownerNames.get(a.created_by_id) || "";
-    return "";
-  };
-
-  const named = new Map();
-  const leftovers = [];
-  for (const a of assessments) {
-    const name = nameFor(a);
-    if (!name) { leftovers.push(a); continue; }
-    if (!named.has(name)) named.set(name, []);
-    named.get(name).push(a);
-  }
-
-  const groups = [...named.entries()]
-    .sort(([a], [b]) => a.localeCompare(b, undefined, { sensitivity: "base" }))
-    .map(([label, items]) => ({ key: `name:${label}`, label, items }));
-
-  // Appended rather than sorted in: it is the leftovers, and "No company"
-  // sitting between "Northwind" and "SAS" reads as a client called No company.
-  if (leftovers.length) {
-    groups.push({ key: "ungrouped", label: UNGROUPED_LABEL[groupBy], items: leftovers });
-  }
-  return groups;
-};
-
-const STATUS_COLORS = {
-  draft: "bg-gray-100 text-gray-500",
-  active: "bg-green-100 text-green-700",
-  closed: "bg-red-100 text-red-600",
-};
-
-// Every assessment says which kind it is. Only "Personal" used to be labelled,
-// on the reasoning that team gap is the default and the default needs no badge
-// — but a missing badge is not a statement, it's an absence, and the reader has
-// to know the rule to decode it. A list where one row is tagged and the next is
-// bare reads as "this one is special", not "these are two kinds".
-//
-// The type also decides which questions get asked and which results view opens,
-// so it is worth reading at a glance from the list rather than after a click.
-//
-// Rounded-md and bottom-left, against the status pill's rounded-full top-right:
-// shape and position carry the distinction, so the two never trade places even
-// when teal sits near the green of "active".
-const TYPE_BADGE = {
-  team_gap: { label: "Team",     tone: "text-teal-700 bg-teal-50" },
-  personal: { label: "Personal", tone: "text-indigo-600 bg-indigo-50" },
-};
-
-// Absent means team_gap — the field was added after the first assessments
-// existed, and the Assessment schema documents the same default.
-const assessmentType = (a) => (a.assessment_type === "personal" ? "personal" : "team_gap");
-
-// The badge an assessment carries in the list. An instrument names itself, and
-// the four imported ones are neither Team nor Personal — labelling a Chaos
-// Assessment "Team" because assessment_type is absent would be worse than the
-// unlabelled rows this badge was added to fix.
-//
-// Short, because the badge sits in a 250px column beside a status pill: the
-// first word of the instrument's name is enough to tell six apart, and the row
-// already carries the full title above it.
-const badgeFor = (assessment, instrument) => {
-  if (!instrument) return TYPE_BADGE[assessmentType(assessment)];
-  if (instrument.question_source === "library") {
-    return TYPE_BADGE[instrument.report_style === "profile" ? "personal" : "team_gap"];
-  }
-  return { label: instrument.name.split(" ")[0], tone: "text-amber-700 bg-amber-50" };
-};
+// The list used to live in this sidebar, grouped by client, organization or
+// owner. It moved to AssessmentsHome, which has the width for a table; the
+// sidebar keeps a Recent list and the ⌘K switcher, so moving between two
+// assessments never needs a trip back through the list.
 
 export default function AdminPage() {
   const { user, isAuthenticated, logout } = useAuth();
@@ -174,32 +76,23 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [showNewForm, setShowNewForm] = useState(false);
   const [tags, setTags] = useState([]);
-  // Narrows the sidebar list. Not persisted: a filter you set days ago and
-  // forgot looks exactly like an assessment that has gone missing.
-  const [groupBy, setGroupBy] = useState(() => sessionStorage.getItem(GROUP_BY_KEY) || "client");
-  // Deliberately not remembered, unlike the grouping. Coming back to a sidebar
-  // silently hiding most of the list behind a search typed yesterday is the
-  // kind of thing that gets reported as missing assessments.
-  const [search, setSearch] = useState("");
-  // Names for the two id-based axes. Empty maps are fine: groupAssessments
-  // drops anything it cannot name into the leftovers bucket, so the sidebar
-  // renders correctly while these are still loading or if either call fails.
   // The six instruments, by id. Drives the New Assessment panel, the badge on
   // each sidebar row, and which tabs an assessment gets. Read-open, so every
   // role that can reach this page can load them.
   const [instruments, setInstruments] = useState([]);
   const [questionCounts, setQuestionCounts] = useState(() => new Map());
-  const [orgNames, setOrgNames] = useState(() => new Map());
+  // For the Owner column when a super-admin or org admin shows everyone's.
+  // Empty is fine: the column prints a dash for anyone it cannot name.
   const [ownerNames, setOwnerNames] = useState(() => new Map());
-  // Collapsed by heading label, not index — regrouping or a new assessment
-  // would otherwise silently collapse a different group. Deliberately not
-  // persisted: reopening the admin page showing everything is the better
-  // default, and a stored set would only grow.
-  const [collapsedGroups, setCollapsedGroups] = useState(() => new Set());
+  // Respondent counts per assessment. null while loading and undefined if the
+  // call failed — kept distinct, because a failure must not render as "nobody
+  // has responded".
+  const [respondentSummary, setRespondentSummary] = useState(null);
+  const [seen, setSeen] = useState(null);
+  const [recentIds, setRecentIds] = useState([]);
+  const [switcherOpen, setSwitcherOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState("");
-
-  useEffect(() => { document.title = "Admin | Quartz Assessments"; }, []);
 
   // One place to remember the selection, so creating, deleting and clicking a
   // row all persist it without each having to.
@@ -224,10 +117,25 @@ export default function AdminPage() {
       if (!canAccessAdmin) return; // no access for plain "user" role
       loadAssessments();
       loadTags();
-      loadGroupNames();
+      loadOwnerNames();
       loadInstruments();
+      loadResponseBadges();
+      setRecentIds(readRecent(user.id));
     }
   }, [isAuthenticated, user]);
+
+  // Best-effort like everything else feeding the list: without it the
+  // Responses column says it could not load, and every assessment still opens.
+  const loadResponseBadges = async () => {
+    try {
+      const [summary, seenState] = await Promise.all([loadRespondentSummary(), ensureSeenState(user)]);
+      setRespondentSummary(summary);
+      setSeen(seenState);
+    } catch (e) {
+      console.error("Could not load respondent summary", e);
+      setRespondentSummary(undefined);
+    }
+  };
 
   // Best-effort, like the grouping names: an assessment whose instrument will
   // not load still lists and still opens, on the tabs its assessment_type
@@ -258,36 +166,22 @@ export default function AdminPage() {
     }
   };
 
-  useEffect(() => {
-    sessionStorage.setItem(GROUP_BY_KEY, groupBy);
-  }, [groupBy]);
-
-  // Display names for the organization and owner axes.
-  //
-  // Both are best-effort and neither blocks the list: a failure here costs the
-  // headings on two of the four groupings, not the sidebar. Organization.read
-  // is open, so the first call works for every role. listUsers is scoped —
-  // a facilitator only gets their own organization's people — so the owner of
-  // an assessment shared in from elsewhere resolves to nothing and lands in
-  // "Unknown owner", which is honest: they cannot see that person anyway.
-  const loadGroupNames = async () => {
-    try {
-      const orgs = await base44.entities.Organization.list("name");
-      setOrgNames(new Map(orgs.map(o => [o.id, o.name])));
-    } catch (e) {
-      console.error("Could not load organization names for grouping", e);
-    }
+  // Best-effort. listUsers is scoped — a facilitator only gets their own
+  // organization's people — so the owner of an assessment shared in from
+  // elsewhere resolves to nothing and prints a dash, which is honest: they
+  // cannot see that person anyway.
+  const loadOwnerNames = async () => {
     try {
       const res = await base44.functions.invoke("listUsers", {});
       const users = res?.data?.users || [];
       setOwnerNames(new Map(users.map(u => [u.id, u.full_name || u.email])));
     } catch (e) {
-      console.error("Could not load owner names for grouping", e);
+      console.error("Could not load owner names", e);
     }
   };
 
-  // Tags are still loaded with no filter to drive: the sidebar rows show their
-  // chips, and search matches on their names. Both resolve ids against this
+  // Tags are still loaded with no filter to drive: the Assessments page shows
+  // their chips, and both searches match on their names. Both resolve ids against this
   // list and drop what they cannot find, so a tag deleted or merged in settings
   // has to reach here or its chip outlives it until the browser is reloaded —
   // which reads as the delete having failed. Hence still named rather than
@@ -315,13 +209,13 @@ export default function AdminPage() {
       // list() returns oldest first; the sidebar shows newest first.
       const ordered = [...scoped].reverse();
       setAssessments(ordered);
-      if (ordered.length > 0 && !selectedId) {
+      if (!selectedId) {
         // Come back to whatever was open before navigating away. The stored id
         // is only trusted if it's still in this user's list — it may have been
-        // deleted, or access to it withdrawn, since.
+        // deleted, or access to it withdrawn, since. Otherwise the Assessments
+        // page, rather than whichever assessment happens to be newest.
         const remembered = sessionStorage.getItem(SELECTED_ASSESSMENT_KEY);
-        const stillVisible = remembered && ordered.some(a => a.id === remembered);
-        setSelectedId(stillVisible ? remembered : ordered[0].id);
+        if (remembered && ordered.some(a => a.id === remembered)) setSelectedId(remembered);
       }
     } catch (e) {
       console.error("Failed to load assessments", e);
@@ -369,9 +263,8 @@ export default function AdminPage() {
         org_id: user.org_id || undefined,
       });
       setAssessments(prev => [created, ...prev]);
-      setSelectedId(created.id);
+      openAssessment(created.id);
       setShowNewForm(false);
-      setActiveTab("Overview");
     } catch (e) {
       console.error("Failed to create assessment", e);
       setCreateError(e?.message || "Failed to create assessment. Please try again.");
@@ -408,12 +301,8 @@ export default function AdminPage() {
       // and responses and then failed on the assessment itself.
       await base44.functions.invoke("deleteAssessment", { assessmentId: selected.id });
 
-      setAssessments(prev => {
-        const next = prev.filter(a => a.id !== selected.id);
-        setSelectedId(next.length > 0 ? next[0].id : null);
-        if (next.length > 0) setSelectedSection("assessments");
-        return next;
-      });
+      setAssessments(prev => prev.filter(a => a.id !== selected.id));
+      goHome();
       setConfirmingDelete(false);
     } catch (e) {
       // Kept in the dialog rather than an alert(): the failure belongs next to
@@ -425,61 +314,60 @@ export default function AdminPage() {
     setDeleting(false);
   };
 
+  // Every way into an assessment — a table row, a Recent link, the switcher,
+  // creating one — goes through here, so the recent list and the tab it opens
+  // on cannot disagree between them.
+  const openAssessment = (id, tab = "Overview") => {
+    setSelectedId(id);
+    setSelectedSection("assessments");
+    setActiveTab(tab);
+    if (user) setRecentIds(pushRecent(user.id, id));
+  };
+
+  const goHome = () => {
+    setSelectedId(null);
+    setSelectedSection("assessments");
+    sessionStorage.removeItem(SELECTED_ASSESSMENT_KEY);
+    // Counts are cheap to refresh and this is the moment someone reads them.
+    loadResponseBadges();
+  };
+
+  // ⌘K on a Mac, Ctrl+K elsewhere, from anywhere on the admin page — including
+  // inside a text field, since that is where people are when they want out.
+  const toggleSwitcher = useCallback((e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+      e.preventDefault();
+      setSwitcherOpen(open => !open);
+    }
+  }, []);
+  useEffect(() => {
+    if (!canAccessAdmin) return;
+    window.addEventListener("keydown", toggleSwitcher);
+    return () => window.removeEventListener("keydown", toggleSwitcher);
+  }, [canAccessAdmin, toggleSwitcher]);
+
+  const unreadFor = (a) => unreadCount(respondentSummary?.[a.id], seen, a.id);
+  const totalUnread = assessments.reduce((n, a) => n + unreadFor(a), 0);
+
+  // Reading Results is what clears the badge, however you got there — the
+  // table, the switcher, or the tab bar of an assessment already open.
+  const selectedUnread = selectedId && activeTab === "Results"
+    ? unreadCount(respondentSummary?.[selectedId], seen, selectedId)
+    : 0;
+  useEffect(() => {
+    if (selectedUnread > 0 && seen) setSeen(markSeen(seen, selectedId));
+  }, [selectedUnread, selectedId]);
+
+  // The unread total in the tab title, the way a mail client shows it, so a
+  // consultant with /admin open in a background tab can see news arrive.
+  useEffect(() => {
+    document.title = `${totalUnread > 0 ? `(${totalUnread}) ` : ""}Admin | Quartz Assessments`;
+  }, [totalUnread]);
+
   // One explanation of this state, on one page, rather than three screens that
   // each say "denied" and none of which say why. /no-access names the address
   // they are signed in as, which is the fact that resolves it nearly every time.
   if (!canAccessAdmin) return <Navigate to="/no-access" replace />;
-
-  // The sidebar list, narrowed by the tag filter. The selected assessment is
-  // still resolved against the full list, so filtering never blanks the pane
-  // you are currently reading.
-  //
-  // Search matches the three things printed on the row — title, client company
-  // and tag names — so every hit can be explained by looking at it. Matching on
-  // anything the row does not show produces results that look like bugs.
-  //
-  // Terms are ANDed and order-independent, so "sas roles" finds "Product Team
-  // Roles" at SAS without knowing which field holds which word. That is the way
-  // a half-remembered assessment is actually recalled: a client and a fragment.
-  const searchTerms = search.trim().toLowerCase().split(/\s+/).filter(Boolean);
-  const matchesSearch = (a) => {
-    if (searchTerms.length === 0) return true;
-    const haystack = [
-      a.title || "",
-      a.company_name || "",
-      ...(a.tag_ids || []).map(id => tags.find(t => t.id === id)?.name || ""),
-    ].join(" ").toLowerCase();
-    return searchTerms.every(term => haystack.includes(term));
-  };
-
-  const visibleAssessments = assessments.filter(matchesSearch);
-
-  // An axis that can only ever draw one heading is not a grouping, it is a box
-  // around the whole list. Organization is that for every org admin and most
-  // facilitators, and owner is that for a facilitator working alone — so each
-  // is offered only once the list actually spans more than one of them.
-  const distinctCount = (pick) => new Set(assessments.map(pick).map(v => v || null)).size;
-  const groupOptions = GROUP_OPTIONS.filter(o => {
-    if (o.key === "org") return distinctCount(a => a.org_id) > 1;
-    if (o.key === "owner") return distinctCount(a => a.created_by_id) > 1;
-    return true;
-  });
-
-  // A remembered grouping can outlive the reason it was available — the org
-  // axis disappears when the last assessment from a second organization goes.
-  // Falling back keeps the list grouped by something rather than silently
-  // ungrouped under a control offering a value it no longer holds.
-  const activeGroupBy = groupOptions.some(o => o.key === groupBy) ? groupBy : "client";
-
-  const groups = groupAssessments(visibleAssessments, activeGroupBy, { orgNames, ownerNames });
-
-  const toggleGroup = (key) =>
-    setCollapsedGroups(prev => {
-      const next = new Set(prev);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      return next;
-    });
 
   const selected = assessments.find(a => a.id === selectedId);
   const canDeleteSelected = !!selected && (isAdmin || selected.created_by_id === user?.id);
@@ -490,6 +378,14 @@ export default function AdminPage() {
   const selectedInstrument = instrumentOf(selected);
   const visibleTabs = tabsFor(selected, selectedInstrument);
   const effectiveTab = visibleTabs.includes(activeTab) ? activeTab : "Overview";
+  const recent = visibleRecent(recentIds, assessments);
+  const onHome = selectedSection === "assessments" && !selected;
+  const openNewForm = () => { setShowNewForm(true); setCreateError(""); };
+  const isMac = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform);
+
+  const navClass = (active) => `w-full text-left px-3 py-2 rounded-lg transition-colors text-sm font-medium flex items-center gap-2 ${
+    active ? "bg-blue-50 text-blue-900" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+  }`;
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
@@ -501,176 +397,63 @@ export default function AdminPage() {
         </div>
 
         <div className="flex-1 overflow-y-auto py-3 px-3">
-          {/* Assessments section */}
-          <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest px-3 mb-1.5 mt-1">Assessments</p>
+          {/* Looks like a search box because that is what it does, and shows
+              its shortcut so the keyboard route is learnt by seeing it. */}
+          <button
+            onClick={() => setSwitcherOpen(true)}
+            className="w-full flex items-center gap-2 px-3 py-1.5 mb-3 text-xs text-gray-400 bg-white border border-gray-200 rounded-lg hover:border-gray-300 transition-colors"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 115 11a6 6 0 0112 0z" />
+            </svg>
+            Find assessment
+            <kbd className="ml-auto font-mono text-[10px] text-gray-400 border border-gray-200 rounded px-1">{isMac ? "⌘K" : "Ctrl K"}</kbd>
+          </button>
+
+          <button onClick={goHome} className={navClass(onHome)}>
+            Assessments
+            <span className="ml-auto">
+              {totalUnread > 0
+                ? <UnreadBadge count={totalUnread} />
+                : <span className="text-xs font-normal text-gray-400">{assessments.length || ""}</span>}
+            </span>
+          </button>
 
           {/* Opens the panel rather than an inline form. Choosing among six
               instruments, each with a description worth reading, does not fit
               a 250px column — and the choice decides what every respondent is
               asked. */}
           <button
-            onClick={() => { setShowNewForm(true); setCreateError(""); }}
-            className="w-full flex items-center gap-2 px-3 py-2 mb-2 text-sm text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+            onClick={openNewForm}
+            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
           >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
             New assessment
           </button>
 
-          {/* Search and grouping, at a threshold: below it the whole list is on
-              screen at once, and a control that narrows four rows costs more
-              attention than it saves.
-
-              There was a tag filter here too. Search matches tag names, so it
-              did the same job with one control instead of two — and did it
-              better where it mattered, since a dropdown lists two tags that
-              share a name as two entries and splits their assessments between
-              them, while typing the name finds both. */}
-          {assessments.length > 3 && (
-            <div className="px-3 mb-2 space-y-1.5">
-              <div className="relative">
-                <input
-                  type="search"
-                  value={search}
-                  onChange={e => setSearch(e.target.value)}
-                  placeholder="Search assessments"
-                  aria-label="Search assessments by title, company, or tag"
-                  className="w-full border border-gray-200 rounded-lg pl-2 pr-7 py-1.5 text-xs text-gray-700 bg-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                {search && (
-                  <button
-                    onClick={() => setSearch("")}
-                    aria-label="Clear search"
-                    className="absolute right-1.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-                  >
-                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                )}
-              </div>
-              <select
-                aria-label="Group assessments by"
-                value={activeGroupBy}
-                onChange={e => setGroupBy(e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-xs text-gray-600 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                {groupOptions.map(o => (
-                  <option key={o.key} value={o.key}>Group by: {o.label}</option>
+          {/* Five at most, whatever the size of the list — which is what keeps
+              the sidebar quiet for a super-admin with a hundred assessments.
+              One line per row: the title and its unread count, nothing else. */}
+          {recent.length > 0 && (
+            <>
+              <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest px-3 mb-1 mt-5">Recent</p>
+              <ul className="space-y-0.5">
+                {recent.map(a => (
+                  <li key={a.id}>
+                    <button
+                      onClick={() => openAssessment(a.id, unreadFor(a) ? "Results" : "Overview")}
+                      className={navClass(selectedSection === "assessments" && selectedId === a.id)}
+                      title={a.company_name ? `${a.title} · ${a.company_name}` : a.title}
+                    >
+                      <span className="truncate font-normal">{a.title}</span>
+                      <UnreadBadge count={unreadFor(a)} className="ml-auto shrink-0" />
+                    </button>
+                  </li>
                 ))}
-              </select>
-            </div>
-          )}
-
-          {loading ? (
-            <div className="flex items-center justify-center py-10">
-              <div className="w-5 h-5 border-2 border-blue-200 border-t-blue-500 rounded-full animate-spin" />
-            </div>
-          ) : visibleAssessments.length === 0 && searchTerms.length > 0 ? (
-            /* Names the search term, because "nothing matches" against a list
-               you can see is full is a puzzle rather than an answer. */
-            <p className="text-xs text-gray-400 text-center py-4 px-2">
-              Nothing matching <span className="font-medium text-gray-500">{search.trim()}</span>.{" "}
-              <button onClick={() => setSearch("")} className="text-blue-600 hover:underline">
-                Show all
-              </button>
-            </p>
-          ) : assessments.length === 0 ? (
-            <p className="text-xs text-gray-400 text-center py-4 px-2">
-              {isAdmin
-                ? "No assessments yet."
-                : isOrgAdmin
-                  ? "No assessments for your organization yet."
-                  : "No assessments have been shared with you yet."}
-            </p>
-          ) : (
-            /* One code path for grouped and ungrouped: "Group by: Nothing"
-               returns a single group with no label, so the flat list is the
-               same render without a heading. */
-            groups.map(group => {
-              // A search overrides collapse. A hit hiding inside a folded group
-              // is a search that answered "nothing here" while holding the
-              // thing you asked for; the collapsed set is remembered, so the
-              // groups fold back as soon as the box is cleared.
-              const collapsed = searchTerms.length === 0 && collapsedGroups.has(group.key);
-              // A collapsed group still has to show the assessment you are
-              // reading, or the sidebar stops agreeing with the pane beside it.
-              const holdsSelected = group.items.some(a => a.id === selectedId);
-              return (
-            <div key={group.key} className={group.label ? "mb-2" : ""}>
-              {group.label && (
-                <button
-                  onClick={() => toggleGroup(group.key)}
-                  aria-expanded={!collapsed}
-                  className="w-full flex items-center gap-1.5 px-3 py-1 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wide hover:text-gray-600 transition-colors"
-                >
-                  <svg
-                    className={`w-3 h-3 shrink-0 transition-transform ${collapsed ? "" : "rotate-90"}`}
-                    fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                  <span className="truncate" title={group.label}>{group.label}</span>
-                  <span className="ml-auto shrink-0 font-normal normal-case tracking-normal text-gray-300">
-                    {group.items.length}
-                  </span>
-                </button>
-              )}
-            <ul className={`space-y-1 ${collapsed && !holdsSelected ? "hidden" : ""}`}>
-              {(collapsed && holdsSelected
-                ? group.items.filter(a => a.id === selectedId)
-                : group.items
-              ).map(a => (
-                <li key={a.id}>
-                  <button
-                    onClick={() => { setSelectedId(a.id); setSelectedSection("assessments"); setActiveTab("Overview"); }}
-                    className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors group ${
-                      selectedSection === "assessments" && selectedId === a.id
-                        ? "bg-blue-50 text-blue-900"
-                        : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      {/* Hovering shows the full name. The sidebar is narrow
-                          enough that a title ending in an activity count —
-                          "Product Team Quick Review [7]" — loses the part that
-                          distinguishes it from its neighbour. */}
-                      <span className="text-sm font-medium truncate" title={a.title}>{a.title}</span>
-                      <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full shrink-0 ${STATUS_COLORS[a.status] || STATUS_COLORS.draft}`}>
-                        {a.status}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1.5 mt-0.5">
-                      <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded shrink-0 ${badgeFor(a, instrumentOf(a)).tone}`}>
-                        {badgeFor(a, instrumentOf(a)).label}
-                      </span>
-                      {a.company_name && (
-                        <p className="text-xs text-gray-400 truncate">{a.company_name}</p>
-                      )}
-                    </div>
-                    {/* Tags on the row, so a group is visible without having
-                        to filter for it. Names only — resolved against the
-                        loaded tags, so a deleted tag simply stops appearing. */}
-                    {(a.tag_ids || []).length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {(a.tag_ids || [])
-                          .map(id => tags.find(t => t.id === id))
-                          .filter(Boolean)
-                          .map(t => (
-                            <span key={t.id} className="text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
-                              {t.name}
-                            </span>
-                          ))}
-                      </div>
-                    )}
-                  </button>
-                </li>
-              ))}
-            </ul>
-            </div>
-              );
-            })
+              </ul>
+            </>
           )}
 
           {/* Settings section */}
@@ -785,14 +568,32 @@ export default function AdminPage() {
             onBackToOrganizations={() => { setTeamOrgFilter(null); setSelectedSection("organizations"); }}
           />
         ) : !selected ? (
-          <div className="flex-1 flex items-center justify-center text-gray-400 text-sm">
-            {loading ? "" : "Select or create an assessment"}
-          </div>
+          loading ? (
+            <div className="flex-1 flex items-center justify-center">
+              <div className="w-5 h-5 border-2 border-blue-200 border-t-blue-500 rounded-full animate-spin" />
+            </div>
+          ) : (
+            <AssessmentsHome
+              assessments={assessments}
+              tags={tags}
+              instrumentOf={instrumentOf}
+              ownerNames={ownerNames}
+              userId={user?.id}
+              summary={respondentSummary}
+              seen={seen}
+              onOpen={openAssessment}
+              onNew={openNewForm}
+            />
+          )
         ) : (
           <>
             {/* Header */}
             <div className="bg-white border-b border-gray-200 px-8 py-4">
               <div className="mb-3">
+                {/* The way back to the list, now that the list is a page. */}
+                <button onClick={goHome} className="text-xs text-gray-400 hover:text-blue-600 transition-colors mb-0.5">
+                  ← Assessments
+                </button>
                 <h2 className="text-lg font-bold text-gray-900">{selected.title}</h2>
                 {selected.company_name && (
                   <p className="text-sm text-gray-400">{selected.company_name}</p>
@@ -873,6 +674,19 @@ export default function AdminPage() {
         busy={deleting}
         onConfirm={performDeleteAssessment}
         onCancel={() => { setConfirmingDelete(false); setDeleteError(""); }}
+      />
+
+      <AssessmentSwitcher
+        open={switcherOpen}
+        onOpenChange={setSwitcherOpen}
+        assessments={assessments}
+        recent={recent}
+        tags={tags}
+        instrumentOf={instrumentOf}
+        unreadFor={unreadFor}
+        onOpenAssessment={openAssessment}
+        onGoHome={goHome}
+        onNew={openNewForm}
       />
 
       {showNewForm && (
