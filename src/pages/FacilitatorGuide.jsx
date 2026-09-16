@@ -15,7 +15,7 @@ const sections = [
 2. **Choose what you're running.** The panel lists every instrument with a one-line summary and a short description. On the right, each one says what it asks of respondents: **you pick the activities** for Team gap analysis and Personal assessment, or the number of questions for the others. Click one to choose it; **Choose a different one** takes you back to the list.
 3. **Fill in the details.**
    - **What to call this engagement** — required. The placeholder shows the pattern, such as *Idea Reality Check — Acme*.
-   - **Client company** — optional. It appears on the Assessments page and in reports, and search matches it.
+   - **Client company** — optional, but worth filling in. It appears in reports, and it's what the **client dropdown** on the Assessments page groups by, so use the same spelling on every assessment for that client — "Alert Media" and "AlertMedia" would show up as two clients. You can change it later on the Overview tab.
    - **Which product** or **which idea** — required for the **Product Success Quiz** and the **Idea Reality Check** only. Everyone answering sees it, so they're all scoring the same product or idea. A code name is fine.
 4. **Click Create.** It stays greyed out until the required fields are filled in. The new assessment opens on its **Overview** tab as a **draft**.
 
@@ -25,7 +25,7 @@ const sections = [
 |------|--------|---------|
 | 1 | **Choose an activity preset.** Go to the **Activities** tab and click a preset — Default (36), Extended (65), Brief (22), or Executive (6). Each card says what the set is for. Ownership roles are pre-populated automatically. | Team gap and Personal |
 | 2 | **Review ownership roles.** Open the **Ownership Roles** tab and add or remove roles to match the client's actual team structure. | Team gap |
-| 3 | **Tag it.** In the **Overview** tab, add tags — the client, a cohort, whatever groups this with related work. | All |
+| 3 | **Tag it.** In the **Overview** tab, add tags — a cohort, a program, whatever groups this with related work across clients. The client itself doesn't need a tag: **Client company** already does that job. | All |
 | 4 | **Set status to Active.** In the **Overview** tab, set the status to **Active**. Participants can't open the survey until you do. | All |
 
 The Chaos Assessment, Portfolio Health Check, Product Success Quiz, and Idea Reality Check ask their own fixed questions, so they have no Activities or Ownership Roles tab: tag it, set it Active, and share the link.
@@ -45,7 +45,7 @@ The Chaos Assessment, Portfolio Health Check, Product Success Quiz, and Idea Rea
 
 ## Tags
 
-Tags group related assessments — a client, a cohort, a support group. An assessment can carry several, and they're only for finding things: they don't affect who can see what. The search box on the Assessments page matches tag names, so typing a tag finds everything that carries it.
+Tags group related assessments — a cohort, a program, a support group. For grouping by client, use **Client company** and the client dropdown instead; tags are for groupings a client name can't express. An assessment can carry several, and they're only for finding things: they don't affect who can see what. The search box on the Assessments page matches tag names, so typing a tag finds everything that carries it.
 
 Pick an existing tag rather than typing a new one where you can. The picker only offers to create when nothing matches, which keeps "Alert Media" and "AlertMedia" from becoming two separate groups.
 
