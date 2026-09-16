@@ -42,6 +42,10 @@
           }
         }
       }
+    },
+    "responses_seen_at": {
+      "type": "object",
+      "description": "When this user last looked at each assessment's results, as { since, assessments: { [assessmentId]: ISO date } }. Drives the unread-responses badges in /admin. 'since' is stamped the first time the badges load, so nothing reads as new on day one. Deliberately writable by the user themself and given no per-field rule: it only decides which badges they see, and grants nothing."
     }
   },
   "required": [
