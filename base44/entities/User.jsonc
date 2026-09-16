@@ -54,6 +54,14 @@
       },
       "default": [],
       "description": "Assessments this user pinned to the top of the /admin sidebar, in the order they were pinned. Holding an id grants nothing: the sidebar only shows pins that resolve against assessments the user can already see. Self-writable with no per-field rule, like responses_seen_at, for the same reason."
+    },
+    "release_notes_read": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "Titles of the RELEASE_NOTES.md entries this user has read or dismissed. Any entry not listed puts the announcement bar across the top of /admin. Self-writable with no per-field rule, like pinned_assessment_ids: it only decides which announcements they see, and grants nothing."
     }
   },
   "required": [

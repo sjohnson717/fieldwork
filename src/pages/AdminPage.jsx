@@ -22,6 +22,8 @@ import {
   readRecent, pushRecent, visibleRecent,
 } from "@/lib/unread-responses";
 import { readPinned, togglePinned, pinnedIn } from "@/lib/pinned-assessments";
+import { readReleaseNotes, unreadReleaseNotes, markAllReleaseNotesRead } from "@/lib/release-notes";
+import { ReleaseNotesBar, ReleaseNotesDialog, useReleaseNotesDialog } from "@/components/ReleaseNotes";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import NewAssessmentPanel from "@/components/NewAssessmentPanel";
 import { functionErrorMessage } from "@/lib/utils";
@@ -60,6 +62,10 @@ const tabsFor = (assessment, instrument) => {
 // the last assessment you happened to open before that.
 const SELECTED_ASSESSMENT_KEY = "qa_admin_selected_assessment";
 
+// The sidebar's height and sticky offset while the release notes bar is showing:
+// the bar's h-10, taken off the top. Spelt out whole so Tailwind finds it.
+const RELEASE_BAR_OFFSET = "h-[calc(100vh-2.5rem)] top-10";
+
 // The list used to live in this sidebar, grouped by client, organization or
 // owner. It moved to AssessmentsHome, which has the width for a table; the
 // sidebar keeps Pinned and Recent lists and the ⌘K switcher, so moving between two
@@ -92,6 +98,9 @@ export default function AdminPage() {
   const [seen, setSeen] = useState(null);
   const [recentIds, setRecentIds] = useState([]);
   const [pinnedIds, setPinnedIds] = useState([]);
+  // Release note titles this user has read or dismissed. null until the user
+  // loads, so the bar never flashes up for someone who has read everything.
+  const [readNoteIds, setReadNoteIds] = useState(null);
   // Mine or Everyone's on the Assessments page. Held here rather than on the
   // page because the sidebar's count and unread total follow it too, and so it
   // survives opening an assessment and coming back. Not persisted across
@@ -133,6 +142,7 @@ export default function AdminPage() {
       loadResponseBadges();
       setRecentIds(readRecent(user.id));
       setPinnedIds(readPinned(user));
+      setReadNoteIds(readReleaseNotes(user));
     }
   }, [isAuthenticated, user]);
 
@@ -344,6 +354,10 @@ export default function AdminPage() {
     loadResponseBadges();
   };
 
+  const unreadNotes = readNoteIds ? unreadReleaseNotes(readNoteIds) : [];
+  const markNotesRead = () => setReadNoteIds(markAllReleaseNotesRead());
+  const whatsNew = useReleaseNotesDialog(unreadNotes, markNotesRead);
+
   // ⌘K on a Mac, Ctrl+K elsewhere, from anywhere on the admin page — including
   // inside a text field, since that is where people are when they want out.
   const toggleSwitcher = useCallback((e) => {
@@ -414,275 +428,292 @@ export default function AdminPage() {
   }`;
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      {/* Sidebar */}
-      <aside className="w-64 shrink-0 bg-white border-r border-gray-200 flex flex-col h-screen sticky top-0">
-        <div className="px-5 py-5 border-b border-gray-100">
-          <p className="text-xs font-semibold text-blue-600 uppercase tracking-wide mb-0.5">Quartz Assessment</p>
-          <h1 className="text-base font-bold text-gray-900">Admin</h1>
-        </div>
+    <div className="min-h-screen bg-gray-50">
+      {/* Across the whole screen rather than the main column, so it reads as
+          news about the app and not about whatever page is open. Sticky, so it
+          stays in view until it is read or dismissed; the sidebar sits below it
+          rather than under it, or Log out would drop off the bottom. */}
+      <ReleaseNotesBar unread={unreadNotes} onOpen={whatsNew.openDialog} onDismiss={markNotesRead} />
+      <div className="flex">
+        {/* Sidebar */}
+        <aside className={`w-64 shrink-0 bg-white border-r border-gray-200 flex flex-col sticky ${
+          unreadNotes.length > 0 ? RELEASE_BAR_OFFSET : "h-screen top-0"
+        }`}>
+          <div className="px-5 py-5 border-b border-gray-100">
+            <p className="text-xs font-semibold text-blue-600 uppercase tracking-wide mb-0.5">Quartz Assessment</p>
+            <h1 className="text-base font-bold text-gray-900">Admin</h1>
+          </div>
 
-        <div className="flex-1 overflow-y-auto py-3 px-3">
-          {/* Looks like a search box because that is what it does, and shows
-              its shortcut so the keyboard route is learnt by seeing it. */}
-          <button
-            onClick={() => setSwitcherOpen(true)}
-            className="w-full flex items-center gap-2 px-3 py-1.5 mb-3 text-xs text-gray-400 bg-white border border-gray-200 rounded-lg hover:border-gray-300 transition-colors"
-          >
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 115 11a6 6 0 0112 0z" />
-            </svg>
-            Find assessment
-            <kbd className="ml-auto font-mono text-[10px] text-gray-400 border border-gray-200 rounded px-1">{isMac ? "⌘K" : "Ctrl K"}</kbd>
-          </button>
+          <div className="flex-1 overflow-y-auto py-3 px-3">
+            {/* Looks like a search box because that is what it does, and shows
+                its shortcut so the keyboard route is learnt by seeing it. */}
+            <button
+              onClick={() => setSwitcherOpen(true)}
+              className="w-full flex items-center gap-2 px-3 py-1.5 mb-3 text-xs text-gray-400 bg-white border border-gray-200 rounded-lg hover:border-gray-300 transition-colors"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 115 11a6 6 0 0112 0z" />
+              </svg>
+              Find assessment
+              <kbd className="ml-auto font-mono text-[10px] text-gray-400 border border-gray-200 rounded px-1">{isMac ? "⌘K" : "Ctrl K"}</kbd>
+            </button>
 
-          <button onClick={goHome} className={navClass(onHome)}>
-            Assessments
-            <span className="ml-auto">
-              {totalUnread > 0
-                ? <UnreadBadge count={totalUnread} />
-                : <span className="text-xs font-normal text-gray-400">{ownerScoped.length || ""}</span>}
-            </span>
-          </button>
+            <button onClick={goHome} className={navClass(onHome)}>
+              Assessments
+              <span className="ml-auto">
+                {totalUnread > 0
+                  ? <UnreadBadge count={totalUnread} />
+                  : <span className="text-xs font-normal text-gray-400">{ownerScoped.length || ""}</span>}
+              </span>
+            </button>
 
-          {/* Pinned first, then Recent. Recent is five at most whatever the
-              size of the list, which is what keeps the sidebar quiet for a
-              super-admin with a hundred assessments; Pinned is only as long as
-              someone chose to make it. One line per row: the title and its
-              unread count, nothing else. */}
-          {[["Pinned", pinned], ["Recent", recent]].map(([heading, rows]) => rows.length > 0 && (
-            <div key={heading}>
-              <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest px-3 mb-1 mt-5">{heading}</p>
-              <ul className="space-y-0.5">
-                {rows.map(a => (
-                  <li key={a.id}>
-                    <button
-                      onClick={() => openAssessment(a.id, unreadFor(a) ? "Results" : "Overview")}
-                      className={navClass(selectedSection === "assessments" && selectedId === a.id)}
-                      title={a.company_name ? `${a.title} · ${a.company_name}` : a.title}
-                    >
-                      <span className="truncate font-normal">{a.title}</span>
-                      <UnreadBadge count={unreadFor(a)} className="ml-auto shrink-0" />
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-
-          {/* Settings section */}
-          {(isAdmin || isOrgAdmin) && (
-            <>
-              <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest px-3 mb-1.5 mt-5">Settings</p>
-              {isAdmin && (
-                <button
-                  onClick={() => setSelectedSection("library")}
-                  className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors text-sm font-medium ${
-                    selectedSection === "library"
-                      ? "bg-blue-50 text-blue-900"
-                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                  }`}
-                >
-                  Library
-                </button>
-              )}
-              {/* Next to the Library and gated the same way: both are authored
-                  content every organization reads and only we may rewrite. */}
-              {isAdmin && (
-                <button
-                  onClick={() => setSelectedSection("instruments")}
-                  className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors text-sm font-medium ${
-                    selectedSection === "instruments"
-                      ? "bg-blue-50 text-blue-900"
-                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                  }`}
-                >
-                  Instruments
-                </button>
-              )}
-              {/* Tags, unlike the rest of Settings, is open to org admins too:
-                  Tag's own rules let them manage their organization's tags, and
-                  listTags scopes the page to those. */}
-              <button
-                onClick={() => setSelectedSection("tags")}
-                className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors text-sm font-medium ${
-                  selectedSection === "tags"
-                    ? "bg-blue-50 text-blue-900"
-                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                }`}
-              >
-                Tags
-              </button>
-              {isAdmin && (
-                <button
-                  onClick={() => setSelectedSection("organizations")}
-                  className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors text-sm font-medium ${
-                    selectedSection === "organizations"
-                      ? "bg-blue-50 text-blue-900"
-                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                  }`}
-                >
-                  Organizations
-                </button>
-              )}
-              <button
-                onClick={() => { setSelectedSection("team"); setTeamOrgFilter(null); }}
-                className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors text-sm font-medium ${
-                  selectedSection === "team"
-                    ? "bg-blue-50 text-blue-900"
-                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                }`}
-              >
-                Facilitators
-              </button>
-            </>
-          )}
-          <a
-            href="/facilitator-guide"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-full text-left px-3 py-2.5 rounded-lg transition-colors text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 flex items-center gap-1.5"
-          >
-            Facilitator Guide
-            <svg className="w-3 h-3 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-            </svg>
-          </a>
-        </div>
-
-        <div className="px-3 py-2 border-t border-gray-100">
-          {user?.email && (
-            <p className="px-3 py-1 text-xs text-gray-400 truncate" title={user.email}>{user.email}</p>
-          )}
-          <button
-            onClick={() => logout()}
-            className="w-full text-left px-3 py-1.5 rounded-lg text-xs text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
-          >
-            Log out
-          </button>
-        </div>
-      </aside>
-
-      {/* Main */}
-      <div className="flex-1 flex flex-col min-w-0">
-        {selectedSection === "organizations" ? (
-          <OrganizationsPage
-            onViewTeam={orgId => { setTeamOrgFilter(orgId); setSelectedSection("team"); }}
-          />
-        ) : selectedSection === "instruments" ? (
-          <InstrumentsPage />
-        ) : selectedSection === "library" ? (
-          <LibraryPage />
-        ) : selectedSection === "tags" ? (
-          <TagsPage onTagsChanged={loadTags} />
-        ) : selectedSection === "team" ? (
-          <TeamPage
-            orgFilter={teamOrgFilter}
-            onClearOrgFilter={() => setTeamOrgFilter(null)}
-            onBackToOrganizations={() => { setTeamOrgFilter(null); setSelectedSection("organizations"); }}
-          />
-        ) : !selected ? (
-          loading ? (
-            <div className="flex-1 flex items-center justify-center">
-              <div className="w-5 h-5 border-2 border-blue-200 border-t-blue-500 rounded-full animate-spin" />
-            </div>
-          ) : (
-            <AssessmentsHome
-              assessments={assessments}
-              tags={tags}
-              instrumentOf={instrumentOf}
-              ownerNames={ownerNames}
-              userId={user?.id}
-              summary={respondentSummary}
-              seen={seen}
-              onOpen={openAssessment}
-              onNew={openNewForm}
-              isPinned={isPinned}
-              onTogglePin={togglePin}
-              ownerChoice={ownerChoice}
-              onOwnerChoice={setOwnerChoice}
-              clientChoice={clientChoice}
-              onClientChoice={setClientChoice}
-            />
-          )
-        ) : (
-          <>
-            {/* Header */}
-            <div className="bg-white border-b border-gray-200 px-8 py-4">
-              <div className="mb-3">
-                {/* The way back to the list, now that the list is a page. */}
-                <button onClick={goHome} className="text-xs text-gray-400 hover:text-blue-600 transition-colors mb-0.5">
-                  ← Assessments
-                </button>
-                <div className="flex items-center gap-2">
-                  <h2 className="text-lg font-bold text-gray-900">{selected.title}</h2>
-                  <PinButton pinned={isPinned(selected.id)} onToggle={() => togglePin(selected.id)} />
-                </div>
-                {selected.company_name && (
-                  <p className="text-sm text-gray-400">{selected.company_name}</p>
-                )}
+            {/* Pinned first, then Recent. Recent is five at most whatever the
+                size of the list, which is what keeps the sidebar quiet for a
+                super-admin with a hundred assessments; Pinned is only as long as
+                someone chose to make it. One line per row: the title and its
+                unread count, nothing else. */}
+            {[["Pinned", pinned], ["Recent", recent]].map(([heading, rows]) => rows.length > 0 && (
+              <div key={heading}>
+                <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest px-3 mb-1 mt-5">{heading}</p>
+                <ul className="space-y-0.5">
+                  {rows.map(a => (
+                    <li key={a.id}>
+                      <button
+                        onClick={() => openAssessment(a.id, unreadFor(a) ? "Results" : "Overview")}
+                        className={navClass(selectedSection === "assessments" && selectedId === a.id)}
+                        title={a.company_name ? `${a.title} · ${a.company_name}` : a.title}
+                      >
+                        <span className="truncate font-normal">{a.title}</span>
+                        <UnreadBadge count={unreadFor(a)} className="ml-auto shrink-0" />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
               </div>
-              {/* Tabs */}
-              <div className="flex gap-1">
-                {visibleTabs.map(tab => (
+            ))}
+
+            {/* Settings section */}
+            {(isAdmin || isOrgAdmin) && (
+              <>
+                <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest px-3 mb-1.5 mt-5">Settings</p>
+                {isAdmin && (
                   <button
-                    key={tab}
-                    onClick={() => setActiveTab(tab)}
-                    className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                      effectiveTab === tab
-                        ? "bg-blue-600 text-white"
-                        : "text-gray-500 hover:text-gray-800 hover:bg-gray-100"
+                    onClick={() => setSelectedSection("library")}
+                    className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors text-sm font-medium ${
+                      selectedSection === "library"
+                        ? "bg-blue-50 text-blue-900"
+                        : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                     }`}
                   >
-                    {tab}
+                    Library
                   </button>
-                ))}
-              </div>
-            </div>
+                )}
+                {/* Next to the Library and gated the same way: both are authored
+                    content every organization reads and only we may rewrite. */}
+                {isAdmin && (
+                  <button
+                    onClick={() => setSelectedSection("instruments")}
+                    className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors text-sm font-medium ${
+                      selectedSection === "instruments"
+                        ? "bg-blue-50 text-blue-900"
+                        : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                    }`}
+                  >
+                    Instruments
+                  </button>
+                )}
+                {/* Tags, unlike the rest of Settings, is open to org admins too:
+                    Tag's own rules let them manage their organization's tags, and
+                    listTags scopes the page to those. */}
+                <button
+                  onClick={() => setSelectedSection("tags")}
+                  className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors text-sm font-medium ${
+                    selectedSection === "tags"
+                      ? "bg-blue-50 text-blue-900"
+                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                  }`}
+                >
+                  Tags
+                </button>
+                {isAdmin && (
+                  <button
+                    onClick={() => setSelectedSection("organizations")}
+                    className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors text-sm font-medium ${
+                      selectedSection === "organizations"
+                        ? "bg-blue-50 text-blue-900"
+                        : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                    }`}
+                  >
+                    Organizations
+                  </button>
+                )}
+                <button
+                  onClick={() => { setSelectedSection("team"); setTeamOrgFilter(null); }}
+                  className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors text-sm font-medium ${
+                    selectedSection === "team"
+                      ? "bg-blue-50 text-blue-900"
+                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                  }`}
+                >
+                  Facilitators
+                </button>
+              </>
+            )}
+            <a
+              href="/facilitator-guide"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full text-left px-3 py-2.5 rounded-lg transition-colors text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 flex items-center gap-1.5"
+            >
+              Facilitator Guide
+              <svg className="w-3 h-3 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+              </svg>
+            </a>
+            {/* Always here, so a dismissed announcement can still be read. */}
+            <button onClick={whatsNew.openDialog} className={navClass(false)}>
+              What's new
+              {/* Blue, not the red count: red means new responses everywhere else. */}
+              {unreadNotes.length > 0 && <span className="ml-auto w-2 h-2 rounded-full bg-blue-500" aria-label="Unread" />}
+            </button>
+          </div>
 
-            {/* Tab content */}
-            <div className="flex-1 overflow-y-auto">
-              {effectiveTab === "Overview" && (
-                <AssessmentOverview
-                  instrument={selectedInstrument}
-                  assessment={selected}
-                  onUpdate={handleAssessmentUpdate}
-                  // Deleting is creator-or-super-admin, matching both
-                  // Assessment's delete rule and deleteAssessment's check.
-                  // Anyone else was shown a button that could only half-work.
-                  onDelete={canDeleteSelected ? handleDeleteAssessment : null}
-                  deleting={deleting}
-                />
-              )}
-              {effectiveTab === "Activities" && (
-                <AssessmentActivitiesTab
-                  assessment={selected}
-                  onUpdate={handleAssessmentUpdate}
-                />
-              )}
-              {effectiveTab === "Ownership Roles" && (
-                <AssessmentOwnershipRoles
-                  assessment={selected}
-                  onUpdate={handleAssessmentUpdate}
-                />
-              )}
-              {effectiveTab === "Results" && (
-                // Routed by the instrument where there is one, and by
-                // assessment_type where there is not — which is every
-                // assessment made before instruments existed.
-                selectedInstrument?.question_source === "instrument"
-                  ? <InstrumentResults assessment={selected} />
-                  : selected.assessment_type === "personal"
-                    ? <PersonalResults assessment={selected} />
-                    : <AssessmentResults assessment={selected} />
-              )}
-              {effectiveTab === "Discussion" && (
-                <AssessmentDiscussion assessment={selected} />
-              )}
-            </div>
-          </>
-        )}
+          <div className="px-3 py-2 border-t border-gray-100">
+            {user?.email && (
+              <p className="px-3 py-1 text-xs text-gray-400 truncate" title={user.email}>{user.email}</p>
+            )}
+            <button
+              onClick={() => logout()}
+              className="w-full text-left px-3 py-1.5 rounded-lg text-xs text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+            >
+              Log out
+            </button>
+          </div>
+        </aside>
+
+        {/* Main */}
+        <div className="flex-1 flex flex-col min-w-0">
+          {selectedSection === "organizations" ? (
+            <OrganizationsPage
+              onViewTeam={orgId => { setTeamOrgFilter(orgId); setSelectedSection("team"); }}
+            />
+          ) : selectedSection === "instruments" ? (
+            <InstrumentsPage />
+          ) : selectedSection === "library" ? (
+            <LibraryPage />
+          ) : selectedSection === "tags" ? (
+            <TagsPage onTagsChanged={loadTags} />
+          ) : selectedSection === "team" ? (
+            <TeamPage
+              orgFilter={teamOrgFilter}
+              onClearOrgFilter={() => setTeamOrgFilter(null)}
+              onBackToOrganizations={() => { setTeamOrgFilter(null); setSelectedSection("organizations"); }}
+            />
+          ) : !selected ? (
+            loading ? (
+              <div className="flex-1 flex items-center justify-center">
+                <div className="w-5 h-5 border-2 border-blue-200 border-t-blue-500 rounded-full animate-spin" />
+              </div>
+            ) : (
+              <AssessmentsHome
+                assessments={assessments}
+                tags={tags}
+                instrumentOf={instrumentOf}
+                ownerNames={ownerNames}
+                userId={user?.id}
+                summary={respondentSummary}
+                seen={seen}
+                onOpen={openAssessment}
+                onNew={openNewForm}
+                isPinned={isPinned}
+                onTogglePin={togglePin}
+                ownerChoice={ownerChoice}
+                onOwnerChoice={setOwnerChoice}
+                clientChoice={clientChoice}
+                onClientChoice={setClientChoice}
+              />
+            )
+          ) : (
+            <>
+              {/* Header */}
+              <div className="bg-white border-b border-gray-200 px-8 py-4">
+                <div className="mb-3">
+                  {/* The way back to the list, now that the list is a page. */}
+                  <button onClick={goHome} className="text-xs text-gray-400 hover:text-blue-600 transition-colors mb-0.5">
+                    ← Assessments
+                  </button>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-lg font-bold text-gray-900">{selected.title}</h2>
+                    <PinButton pinned={isPinned(selected.id)} onToggle={() => togglePin(selected.id)} />
+                  </div>
+                  {selected.company_name && (
+                    <p className="text-sm text-gray-400">{selected.company_name}</p>
+                  )}
+                </div>
+                {/* Tabs */}
+                <div className="flex gap-1">
+                  {visibleTabs.map(tab => (
+                    <button
+                      key={tab}
+                      onClick={() => setActiveTab(tab)}
+                      className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                        effectiveTab === tab
+                          ? "bg-blue-600 text-white"
+                          : "text-gray-500 hover:text-gray-800 hover:bg-gray-100"
+                      }`}
+                    >
+                      {tab}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Tab content */}
+              <div className="flex-1 overflow-y-auto">
+                {effectiveTab === "Overview" && (
+                  <AssessmentOverview
+                    instrument={selectedInstrument}
+                    assessment={selected}
+                    onUpdate={handleAssessmentUpdate}
+                    // Deleting is creator-or-super-admin, matching both
+                    // Assessment's delete rule and deleteAssessment's check.
+                    // Anyone else was shown a button that could only half-work.
+                    onDelete={canDeleteSelected ? handleDeleteAssessment : null}
+                    deleting={deleting}
+                  />
+                )}
+                {effectiveTab === "Activities" && (
+                  <AssessmentActivitiesTab
+                    assessment={selected}
+                    onUpdate={handleAssessmentUpdate}
+                  />
+                )}
+                {effectiveTab === "Ownership Roles" && (
+                  <AssessmentOwnershipRoles
+                    assessment={selected}
+                    onUpdate={handleAssessmentUpdate}
+                  />
+                )}
+                {effectiveTab === "Results" && (
+                  // Routed by the instrument where there is one, and by
+                  // assessment_type where there is not — which is every
+                  // assessment made before instruments existed.
+                  selectedInstrument?.question_source === "instrument"
+                    ? <InstrumentResults assessment={selected} />
+                    : selected.assessment_type === "personal"
+                      ? <PersonalResults assessment={selected} />
+                      : <AssessmentResults assessment={selected} />
+                )}
+                {effectiveTab === "Discussion" && (
+                  <AssessmentDiscussion assessment={selected} />
+                )}
+              </div>
+            </>
+          )}
+        </div>
       </div>
+
+      <ReleaseNotesDialog open={whatsNew.open} onOpenChange={whatsNew.setOpen} newIds={whatsNew.newIds} />
 
       <ConfirmDialog
         open={confirmingDelete}

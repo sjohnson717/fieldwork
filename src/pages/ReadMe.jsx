@@ -38,7 +38,7 @@ The two are separate records that can be linked, so a report can cross what a te
 | **Invitation** | Carries an application role until an invited user first signs in. |
 | **JobTitle** | The picklist of roles offered when suggesting an owner. |
 | **Resource** | Authored learning resources for the personal report. Typed (free article / external / book / course), attached to activities by \`activity_ids\`. Read is open — the personal report renders unauthenticated. |
-| **User** | Base44 built-in, extended with \`org_id\`, an application \`role\`, \`responses_seen_at\` — when this user last opened each assessment's Results, which drives the unread badges — and \`pinned_assessment_ids\`, the assessments pinned to their sidebar. |
+| **User** | Base44 built-in, extended with \`org_id\`, an application \`role\`, \`responses_seen_at\` — when this user last opened each assessment's Results, which drives the unread badges — \`pinned_assessment_ids\`, the assessments pinned to their sidebar, and \`release_notes_read\`, the release notes they have read or dismissed. |
 
 Built-in fields on every entity: \`id\`, \`created_date\`, \`updated_date\`, \`created_by_id\`.`,
   },
@@ -93,6 +93,7 @@ Built-in fields on every entity: \`id\`, \`created_date\`, \`updated_date\`, \`c
 | \`src/lib/public-assessment.js\` | Client wrapper over the \`publicAssessment\` function. |
 | \`src/lib/roles.js\` | Application roles and org comparison. |
 | \`src/lib/pinned-assessments.js\` | Pinned assessments: reads and writes \`User.pinned_assessment_ids\`, and resolves pins against the assessments the user can see, so a deleted or unshared one simply stops appearing. |
+| \`src/lib/release-notes.js\` | Release notes: parses \`RELEASE_NOTES.md\` (bundled as text), and reads and writes \`User.release_notes_read\`. Drives the announcement bar across the top of \`/admin\` and the What's new dialog in \`src/components/ReleaseNotes.jsx\`. **Announcing a capability is adding an entry to that file** — a \`##\` title, a \`Released: YYYY-MM-DD\` line, and a paragraph for customers. Renaming an entry announces it again. |
 | \`src/lib/unread-responses.js\` | The Assessments page's unread badges and Recent list: loads \`summarizeRespondents\`, counts completions newer than what the user has seen, and records a Results visit as seen. |
 
 The two scoring modules are deliberately separate: a "3" does not mean the same thing in each, so nothing can be shared between them without introducing a bug that looks like a rounding error.
