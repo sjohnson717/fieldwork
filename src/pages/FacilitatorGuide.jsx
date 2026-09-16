@@ -7,26 +7,41 @@ const sections = [
   {
     id: "setup",
     title: "Setup",
-    content: `Complete setup before sending any links to the client. Everything is done in the Gap Analysis Admin screen.
+    content: `Complete setup before sending any links to the client. Everything is done in Admin.
 
-## Steps
+## Create the assessment
 
-| Step | Action | Details |
+1. **Click New assessment.** It's the blue button at the top of the Assessments page. From anywhere else in Admin, press ⌘K (Ctrl+K on Windows) and choose **New assessment**.
+2. **Choose what you're running.** The panel lists every instrument with a one-line summary and a short description. On the right, each one says what it asks of respondents: **you pick the activities** for Team gap analysis and Personal assessment, or the number of questions for the others. Click one to choose it; **Choose a different one** takes you back to the list.
+3. **Fill in the details.**
+   - **What to call this engagement** — required. The placeholder shows the pattern, such as *Idea Reality Check — Acme*.
+   - **Client company** — optional. It appears on the Assessments page and in reports, and search matches it.
+   - **Which product** or **which idea** — required for the **Product Success Quiz** and the **Idea Reality Check** only. Everyone answering sees it, so they're all scoring the same product or idea. A code name is fine.
+4. **Click Create.** It stays greyed out until the required fields are filled in. The new assessment opens on its **Overview** tab as a **draft**.
+
+## Then finish setup
+
+| Step | Action | Applies to |
 |------|--------|---------|
-| 1 | **Create the assessment** | Click **New assessment** on the Assessments page, or press ⌘K (Ctrl+K on Windows) and choose **New assessment** from anywhere in admin. Enter a title and client company name, then choose the type — **Team gap** or **Personal**. |
-| 2 | **Choose an activity preset** | Go to the **Activities** tab. Click a preset — Default (36), Extended (65), Brief (22), or Executive (6). Each card says what the set is for. Ownership roles are pre-populated automatically. |
-| 3 | **Review ownership roles** | Open the **Ownership Roles** tab. Add or remove roles to match the client's actual team structure. Team gap assessments only. |
-| 4 | **Tag it** | In the **Overview** tab, add tags — the client, a cohort, whatever groups this with related work. |
-| 5 | **Set status to Active** | In the Overview tab, set the status to **Active**. Participants cannot access the survey until this is done. |
+| 1 | **Choose an activity preset.** Go to the **Activities** tab and click a preset — Default (36), Extended (65), Brief (22), or Executive (6). Each card says what the set is for. Ownership roles are pre-populated automatically. | Team gap and Personal |
+| 2 | **Review ownership roles.** Open the **Ownership Roles** tab and add or remove roles to match the client's actual team structure. | Team gap |
+| 3 | **Tag it.** In the **Overview** tab, add tags — the client, a cohort, whatever groups this with related work. | All |
+| 4 | **Set status to Active.** In the **Overview** tab, set the status to **Active**. Participants can't open the survey until you do. | All |
 
-> **Choose the type carefully — it can't be changed later.** The type decides which questions get asked, so switching it on an assessment that already has responses would relabel answers people gave to a different question.
+The Chaos Assessment, Portfolio Health Check, Product Success Quiz, and Idea Reality Check ask their own fixed questions, so they have no Activities or Ownership Roles tab: tag it, set it Active, and share the link.
 
-## Which type?
+> **Choose the instrument carefully — it can't be changed later.** It decides which questions get asked, so switching it on an assessment that already has responses would relabel answers people gave to a different question.
 
-| Type | Asks | Produces |
+## Which one?
+
+| Instrument | Asks | Produces |
 |------|------|----------|
-| **Team gap** | How important is this activity, how well is it done today, and who should own it? | The gap analysis and the buyer report. Reported in aggregate — no individual is ever identified. |
-| **Personal** | How much experience, skill, and interest do *you* have in this activity? | A development profile belonging to each person. Attributed, not anonymous. |
+| **Team gap analysis** | How important is each activity, how well is it done today, and who does it? | The gap analysis and the buyer report. Reported in aggregate — no individual is ever identified. |
+| **Personal assessment** | How much experience, skill, and interest do *you* have in each activity? | A development profile belonging to each person. Attributed, not anonymous. |
+| **Chaos Assessment** | How well does each common obstacle to product success describe this team, from Absolutely to Never? | A report ordered by where the team disagrees most — see **Reading a Chaos, Portfolio Health, Idea Reality, or Product Success report**. |
+| **Portfolio Health Check** | Which portfolio challenges resonate with the team? | The same kind of report. |
+| **Product Success Quiz** | How healthy are one named product and the processes around it? | The same kind of report, about that product. |
+| **Idea Reality Check** | Is the organization positioned to make one named idea succeed? | The same kind of report, about that idea. |
 
 ## Tags
 
@@ -42,7 +57,7 @@ Each facilitator only sees assessments they created themselves, plus any they've
 
 ## Finding an assessment
 
-Admin opens on the **Assessments** page: one table of every assessment you can see, with its client, type, responses so far, last activity, and status. Click a row to open it, and **← Assessments** above an assessment's title to come back.
+Admin opens on the **Assessments** page: one table of every assessment you can see, with its client, type, responses so far, last activity, and status. **Last activity** is when a respondent last joined, saved a page, or finished; editing the assessment yourself doesn't change it, and an assessment nobody has answered shows a dash. Click a row to open it, and **← Assessments** above an assessment's title to come back.
 
 - **Search** matches the title, client, tag names, and access code, in any order — "sas roles" finds *Product Team Roles* at SAS.
 - **Open**, **Closed**, and **All** filter by status. Open is the default, so finished engagements stay out of the way until you ask for them.
