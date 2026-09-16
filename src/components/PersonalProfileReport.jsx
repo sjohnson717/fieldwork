@@ -194,6 +194,23 @@ function ResourceItem({ resource: r }) {
   );
 }
 
+// A section heading printed as one unbreakable block with the first card under
+// it. .print-section pins a heading to what follows with break-after: avoid,
+// which Safari ignores, so an iPhone PDF could end a page on "Part four ·
+// Suggested resources" and start the next on the first resource. Wrapping the
+// pair in break-inside: avoid holds in every engine. Only the first card is
+// paired; the rest flow as before, so a long section still splits between
+// cards rather than jumping to a new page whole.
+function withHeading(heading, key, card) {
+  if (!heading) return <div key={key}>{card}</div>;
+  return (
+    <div key={key} className="break-inside-avoid">
+      {heading}
+      {card}
+    </div>
+  );
+}
+
 function SectionHeading({ eyebrow, title, blurb, first = false }) {
   return (
     <div className={`${first ? "" : "print-section"} mb-5 pt-1`}>
@@ -374,16 +391,24 @@ export default function PersonalProfileReport({
                    a heading over its rows. */
                 <div className="space-y-3">
                   {groups.map(group => (
-                    <div key={group.facet}>
-                      <div className="facet-heading flex items-baseline gap-2 mb-1">
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-gray-900">{group.facet}</span>
-                        <span className="text-[10px] text-gray-400">{FACET_SUBTITLES[group.facet]}</span>
+                    <div key={group.facet} className="space-y-1">
+                      {/* The phase label and its first activity are one block
+                          that cannot be split. .facet-heading asks for the same
+                          thing with break-after: avoid, which Chrome honours
+                          and Safari ignores — an iPhone PDF printed LEARN as
+                          the last line of a page with both its activities
+                          overleaf. Every engine honours break-inside: avoid, so
+                          the pairing is built from that instead. */}
+                      <div className="break-inside-avoid space-y-1">
+                        <div className="facet-heading flex items-baseline gap-2">
+                          <span className="text-[10px] font-bold uppercase tracking-widest text-gray-900">{group.facet}</span>
+                          <span className="text-[10px] text-gray-400">{FACET_SUBTITLES[group.facet]}</span>
+                        </div>
+                        <p className="text-sm text-gray-800">{group.rows[0].activity.name}</p>
                       </div>
-                      <div className="space-y-1">
-                        {group.rows.map(row => (
-                          <p key={row.activity.id} className="text-sm text-gray-800">{row.activity.name}</p>
-                        ))}
-                      </div>
+                      {group.rows.slice(1).map(row => (
+                        <p key={row.activity.id} className="text-sm text-gray-800">{row.activity.name}</p>
+                      ))}
                     </div>
                   ))}
                 </div>
@@ -413,10 +438,14 @@ export default function PersonalProfileReport({
         {/* No axis legend here. The bars are stacked rows and each carries its
             own label, so a row of the three axis names at the top read as column
             headings for a table that doesn't exist. */}
-        <div className="mb-4 text-[11px] text-gray-400">Longer bar = higher self-rating</div>
+        {/* The key line travels with the first phase, so it can never be the
+            only thing printed at the foot of a page — which on an iPhone PDF
+            left an empty card reading "Longer bar = higher self-rating", with
+            every bar overleaf. */}
         <div className="space-y-4">
-          {facetRows.map(row => (
+          {facetRows.map((row, i) => (
             <div key={row.facet} className="break-inside-avoid">
+              {i === 0 && <div className="mb-4 text-[11px] text-gray-400">Longer bar = higher self-rating</div>}
               <div className="flex items-baseline gap-2 mb-1.5">
                 <span className="text-xs font-bold uppercase tracking-widest text-gray-900">{row.facet}</span>
                 <span className="text-xs text-gray-400">{FACET_SUBTITLES[row.facet]}</span>
@@ -437,23 +466,33 @@ export default function PersonalProfileReport({
         </div>
       </div>
 
-      {/* ── 3. Development Opportunities ── */}
-      <SectionHeading
-        eyebrow="Part three"
-        title="Development opportunities"
-        blurb="Drawn only from work you said you're interested in. Low interest is a legitimate answer, not a gap to be corrected, so nothing here is recommended on the strength of a low score alone."
-      />
+      {/* ── 3. Development Opportunities ──
+          The heading is rendered with the first card below, not here, so the
+          two print as one block; see withHeading. */}
 
       {opportunities.length === 0 ? (
+        <div className="break-inside-avoid">
+        <SectionHeading
+          eyebrow="Part three"
+          title="Development opportunities"
+          blurb="Drawn only from work you said you're interested in. Low interest is a legitimate answer, not a gap to be corrected, so nothing here is recommended on the strength of a low score alone."
+        />
         <div className="bg-white rounded-xl border border-gray-200 p-5 mb-4">
           <p className="text-sm text-gray-600 leading-relaxed">
             Nothing in this assessment combines high interest with a lower self-rated skill, so there's no development shortlist to draw. That isn't a gap in the data — it usually means the scope you were asked about is work you already do well, and the more useful conversation is about scope than about skills.
           </p>
         </div>
+        </div>
       ) : (
         <div className="space-y-3 mb-4">
-          {opportunities.map((o, i) => (
-            <div key={o.activity.id} className="bg-white rounded-xl border border-gray-200 p-5 break-inside-avoid">
+          {opportunities.map((o, i) => withHeading(i === 0 && (
+            <SectionHeading
+              eyebrow="Part three"
+              title="Development opportunities"
+              blurb="Drawn only from work you said you're interested in. Low interest is a legitimate answer, not a gap to be corrected, so nothing here is recommended on the strength of a low score alone."
+            />
+          ), o.activity.id,
+            <div className="bg-white rounded-xl border border-gray-200 p-5 break-inside-avoid">
               <div className="flex items-baseline gap-3 mb-1">
                 <span className="text-xs font-bold text-gray-300">{i + 1}</span>
                 <h3 className="text-sm font-bold text-gray-900 flex-1">{o.activity.name}</h3>
@@ -503,14 +542,15 @@ export default function PersonalProfileReport({
           empty promise. */}
       {resourcesByActivity.length > 0 && (
         <>
-          <SectionHeading
-            eyebrow="Part four"
-            title="Suggested resources"
-            blurb="Reading for the opportunities above — mostly free articles, plus a few books worth owning. None of it is a prerequisite: the tips above are the part you can act on this week."
-          />
           <div className="space-y-4 mb-4">
-            {resourcesByActivity.map(({ activity, items }) => (
-              <div key={activity.id} className="bg-white rounded-xl border border-gray-200 p-5 break-inside-avoid">
+            {resourcesByActivity.map(({ activity, items }, i) => withHeading(i === 0 && (
+              <SectionHeading
+                eyebrow="Part four"
+                title="Suggested resources"
+                blurb="Reading for the opportunities above — mostly free articles, plus a few books worth owning. None of it is a prerequisite: the tips above are the part you can act on this week."
+              />
+            ), activity.id,
+              <div className="bg-white rounded-xl border border-gray-200 p-5 break-inside-avoid">
                 <h3 className="text-sm font-bold text-gray-900 mb-3">{activity.name}</h3>
                 <div className="space-y-3">
                   {items.map(r => <ResourceItem key={r.id} resource={r} />)}

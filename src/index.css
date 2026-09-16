@@ -252,7 +252,14 @@
        stranded alone overleaf. Sized for the browser that gives the least
        room: on Chrome the credit sits low rather than flush, which is the cost
        of it holding together everywhere. */
-    height: calc(11in - 28mm - 2.5rem - 22mm);
+    /* That 22mm was still not enough for an iPhone. iOS Safari's printable
+       area on Letter measured 8in tall — 3in of the sheet go to its margins
+       and its header and footer — so the cover overran it and the credit took
+       page two by itself. The cover is now sized to fit inside that with a
+       margin to spare, rather than derived from the paper: 7.25in including
+       the column's own 2.5rem. On Chrome the credit sits about two inches
+       higher than it could; on every engine it stays on the cover. */
+    height: calc(7.25in - 2.5rem);
     margin-bottom: 0 !important;
     break-after: page;
     page-break-after: always;
