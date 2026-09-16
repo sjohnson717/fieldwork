@@ -8,6 +8,12 @@ Each entry is a `##` title, a `Released: YYYY-MM-DD` line, and a short
 explanation written for the people using the app. The title is the entry's
 identity — renaming one announces it again to everyone who already read it.
 
+## Admin on your phone
+
+Released: 2026-09-16
+
+Admin now fits a phone. The sidebar folds into a menu behind the ☰ button, and the Assessments page shows each assessment as a card with its client, type, status, responses, and last activity. Tap a card to open it. Assessments with new responses open on Results.
+
 ## The Assessments page
 
 Released: 2026-09-16
