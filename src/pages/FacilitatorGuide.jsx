@@ -316,7 +316,7 @@ Resources are managed in **Library → Resources**. Its picker lists library act
 
 **The library is loaded.** 61 of the 65 activities carry a resource: 48 Product Growth Leaders articles, 11 third-party books and external resources, and the *Customer Conversations* book, attached to the activities they serve. Staff Promotional Events deliberately has none, and shows only its Try this step. Product Roadmap, Portfolio Management, and Readiness Planning have none yet, so they show only their Try this step too. A resource serving several activities is listed **once**, under the highest-ranked opportunity that claims it, so a shortlist doesn't repeat the same article three times.
 
-**The chaos limericks.** 23 of those articles are the short "chaos" pieces from productgrowthleaders.com/i/ (Squeaky Wheel, Too Many Cooks, Field of Dreams, and the rest). Each names one recognisable dysfunction and carries a note beginning *Chaos ensues when…*. On the website they are grouped into four categories, and the categories decide where they attach in the library:
+**The chaos limericks.** 23 of those articles are the short "chaos" pieces from productgrowthleaders.com/reading-idiom/ (Squeaky Wheel, Too Many Cooks, Field of Dreams, and the rest). Each names one recognisable dysfunction and carries a note beginning *Chaos ensues when…*. On the website they are grouped into four categories, and the categories decide where they attach in the library:
 
 | Website category | Attached to activities in |
 |---|---|
