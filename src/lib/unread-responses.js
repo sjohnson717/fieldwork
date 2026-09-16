@@ -87,9 +87,13 @@ export const visibleRecent = (ids, assessments) => {
 
 // "2 hours ago", "Yesterday", "Sep 2". Coarse on purpose: a list is sorted by
 // it, not audited by it.
+//
+// A timestamp with no timezone designator is read as UTC, which is what the
+// platform means by one; the browser would otherwise read it as local time.
 export const relativeDate = (iso) => {
   if (!iso) return "—";
-  const then = new Date(iso);
+  const then = new Date(/[zZ]$|[+-]\d\d:?\d\d$/.test(iso) ? iso : `${iso}Z`);
+  if (Number.isNaN(then.getTime())) return "—";
   const mins = Math.round((Date.now() - then.getTime()) / 60000);
   if (mins < 1) return "Just now";
   if (mins < 60) return `${mins} min ago`;

@@ -82,20 +82,26 @@ export default function AssessmentsHome({
   const statusCount = (f) => searched.filter(f.test).length;
   const activeFilter = STATUS_FILTERS.find(f => f.key === statusFilter);
 
-  // Last activity is whichever is later: the last respondent to do anything,
-  // or the last edit to the assessment itself. A draft nobody has answered
-  // still moves up the list when you work on it.
+  // Last activity is the last respondent to do anything — join, save a page, or
+  // finish — and nothing else. It used to take the assessment's own edits too,
+  // so renaming a client on three assessments put all three at the top of the
+  // list as "Just now" while none had a response. What this column is read for
+  // is whether people are answering; an assessment nobody has answered shows a
+  // dash and sorts last.
   const rows = searched
     .filter(activeFilter.test)
     .map(a => {
       const s = summary?.[a.id];
-      const activity = [s?.last_activity, a.updated_date].filter(Boolean).sort().pop() || null;
+      const activity = s?.last_activity || null;
       return { ...a, _summary: s, _completed: s?.completed || 0, _activity: activity, _unread: unreadCount(s, seen, a.id) };
     })
     .sort((a, b) => {
       // Unread first, whatever the sort. That is the point of the badge: news
       // should not be sitting on page two under a stale draft.
       if (!!b._unread !== !!a._unread) return b._unread ? 1 : -1;
+      // Nobody has answered: last in either direction, since there is no
+      // activity to put first or last.
+      if (sort.key === "activity" && !!a._activity !== !!b._activity) return a._activity ? -1 : 1;
       const c = SORTS[sort.key](a, b);
       return sort.dir === "asc" ? c : -c;
     });

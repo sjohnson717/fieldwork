@@ -19,6 +19,20 @@ import { createClientFromRequest } from "npm:@base44/sdk@0.8.39";
 
 const sameOrg = (a, b) => (a || null) === (b || null);
 
+// Every timestamp out as a full ISO string in UTC. The platform's built-in
+// created_date and updated_date can arrive with no timezone designator, which a
+// browser parses as local time — an edit made an hour ago in New York read as
+// four hours in the future, and printed as "Just now". completed_date is
+// written by saveResponses with toISOString() and already carries its Z.
+// Normalising here also keeps the browser's string comparisons against the
+// user's seen times honest, since both sides are then the same format.
+const toIso = (d: string | null | undefined) => {
+  if (!d) return null;
+  const hasZone = /[zZ]$|[+-]\d\d:?\d\d$/.test(d);
+  const t = new Date(hasZone ? d : `${d}Z`);
+  return Number.isNaN(t.getTime()) ? null : t.toISOString();
+};
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -62,7 +76,7 @@ Deno.serve(async (req) => {
       // signed in does not. Rows from before completed_date existed fall back
       // to updated_date, which is when the completion flag was written.
       const done = r.status === "completed";
-      const when = done ? (r.completed_date || r.updated_date) : (r.updated_date || r.created_date);
+      const when = toIso(done ? (r.completed_date || r.updated_date) : (r.updated_date || r.created_date));
       if (done) {
         s.completed += 1;
         if (when) s.completed_dates.push(when);
