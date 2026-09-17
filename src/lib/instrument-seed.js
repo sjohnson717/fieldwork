@@ -256,7 +256,7 @@ export const INSTRUMENT_SEED = {
   "instruments": [
     {
       "key": "team_gap",
-      "name": "Team gap analysis",
+      "name": "Team Gap Analysis",
       "question_source": "library",
       "report_style": "gap",
       "ask_ownership": true,
@@ -280,7 +280,7 @@ export const INSTRUMENT_SEED = {
     },
     {
       "key": "personal",
-      "name": "Personal assessment",
+      "name": "Personal Assessment",
       "question_source": "library",
       "report_style": "profile",
       "ask_ownership": false,

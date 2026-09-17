@@ -265,7 +265,15 @@ export default function TeamLeaderPage() {
       <main className="max-w-3xl mx-auto px-6 py-10 space-y-8">
         {/* Title */}
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{assessment.company_name || assessment.title}</h1>
+          {/* The assessment's own name, which now carries the client and the
+              run inside it (see src/lib/assessment-naming.js). This used to
+              lead with the company alone, from when a title was freehand and
+              often said only "Team Gap Analysis" — a team leader holding two
+              links for the same client could not tell them apart. */}
+          <h1 className="text-2xl font-bold text-gray-900">{assessment.title}</h1>
+          {assessment.company_name && (
+            <p className="text-sm text-gray-500">{assessment.company_name}</p>
+          )}
           <p className="text-sm text-gray-400 mt-1">
             {linked.length > 0
               ? "Manage your team's participation across both assessments."

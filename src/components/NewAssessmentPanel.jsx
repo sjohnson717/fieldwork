@@ -1,4 +1,11 @@
 import { useState, useEffect, useRef } from "react";
+import {
+  titleCase,
+  composeAssessmentTitle,
+  NAMING_EXAMPLE,
+  NAMING_NOTE,
+  GENERIC_COMPANY,
+} from "@/lib/assessment-naming";
 
 // Choosing which of the six instruments to run.
 //
@@ -16,12 +23,20 @@ import { useState, useEffect, useRef } from "react";
 // Two steps rather than one long form. Picking the instrument is the decision;
 // naming the engagement is bookkeeping, and the fields it needs depend on what
 // was picked — only some instruments are about a single named subject.
+//
+// The name itself is not freehand any more. It is the three parts of the
+// naming standard (see src/lib/assessment-naming.js), collected separately and
+// joined for you, with the result shown as you type — because this string
+// becomes the heading on every report someone reads, and a box that merely
+// suggested the shape was producing six kinds of name.
 export default function NewAssessmentPanel({ instruments, creating, error, onCreate, onCancel }) {
   const [chosen, setChosen] = useState(null);
-  const [title, setTitle] = useState("");
+  const [name, setName] = useState("");
   const [company, setCompany] = useState("");
+  const [modifier, setModifier] = useState("");
+  const [tagline, setTagline] = useState("");
   const [subject, setSubject] = useState("");
-  const titleRef = useRef(null);
+  const modifierRef = useRef(null);
   const cancelRef = useRef(null);
 
   useEffect(() => {
@@ -31,17 +46,29 @@ export default function NewAssessmentPanel({ instruments, creating, error, onCre
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [creating, onCancel]);
 
-  useEffect(() => { if (chosen) titleRef.current?.focus(); }, [chosen]);
+  // The instrument name fills the first part of the standard, in Title Case,
+  // so the common case is two fields and not three. Reset it whenever the
+  // instrument changes, including on "Choose a different one" — otherwise the
+  // name of the instrument they backed out of stays in the box.
+  useEffect(() => {
+    setName(chosen ? titleCase(chosen.name) : "");
+    // The client and the run are theirs to type; jump to the one they are
+    // least likely to have a default for.
+    if (chosen) modifierRef.current?.focus();
+  }, [chosen]);
 
   const needsSubject = !!chosen?.subject_label;
-  const ready = title.trim() && (!needsSubject || subject.trim());
+  const title = composeAssessmentTitle({ name, company, modifier });
+  const ready =
+    name.trim() && company.trim() && modifier.trim() && (!needsSubject || subject.trim());
 
   const submit = () => {
     if (!ready || creating) return;
     onCreate({
       instrument: chosen,
-      title: title.trim(),
+      title,
       company_name: company.trim(),
+      tagline: tagline.trim(),
       subject: subject.trim(),
     });
   };
@@ -98,25 +125,32 @@ export default function NewAssessmentPanel({ instruments, creating, error, onCre
               <p className="text-xs text-gray-500 leading-relaxed border-l-2 border-gray-200 pl-3">{chosen.description}</p>
             )}
 
+            {/* The standard, said at the top where it is read before the
+                fields rather than after them. */}
+            <div className="rounded-lg bg-blue-50/60 border border-blue-100 px-3 py-2.5">
+              <p className="text-[11px] font-medium text-blue-900">How assessments are named</p>
+              <p className="text-[11px] text-blue-900/70 leading-snug mt-0.5">{NAMING_NOTE}</p>
+              <p className="text-[11px] text-blue-900/60 mt-1 font-mono break-words">{NAMING_EXAMPLE.full}</p>
+            </div>
+
             <div>
-              <label htmlFor="na-title" className="block text-xs font-medium text-gray-500 mb-1.5">
-                What to call this engagement
+              <label htmlFor="na-name" className="block text-xs font-medium text-gray-500 mb-1.5">
+                Instrument name
               </label>
               <input
-                id="na-title"
-                ref={titleRef}
+                id="na-name"
                 type="text"
-                value={title}
-                onChange={e => setTitle(e.target.value)}
+                value={name}
+                onChange={e => setName(e.target.value)}
                 onKeyDown={e => e.key === "Enter" && submit()}
-                placeholder={`${chosen.name} — Acme`}
+                placeholder={NAMING_EXAMPLE.name}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
               />
             </div>
 
             <div>
               <label htmlFor="na-company" className="block text-xs font-medium text-gray-500 mb-1.5">
-                Client company <span className="text-gray-400 font-normal">— optional</span>
+                Client company
               </label>
               <input
                 id="na-company"
@@ -124,8 +158,60 @@ export default function NewAssessmentPanel({ instruments, creating, error, onCre
                 value={company}
                 onChange={e => setCompany(e.target.value)}
                 onKeyDown={e => e.key === "Enter" && submit()}
+                placeholder={`${NAMING_EXAMPLE.company} — or ${GENERIC_COMPANY}`}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
               />
+              {/* Required now, because a report heading with no client on it
+                  cannot be told from the next client's. An open workshop or a
+                  demo still has an answer, and it is one word. */}
+              <p className="text-[11px] text-gray-400 mt-1 leading-snug">
+                Use {GENERIC_COMPANY} when there is no single client — an open workshop, a demo, a talk.
+              </p>
+            </div>
+
+            <div>
+              <label htmlFor="na-modifier" className="block text-xs font-medium text-gray-500 mb-1.5">
+                Which run this is
+              </label>
+              <input
+                id="na-modifier"
+                ref={modifierRef}
+                type="text"
+                value={modifier}
+                onChange={e => setModifier(e.target.value)}
+                onKeyDown={e => e.key === "Enter" && submit()}
+                placeholder={NAMING_EXAMPLE.modifier}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
+              />
+              {/* The part that tells two runs for the same client apart a year
+                  later: a baseline, a quarter, a date, a cohort. */}
+              <p className="text-[11px] text-gray-400 mt-1 leading-snug">
+                A baseline, a quarter, a date, a cohort — whatever separates this from the next one.
+              </p>
+            </div>
+
+            <div>
+              <label htmlFor="na-tagline" className="block text-xs font-medium text-gray-500 mb-1.5">
+                Description <span className="text-gray-400 font-normal">— optional</span>
+              </label>
+              <input
+                id="na-tagline"
+                type="text"
+                value={tagline}
+                onChange={e => setTagline(e.target.value)}
+                onKeyDown={e => e.key === "Enter" && submit()}
+                placeholder="A line of context, shown under the title on reports"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
+              />
+            </div>
+
+            {/* The name as it will be saved, and as every report will head
+                its first page. Shown rather than described. */}
+            <div className="border-t border-gray-100 pt-3">
+              <p className="text-[11px] text-gray-400 mb-1">Saved as</p>
+              <p className="text-sm font-medium text-gray-800 break-words">
+                {title || <span className="text-gray-300">{NAMING_EXAMPLE.full}</span>}
+              </p>
             </div>
 
             {needsSubject && (

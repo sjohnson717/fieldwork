@@ -12,12 +12,19 @@ const sections = [
 ## Create the assessment
 
 1. **Click New assessment.** It's the blue button at the top of the Assessments page. From anywhere else in Admin, press ⌘K (Ctrl+K on Windows) and choose **New assessment**.
-2. **Choose what you're running.** The panel lists every instrument with a one-line summary and a short description. On the right, each one says what it asks of respondents: **you pick the activities** for Team gap analysis and Personal assessment, or the number of questions for the others. Click one to choose it; **Choose a different one** takes you back to the list.
-3. **Fill in the details.**
-   - **What to call this engagement** — required. The placeholder shows the pattern, such as *Idea Reality Check — Acme*.
-   - **Client company** — optional, but worth filling in. It appears in reports, and it's what the **client dropdown** on the Assessments page groups by, so use the same spelling on every assessment for that client — "Alert Media" and "AlertMedia" would show up as two clients. You can change it later on the Overview tab.
+2. **Choose what you're running.** The panel lists every instrument with a one-line summary and a short description. On the right, each one says what it asks of respondents: **you pick the activities** for Team Gap Analysis and Personal Assessment, or the number of questions for the others. Click one to choose it; **Choose a different one** takes you back to the list.
+3. **Name it to the standard.** Every assessment is named the same way, in three parts, and the panel joins them for you and shows the result under **Saved as**:
+
+   > **Team Gap Analysis - Blackbaud - Initial assessment 260917**
+
+   - **Instrument name** — filled in for you from the instrument you picked, in Title Case. Change it only if this run needs a different name from the instrument's.
+   - **Client company** — required. Use **Public** when there is no single client: an open workshop, a demo, a talk. It also appears on its own line in reports, and it's what the **client dropdown** on the Assessments page groups by, so use the same spelling on every assessment for that client — "Alert Media" and "AlertMedia" would show up as two clients.
+   - **Which run this is** — required. Whatever tells this apart from the next one for the same client: *Initial assessment 260917*, *2Q97*, *Sales cohort*. Dates are written YYMMDD.
+   - **Description** — optional. One line of context, shown under the title on reports.
    - **Which product** or **which idea** — required for the **Product Success Quiz** and the **Idea Reality Check** only. Everyone answering sees it, so they're all scoring the same product or idea. A code name is fine.
-4. **Click Create.** It stays greyed out until the required fields are filled in. The new assessment opens on its **Overview** tab as a **draft**.
+
+   The name is the heading on every report a buyer, a team leader, and each respondent reads, which is why it isn't freehand. You can still rename any of it later on the Overview tab.
+4. **Click Create.** It stays greyed out until the required fields are filled in. The new assessment opens on its **Overview** tab, **active** — the access code works straight away, so don't share it until setup is finished.
 
 ## Then finish setup
 
@@ -26,9 +33,8 @@ const sections = [
 | 1 | **Choose an activity preset.** Go to the **Activities** tab and click a preset — Default (36), Extended (65), Brief (22), or Executive (6). Each card says what the set is for. Ownership roles are pre-populated automatically. | Team gap and Personal |
 | 2 | **Review ownership roles.** Open the **Ownership Roles** tab and add or remove roles to match the client's actual team structure. | Team gap |
 | 3 | **Tag it.** In the **Overview** tab, add tags — a cohort, a program, whatever groups this with related work across clients. The client itself doesn't need a tag: **Client company** already does that job. | All |
-| 4 | **Set status to Active.** In the **Overview** tab, set the status to **Active**. Participants can't open the survey until you do. | All |
 
-The Chaos Assessment, Portfolio Health Check, Product Success Quiz, and Idea Reality Check ask their own fixed questions, so they have no Activities or Ownership Roles tab: tag it, set it Active, and share the link.
+The Chaos Assessment, Portfolio Health Check, Product Success Quiz, and Idea Reality Check ask their own fixed questions, so they have no Activities or Ownership Roles tab: tag it and share the link.
 
 > **Choose the instrument carefully — it can't be changed later.** It decides which questions get asked, so switching it on an assessment that already has responses would relabel answers people gave to a different question.
 
@@ -36,8 +42,8 @@ The Chaos Assessment, Portfolio Health Check, Product Success Quiz, and Idea Rea
 
 | Instrument | Asks | Produces |
 |------|------|----------|
-| **Team gap analysis** | How important is each activity, how well is it done today, and who does it? | The gap analysis and the buyer report. Reported in aggregate — no individual is ever identified. |
-| **Personal assessment** | How much experience, skill, and interest do *you* have in each activity? | A development profile belonging to each person. Attributed, not anonymous. |
+| **Team Gap Analysis** | How important is each activity, how well is it done today, and who does it? | The gap analysis and the buyer report. Reported in aggregate — no individual is ever identified. |
+| **Personal Assessment** | How much experience, skill, and interest do *you* have in each activity? | A development profile belonging to each person. Attributed, not anonymous. |
 | **Chaos Assessment** | How well does each common obstacle to product success describe this team, from Absolutely to Never? | A report ordered by where the team disagrees most — see **Reading a Chaos, Portfolio Health, Idea Reality, or Product Success report**. |
 | **Portfolio Health Check** | Which portfolio challenges resonate with the team? | The same kind of report. |
 | **Product Success Quiz** | How healthy are one named product and the processes around it? | The same kind of report, about that product. |
@@ -119,7 +125,7 @@ LEARN is in **Default** and **Extended**. Executive and Brief deliberately leave
 
 > **Who gets which link?** All participants get the Access link. For a team gap assessment you can also hand out per-person links from the Team Leader Dashboard. Share the Dashboard and Report links only with team leaders.
 
-> **Personal assessments work differently here.** The dashboard shows who has responded but offers no per-person links, and there is no buyer report. A personal link reopens and *edits* that person's answers, so it stays with them — a team leader needs to know a response arrived, not to be able to rewrite it. If someone loses their link, they re-join with the access code and you remove the empty duplicate from the Results tab.
+> **Personal Assessments work differently here.** The dashboard shows who has responded but offers no per-person links, and there is no buyer report. A personal link reopens and *edits* that person's answers, so it stays with them — a team leader needs to know a response arrived, not to be able to rewrite it. If someone loses their link, they re-join with the access code and you remove the empty duplicate from the Results tab.
 
 > **Tell people they can stop partway.** Every survey page carries **Save and finish later**, which writes the page and hands them their own link. Someone who uses it does not need you or the dashboard to get back in. It is worth a line in whatever you send, because the people most likely to abandon are the ones who did not know they could pause.
 
@@ -160,7 +166,7 @@ The intro screen says what the assessment is for, what it will ask, roughly how 
 
 On a team gap that names ownership roles, the intro covers that question too: the answer is the role that **should** be accountable, not whoever does the work today. Worth stating, because a respondent describing the status quo produces a tidy answer that reports what the room already knows. An assessment with no roles configured is never told about a question it will not ask.
 
-**You do not have to brief people on any of this, and the public assessments have nobody to do it.** Say it in your own words if you like; just don't assume it has to come from you. What the axes mean and why they are kept apart is in *Personal assessments* below.
+**You do not have to brief people on any of this, and the public assessments have nobody to do it.** Say it in your own words if you like; just don't assume it has to come from you. What the axes mean and why they are kept apart is in *Personal Assessments* below.
 
 ## Two questions at the end
 
@@ -240,7 +246,7 @@ The cover carries the Quartz mark, not a PGL logo: this is the respondent's docu
   },
   {
     id: "personal",
-    title: "Personal assessments",
+    title: "Personal Assessments",
     content: `A personal assessment asks each person about their own experience, skills, and interest in the same activities the team rates. It produces a development profile for the individual and a capability picture for you.
 
 ## What the three axes mean

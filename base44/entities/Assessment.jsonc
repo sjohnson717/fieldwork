@@ -27,7 +27,8 @@
         "active",
         "closed"
       ],
-      "default": "draft"
+      "default": "active",
+      "description": "Open, or closed to responses. New assessments are born active: the access code has always worked from the moment the record exists, so \"draft\" only ever described an assessment that was already collecting answers. \"draft\" stays in the enum so records created before this keep their value rather than losing it on the next publish \u2014 the app reads every status through displayStatus() and treats draft as active."
     },
     "closed_date": {
       "type": "string",

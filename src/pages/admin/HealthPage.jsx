@@ -202,7 +202,7 @@ export default function HealthPage({ onOpen }) {
             <Tile
               count={failed.has("assessments") ? null : totals.assessments}
               label="Assessments"
-              note={failed.has("assessments") ? null : `${totals.open} open · ${totals.drafts} draft · ${totals.closed} closed`}
+              note={failed.has("assessments") ? null : `${totals.open} open · ${totals.closed} closed`}
             />
             <Tile
               count={failed.has("resources") ? null : totals.resources}

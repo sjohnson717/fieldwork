@@ -263,7 +263,7 @@ export default function AdminPage() {
     setLoading(false);
   };
 
-  const handleCreate = async ({ instrument, title, company_name, subject }) => {
+  const handleCreate = async ({ instrument, title, company_name, tagline, subject }) => {
     if (!title) return;
     setCreating(true);
     setCreateError("");
@@ -285,9 +285,14 @@ export default function AdminPage() {
       const created = await base44.entities.Assessment.create({
         title,
         company_name,
+        tagline: tagline || undefined,
         access_code: code,
         buyer_token: buyerToken,
-        status: "draft",
+        // Born open. There was a draft state before this, and nothing ever
+        // enforced it — the access code worked from the moment it existed, so
+        // "draft" only ever meant a grey pill on a row that was already
+        // collecting responses. An assessment is active until it is closed.
+        status: "active",
         instrument_id: instrument.id,
         // Written alongside instrument_id, and only where it means something.
         // The two library instruments keep it because everything still branches

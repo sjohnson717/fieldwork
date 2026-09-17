@@ -14,7 +14,6 @@ export const THRESHOLDS = {
   resourceYears: 5,          // a resource published longer ago than this
   quietActiveDays: 90,       // an open assessment with no response for this long
   unansweredActiveDays: 30,  // an open assessment nobody has started, this long after it was made
-  draftDays: 60,             // a draft never opened to respondents
   closedYears: 2,            // a closed assessment, kept this long after closing
   pendingInviteDays: 30,     // an invitation nobody has accepted
 };
@@ -73,7 +72,7 @@ export function runChecks(data, now = new Date()) {
   // ── Assessments ──
   const quiet = [];
   const unanswered = [];
-  for (const a of assessments.filter(a => a.status === "active")) {
+  for (const a of assessments.filter(a => a.status !== "closed")) {
     const s = summary[a.id];
     const last = parseDate(s?.last_activity);
     const created = parseDate(a.created_date);
@@ -85,10 +84,6 @@ export function runChecks(data, now = new Date()) {
       unanswered.push({ key: a.id, label: assessmentLabel(a), detail: `Opened ${ago(created, now)}, nobody has started it`, target: openAssessment(a) });
     }
   }
-
-  const drafts = assessments
-    .filter(a => a.status === "draft" && olderThan(parseDate(a.created_date), T.draftDays, now))
-    .map(a => ({ key: a.id, label: assessmentLabel(a), detail: `Created ${ago(parseDate(a.created_date), now)}`, target: openAssessment(a) }));
 
   // closed_date is written when an assessment closes; ones closed before it
   // existed fall back to their last edit, which is usually the closing.
@@ -166,8 +161,7 @@ export function runChecks(data, now = new Date()) {
 
   const totals = {
     assessments: assessments.length,
-    open: assessments.filter(a => a.status === "active").length,
-    drafts: assessments.filter(a => a.status === "draft").length,
+    open: assessments.filter(a => a.status !== "closed").length,
     closed: assessments.filter(a => a.status === "closed").length,
     resources: activeResources.length,
     disabledResources: resources.length - activeResources.length,
@@ -187,8 +181,6 @@ export function runChecks(data, now = new Date()) {
       ["assessments", "summary"], quiet),
     check("unanswered", "review", `Open assessments nobody has started after ${T.unansweredActiveDays} days`,
       "The link may never have been sent.", ["assessments", "summary"], unanswered),
-    check("drafts", "review", `Drafts older than ${T.draftDays} days`,
-      "Never opened to respondents. Open one or delete it.", ["assessments"], drafts),
     check("closed", "review", `Assessments closed more than ${T.closedYears} years ago`,
       "Kept with every respondent's answers. Delete the ones nobody will read again.", ["assessments"], longClosed),
 

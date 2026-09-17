@@ -10,9 +10,9 @@ const sections = [
     title: "Overview",
     content: `Quartz Assessment runs two kinds of assessment over one shared library of product-team activities.
 
-**Team gap analysis** — a team rates each activity on *importance* and *current execution*, and suggests who should own it. The gap between importance and execution is the finding, and it drives the consulting engagement.
+**Team Gap Analysis** — a team rates each activity on *importance* and *current execution*, and suggests who should own it. The gap between importance and execution is the finding, and it drives the consulting engagement.
 
-**Personal assessment** — an individual rates their own *experience*, *skills* and *interest* in the same activities. The output is a development plan belonging to that person.
+**Personal Assessment** — an individual rates their own *experience*, *skills* and *interest* in the same activities. The output is a development plan belonging to that person.
 
 The two are separate records that can be linked, so a report can cross what a team needs against what its people can actually do. Built on Base44: React, Tailwind, and a backend-as-a-service providing entities, auth, and row-level security.
 
@@ -85,12 +85,13 @@ Built-in fields on every entity: \`id\`, \`created_date\`, \`updated_date\`, \`c
 | Module | Responsibility |
 |---|---|
 | \`src/lib/scoring.js\` | Gap analysis. Importance and execution are 0–3. **Also the single source of \`FACET_ORDER\`, \`FACET_SUBTITLES\` and \`THEME_GROUPS\`** — everything that sorts, pages, or groups by facet imports from here. Plus \`computeGapMix\` for the buyer report's shape card. |
-| \`src/lib/personal-scoring.js\` | Personal assessment. All three axes are 0/1/3/5, normalised before any cross-axis maths. Owns the five categories, both label vocabularies, and the per-facet, shape-card, and development-shortlist aggregations. \`PERSONAL_AXES\` also carries each axis's respondent-facing \`hint\`, so the survey and its intro cannot word a question two ways. |
+| \`src/lib/personal-scoring.js\` | Personal Assessment. All three axes are 0/1/3/5, normalised before any cross-axis maths. Owns the five categories, both label vocabularies, and the per-facet, shape-card, and development-shortlist aggregations. \`PERSONAL_AXES\` also carries each axis's respondent-facing \`hint\`, so the survey and its intro cannot word a question two ways. |
 | \`src/lib/self-gap.js\` | One respondent's own gap analysis, for the summary they see after submitting. Deliberately not \`computeActivityStats\` with a single response fed in — every field that function returns is a claim about a group. Also \`computeSelfGapMix\` for its shape card. |
 | \`src/lib/activities.js\` | Resolves which activities an assessment actually asks about. |
 | \`src/lib/activity-csv.js\` | Parses, validates, and diffs the library CSV. No UI, no writes — the import dialog decides what to do with the diff. |
 | \`src/lib/responses.js\` | Response rows to answers keyed by activity id — the shape both the survey and the summary work in. Shared so the facilitator's preview reshapes a respondent's answers exactly as their own page did. |
 | \`src/lib/public-assessment.js\` | Client wrapper over the \`publicAssessment\` function. |
+| \`src/lib/assessment-naming.js\` | The naming standard: **instrument - client - which run this is**, joined by \`composeAssessmentTitle\`, plus \`titleCase\` and the \`YYMMDD\` date stamp. The three parts are collected separately by the new-assessment panel and joined into \`title\`; nothing parses the title back apart, so renaming on the Overview tab stays free text. The note and the worked example shown in both places live here too, so the standard is described in one voice. |
 | \`src/lib/roles.js\` | Application roles and org comparison. |
 | \`src/lib/pinned-assessments.js\` | Pinned assessments: reads and writes \`User.pinned_assessment_ids\`, and resolves pins against the assessments the user can see, so a deleted or unshared one simply stops appearing. |
 | \`src/lib/release-notes.js\` | Release notes: fetches and parses \`public/release-notes.md\`, and reads and writes \`User.release_notes_read\`. Drives the announcement bar across the top of \`/admin\` and the What's new dialog in \`src/components/ReleaseNotes.jsx\`. **Announcing a capability is adding an entry to that file** — a \`##\` title, a \`Released: YYYY-MM-DD\` line, and a paragraph for customers. Renaming an entry announces it again. The file is fetched rather than imported with \`?raw\`, because Base44's publish refuses a \`.md?raw\` import. |

@@ -8,6 +8,16 @@ Each entry is a `##` title, a `Released: YYYY-MM-DD` line, and a short
 explanation written for the people using the app. The title is the entry's
 identity — renaming one announces it again to everyone who already read it.
 
+## One way to name an assessment
+
+Released: 2026-09-17
+
+Every assessment is now named the same way, in three parts: the instrument, the client, and which run this is — **Team Gap Analysis - Blackbaud - Initial assessment 260917**. **New assessment** collects the three separately, fills the instrument in for you, and shows the finished name before you create it.
+
+The client is no longer optional; use **Public** when there is no single client, such as an open workshop or a talk. A one-line description is optional and appears under the title on reports. That name is the heading on every report a buyer, a team leader, and each respondent reads, so two runs for the same client can finally be told apart a year later.
+
+Assessments also start **active** now. There was a draft state before, and it never held anything back — the access code worked from the moment the assessment existed — so the only status that changes anything is **closed**.
+
 ## Discussion for instruments
 
 Released: 2026-09-16

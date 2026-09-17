@@ -4,15 +4,19 @@ import { useAuth } from "@/lib/AuthContext";
 import { roleLabel, NO_ACCESS_ROLE } from "@/lib/roles";
 import AssessmentDemoData from "./AssessmentDemoData";
 import TagPicker from "@/components/TagPicker";
+import { displayStatus } from "./assessment-labels";
+import { NAMING_EXAMPLE, NAMING_NOTE, GENERIC_COMPANY } from "@/lib/assessment-naming";
 
+// Two states. An assessment is open from the moment it exists — the access
+// code works immediately — and the only real event in its life is being closed.
+// See displayStatus in assessment-labels.jsx for the draft records that
+// predate this.
 const STATUS_TRANSITIONS = {
-  draft: ["active"],
   active: ["closed"],
   closed: ["active"],
 };
 
 const STATUS_LABELS = {
-  draft: { active: "Open for responses" },
   active: { closed: "Close assessment" },
   closed: { active: "Reopen assessment" },
 };
@@ -178,7 +182,8 @@ export default function AssessmentOverview({ assessment, instrument, onUpdate, o
     setSavingCollaborators(false);
   };
 
-  const nextStatuses = STATUS_TRANSITIONS[assessment.status] || [];
+  const status = displayStatus(assessment);
+  const nextStatuses = STATUS_TRANSITIONS[status] || [];
 
   return (
     <div className="p-8 max-w-3xl space-y-8">
@@ -198,6 +203,14 @@ export default function AssessmentOverview({ assessment, instrument, onUpdate, o
         </div>
         {editingTitle ? (
           <div className="space-y-3">
+            {/* Renaming is free text — the three parts are only collected
+                separately at creation — so the standard is restated here,
+                where the whole name is being retyped. */}
+            <div className="rounded-lg bg-blue-50/60 border border-blue-100 px-3 py-2.5">
+              <p className="text-[11px] font-medium text-blue-900">How assessments are named</p>
+              <p className="text-[11px] text-blue-900/70 leading-snug mt-0.5">{NAMING_NOTE}</p>
+              <p className="text-[11px] text-blue-900/60 mt-1 font-mono break-words">{NAMING_EXAMPLE.full}</p>
+            </div>
             <div>
               <label className="block text-xs font-medium text-gray-500 mb-1">Title</label>
               <input
@@ -205,6 +218,7 @@ export default function AssessmentOverview({ assessment, instrument, onUpdate, o
                 type="text"
                 value={titleDraft}
                 onChange={e => setTitleDraft(e.target.value)}
+                placeholder={NAMING_EXAMPLE.full}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
@@ -214,16 +228,19 @@ export default function AssessmentOverview({ assessment, instrument, onUpdate, o
                 type="text"
                 value={companyDraft}
                 onChange={e => setCompanyDraft(e.target.value)}
+                placeholder={`${NAMING_EXAMPLE.company} — or ${GENERIC_COMPANY}`}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Tagline</label>
+              <label className="block text-xs font-medium text-gray-500 mb-1">
+                Description <span className="text-gray-400 font-normal">— optional</span>
+              </label>
               <input
                 type="text"
                 value={taglineDraft}
                 onChange={e => setTaglineDraft(e.target.value)}
-                placeholder="e.g. Q2 2026 Product Team Diagnostic"
+                placeholder="A line of context, shown under the title on reports"
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
@@ -316,7 +333,7 @@ export default function AssessmentOverview({ assessment, instrument, onUpdate, o
         <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-4">Status</h3>
         <div className="flex items-center gap-4 flex-wrap">
           <div className="text-sm text-gray-600">
-            Currently <span className="font-semibold text-gray-900">{assessment.status}</span>
+            Currently <span className="font-semibold text-gray-900">{status}</span>
           </div>
           {nextStatuses.map(s => (
             <button
@@ -329,7 +346,7 @@ export default function AssessmentOverview({ assessment, instrument, onUpdate, o
                   : "border-green-200 text-green-700 hover:bg-green-50"
               }`}
             >
-              {updatingStatus ? "Updating…" : STATUS_LABELS[assessment.status]?.[s] || s}
+              {updatingStatus ? "Updating…" : STATUS_LABELS[status]?.[s] || s}
             </button>
           ))}
         </div>

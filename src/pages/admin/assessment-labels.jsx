@@ -5,10 +5,17 @@ import { Pin, PinOff } from "lucide-react";
 // cannot drift into calling the same assessment different things.
 
 export const STATUS_COLORS = {
-  draft: "bg-gray-100 text-gray-500",
   active: "bg-green-100 text-green-700",
   closed: "bg-red-100 text-red-600",
 };
+
+// There are two states: open, and closed. "draft" was a third, and it never
+// meant anything — the access code worked from the moment the assessment
+// existed, so a draft was an active assessment wearing a grey pill. Records
+// created before this still carry the word, and the enum still accepts it so
+// their value is not dropped on the next publish; everything that reads a
+// status reads it through here, where draft is simply active.
+export const displayStatus = (a) => (a?.status === "closed" ? "closed" : "active");
 
 // Every assessment says which kind it is. Only "Personal" used to be labelled,
 // on the reasoning that team gap is the default and the default needs no badge

@@ -1,7 +1,7 @@
 import { useCommandState } from "cmdk";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Command, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem } from "@/components/ui/command";
-import { STATUS_COLORS, badgeFor, UnreadBadge } from "@/pages/admin/assessment-labels";
+import { STATUS_COLORS, displayStatus, badgeFor, UnreadBadge } from "@/pages/admin/assessment-labels";
 
 // ⌘K from anywhere in /admin: jump straight to an assessment without going
 // back through the Assessments page. That page is where you look around; this
@@ -43,7 +43,7 @@ export default function AssessmentSwitcher({
         {a.company_name && <span className="truncate text-xs text-gray-400">{a.company_name}</span>}
         <span className="ml-auto flex items-center gap-2 shrink-0">
           <UnreadBadge count={unread} />
-          <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${STATUS_COLORS[a.status] || STATUS_COLORS.draft}`}>{a.status}</span>
+          <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${STATUS_COLORS[displayStatus(a)]}`}>{displayStatus(a)}</span>
         </span>
       </CommandItem>
     );

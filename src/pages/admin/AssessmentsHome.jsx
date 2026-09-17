@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { STATUS_COLORS, badgeFor, UnreadBadge, PinButton } from "./assessment-labels";
+import { STATUS_COLORS, displayStatus, badgeFor, UnreadBadge, PinButton } from "./assessment-labels";
 import { unreadCount, relativeDate } from "@/lib/unread-responses";
 
 // The Assessments page: where /admin opens, and where the list of assessments
@@ -143,7 +143,7 @@ export default function AssessmentsHome({
     })
     .sort((a, b) => {
       // Unread first, whatever the sort. That is the point of the badge: news
-      // should not be sitting on page two under a stale draft.
+      // should not be sitting on page two under a quiet assessment.
       if (!!b._unread !== !!a._unread) return b._unread ? 1 : -1;
       // Nobody has answered: last in either direction, since there is no
       // activity to put first or last.
@@ -318,8 +318,8 @@ export default function AssessmentsHome({
                     <div className="mt-1 flex items-center gap-2 flex-wrap text-sm">
                       <span className="text-gray-600">{a.company_name || <span className="text-gray-300">No client</span>}</span>
                       <span className={`text-[11px] font-semibold px-1.5 py-0.5 rounded ${badge.tone}`}>{badge.label}</span>
-                      <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${STATUS_COLORS[a.status] || STATUS_COLORS.draft}`}>
-                        {a.status}
+                      <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${STATUS_COLORS[displayStatus(a)]}`}>
+                        {displayStatus(a)}
                       </span>
                     </div>
                     {(a.tag_ids || []).length > 0 && (
@@ -415,8 +415,8 @@ export default function AssessmentsHome({
                           {relativeDate(a._activity)}
                         </td>
                         <td className="px-4 py-3">
-                          <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${STATUS_COLORS[a.status] || STATUS_COLORS.draft}`}>
-                            {a.status}
+                          <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${STATUS_COLORS[displayStatus(a)]}`}>
+                            {displayStatus(a)}
                           </span>
                         </td>
                       </tr>
