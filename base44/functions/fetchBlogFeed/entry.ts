@@ -1,6 +1,6 @@
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.39";
 
-// The blog's RSS feed, for "New from the blog" on the Resources tab.
+// The blog's RSS feed, for "New from the blog" on Settings → Resources.
 //
 // A function rather than a fetch in the browser because the Wix site sends no
 // CORS header, so the browser refuses to hand the feed to the app. Nothing here

@@ -16,6 +16,7 @@ import TeamPage from "./admin/TeamPage";
 import OrganizationsPage from "./admin/OrganizationsPage";
 import TagsPage from "./admin/TagsPage";
 import HealthPage from "./admin/HealthPage";
+import ResourcesPage from "./admin/ResourcesPage";
 import AssessmentsHome, { scopeByOwner } from "./admin/AssessmentsHome";
 import { UnreadBadge, PinButton } from "./admin/assessment-labels";
 import AssessmentSwitcher from "@/components/AssessmentSwitcher";
@@ -76,7 +77,7 @@ export default function AdminPage() {
   const { user, isAuthenticated, logout } = useAuth();
   const [assessments, setAssessments] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
-  const [selectedSection, setSelectedSection] = useState("assessments"); // assessments | instruments | library | tags | organizations | team | health
+  const [selectedSection, setSelectedSection] = useState("assessments"); // assessments | instruments | library | resources | tags | organizations | team | health
   // The Library tab to land on, and a counter that remounts the page so a
   // second jump from Health to the same tab still resets it.
   const [libraryTab, setLibraryTab] = useState({ tab: "Activities", n: 0 });
@@ -578,6 +579,20 @@ export default function AdminPage() {
                     Instruments
                   </button>
                 )}
+                {/* After both, since it serves both: a resource can be reading for
+                    a library activity and for an instrument's question. */}
+                {isAdmin && (
+                  <button
+                    onClick={() => setSelectedSection("resources")}
+                    className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors text-sm font-medium ${
+                      selectedSection === "resources"
+                        ? "bg-blue-50 text-blue-900"
+                        : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                    }`}
+                  >
+                    Resources
+                  </button>
+                )}
                 {/* Tags, unlike the rest of Settings, is open to org admins too:
                     Tag's own rules let them manage their organization's tags, and
                     listTags scopes the page to those. */}
@@ -679,6 +694,8 @@ export default function AdminPage() {
             <InstrumentsPage />
           ) : selectedSection === "library" ? (
             <LibraryPage key={libraryTab.n} initialTab={libraryTab.tab} />
+          ) : selectedSection === "resources" ? (
+            <ResourcesPage />
           ) : selectedSection === "health" ? (
             <HealthPage
               onOpen={(target) => {

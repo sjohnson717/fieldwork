@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from "react";
 import { isLibraryActivity } from "@/lib/activities";
 import { base44 } from "@/api/base44Client";
 import ActivitySetsTab from "./ActivitySetsTab";
-import ResourcesTab from "./ResourcesTab";
 import { FACET_ORDER } from "@/lib/scoring";
 import DraggableList from "@/components/DraggableList";
 import ConfirmDialog from "@/components/ConfirmDialog";
@@ -704,7 +703,7 @@ function JobTitlesTab() {
 
 // ── Main LibraryPage ─────────────────────────────────────────────────────────
 
-const TABS = ["Activities", "Job Titles", "Activity Sets", "Resources"];
+const TABS = ["Activities", "Job Titles", "Activity Sets"];
 
 export default function LibraryPage({ initialTab = "Activities" }) {
   const [activeTab, setActiveTab] = useState(TABS.includes(initialTab) ? initialTab : "Activities");
@@ -739,7 +738,6 @@ export default function LibraryPage({ initialTab = "Activities" }) {
         {activeTab === "Activities" && <ActivitiesTab />}
         {activeTab === "Job Titles" && <JobTitlesTab />}
         {activeTab === "Activity Sets" && <ActivitySetsTab />}
-        {activeTab === "Resources" && <ResourcesTab />}
       </div>
     </div>
   );

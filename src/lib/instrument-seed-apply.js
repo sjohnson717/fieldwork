@@ -293,7 +293,7 @@ export async function seedInstruments(base44, { onProgress } = {}) {
 
     // An article already in the library is the library's. The seed used to
     // write every field on a match, and nine blog articles someone had added
-    // through Library → Resources had their notes replaced, their order moved
+    // through Settings → Resources had their notes replaced, their order moved
     // to the end of every reading list, and would have lost a fallback flag or
     // been switched back on had anyone set one. Now it touches only what it
     // owns: the address, because where reading points is this file's policy
@@ -381,7 +381,7 @@ export async function seedInstruments(base44, { onProgress } = {}) {
     notes.push(
       `${duplicates.length} duplicate reading row${duplicates.length === 1 ? "" : "s"} still present, retired and emptied — ` +
       `${titles.slice(0, 4).join(", ")}${titles.length > 4 ? `, and ${titles.length - 4} more` : ""}. ` +
-      `Their links are on the rows that were kept. Delete them in Library > Resources; this note goes away when they are gone.`,
+      `Their links are on the rows that were kept. Delete them in Settings > Resources; this note goes away when they are gone.`,
     );
   } else if (readingSeeded) {
     notes.push("No duplicate reading rows — one row per article.");

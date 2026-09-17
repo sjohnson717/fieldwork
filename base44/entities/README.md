@@ -338,7 +338,7 @@ refused delete look exactly like one that worked until the page was reloaded.
 
 ## SkippedPost is a list of addresses, not a copy of the blog
 
-"New from the blog" on the Resources tab reads the Wix RSS feed through
+"New from the blog" on Settings → Resources reads the Wix RSS feed through
 `fetchBlogFeed` (the site sends no CORS header, so a browser fetch is refused)
 and offers every post whose address is neither a `Resource.url` nor a
 `SkippedPost.url`. Nothing about the post is stored until a person saves it as a

@@ -22,7 +22,7 @@
     },
     "published_date": {
       "type": "string",
-      "description": "When the piece was published, as YYYY-MM-DD. Empty when unknown. Lets a reader of the Resources tab tell a post from last month from one written years ago."
+      "description": "When the piece was published, as YYYY-MM-DD. Empty when unknown. Lets a reader of Settings → Resources tell a post from last month from one written years ago."
     },
     "url": {
       "type": "string"

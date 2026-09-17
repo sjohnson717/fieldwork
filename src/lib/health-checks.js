@@ -62,7 +62,7 @@ export function runChecks(data, now = new Date()) {
 
   const assessmentLabel = (a) => a.company_name ? `${a.title} · ${a.company_name}` : a.title;
   const openAssessment = (a) => ({ section: "assessments", assessmentId: a.id });
-  const toResources = { section: "library", tab: "Resources" };
+  const toResources = { section: "resources" };
 
   const activeResources = resources.filter(r => r.active !== false);
   const activityName = new Map(activities.map(a => [a.id, a.name]));
@@ -200,7 +200,7 @@ export function runChecks(data, now = new Date()) {
     check("unattached", "fix", "Resources attached to nothing",
       "Enabled, but offered for no activity and not for thin shortlists, so no report shows them.", ["resources"], unattached),
     check("duplicates", "fix", "Articles added more than once", "Two resources with the same article, perhaps at different addresses.", ["resources"], duplicates),
-    check("blog", "review", "Blog posts waiting for a decision", "In the blog feed but neither added as a resource nor skipped. Decide on Resources → New from the blog.",
+    check("blog", "review", "Blog posts waiting for a decision", "In the blog feed but neither added as a resource nor skipped. Decide on Settings → Resources → New from the blog.",
       ["resources", "blogPosts", "skippedPosts"], newPosts),
 
     check("no-reading", "fix", "Library activities with no reading",

@@ -164,7 +164,7 @@ export default function InstrumentsPage() {
           here — open one with Edit content. Apply source brings in any
           instrument the app does not have yet and keeps the scales current; an
           instrument that already has questions is left exactly as you edited
-          it. Reading already in Library → Resources keeps your edits too.
+          it. Reading already in Settings → Resources keeps your edits too.
           Download content saves a copy of everything as it stands.
         </p>
 
