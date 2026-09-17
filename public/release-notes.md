@@ -8,11 +8,13 @@ Each entry is a `##` title, a `Released: YYYY-MM-DD` line, and a short
 explanation written for the people using the app. The title is the entry's
 identity — renaming one announces it again to everyone who already read it.
 
-## Every report says which engagement it is, and reading is a shortlist
+## Clearer reports
 
 Released: 2026-09-17
 
 Each respondent's own report now carries the assessment's full name on screen, not only on the printed cover — so someone holding two links can tell which one they just answered. The instrument's name used to stand in for it, and it could not tell two runs apart.
+
+Each question's commentary now sits in a panel of its own, labelled, so nobody has to work out which lines are their own answers and which are ours.
 
 Reading is capped at two articles per activity. An activity that has collected eight offers the first two, in the order set in Settings → Resources, so which two is an editorial decision rather than an accident. A page of every article we have reads as a catalogue, and a catalogue gets read as advertising.
 

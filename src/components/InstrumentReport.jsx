@@ -1,5 +1,6 @@
 import { distributionFor, agendaOrder } from "@/lib/instrument-scoring";
 import PrintCredit from "@/components/PrintCredit";
+import Commentary from "@/components/Commentary";
 
 // The team report for an instrument that asks its own questions.
 //
@@ -441,11 +442,7 @@ export default function InstrumentReport({
               {chart === "share"
                 ? <ShareDistribution dist={d} expected={completedCount} />
                 : <Distribution dist={d} expected={completedCount} />}
-              {q.commentary && (
-                <p className="text-sm text-gray-600 leading-relaxed mt-3 pt-3 border-t border-gray-100">
-                  {q.commentary}
-                </p>
-              )}
+              <Commentary text={q.commentary} />
             </li>
           );
         })}

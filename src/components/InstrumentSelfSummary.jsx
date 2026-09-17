@@ -2,6 +2,7 @@ import { scoreFor, bandFor } from "@/lib/instrument-scoring";
 import { capReading } from "@/lib/reading";
 import ResumeLink from "@/components/ResumeLink";
 import PrintCredit from "@/components/PrintCredit";
+import Commentary from "@/components/Commentary";
 
 // What one person sees when they finish one of the four imported instruments.
 //
@@ -138,32 +139,34 @@ export default function InstrumentSelfSummary({
                   </p>
                   {/* The commentary explains the question, not the answer, which
                       is why one paragraph serves whatever was chosen — and why
-                      it is worth showing even where somebody skipped. */}
-                  {q.commentary && (
-                    <p className="text-sm text-gray-600 leading-relaxed mt-2 pt-2 border-t border-gray-100">
-                      {q.commentary}
-                    </p>
-                  )}
-                  {/* Where to read more. On the person's own copy only — the
-                      team report carries none, because a reading list is advice
-                      to one reader rather than a finding about a room.
+                      it is worth showing even where somebody skipped.
 
-                      A real anchor with the title as its text, so it survives
-                      being printed or pasted somewhere else. */}
-                  {readingFor(q.id).map(r => (
-                    <p key={r.id} className="text-sm mt-2">
-                      <a
-                        href={r.url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-blue-600 hover:text-blue-700 print:text-gray-600 print:no-underline"
-                      >
-                        {r.title}
-                      </a>
-                      {r.source && <span className="text-gray-400"> · {r.source}</span>}
-                      {r.note && <span className="text-gray-400"> — {r.note}</span>}
-                    </p>
-                  ))}
+                      It sits in a panel with the reading that belongs to it:
+                      both are ours rather than theirs, and a reader scanning
+                      their own answers should be able to see at a glance which
+                      lines they wrote. */}
+                  <Commentary text={q.commentary}>
+                    {/* Where to read more. On the person's own copy only — the
+                        team report carries none, because a reading list is advice
+                        to one reader rather than a finding about a room.
+
+                        A real anchor with the title as its text, so it survives
+                        being printed or pasted somewhere else. */}
+                    {readingFor(q.id).map(r => (
+                      <p key={r.id} className="text-sm mt-2">
+                        <a
+                          href={r.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-blue-600 hover:text-blue-700 print:text-gray-600 print:no-underline"
+                        >
+                          {r.title}
+                        </a>
+                        {r.source && <span className="text-gray-400"> · {r.source}</span>}
+                        {r.note && <span className="text-gray-400"> — {r.note}</span>}
+                      </p>
+                    ))}
+                  </Commentary>
                 </li>
               );
             })}
