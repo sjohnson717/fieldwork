@@ -57,24 +57,33 @@ function RosterTable({ rows, linkFor }) {
     );
   }
   return (
+    // On a phone the status and the link sit under the name rather than in
+    // columns beside it. As columns, a long name such as "Alex
+    // Fitzwilliam-Hargreaves" and its job title held the table wider than a
+    // 375px screen and the card cut the rest off; squeezed to fit, the name
+    // column was 83px and broke names mid-word.
     <table className="w-full text-sm">
       <thead>
         <tr className="text-xs text-gray-400 uppercase tracking-wide border-b border-gray-100 bg-gray-50">
           <th className="text-left px-4 py-3 font-medium">Name</th>
-          <th className="text-left px-4 py-3 font-medium w-28">Status</th>
-          {linkFor && <th className="px-4 py-3 w-24" />}
+          <th className="hidden sm:table-cell text-left px-4 py-3 font-medium w-28">Status</th>
+          {linkFor && <th className="hidden sm:table-cell px-4 py-3 w-24" />}
         </tr>
       </thead>
       <tbody>
         {rows.map(r => (
           <tr key={r.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50/50">
-            <td className="px-4 py-3 font-medium text-gray-800">
+            <td className="px-4 py-3 font-medium text-gray-800 break-words">
               {r.name}
-              {r.title && <span className="text-xs text-gray-400 ml-2">{r.title}</span>}
+              {r.title && <span className="block sm:inline text-xs font-normal text-gray-400 sm:ml-2">{r.title}</span>}
+              <div className="sm:hidden flex items-center justify-between gap-3 mt-2">
+                {statusBadge(r.status, r.answer_count)}
+                {linkFor && <CopyButton text={linkFor(r)} />}
+              </div>
             </td>
-            <td className="px-4 py-3">{statusBadge(r.status, r.answer_count)}</td>
+            <td className="hidden sm:table-cell px-4 py-3 whitespace-nowrap">{statusBadge(r.status, r.answer_count)}</td>
             {linkFor && (
-              <td className="px-4 py-3 text-right">
+              <td className="hidden sm:table-cell px-4 py-3 text-right whitespace-nowrap">
                 <CopyButton text={linkFor(r)} />
               </td>
             )}
