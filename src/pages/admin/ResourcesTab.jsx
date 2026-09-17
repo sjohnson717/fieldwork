@@ -250,6 +250,33 @@ export default function ResourcesTab() {
 
   const activityName = (id) => allActivities.find(a => a.id === id)?.name;
 
+  // A function rather than a component: declared in here, a component would
+  // be a new type every render and remount its buttons.
+  const rowActions = (r, className, buttonClassName) => (
+    <div className={`items-center gap-2 ${className}`}>
+      <button
+        onClick={() => {
+          setEditingId(r.id);
+          setDraft({
+            title: r.title || "", resource_type: r.resource_type || "free_article",
+            source: r.source || "", url: r.url || "", note: r.note || "",
+            activity_ids: r.activity_ids || [],
+            fallback: !!r.fallback,
+          });
+        }}
+        className={`${buttonClassName} text-gray-400 hover:text-[#3366FF] font-medium transition-colors`}
+      >
+        Edit
+      </button>
+      <button onClick={() => handleToggleActive(r)} className={`${buttonClassName} text-gray-400 hover:text-gray-700 transition-colors`}>
+        {r.active ? "Disable" : "Enable"}
+      </button>
+      <button onClick={() => setDeleting(r)} className={`${buttonClassName} text-gray-400 [@media(hover:hover)]:text-gray-300 hover:text-red-400 transition-colors`}>
+        Delete
+      </button>
+    </div>
+  );
+
   if (loading) return (
     <div className="flex justify-center py-16">
       <div className="w-6 h-6 border-2 border-blue-200 border-t-blue-500 rounded-full animate-spin" />
@@ -336,28 +363,7 @@ export default function ResourcesTab() {
                     {r.title}
                   </span>
                   {r.source && <span className="text-xs text-gray-400">{r.source}</span>}
-                  <div className="ml-auto flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button
-                      onClick={() => {
-                        setEditingId(r.id);
-                        setDraft({
-                          title: r.title || "", resource_type: r.resource_type || "free_article",
-                          source: r.source || "", url: r.url || "", note: r.note || "",
-                          activity_ids: r.activity_ids || [],
-                          fallback: !!r.fallback,
-                        });
-                      }}
-                      className="text-xs text-gray-400 hover:text-[#3366FF] font-medium transition-colors"
-                    >
-                      Edit
-                    </button>
-                    <button onClick={() => handleToggleActive(r)} className="text-xs text-gray-400 hover:text-gray-700 transition-colors">
-                      {r.active ? "Disable" : "Enable"}
-                    </button>
-                    <button onClick={() => setDeleting(r)} className="text-xs text-gray-300 hover:text-red-400 transition-colors">
-                      Delete
-                    </button>
-                  </div>
+                  {rowActions(r, "ml-auto hidden [@media(hover:hover)]:flex opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity", "text-xs")}
                 </div>
                 {r.note && <p className="text-xs text-gray-500 mt-1">{r.note}</p>}
                 {r.url && <p className="text-[11px] text-blue-600 mt-0.5 truncate font-mono">{r.url}</p>}
@@ -373,6 +379,9 @@ export default function ResourcesTab() {
                 {r.fallback && (
                   <p className="text-[11px] text-[#1a2e7a] mt-0.5">Also offered when a shortlist is thin</p>
                 )}
+                {/* A phone has no hover to reveal the actions above, so they sit
+                    here instead, always shown and big enough to tap. */}
+                {rowActions(r, "flex [@media(hover:hover)]:hidden -ml-3 -mb-2 mt-1", "text-sm h-11 px-3")}
               </div>
             )}
           </div>
