@@ -10,6 +10,7 @@ import {
   DOMINANT_SUMMARY,
 } from "@/lib/personal-scoring";
 import { FACET_ORDER, FACET_SUBTITLES } from "@/lib/scoring";
+import { capReading } from "@/lib/reading";
 import PrintCredit from "@/components/PrintCredit";
 import ChaosAssessmentPlug from "@/components/ChaosAssessmentPlug";
 import ResumeLink from "@/components/ResumeLink";
@@ -252,9 +253,12 @@ export default function PersonalProfileReport({
   const resourcesByActivity = [];
   const alreadyListed = new Set();
   for (const o of opportunities) {
-    const items = resources.filter(
+    // Three at most per activity — see src/lib/reading.js. Taken after the
+    // already-listed filter, so an activity whose first three were claimed by
+    // a higher-ranked opportunity offers its next three rather than nothing.
+    const items = capReading(resources.filter(
       r => (r.activity_ids || []).includes(o.activity.id) && !alreadyListed.has(r.id)
-    );
+    ));
     if (items.length === 0) continue;
     items.forEach(r => alreadyListed.add(r.id));
     resourcesByActivity.push({ activity: o.activity, items });
@@ -308,6 +312,12 @@ export default function PersonalProfileReport({
           </svg>
         </div>
         <div>
+          {/* Which engagement this report belongs to, by its full name. The
+              paper cover has always carried it; on screen it was missing, so
+              a person holding two links had nothing to tell them apart. */}
+          {assessment?.title && (
+            <p className="text-xs font-semibold text-blue-600 uppercase tracking-wide mb-0.5">{assessment.title}</p>
+          )}
           <h1 className="text-xl font-bold text-gray-900">Your profile, {name.split(" ")[0]}</h1>
           {/* Same reasoning as the team gap report: the invitation to come
               back and change an answer belongs to the person whose answers

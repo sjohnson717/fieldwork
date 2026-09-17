@@ -96,6 +96,11 @@ export default function TeamGapSelfReport({
           </svg>
         </div>
         <div>
+          {/* Same as the personal report: the engagement's full name on
+              screen, not only on the printed cover. */}
+          {assessment?.title && (
+            <p className="text-xs font-semibold text-blue-600 uppercase tracking-wide mb-0.5">{assessment.title}</p>
+          )}
           <h1 className="text-xl font-bold text-gray-900">
             {returningCompleted ? `Your responses, ${name}` : `Thank you, ${name}!`}
           </h1>

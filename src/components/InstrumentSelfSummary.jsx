@@ -1,4 +1,5 @@
 import { scoreFor, bandFor } from "@/lib/instrument-scoring";
+import { capReading } from "@/lib/reading";
 import ResumeLink from "@/components/ResumeLink";
 import PrintCredit from "@/components/PrintCredit";
 
@@ -79,8 +80,10 @@ export default function InstrumentSelfSummary({
   // loaded list and silently dropping anything that will not resolve, the same
   // way every other reference in this app is treated — an article retired since
   // somebody answered should cost a link, not the page.
+  // Capped: see src/lib/reading.js. A question that has collected eight
+  // articles offers the first three, in the library's own order.
   const readingFor = (questionId) =>
-    resources.filter((r) => (r.activity_ids || []).includes(questionId));
+    capReading(resources.filter((r) => (r.activity_ids || []).includes(questionId)));
   const axis = instrument.axes?.[0];
   const rated = questions.filter(q => q.question_type !== "text");
   const score = axis ? scoreFor(questions, responses, axis) : null;
@@ -92,8 +95,13 @@ export default function InstrumentSelfSummary({
     <div className="min-h-screen bg-gray-50 print-plain">
       <div className="max-w-2xl mx-auto px-4 py-10 space-y-6">
         <header>
+          {/* The engagement's own name, which carries the instrument, the
+              client, and which run this is. The instrument alone could not
+              tell a respondent which of two Chaos Assessments they just
+              answered. Falls back to the instrument for anything named
+              before the standard. */}
           <p className="text-xs font-semibold text-blue-600 uppercase tracking-wide mb-1">
-            {instrument.name}
+            {assessment?.title || instrument.name}
           </p>
           <h1 className="text-2xl font-bold text-gray-900">
             Thank you, {name?.split(" ")[0] || "and well done"}
