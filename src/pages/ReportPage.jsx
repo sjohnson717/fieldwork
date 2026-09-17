@@ -137,6 +137,9 @@ const facetCaption = (group) =>
     ? FACET_SUBTITLES[group.facets[0]]
     : group.facets.join(" · ");
 
+// Rows of one facet kept on a single printed sheet; beyond this they may split.
+const KEEP_FACET_WHOLE = 8;
+
 function ThemeSection({ group, activities, activityStats, filterLevel, facetFilter }) {
   const groupActivities = activities.filter(a => group.facets.includes(a.facet));
   if (groupActivities.length === 0) return null;
@@ -216,7 +219,11 @@ function ThemeSection({ group, activities, activityStats, filterLevel, facetFilt
 
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         {byFacet.map(({ facet, subtitle, items }) => (
-          <div key={facet}>
+          /* Printed whole when it fits, as the answer tables are (see
+             ActivityAnswerTable): otherwise a sheet could end on the facet's
+             heading with its rows overleaf. A longer facet still splits
+             between rows rather than leaving a page mostly empty. */
+          <div key={facet} className={items.length <= KEEP_FACET_WHOLE ? "break-inside-avoid" : ""}>
             {/* Facet sub-header. A standalone group keeps the anchor — the facet
                 wheel scrolls to it — but drops the bar, since the section header
                 immediately above already says the same word. */}
@@ -366,8 +373,12 @@ function FacetWheel({ activityStats, activities, onFacetClick }) {
               {/* Left color band — theme identity */}
               <div className="w-1 shrink-0" style={{ backgroundColor: group.color }} />
               <div className="flex-1 p-4">
-                <div className="flex items-start justify-between gap-2">
-                  <div>
+                {/* Wraps, so the badge drops under the name when the card is too
+                    narrow for both: a phone's two columns, or three on a printed
+                    Letter sheet. Held on one line, it ran out past the card's
+                    edge and was cut off. */}
+                <div className="flex flex-wrap items-start justify-between gap-x-2 gap-y-1.5">
+                  <div className="min-w-0">
                     <div className="text-xs font-bold uppercase tracking-widest mb-0.5 text-gray-900">{facet}</div>
                     <div className="text-sm font-semibold text-gray-800">{FACET_SUBTITLES[facet]}</div>
                   </div>

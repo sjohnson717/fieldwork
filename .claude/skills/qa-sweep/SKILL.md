@@ -162,6 +162,12 @@ not mistaken for a new regression:
   replaced the sidebar list, and opens clean at 768 and 1280. Its one contrast
   finding is the `text-gray-400` count beside the Assessments link, same class
   as the rest.
+- On 2026-09-17 the facet overview cards let their status badge wrap under
+  the facet name, which fixed the badge running out past the card on a
+  printed Letter sheet and took the buyer report down to 2 overlaps at 320,
+  375 and 390 and 1 at 430, with clipping 14/2/0/0. What remains is the
+  activity rows: "Discuss owner" and the status badge drawn over a long
+  activity name, and clipped at 320. This is the new baseline.
 - The buyer report's overlap counts rose again on 2026-08-20, to 8 at 320, 375
   and 390 and 1 at 430, with clipping up in step. Nothing on that page changed:
   the fixtures gained `preferred_owner` on four activities, so rows now carry a
