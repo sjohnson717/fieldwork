@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { isLibraryActivity } from "@/lib/activities";
 import { base44 } from "@/api/base44Client";
 import { FACET_ORDER } from "@/lib/scoring";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import BlogFeedPanel from "@/pages/admin/BlogFeedPanel";
 import { functionErrorMessage } from "@/lib/utils";
 
 // Learning resources offered on a personal report, against the activities
@@ -159,6 +160,15 @@ export default function ResourcesTab() {
   const [draft, setDraft] = useState(EMPTY);
   const [saving, setSaving] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showFeed, setShowFeed] = useState(false);
+  // The blog post the add form was filled from, for the category hint.
+  const [feedPost, setFeedPost] = useState(null);
+  const addFormRef = useRef(null);
+
+  // Add on a post far down the feed opens the form above it, out of sight.
+  useEffect(() => {
+    if (showAddForm && feedPost) addFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [showAddForm, feedPost]);
   const [deleting, setDeleting] = useState(null);
   const [error, setError] = useState("");
 
@@ -198,6 +208,7 @@ export default function ResourcesTab() {
       setResources(prev => [created, ...prev]);
       setDraft(EMPTY);
       setShowAddForm(false);
+      setFeedPost(null);
     } catch (e) { console.error(e); }
     setSaving(false);
   };
@@ -254,24 +265,55 @@ export default function ResourcesTab() {
       {error && <p className="text-xs text-red-500">{error}</p>}
 
       {showAddForm ? (
-        <div className="bg-white rounded-xl border border-[#a3b8ff] px-4 py-3">
+        <div ref={addFormRef} className="bg-white rounded-xl border border-[#a3b8ff] px-4 py-3 scroll-mt-4">
+          {feedPost && (
+            <p className="text-[11px] text-gray-400 mb-2">
+              From the blog{feedPost.categories.length > 0 ? ` · filed under ${feedPost.categories.join(", ")}` : ""}.
+              The note is the post's teaser; say why it helps with the activities you pick.
+            </p>
+          )}
           <ResourceForm
             draft={draft} setDraft={setDraft} activities={activities}
             onSave={handleAdd}
-            onCancel={() => { setShowAddForm(false); setDraft(EMPTY); }}
+            onCancel={() => { setShowAddForm(false); setDraft(EMPTY); setFeedPost(null); }}
             saving={saving} saveLabel="Add"
           />
         </div>
       ) : (
-        <button
-          onClick={() => { setDraft(EMPTY); setShowAddForm(true); }}
-          className="flex items-center gap-2 text-sm text-gray-400 hover:text-[#3366FF] transition-colors px-1"
-        >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-          Add resource
-        </button>
+        <div className="flex items-center gap-5 flex-wrap">
+          <button
+            onClick={() => { setDraft(EMPTY); setFeedPost(null); setShowAddForm(true); }}
+            className="flex items-center gap-2 text-sm text-gray-400 hover:text-[#3366FF] transition-colors px-1 min-h-[44px] md:min-h-0"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            Add resource
+          </button>
+          {!showFeed && (
+            <button
+              onClick={() => setShowFeed(true)}
+              className="flex items-center gap-2 text-sm text-gray-400 hover:text-[#3366FF] transition-colors px-1 min-h-[44px] md:min-h-0"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 5c7.18 0 13 5.82 13 13M6 11a7 7 0 017 7m-6 0a1 1 0 11-2 0 1 1 0 012 0z" />
+              </svg>
+              New from the blog
+            </button>
+          )}
+        </div>
+      )}
+
+      {showFeed && (
+        <BlogFeedPanel
+          resources={resources}
+          onClose={() => setShowFeed(false)}
+          onAdd={(post) => {
+            setDraft({ ...EMPTY, title: post.title, url: post.url, note: post.description });
+            setFeedPost(post);
+            setShowAddForm(true);
+          }}
+        />
       )}
 
       <div className="space-y-2">

@@ -8,6 +8,12 @@ Each entry is a `##` title, a `Released: YYYY-MM-DD` line, and a short
 explanation written for the people using the app. The title is the entry's
 identity — renaming one announces it again to everyone who already read it.
 
+## New posts from the blog
+
+Released: 2026-09-17
+
+The Resources tab has a **New from the blog** button. It lists posts from the Product Growth Leaders blog that aren't resources yet. Press **Add** to open the add form with the post's title, address, and teaser filled in, then pick the activities it helps with. Press **Skip** for a post that doesn't belong, and it won't be offered again; the skipped list at the bottom of the panel puts one back.
+
 ## Discussion for instruments
 
 Released: 2026-09-16
