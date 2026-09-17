@@ -535,7 +535,11 @@ export default function AdminPage() {
               </div>
             ))}
 
-            {/* Settings section */}
+            {/* Settings, then a separate section for what only we can see.
+                An org admin's Settings is the whole of their app; everything
+                below the rule is ours — the shared library, the instruments,
+                every organization, and the checks that read across all of them.
+                Split so it is obvious at a glance which is which. */}
             {(isAdmin || isOrgAdmin) && (
               <>
                 <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest px-3 mb-1.5 mt-5">Settings</p>
@@ -546,95 +550,50 @@ export default function AdminPage() {
                   {/* Blue, not the red count: red means new responses everywhere else. */}
                   {unreadNotes.length > 0 && <span className="ml-auto w-2 h-2 rounded-full bg-blue-500" aria-label="Unread" />}
                 </button>
-                {/* Named for someone who has never seen it: "Health" alone did
-                    not say whose. Super-admin only, since it reads across every
-                    organization. */}
-                {isAdmin && (
-                  <button
-                    onClick={() => setSelectedSection("health")}
-                    className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors text-sm font-medium ${
-                      selectedSection === "health"
-                        ? "bg-blue-50 text-blue-900"
-                        : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                    }`}
-                  >
-                    System Health
-                  </button>
-                )}
-                {isAdmin && (
-                  <button
-                    onClick={() => { setLibraryTab(prev => ({ tab: "Activities", n: prev.n + 1 })); goToSection("library"); }}
-                    className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors text-sm font-medium ${
-                      selectedSection === "library"
-                        ? "bg-blue-50 text-blue-900"
-                        : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                    }`}
-                  >
-                    Library
-                  </button>
-                )}
-                {/* Next to the Library and gated the same way: both are authored
-                    content every organization reads and only we may rewrite. */}
-                {isAdmin && (
-                  <button
-                    onClick={() => goToSection("instruments")}
-                    className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors text-sm font-medium ${
-                      selectedSection === "instruments"
-                        ? "bg-blue-50 text-blue-900"
-                        : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                    }`}
-                  >
-                    Instruments
-                  </button>
-                )}
-                {/* After both, since it serves both: a resource can be reading for
-                    a library activity and for an instrument's question. */}
-                {isAdmin && (
-                  <button
-                    onClick={() => goToSection("resources")}
-                    className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors text-sm font-medium ${
-                      selectedSection === "resources"
-                        ? "bg-blue-50 text-blue-900"
-                        : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                    }`}
-                  >
-                    Resources
-                  </button>
-                )}
-                {/* Tags, unlike the rest of Settings, is open to org admins too:
+                {/* Tags, unlike the authored content below, is open to org admins:
                     Tag's own rules let them manage their organization's tags, and
                     listTags scopes the page to those. */}
-                <button
-                  onClick={() => setSelectedSection("tags")}
-                  className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors text-sm font-medium ${
-                    selectedSection === "tags"
-                      ? "bg-blue-50 text-blue-900"
-                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                  }`}
-                >
+                <button onClick={() => setSelectedSection("tags")} className={navClass(selectedSection === "tags")}>
                   Tags
                 </button>
-                {isAdmin && (
-                  <button
-                    onClick={() => setSelectedSection("organizations")}
-                    className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors text-sm font-medium ${
-                      selectedSection === "organizations"
-                        ? "bg-blue-50 text-blue-900"
-                        : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                    }`}
-                  >
-                    Organizations
-                  </button>
-                )}
                 <button
                   onClick={() => { setSelectedSection("team"); setTeamOrgFilter(null); }}
-                  className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors text-sm font-medium ${
-                    selectedSection === "team"
-                      ? "bg-blue-50 text-blue-900"
-                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                  }`}
+                  className={navClass(selectedSection === "team")}
                 >
                   Facilitators
+                </button>
+              </>
+            )}
+
+            {isAdmin && (
+              <>
+                <div className="border-t border-gray-200 mt-5 pt-4">
+                  <p className="text-[10px] font-semibold text-[#3366FF] uppercase tracking-widest px-3 mb-0.5">Product Growth Leaders</p>
+                  <p className="text-[10px] text-gray-400 px-3 mb-1.5">Only super-admins see this</p>
+                </div>
+                {/* Named for someone who has never seen it: "Health" alone did
+                    not say whose. It reads across every organization. */}
+                <button onClick={() => setSelectedSection("health")} className={navClass(selectedSection === "health")}>
+                  System Health
+                </button>
+                <button
+                  onClick={() => { setLibraryTab(prev => ({ tab: "Activities", n: prev.n + 1 })); goToSection("library"); }}
+                  className={navClass(selectedSection === "library")}
+                >
+                  Library
+                </button>
+                {/* Next to the Library: both are authored content every
+                    organization reads and only we may rewrite. */}
+                <button onClick={() => goToSection("instruments")} className={navClass(selectedSection === "instruments")}>
+                  Instruments
+                </button>
+                {/* After both, since it serves both: a resource can be reading for
+                    a library activity and for an instrument's question. */}
+                <button onClick={() => goToSection("resources")} className={navClass(selectedSection === "resources")}>
+                  Resources
+                </button>
+                <button onClick={() => setSelectedSection("organizations")} className={navClass(selectedSection === "organizations")}>
+                  Organizations
                 </button>
               </>
             )}
