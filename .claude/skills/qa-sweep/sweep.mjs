@@ -120,6 +120,18 @@ const ROUTES = [
     expect: "flagged for discussion",
   },
   {
+    // The suggestion box's review page, super-admin only: the filed ideas, the
+    // status chips that decide what a working session picks up, and the note
+    // saying why. Desktop widths, like the rest of the admin pages behind the
+    // fixed sidebar.
+    name: "admin-ideas",
+    url: "/admin",
+    signIn: { email: "qa@example.com", role: "admin" },
+    admin: { section: "Ideas" },
+    widths: [768, 1280],
+    expect: "the problem",
+  },
+  {
     // The content editor on Settings → Instruments, on the fixture's small
     // Product Success instrument: sections, commentary, reading chips, bands.
     name: "admin-instrument-editor",

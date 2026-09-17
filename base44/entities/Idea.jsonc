@@ -1,0 +1,89 @@
+{
+  "name": "Idea",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "A short name for the idea, the way it would appear on a list."
+    },
+    "idea": {
+      "type": "string",
+      "description": "What the person would like the app to do."
+    },
+    "problem": {
+      "type": "string",
+      "description": "What problem it solves. Required on purpose: an idea without the problem behind it cannot be judged, and the problem is often solvable another way."
+    },
+    "context": {
+      "type": "string",
+      "description": "Where the person was when they filed it, captured automatically. A path, not anything they typed."
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "new",
+        "considering",
+        "pursue",
+        "declined",
+        "done"
+      ],
+      "default": "new",
+      "description": "Where this stands. \"pursue\" is the one that matters: it is what a working session picks up. Nothing is promised by being filed."
+    },
+    "decision_note": {
+      "type": "string",
+      "description": "Why it was marked the way it was. Written for whoever reads the list next, including the person who wrote the note."
+    },
+    "org_id": {
+      "type": "string",
+      "description": "Organization of the person who filed it. Absent/null is the legacy no-org bucket."
+    }
+  },
+  "required": [
+    "title",
+    "problem"
+  ],
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "org_admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "facilitator"
+          }
+        }
+      ]
+    },
+    "read": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "created_by_id": "{{user.id}}"
+        }
+      ]
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

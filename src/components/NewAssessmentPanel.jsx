@@ -206,9 +206,10 @@ export default function NewAssessmentPanel({ instruments, creating, error, onCre
             </div>
 
             {/* The name as it will be saved, and as every report will head
-                its first page. Shown rather than described. */}
+                its first page. Shown rather than described, and labelled for
+                what it is: this is the thing itself, not a summary of it. */}
             <div className="border-t border-gray-100 pt-3">
-              <p className="text-[11px] text-gray-400 mb-1">Saved as</p>
+              <p className="text-[11px] text-gray-400 mb-1">As it appears</p>
               <p className="text-sm font-medium text-gray-800 break-words">
                 {title || <span className="text-gray-300">{NAMING_EXAMPLE.full}</span>}
               </p>

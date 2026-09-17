@@ -37,6 +37,12 @@ const state = {
   // the chip on a tagged row and the absence of one on an untagged row.
   tags: [{ id: "tag-1", name: "Northwind Systems" }],
   flags: [],
+  // Two filed ideas, one still new and one already marked, so the Ideas page
+  // exercises both the working list and a decision that has been recorded.
+  ideas: [
+    { id: "idea-1", title: "Put the report's name on the report", problem: "A respondent holding two links cannot tell which assessment they just answered, and neither can I a year later.", idea: "Show the assessment title at the top of every report page.", status: "pursue", context: "assessments \u00b7 Chaos Assessment - Northwind", created_by_id: "user-admin", created_date: "2026-09-16T10:00:00.000Z", decision_note: "" },
+    { id: "idea-2", title: "Let a team leader nudge people who have not started", problem: "Chasing eight people by hand the night before a session is the worst part of running one.", status: "new", context: "assessments", created_by_id: "user-admin", created_date: "2026-09-17T09:00:00.000Z" },
+  ],
   // Questions, bands, and reading as state rather than constants, because the
   // Instruments editor writes them and the sweep reads the result back.
   activities: [...ACTIVITIES, ...CHAOS_QUESTIONS, ...PS_QUESTIONS].map(a => ({ ...a })),
@@ -179,6 +185,8 @@ export const base44 = {
     // page could be checked at all, including the two results tabs that hold
     // every respondent's answers.
     Tag: { list: async () => readOnly(state.tags) },
+    // Filed by anyone with a login, read and decided by super-admin only.
+    Idea: editable("Idea", "ideas", staffOnly),
     Assessment: {
       // Staff-only, like Response.list: an anonymous caller must never be able
       // to enumerate assessments and read their access codes and tokens.

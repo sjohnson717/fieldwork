@@ -70,6 +70,42 @@ const clippingParent = (el) => {
   return null;
 };
 
+// Every ancestor that clips, scrollable or not — what actually bounds the
+// pixels this element puts on the screen. The single nearest one is enough to
+// ask "is this sliced off"; it is not enough to ask "is this painted here",
+// which is what the overlap check needs.
+const clippingAncestors = (el) => {
+  const out = [];
+  let p = el.parentElement;
+  while (p && p !== document.body) {
+    const s = getComputedStyle(p);
+    if (/hidden|clip|auto|scroll/.test(s.overflow + s.overflowX + s.overflowY)) out.push(p);
+    p = p.parentElement;
+  }
+  return out;
+};
+
+// A rect reduced to the part of it that is actually painted: intersected with
+// every clipping ancestor, and with the viewport. Returns null when nothing of
+// it survives.
+//
+// Without this, an item scrolled out of a sidebar still reports a rect where it
+// would have been — below the container, on top of whatever sits under it — and
+// the overlap check calls that text drawn over text. A sidebar long enough to
+// scroll made every route carrying one report three findings that no pixel on
+// the screen corresponded to.
+const paintedRect = (rect, clips) => {
+  let top = rect.top, left = rect.left, right = rect.right, bottom = rect.bottom;
+  for (const c of clips) {
+    const b = c.getBoundingClientRect();
+    top = Math.max(top, b.top); left = Math.max(left, b.left);
+    right = Math.min(right, b.right); bottom = Math.min(bottom, b.bottom);
+  }
+  top = Math.max(top, 0); left = Math.max(left, 0);
+  right = Math.min(right, window.innerWidth); bottom = Math.min(bottom, window.innerHeight);
+  return right - left > 0 && bottom - top > 0 ? { top, left, right, bottom } : null;
+};
+
 const parseColor = (c) => {
   const m = c.match(/rgba?\(([\d.]+),\s*([\d.]+),\s*([\d.]+)(?:,\s*([\d.]+))?\)/);
   if (!m) return null;
@@ -145,9 +181,15 @@ export function qaAudit(options = {}) {
   //    Block elements return a single rect equal to their border box, so the
   //    case this check was written for — a collapsed flex item spilling across
   //    its neighbour — measures exactly as before.
+  //    And clipped to what is on the screen: see paintedRect. A pair whose
+  //    rects only meet where neither is painted is not two pieces of text on
+  //    top of each other.
   const lineBoxes = new Map();
   const rectsOf = (el) => {
-    if (!lineBoxes.has(el)) lineBoxes.set(el, [...el.getClientRects()]);
+    if (!lineBoxes.has(el)) {
+      const clips = clippingAncestors(el);
+      lineBoxes.set(el, [...el.getClientRects()].map(r => paintedRect(r, clips)).filter(Boolean));
+    }
     return lineBoxes.get(el);
   };
   for (let i = 0; i < textLeaves.length; i++) {

@@ -32,6 +32,18 @@ Verified supported: `$and`, `$or`, `$in`, `$nin`, and array containment
 
 ## Why each non-obvious rule is the way it is
 
+**`Idea` is a suggestion box, so it reads narrower than it writes.** Anyone with
+a login may create one — super-admin, org admin, or facilitator, the same three
+who may create a `Tag`. Reading is super-admin or the row's own creator, and
+update and delete are super-admin alone.
+
+That asymmetry is the feature. A facilitator filing an idea should not be able
+to read everyone else's, and the status on a row is a decision we made about
+someone else's suggestion: a creator who could update their own row could mark
+it `pursue` themselves, which is the one value that means work. The creator
+clause on `read` is there so a submitter's own ideas can be shown back to them
+without opening anyone else's, whether or not the app does that yet.
+
 **Assessment.read mirrors `listRespondents`'s own check, clause for clause.**
 The three unauthenticated flows — `/assess`, `/report/:token`, `/team/:token` —
 used to find their assessment by listing every assessment and matching a token

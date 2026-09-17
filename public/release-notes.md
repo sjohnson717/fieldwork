@@ -8,6 +8,16 @@ Each entry is a `##` title, a `Released: YYYY-MM-DD` line, and a short
 explanation written for the people using the app. The title is the entry's
 identity — renaming one announces it again to everyone who already read it.
 
+## Share an idea
+
+Released: 2026-09-17
+
+**Share an idea** is in the sidebar, under Settings. Anything the app should do and doesn't — a report that should say something it doesn't, a step that takes longer than it should.
+
+It asks two things: the idea in a few words, and what problem it solves. The second is the one that matters. An idea arrives as a solution, and a solution can only be weighed against the problem underneath it — which is often solvable a better way than the one either of us thought of first.
+
+Filing one promises nothing. We read every one, we build the ones where the problem turns out to be shared, and anything we build shows up here in What's new.
+
 ## Clearer reports
 
 Released: 2026-09-17

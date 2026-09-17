@@ -162,6 +162,16 @@ not mistaken for a new regression:
 - Three routes joined on 2026-09-10 and 2026-09-11 and open clean at every
   width they run at: `revise-team-gap` and `revise-instrument` (the section
   strip a revision shows) and `admin-instrument-editor` (768 and 1280 only).
+- `admin-ideas` joined on 2026-09-17 with the suggestion box, and opens clean
+  at 768 and 1280. The same run found two things worth keeping in mind. The
+  sidebar grew past the viewport and did not scroll — `flex-1` without
+  `min-h-0`, so the nav was drawn over the email and Log out, which is a real
+  bug the sweep caught the day it appeared. And the overlap check had no notion
+  of a scrolling ancestor: an item scrolled out of the sidebar still reported a
+  rect where it would have been, on top of whatever sat below the container. It
+  now clips every rect to its clipping ancestors and the viewport before
+  comparing, the same reasoning the clipping check already used. Any route with
+  a scrollable region was liable to the old false positive.
 - `admin-assessments-home` joined on 2026-09-16, when the Assessments page
   replaced the sidebar list, and opens clean at 768 and 1280. Its one contrast
   finding is the `text-gray-400` count beside the Assessments link, same class

@@ -29,6 +29,8 @@ import { loadReleaseNotes, readReleaseNotes, unreadReleaseNotes, markAllReleaseN
 import { ReleaseNotesBar, ReleaseNotesDialog, useReleaseNotesDialog } from "@/components/ReleaseNotes";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import NewAssessmentPanel from "@/components/NewAssessmentPanel";
+import IdeaDialog from "@/components/IdeaDialog";
+import IdeasPage from "./admin/IdeasPage";
 import { functionErrorMessage } from "@/lib/utils";
 
 // If assessment_type ever starts arriving as undefined on freshly created
@@ -77,7 +79,7 @@ export default function AdminPage() {
   const { user, isAuthenticated, logout } = useAuth();
   const [assessments, setAssessments] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
-  const [selectedSection, setSelectedSection] = useState("assessments"); // assessments | instruments | library | resources | tags | organizations | team | health
+  const [selectedSection, setSelectedSection] = useState("assessments"); // assessments | instruments | library | resources | tags | organizations | team | health | ideas
   // The Library tab to land on, and a counter that remounts the page so a
   // second jump from Health to the same tab still resets it.
   const [libraryTab, setLibraryTab] = useState({ tab: "Activities", n: 0 });
@@ -128,6 +130,7 @@ export default function AdminPage() {
   // Below md the sidebar is a drawer behind a menu button: at phone width a
   // 256px column leaves the page under 150px to work in.
   const [menuOpen, setMenuOpen] = useState(false);
+  const [ideaOpen, setIdeaOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState("");
 
@@ -492,7 +495,11 @@ export default function AdminPage() {
             </button>
           </div>
 
-          <div className="flex-1 overflow-y-auto py-3 px-3">
+          {/* min-h-0 with the flex-1: without it a flex child will not shrink
+              below its content, so the column grew past the sidebar instead of
+              scrolling and the nav was drawn over the email and Log out. It
+              only looked right while the list was short enough to fit. */}
+          <div className="flex-1 min-h-0 overflow-y-auto py-3 px-3">
             {/* Looks like a search box because that is what it does, and shows
                 its shortcut so the keyboard route is learnt by seeing it. */}
             <button
@@ -570,6 +577,16 @@ export default function AdminPage() {
               </>
             )}
 
+            {/* Open to anyone with a login, and placed with the guide rather
+                than under Settings: it is a way to talk to us, not a thing to
+                configure. Filing one promises nothing — see IdeaDialog. */}
+            <button onClick={() => setIdeaOpen(true)} className={`${navClass(false)} flex items-center gap-2`}>
+              <svg className="w-4 h-4 text-amber-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 18h6M10 21h4M12 3a6 6 0 00-3.6 10.8c.5.4.8.9.9 1.5l.1.7h5.2l.1-.7c.1-.6.4-1.1.9-1.5A6 6 0 0012 3z" />
+              </svg>
+              Share an idea
+            </button>
+
             <a
               href="/facilitator-guide"
               target="_blank"
@@ -619,6 +636,12 @@ export default function AdminPage() {
                 <button onClick={() => setSelectedSection("organizations")} className={navClass(selectedSection === "organizations")}>
                   Organizations
                 </button>
+                {/* What everyone else has asked for, and what we decided.
+                    Last, because it is read on purpose rather than passed
+                    through on the way somewhere else. */}
+                <button onClick={() => setSelectedSection("ideas")} className={navClass(selectedSection === "ideas")}>
+                  Ideas
+                </button>
               </>
             )}
           </div>
@@ -659,7 +682,9 @@ export default function AdminPage() {
             </button>
             <UnreadBadge count={totalUnread} />
           </div>
-          {selectedSection === "organizations" ? (
+          {selectedSection === "ideas" ? (
+            <IdeasPage />
+          ) : selectedSection === "organizations" ? (
             <OrganizationsPage
               onViewTeam={orgId => { setTeamOrgFilter(orgId); setSelectedSection("team"); }}
             />
@@ -792,6 +817,14 @@ export default function AdminPage() {
       </div>
 
       <ReleaseNotesDialog notes={releaseNotes} open={whatsNew.open} onOpenChange={whatsNew.setOpen} newIds={whatsNew.newIds} />
+
+      {/* Where they were when they had the thought, captured rather than
+          asked: the section, and the assessment if they were inside one. */}
+      <IdeaDialog
+        open={ideaOpen}
+        onClose={() => setIdeaOpen(false)}
+        context={selected ? `${selectedSection} · ${selected.title}` : selectedSection}
+      />
 
       <ConfirmDialog
         open={confirmingDelete}
