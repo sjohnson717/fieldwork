@@ -20,6 +20,10 @@
       "type": "string",
       "description": "Author, publication, or book and chapter. Attribution belongs with the recommendation."
     },
+    "published_date": {
+      "type": "string",
+      "description": "When the piece was published, as YYYY-MM-DD. Empty when unknown. Lets a reader of the Resources tab tell a post from last month from one written years ago."
+    },
     "url": {
       "type": "string"
     },

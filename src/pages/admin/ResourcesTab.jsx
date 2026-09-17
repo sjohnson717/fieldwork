@@ -29,8 +29,16 @@ const TYPES = [
 const TYPE_LABEL = Object.fromEntries(TYPES.map(t => [t.key, t.label]));
 
 const EMPTY = {
-  title: "", resource_type: "free_article", source: "", url: "", note: "", activity_ids: [],
+  title: "", resource_type: "free_article", source: "", published_date: "", url: "", note: "", activity_ids: [],
   fallback: false,
+};
+
+// Stored as YYYY-MM-DD. Parsed as a local date: new Date("2026-08-10") is
+// midnight UTC, which reads as 9 Aug anywhere west of Greenwich.
+const formatPublished = (ymd) => {
+  const [y, m, d] = String(ymd || "").split("-").map(Number);
+  if (!y || !m || !d) return "";
+  return new Date(y, m - 1, d).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
 };
 
 function ActivityPicker({ activities, selectedIds, onToggle }) {
@@ -84,7 +92,7 @@ function ResourceForm({ draft, setDraft, activities, onSave, onCancel, saving, s
         onChange={e => setDraft(d => ({ ...d, title: e.target.value }))}
         className="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
       />
-      <div className="flex gap-3">
+      <div className="flex flex-wrap gap-3">
         <select
           value={draft.resource_type}
           onChange={e => setDraft(d => ({ ...d, resource_type: e.target.value }))}
@@ -96,8 +104,17 @@ function ResourceForm({ draft, setDraft, activities, onSave, onCancel, saving, s
           placeholder="Author, publication, or book and chapter"
           value={draft.source}
           onChange={e => setDraft(d => ({ ...d, source: e.target.value }))}
-          className="flex-1 border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
+          className="flex-1 min-w-[12rem] border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
         />
+        <label className="flex items-center gap-2 text-xs text-gray-500">
+          Published
+          <input
+            type="date"
+            value={draft.published_date}
+            onChange={e => setDraft(d => ({ ...d, published_date: e.target.value }))}
+            className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
+          />
+        </label>
       </div>
       <input
         placeholder="https://…"
@@ -259,7 +276,7 @@ export default function ResourcesTab() {
           setEditingId(r.id);
           setDraft({
             title: r.title || "", resource_type: r.resource_type || "free_article",
-            source: r.source || "", url: r.url || "", note: r.note || "",
+            source: r.source || "", published_date: r.published_date || "", url: r.url || "", note: r.note || "",
             activity_ids: r.activity_ids || [],
             fallback: !!r.fallback,
           });
@@ -336,7 +353,10 @@ export default function ResourcesTab() {
           resources={resources}
           onClose={() => setShowFeed(false)}
           onAdd={(post) => {
-            setDraft({ ...EMPTY, title: post.title, url: post.url, note: post.description });
+            setDraft({
+              ...EMPTY, title: post.title, url: post.url, note: post.description,
+              published_date: post.published ? post.published.slice(0, 10) : "",
+            });
             setFeedPost(post);
             setShowAddForm(true);
           }}
@@ -363,6 +383,7 @@ export default function ResourcesTab() {
                     {r.title}
                   </span>
                   {r.source && <span className="text-xs text-gray-400">{r.source}</span>}
+                  {r.published_date && <span className="text-xs text-gray-400">{formatPublished(r.published_date)}</span>}
                   {/* Pinned to the corner, with the title line padded to clear
                       them, rather than placed in the line: invisible, they
                       still took up room, and beside a long title they wrapped
