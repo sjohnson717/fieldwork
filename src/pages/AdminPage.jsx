@@ -15,6 +15,7 @@ import InstrumentsPage from "./admin/InstrumentsPage";
 import TeamPage from "./admin/TeamPage";
 import OrganizationsPage from "./admin/OrganizationsPage";
 import TagsPage from "./admin/TagsPage";
+import HealthPage from "./admin/HealthPage";
 import AssessmentsHome, { scopeByOwner } from "./admin/AssessmentsHome";
 import { UnreadBadge, PinButton } from "./admin/assessment-labels";
 import AssessmentSwitcher from "@/components/AssessmentSwitcher";
@@ -75,7 +76,10 @@ export default function AdminPage() {
   const { user, isAuthenticated, logout } = useAuth();
   const [assessments, setAssessments] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
-  const [selectedSection, setSelectedSection] = useState("assessments"); // assessments | instruments | library | tags | organizations | team
+  const [selectedSection, setSelectedSection] = useState("assessments"); // assessments | instruments | library | tags | organizations | team | health
+  // The Library tab to land on, and a counter that remounts the page so a
+  // second jump from Health to the same tab still resets it.
+  const [libraryTab, setLibraryTab] = useState({ tab: "Activities", n: 0 });
   // Super-admin only: when set, the team page is narrowed to one organization
   // (set by following an org's "View team" link on the Organizations page).
   const [teamOrgFilter, setTeamOrgFilter] = useState(null);
@@ -528,7 +532,7 @@ export default function AdminPage() {
                 <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest px-3 mb-1.5 mt-5">Settings</p>
                 {isAdmin && (
                   <button
-                    onClick={() => setSelectedSection("library")}
+                    onClick={() => { setLibraryTab(prev => ({ tab: "Activities", n: prev.n + 1 })); setSelectedSection("library"); }}
                     className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors text-sm font-medium ${
                       selectedSection === "library"
                         ? "bg-blue-50 text-blue-900"
@@ -587,6 +591,21 @@ export default function AdminPage() {
                 >
                   Facilitators
                 </button>
+                {/* Last in Settings: a page you visit now and then to tidy up,
+                    not one you work in. Super-admin only, since it reads across
+                    every organization. */}
+                {isAdmin && (
+                  <button
+                    onClick={() => setSelectedSection("health")}
+                    className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors text-sm font-medium ${
+                      selectedSection === "health"
+                        ? "bg-blue-50 text-blue-900"
+                        : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                    }`}
+                  >
+                    Health
+                  </button>
+                )}
               </>
             )}
             <a
@@ -651,7 +670,15 @@ export default function AdminPage() {
           ) : selectedSection === "instruments" ? (
             <InstrumentsPage />
           ) : selectedSection === "library" ? (
-            <LibraryPage />
+            <LibraryPage key={libraryTab.n} initialTab={libraryTab.tab} />
+          ) : selectedSection === "health" ? (
+            <HealthPage
+              onOpen={(target) => {
+                if (target.assessmentId) return openAssessment(target.assessmentId);
+                if (target.section === "library") setLibraryTab(prev => ({ tab: target.tab || "Activities", n: prev.n + 1 }));
+                setSelectedSection(target.section);
+              }}
+            />
           ) : selectedSection === "tags" ? (
             <TagsPage onTagsChanged={loadTags} />
           ) : selectedSection === "team" ? (

@@ -706,8 +706,8 @@ function JobTitlesTab() {
 
 const TABS = ["Activities", "Job Titles", "Activity Sets", "Resources"];
 
-export default function LibraryPage() {
-  const [activeTab, setActiveTab] = useState("Activities");
+export default function LibraryPage({ initialTab = "Activities" }) {
+  const [activeTab, setActiveTab] = useState(TABS.includes(initialTab) ? initialTab : "Activities");
 
   return (
     <div className="flex flex-col min-h-0 flex-1">

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { functionErrorMessage } from "@/lib/utils";
+import { sameAddress } from "@/lib/same-address";
 
 // "New from the blog": posts in the Wix RSS feed that are not yet a resource.
 //
@@ -10,23 +11,6 @@ import { functionErrorMessage } from "@/lib/utils";
 // that form is saved. A post that does not belong in Quartz is skipped, and
 // the skip is stored (SkippedPost) so it is not offered again on the next
 // visit or to the next person. Skipping is undone from the same panel.
-
-// Addresses are compared loosely: the feed and a hand-typed resource can differ
-// by scheme, "www.", a trailing slash, or a tracking query. And by the path in
-// front of the slug: Wix shows one article at /post/<slug> in the feed and at
-// /reading/<slug> on the site, and resources were added under both. So the
-// key is the site plus the last segment.
-export const sameAddress = (url) => {
-  const parts = String(url || "")
-    .trim()
-    .toLowerCase()
-    .replace(/^https?:\/\//, "")
-    .replace(/^www\./, "")
-    .replace(/[?#].*$/, "")
-    .replace(/\/+$/, "")
-    .split("/");
-  return parts.length > 1 ? `${parts[0]}/${parts[parts.length - 1]}` : parts[0];
-};
 
 const formatDate = (iso) =>
   iso ? new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" }) : "";

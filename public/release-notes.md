@@ -8,6 +8,12 @@ Each entry is a `##` title, a `Released: YYYY-MM-DD` line, and a short
 explanation written for the people using the app. The title is the entry's
 identity — renaming one announces it again to everyone who already read it.
 
+## Health
+
+Released: 2026-09-17
+
+Super-admins have a **Health** page at the bottom of Settings. It gathers what needs tidying across every organization. **Needs fixing** covers resources no report can show, library activities with no reading, and owners that don't match a job title. **Worth a look** covers articles more than three years old, open assessments that have gone quiet, old drafts and closed assessments, blog posts waiting for a decision, and invitations nobody accepted. Tap a check to see what it found, and **Open** to go where you deal with it. Nothing on the page changes anything by itself.
+
 ## New posts from the blog
 
 Released: 2026-09-17
