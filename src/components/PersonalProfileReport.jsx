@@ -253,9 +253,9 @@ export default function PersonalProfileReport({
   const resourcesByActivity = [];
   const alreadyListed = new Set();
   for (const o of opportunities) {
-    // Three at most per activity — see src/lib/reading.js. Taken after the
-    // already-listed filter, so an activity whose first three were claimed by
-    // a higher-ranked opportunity offers its next three rather than nothing.
+    // Two at most per activity — see src/lib/reading.js. Taken after the
+    // already-listed filter, so an activity whose first two were claimed by a
+    // higher-ranked opportunity offers its next two rather than nothing.
     const items = capReading(resources.filter(
       r => (r.activity_ids || []).includes(o.activity.id) && !alreadyListed.has(r.id)
     ));

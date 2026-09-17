@@ -14,7 +14,7 @@ Released: 2026-09-17
 
 Each respondent's own report now carries the assessment's full name on screen, not only on the printed cover — so someone holding two links can tell which one they just answered. The instrument's name used to stand in for it, and it could not tell two runs apart.
 
-Reading is capped at three articles per activity. An activity that has collected eight offers the first three, in the order set in Settings → Resources, so which three is an editorial decision rather than an accident. A page of every article we have reads as a catalogue, and a catalogue gets read as advertising.
+Reading is capped at two articles per activity. An activity that has collected eight offers the first two, in the order set in Settings → Resources, so which two is an editorial decision rather than an accident. A page of every article we have reads as a catalogue, and a catalogue gets read as advertising.
 
 ## One way to name an assessment
 

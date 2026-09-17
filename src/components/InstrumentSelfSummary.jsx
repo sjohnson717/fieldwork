@@ -81,7 +81,7 @@ export default function InstrumentSelfSummary({
   // way every other reference in this app is treated — an article retired since
   // somebody answered should cost a link, not the page.
   // Capped: see src/lib/reading.js. A question that has collected eight
-  // articles offers the first three, in the library's own order.
+  // articles offers the first two, in the library's own order.
   const readingFor = (questionId) =>
     capReading(resources.filter((r) => (r.activity_ids || []).includes(questionId)));
   const axis = instrument.axes?.[0];
