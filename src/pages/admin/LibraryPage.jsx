@@ -9,6 +9,7 @@ import ConfirmDialog from "@/components/ConfirmDialog";
 import { functionErrorMessage } from "@/lib/utils";
 import ActivityImportDialog from "./ActivityImportDialog";
 import { CSV_COLUMNS } from "@/lib/activity-csv";
+import { ROW, ROW_ACTIONS, PAST_HANDLE, ACTION, DELETE_TONE } from "@/lib/row-actions";
 
 // ── Typeahead owner input ─────────────────────────────────────────────────────
 
@@ -355,7 +356,7 @@ function ActivitiesTab() {
                 </div>
               </div>
             ) : (
-              <div className="flex items-center gap-3 px-4 py-3 group">
+              <div className={`flex items-center gap-3 px-4 py-3 group ${ROW}`}>
                 {/* Drag handle */}
                 <div className="cursor-grab text-gray-200 hover:text-gray-400 shrink-0 transition-colors">
                   <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
@@ -388,13 +389,13 @@ function ActivitiesTab() {
                     <p className="text-xs text-gray-400 truncate mt-0.5">{activity.description}</p>
                   )}
                 </div>
-                <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                <div className={`${ROW_ACTIONS} ${PAST_HANDLE}`}>
                   <button onClick={() => handleEdit(activity)}
-                    className="text-xs text-gray-400 hover:text-blue-600 font-medium transition-colors">
+                    className={`${ACTION} text-gray-400 hover:text-blue-600 font-medium transition-colors`}>
                     Edit
                   </button>
                   <button onClick={() => handleToggleActive(activity)}
-                    className="text-xs text-gray-400 hover:text-gray-700 transition-colors">
+                    className={`${ACTION} text-gray-400 hover:text-gray-700 transition-colors`}>
                     {activity.active ? "Disable" : "Enable"}
                   </button>
                   {/* Delete only where nothing references the activity. On the
@@ -403,7 +404,7 @@ function ActivitiesTab() {
                       the ones that already asked the question intact. */}
                   {canDelete(activity) ? (
                     <button onClick={() => setDeletingActivity(activity)}
-                      className="text-xs text-gray-300 hover:text-red-400 transition-colors">
+                      className={`${ACTION} ${DELETE_TONE} hover:text-red-400 transition-colors`}>
                       Delete
                     </button>
                   ) : (
@@ -411,7 +412,7 @@ function ActivitiesTab() {
                       title={usage === null
                         ? "Usage is still loading"
                         : `In use — ${usageTotal(activity.id)} reference${usageTotal(activity.id) === 1 ? "" : "s"} across assessments, sets, and answers`}
-                      className="text-xs text-gray-200 cursor-default"
+                      className={`${ACTION} text-gray-300 [@media(hover:hover)]:text-gray-200 cursor-default`}
                     >
                       In use
                     </span>
@@ -630,7 +631,7 @@ function JobTitlesTab() {
                 <button onClick={() => setEditingId(null)} className="text-sm text-gray-400 hover:text-gray-600">Cancel</button>
               </div>
             ) : (
-              <div className="flex items-center gap-3 px-4 py-3 group">
+              <div className={`flex items-center gap-3 px-4 py-3 group ${ROW}`}>
                 <div className="cursor-grab text-gray-200 hover:text-gray-400 shrink-0 transition-colors">
                   <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                     <circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/>
@@ -641,17 +642,17 @@ function JobTitlesTab() {
                 <span className={`flex-1 text-sm ${title.active ? "text-gray-800 font-medium" : "text-gray-400 line-through"}`}>
                   {title.name}
                 </span>
-                <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                <div className={`${ROW_ACTIONS} ${PAST_HANDLE}`}>
                   <button onClick={() => { setEditingId(title.id); setEditName(title.name); }}
-                    className="text-xs text-gray-400 hover:text-blue-600 font-medium transition-colors">
+                    className={`${ACTION} text-gray-400 hover:text-blue-600 font-medium transition-colors`}>
                     Edit
                   </button>
                   <button onClick={() => handleToggleActive(title)}
-                    className="text-xs text-gray-400 hover:text-gray-700 transition-colors">
+                    className={`${ACTION} text-gray-400 hover:text-gray-700 transition-colors`}>
                     {title.active ? "Disable" : "Enable"}
                   </button>
                   <button onClick={() => setDeletingTitle(title)}
-                    className="text-xs text-gray-300 hover:text-red-400 transition-colors">
+                    className={`${ACTION} ${DELETE_TONE} hover:text-red-400 transition-colors`}>
                     Delete
                   </button>
                 </div>

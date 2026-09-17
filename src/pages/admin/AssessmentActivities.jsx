@@ -3,6 +3,7 @@ import { isLibraryActivity } from "@/lib/activities";
 import { base44 } from "@/api/base44Client";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { FACET_ORDER } from "@/lib/scoring";
+import { ROW, ROW_ACTIONS, ACTION, DELETE_TONE } from "@/lib/row-actions";
 
 // ── OwnerTypeahead (same pattern as LibraryPage) ──────────────────────────────
 
@@ -362,14 +363,14 @@ export default function AssessmentActivities({ assessment, onUpdate }) {
                         </div>
                       </div>
                     ) : (
-                      <div className="flex items-center gap-3 px-1 py-1.5 group">
+                      <div className={`flex items-center gap-3 px-1 py-1.5 group ${ROW}`}>
                         <div className="flex-1 min-w-0">
                           <span className="text-sm text-gray-700">{activity.name}</span>
                           {activity.description && (
                             <span className="text-xs text-gray-400 ml-2">{activity.description}</span>
                           )}
                         </div>
-                        <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                        <div className={ROW_ACTIONS}>
                           <button
                             onClick={() => {
                               setEditingCustomId(activity.id);
@@ -380,13 +381,13 @@ export default function AssessmentActivities({ assessment, onUpdate }) {
                                 preferred_owner: activity.preferred_owner || "",
                               });
                             }}
-                            className="text-xs text-gray-400 hover:text-[#3366FF] font-medium transition-colors"
+                            className={`${ACTION} text-gray-400 hover:text-[#3366FF] font-medium transition-colors`}
                           >
                             Edit
                           </button>
                           <button
                             onClick={() => setDeletingCustom(activity)}
-                            className="text-xs text-gray-300 hover:text-red-400 transition-colors"
+                            className={`${ACTION} ${DELETE_TONE} hover:text-red-400 transition-colors`}
                           >
                             Delete
                           </button>

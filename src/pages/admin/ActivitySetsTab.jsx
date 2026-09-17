@@ -5,6 +5,7 @@ import { FACET_ORDER } from "@/lib/scoring";
 import DraggableList from "@/components/DraggableList";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { functionErrorMessage } from "@/lib/utils";
+import { ROW, ROW_ACTIONS, PAST_HANDLE, ACTION, DELETE_TONE } from "@/lib/row-actions";
 
 // ── Activity checklist inside an expanded set ─────────────────────────────────
 
@@ -254,7 +255,7 @@ export default function ActivitySetsTab() {
                 </div>
               ) : (
                 <>
-                  <div className="flex items-center gap-3 px-4 py-3 group">
+                  <div className={`flex items-center gap-3 px-4 py-3 group ${ROW}`}>
                     {/* Drag handle */}
                     <div className="cursor-grab text-gray-200 hover:text-gray-400 shrink-0 transition-colors">
                       <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
@@ -282,35 +283,36 @@ export default function ActivitySetsTab() {
                       )}
                     </button>
 
-                    {/* Expand chevron + actions */}
-                    <div className="flex items-center gap-2 shrink-0">
-                      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
-                          onClick={() => { setEditingId(set.id); setEditName(set.name); setEditDescription(set.description || ""); }}
-                          className="text-xs text-gray-400 hover:text-[#3366FF] font-medium transition-colors"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleToggleActive(set)}
-                          className="text-xs text-gray-400 hover:text-gray-700 transition-colors"
-                        >
-                          {set.active ? "Disable" : "Enable"}
-                        </button>
-                        <button
-                          onClick={() => setDeletingSet(set)}
-                          className="text-xs text-gray-300 hover:text-red-400 transition-colors"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                      <svg
-                        className={`w-4 h-4 text-gray-300 transition-transform ${isExpanded ? "rotate-180" : ""}`}
-                        fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                        onClick={() => setExpandedId(isExpanded ? null : set.id)}
+                    {/* Chevron before the actions in the markup, so on a
+                        touchscreen it stays on the name's line while the
+                        actions wrap below; with hover, order-last puts it back
+                        after them. */}
+                    <svg
+                      className={`w-4 h-4 text-gray-300 shrink-0 [@media(hover:hover)]:order-last transition-transform ${isExpanded ? "rotate-180" : ""}`}
+                      fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                      onClick={() => setExpandedId(isExpanded ? null : set.id)}
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                    <div className={`${ROW_ACTIONS} ${PAST_HANDLE}`}>
+                      <button
+                        onClick={() => { setEditingId(set.id); setEditName(set.name); setEditDescription(set.description || ""); }}
+                        className={`${ACTION} text-gray-400 hover:text-[#3366FF] font-medium transition-colors`}
                       >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleToggleActive(set)}
+                        className={`${ACTION} text-gray-400 hover:text-gray-700 transition-colors`}
+                      >
+                        {set.active ? "Disable" : "Enable"}
+                      </button>
+                      <button
+                        onClick={() => setDeletingSet(set)}
+                        className={`${ACTION} ${DELETE_TONE} hover:text-red-400 transition-colors`}
+                      >
+                        Delete
+                      </button>
                     </div>
                   </div>
 
