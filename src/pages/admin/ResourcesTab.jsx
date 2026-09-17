@@ -168,7 +168,9 @@ export default function ResourcesTab() {
     setLoading(true);
     try {
       const [res, acts] = await Promise.all([
-        base44.entities.Resource.list("sort_order"),
+        // Newest first, so a resource just added sits under the form that
+        // made it. sort_order still sets the order a report shows them in.
+        base44.entities.Resource.list("-created_date"),
         base44.entities.Activity.filter({ active: true }, "sort_order")
           .then(all => all.filter(a => !a.assessment_id)),
       ]);
@@ -193,7 +195,7 @@ export default function ResourcesTab() {
         sort_order: maxOrder + 1,
         active: true,
       });
-      setResources(prev => [...prev, created]);
+      setResources(prev => [created, ...prev]);
       setDraft(EMPTY);
       setShowAddForm(false);
     } catch (e) { console.error(e); }
@@ -250,6 +252,27 @@ export default function ResourcesTab() {
       </p>
 
       {error && <p className="text-xs text-red-500">{error}</p>}
+
+      {showAddForm ? (
+        <div className="bg-white rounded-xl border border-[#a3b8ff] px-4 py-3">
+          <ResourceForm
+            draft={draft} setDraft={setDraft} activities={activities}
+            onSave={handleAdd}
+            onCancel={() => { setShowAddForm(false); setDraft(EMPTY); }}
+            saving={saving} saveLabel="Add"
+          />
+        </div>
+      ) : (
+        <button
+          onClick={() => { setDraft(EMPTY); setShowAddForm(true); }}
+          className="flex items-center gap-2 text-sm text-gray-400 hover:text-[#3366FF] transition-colors px-1"
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          </svg>
+          Add resource
+        </button>
+      )}
 
       <div className="space-y-2">
         {resources.map(r => (
@@ -313,27 +336,6 @@ export default function ResourcesTab() {
           </div>
         ))}
       </div>
-
-      {showAddForm ? (
-        <div className="bg-white rounded-xl border border-[#a3b8ff] px-4 py-3">
-          <ResourceForm
-            draft={draft} setDraft={setDraft} activities={activities}
-            onSave={handleAdd}
-            onCancel={() => { setShowAddForm(false); setDraft(EMPTY); }}
-            saving={saving} saveLabel="Add"
-          />
-        </div>
-      ) : (
-        <button
-          onClick={() => { setDraft(EMPTY); setShowAddForm(true); }}
-          className="flex items-center gap-2 text-sm text-gray-400 hover:text-[#3366FF] transition-colors px-1"
-        >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-          Add resource
-        </button>
-      )}
 
       <ConfirmDialog
         open={!!deleting}
