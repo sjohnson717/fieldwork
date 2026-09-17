@@ -38,45 +38,56 @@ function ActivityRow({ activity, stats }) {
 
   return (
     <div className="border-b border-gray-50 last:border-0">
+      {/* Below md the badges go on a line of their own under the name. Beside
+          it, a phone left the name a sliver, and "Discuss owner" and the status
+          badge were drawn over a long activity name or cut off at the card's
+          edge. From md up, and on paper, they sit at the end of the row. */}
       <button
         onClick={() => setExpanded(e => !e)}
-        className="w-full flex items-center gap-4 px-5 py-3.5 hover:bg-gray-50/50 transition-colors text-left"
+        className="w-full flex items-start md:items-center gap-3 md:gap-4 px-4 md:px-5 py-3.5 hover:bg-gray-50/50 transition-colors text-left"
       >
         {/* Gap dot */}
-        <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: dot }} />
+        <div className="w-3 h-3 rounded-full shrink-0 mt-1 md:mt-0" style={{ backgroundColor: dot }} />
 
-        {/* Name */}
-        <div className="flex-1 min-w-0">
-          <span className="text-sm font-medium text-gray-800">{activity.name}</span>
-          {activity.description && (
-            <p className="text-xs text-gray-400 truncate mt-0.5">{activity.description}</p>
-          )}
-        </div>
+        <div className="flex-1 min-w-0 flex flex-col md:flex-row md:items-center gap-2 md:gap-4">
+          {/* Name */}
+          <div className="min-w-0 md:flex-1">
+            <span className="text-sm font-medium text-gray-800">{activity.name}</span>
+            {activity.description && (
+              <p className="text-xs text-gray-400 truncate mt-0.5">{activity.description}</p>
+            )}
+          </div>
 
-        {/* Gap badge + ownership badge */}
-        <div className="shrink-0 flex items-center gap-3">
-          {stats?.ownerEntries?.length > 0 && (() => {
-            const ownerBadge =
+          {/* Gap badge + ownership badge */}
+          {(() => {
+            const ownerBadge = stats?.ownerEntries?.length > 0 && (
               stats.ownerAgreement < 0.5 ? "Discuss owner" :
               (activity.preferred_owner && !ownerMatchesRecommendation(stats.topOwner, activity.preferred_owner)) ? "Discuss owner" :
-              null;
-            return ownerBadge ? (
-              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[#F5F3FF] text-[#6D28D9]">
-                {ownerBadge}
-              </span>
-            ) : null;
+              null
+            );
+            if (!ownerBadge && gap === null) return null;
+            return (
+              <div className="flex flex-wrap items-center gap-2 md:gap-3 md:shrink-0">
+                {ownerBadge && (
+                  <span className="text-xs font-semibold px-2 py-0.5 rounded-full whitespace-nowrap bg-[#F5F3FF] text-[#6D28D9]">
+                    {ownerBadge}
+                  </span>
+                )}
+                {gap !== null && (
+                  <span className="text-xs font-semibold px-2 py-0.5 rounded-full whitespace-nowrap"
+                    style={{ backgroundColor: dot + "22", color: gap >= 2 ? "#991B1B" : gap >= 1 ? "#92700A" : gap !== null ? "#065F46" : "#6B7280" }}>
+                    {gapLabel(gap)}
+                  </span>
+                )}
+              </div>
+            );
           })()}
-          {gap !== null && (
-            <span className="text-xs font-semibold px-2 py-0.5 rounded-full"
-              style={{ backgroundColor: dot + "22", color: gap >= 2 ? "#991B1B" : gap >= 1 ? "#92700A" : gap !== null ? "#065F46" : "#6B7280" }}>
-              {gapLabel(gap)}
-            </span>
-          )}
-          <svg className={`w-4 h-4 text-gray-300 transition-transform ${expanded ? "rotate-180" : ""}`}
-            fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
         </div>
+
+        <svg className={`w-4 h-4 text-gray-300 shrink-0 mt-0.5 md:mt-0 transition-transform ${expanded ? "rotate-180" : ""}`}
+          fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
       </button>
 
       {expanded && stats && (
@@ -353,7 +364,9 @@ function FacetWheel({ activityStats, activities, onFacetClick }) {
   };
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+    // One column on the narrowest phones: two cards side by side at 320px are
+    // too narrow for a "Worth discussing" badge even on its own line.
+    <div className="grid grid-cols-1 min-[360px]:grid-cols-2 md:grid-cols-3 gap-3">
       {THEME_GROUPS.map(group => (
         group.facets.map(facet => {
           const facetActs = activities.filter(a => a.facet === facet);
@@ -749,8 +762,10 @@ export default function ReportPage() {
 
         {/* ── Title block ── */}
         <div className="mb-10">
-          <div className="flex items-start justify-between gap-4">
-            <h1 className="text-3xl font-bold text-gray-900 mb-1">{assessment.title}</h1>
+          {/* Wraps, so on a narrow phone Save as PDF drops under a long title
+              instead of pushing the page sideways. */}
+          <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
+            <h1 className="text-3xl font-bold text-gray-900 mb-1 min-w-0 break-words">{assessment.title}</h1>
             <button
               onClick={() => window.print()}
               className="no-print shrink-0 border border-gray-300 hover:border-gray-400 text-gray-600 hover:text-gray-800 font-medium px-4 py-2 rounded-lg transition-colors text-sm"
@@ -788,10 +803,12 @@ export default function ReportPage() {
         </p>
 
         {/* ── Headline finding ── */}
-        <div className="bg-[#E1E8F5] border border-gray-100 rounded-2xl px-8 py-8 mb-10 shadow-md">
+        <div className="bg-[#E1E8F5] border border-gray-100 rounded-2xl px-5 md:px-8 py-8 mb-10 shadow-md">
           <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">Key finding</p>
           <p className="text-xl font-semibold leading-relaxed text-gray-900">{headlineSentence}</p>
-          <div className="border-t border-gray-200 mt-6 pt-5 flex gap-8">
+          {/* Wraps: three counts on one line pushed "participants" off a
+              375px screen and the page scrolled sideways. */}
+          <div className="border-t border-gray-200 mt-6 pt-5 flex flex-wrap gap-x-8 gap-y-3">
             <div>
               <span className="text-3xl font-bold text-[#E53E3E]">{criticalGaps}</span>
               <span className="text-sm text-gray-500 ml-2">immediate attention</span>
