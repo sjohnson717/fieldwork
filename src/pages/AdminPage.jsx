@@ -565,6 +565,25 @@ export default function AdminPage() {
               </>
             )}
 
+            <a
+              href="/facilitator-guide"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full text-left px-3 py-2.5 rounded-lg transition-colors text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 flex items-center gap-1.5"
+            >
+              Facilitator Guide
+              <svg className="w-3 h-3 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+              </svg>
+            </a>
+            {/* A facilitator has no Settings, so What's new sits here for them. */}
+            {!(isAdmin || isOrgAdmin) && (
+              <button onClick={whatsNew.openDialog} className={navClass(false)}>
+                What's new
+                {unreadNotes.length > 0 && <span className="ml-auto w-2 h-2 rounded-full bg-blue-500" aria-label="Unread" />}
+              </button>
+            )}
+
             {isAdmin && (
               <>
                 <div className="border-t border-gray-200 mt-5 pt-4">
@@ -596,24 +615,6 @@ export default function AdminPage() {
                   Organizations
                 </button>
               </>
-            )}
-            <a
-              href="/facilitator-guide"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full text-left px-3 py-2.5 rounded-lg transition-colors text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 flex items-center gap-1.5"
-            >
-              Facilitator Guide
-              <svg className="w-3 h-3 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-              </svg>
-            </a>
-            {/* A facilitator has no Settings, so What's new sits here for them. */}
-            {!(isAdmin || isOrgAdmin) && (
-              <button onClick={whatsNew.openDialog} className={navClass(false)}>
-                What's new
-                {unreadNotes.length > 0 && <span className="ml-auto w-2 h-2 rounded-full bg-blue-500" aria-label="Unread" />}
-              </button>
             )}
           </div>
 
