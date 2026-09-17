@@ -62,7 +62,6 @@ export function runChecks(data, now = new Date()) {
 
   const assessmentLabel = (a) => a.company_name ? `${a.title} · ${a.company_name}` : a.title;
   const openAssessment = (a) => ({ section: "assessments", assessmentId: a.id });
-  const toResources = { section: "resources" };
 
   const activeResources = resources.filter(r => r.active !== false);
   const activityName = new Map(activities.map(a => [a.id, a.name]));
@@ -111,17 +110,17 @@ export function runChecks(data, now = new Date()) {
         key: r.id,
         label: r.title,
         detail: `Published ${published.getFullYear()}` + (only.length ? ` · the only reading for ${only.join(", ")}` : ""),
-        target: toResources,
+        target: { section: "resources", resourceIds: [r.id] },
       };
     });
 
   const undated = activeResources
     .filter(r => !parseDate(r.published_date))
-    .map(r => ({ key: r.id, label: r.title, detail: r.url || "", target: toResources }));
+    .map(r => ({ key: r.id, label: r.title, detail: r.url || "", target: { section: "resources", resourceIds: [r.id] } }));
 
   const unattached = activeResources
     .filter(r => !(r.activity_ids || []).length && !r.fallback)
-    .map(r => ({ key: r.id, label: r.title, detail: "Attached to nothing, so it never reaches a report", target: toResources }));
+    .map(r => ({ key: r.id, label: r.title, detail: "Attached to nothing, so it never reaches a report", target: { section: "resources", resourceIds: [r.id] } }));
 
   const byAddress = new Map();
   for (const r of resources) {
@@ -131,19 +130,19 @@ export function runChecks(data, now = new Date()) {
   }
   const duplicates = [...byAddress.values()]
     .filter(rows => rows.length > 1)
-    .map(rows => ({ key: rows[0].id, label: rows[0].title, detail: `${rows.length} resources link to this article`, target: toResources }));
+    .map(rows => ({ key: rows[0].id, label: rows[0].title, detail: `${rows.length} resources link to this article`, target: { section: "resources", resourceIds: rows.map(r => r.id) } }));
 
   const added = new Set(resources.map(r => sameAddress(r.url)));
   const skipped = new Set(skippedPosts.map(r => sameAddress(r.url)));
   const newPosts = blogPosts
     .filter(p => !added.has(sameAddress(p.url)) && !skipped.has(sameAddress(p.url)))
-    .map(p => ({ key: p.url, label: p.title, detail: p.published ? `Posted ${ago(new Date(p.published), now)}` : "", target: toResources }));
+    .map(p => ({ key: p.url, label: p.title, detail: p.published ? `Posted ${ago(new Date(p.published), now)}` : "", target: { section: "resources", showFeed: true } }));
 
   // ── Library ──
   const libraryActivities = activities.filter(a => a.active !== false && isLibraryActivity(a));
   const noReading = libraryActivities
     .filter(a => !readingCount.get(a.id))
-    .map(a => ({ key: a.id, label: a.name, detail: a.facet || "", target: toResources }));
+    .map(a => ({ key: a.id, label: a.name, detail: a.facet || "", target: { section: "resources", addForActivityId: a.id } }));
 
   const liveInstruments = new Map(instruments.filter(i => i.active !== false).map(i => [i.id, i]));
   const questionsNoReading = activities
@@ -152,13 +151,13 @@ export function runChecks(data, now = new Date()) {
       key: a.id,
       label: a.name,
       detail: (a.instrument_ids || []).map(id => liveInstruments.get(id)?.name).filter(Boolean).join(", "),
-      target: { section: "instruments" },
+      target: { section: "instruments", instrumentId: (a.instrument_ids || []).find(id => liveInstruments.has(id)), questionId: a.id },
     }));
 
   const titleNames = new Set(jobTitles.filter(t => t.active !== false).map(t => t.name));
   const unknownOwner = libraryActivities
     .filter(a => a.preferred_owner && !titleNames.has(a.preferred_owner))
-    .map(a => ({ key: a.id, label: a.name, detail: `Recommended owner "${a.preferred_owner}" is not an active job title`, target: { section: "library", tab: "Activities" } }));
+    .map(a => ({ key: a.id, label: a.name, detail: `Recommended owner "${a.preferred_owner}" is not an active job title`, target: { section: "library", tab: "Activities", activityId: a.id } }));
 
   // ── People ──
   const staleInvites = invitations

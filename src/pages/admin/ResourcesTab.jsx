@@ -4,6 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { FACET_ORDER } from "@/lib/scoring";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import BlogFeedPanel from "@/pages/admin/BlogFeedPanel";
+import { scrollToRecord, FOCUS_RING } from "@/lib/focus-record";
 import { functionErrorMessage } from "@/lib/utils";
 
 // Learning resources offered on a personal report, against the activities
@@ -168,7 +169,9 @@ function ResourceForm({ draft, setDraft, activities, onSave, onCancel, saving, s
   );
 }
 
-export default function ResourcesTab() {
+// `focus` comes from System Health's Open: resources to point at, an activity
+// to start new reading for, or the blog feed to open.
+export default function ResourcesTab({ focus = null }) {
   const [resources, setResources] = useState([]);
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -181,11 +184,14 @@ export default function ResourcesTab() {
   // The blog post the add form was filled from, for the category hint.
   const [feedPost, setFeedPost] = useState(null);
   const addFormRef = useRef(null);
+  const [highlighted] = useState(() => new Set(focus?.resourceIds || []));
+  // The activity the add form was opened for, named above the form.
+  const [addingFor, setAddingFor] = useState(null);
 
   // Add on a post far down the feed opens the form above it, out of sight.
   useEffect(() => {
-    if (showAddForm && feedPost) addFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }, [showAddForm, feedPost]);
+    if (showAddForm && (feedPost || addingFor)) addFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [showAddForm, feedPost, addingFor]);
   const [deleting, setDeleting] = useState(null);
   const [error, setError] = useState("");
 
@@ -207,8 +213,18 @@ export default function ResourcesTab() {
       // both, so an article's line below still says where it is offered.
       setActivities(acts.filter(isLibraryActivity));
       setAllActivities(acts);
+      if (focus?.addForActivityId) {
+        const activity = acts.find(a => a.id === focus.addForActivityId);
+        if (activity) {
+          setDraft({ ...EMPTY, activity_ids: [activity.id] });
+          setAddingFor(activity);
+          setShowAddForm(true);
+        }
+      }
+      if (focus?.showFeed) setShowFeed(true);
     } catch (e) { console.error(e); }
     setLoading(false);
+    scrollToRecord("data-resource-id", focus?.resourceIds?.[0]);
   };
 
   const handleAdd = async () => {
@@ -226,6 +242,7 @@ export default function ResourcesTab() {
       setDraft(EMPTY);
       setShowAddForm(false);
       setFeedPost(null);
+      setAddingFor(null);
     } catch (e) { console.error(e); }
     setSaving(false);
   };
@@ -310,6 +327,11 @@ export default function ResourcesTab() {
 
       {showAddForm ? (
         <div ref={addFormRef} className="bg-white rounded-xl border border-[#a3b8ff] px-4 py-3 scroll-mt-4">
+          {addingFor && (
+            <p className="text-[11px] text-gray-400 mb-2">
+              New reading for <span className="font-medium text-gray-600">{addingFor.name}</span>, ticked below. Tick anything else it helps with too.
+            </p>
+          )}
           {feedPost && (
             <p className="text-[11px] text-gray-400 mb-2">
               From the blog{feedPost.categories.length > 0 ? ` · filed under ${feedPost.categories.join(", ")}` : ""}.
@@ -319,7 +341,7 @@ export default function ResourcesTab() {
           <ResourceForm
             draft={draft} setDraft={setDraft} activities={activities}
             onSave={handleAdd}
-            onCancel={() => { setShowAddForm(false); setDraft(EMPTY); setFeedPost(null); }}
+            onCancel={() => { setShowAddForm(false); setDraft(EMPTY); setFeedPost(null); setAddingFor(null); }}
             saving={saving} saveLabel="Add"
           />
         </div>
@@ -365,7 +387,7 @@ export default function ResourcesTab() {
 
       <div className="space-y-2">
         {resources.map(r => (
-          <div key={r.id} className={`bg-white rounded-xl border px-4 py-3 ${r.active ? "border-gray-200" : "border-gray-100 opacity-60"}`}>
+          <div key={r.id} data-resource-id={r.id} className={`bg-white rounded-xl border px-4 py-3 scroll-mt-4 ${r.active ? "border-gray-200" : "border-gray-100 opacity-60"} ${highlighted.has(r.id) ? FOCUS_RING : ""}`}>
             {editingId === r.id ? (
               <ResourceForm
                 draft={draft} setDraft={setDraft} activities={activities}

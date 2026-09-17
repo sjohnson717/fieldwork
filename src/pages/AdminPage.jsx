@@ -81,6 +81,14 @@ export default function AdminPage() {
   // The Library tab to land on, and a counter that remounts the page so a
   // second jump from Health to the same tab still resets it.
   const [libraryTab, setLibraryTab] = useState({ tab: "Activities", n: 0 });
+  // The record System Health's Open pointed at, for the page it opens. The
+  // counter remounts that page, so a second Open lands afresh; going to a page
+  // from the sidebar clears the target.
+  const [focus, setFocus] = useState({ n: 0, target: null });
+  const goToSection = (section, target = null) => {
+    setFocus(prev => ({ n: prev.n + 1, target }));
+    setSelectedSection(section);
+  };
   // Super-admin only: when set, the team page is narrowed to one organization
   // (set by following an org's "View team" link on the Organizations page).
   const [teamOrgFilter, setTeamOrgFilter] = useState(null);
@@ -555,7 +563,7 @@ export default function AdminPage() {
                 )}
                 {isAdmin && (
                   <button
-                    onClick={() => { setLibraryTab(prev => ({ tab: "Activities", n: prev.n + 1 })); setSelectedSection("library"); }}
+                    onClick={() => { setLibraryTab(prev => ({ tab: "Activities", n: prev.n + 1 })); goToSection("library"); }}
                     className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors text-sm font-medium ${
                       selectedSection === "library"
                         ? "bg-blue-50 text-blue-900"
@@ -569,7 +577,7 @@ export default function AdminPage() {
                     content every organization reads and only we may rewrite. */}
                 {isAdmin && (
                   <button
-                    onClick={() => setSelectedSection("instruments")}
+                    onClick={() => goToSection("instruments")}
                     className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors text-sm font-medium ${
                       selectedSection === "instruments"
                         ? "bg-blue-50 text-blue-900"
@@ -583,7 +591,7 @@ export default function AdminPage() {
                     a library activity and for an instrument's question. */}
                 {isAdmin && (
                   <button
-                    onClick={() => setSelectedSection("resources")}
+                    onClick={() => goToSection("resources")}
                     className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors text-sm font-medium ${
                       selectedSection === "resources"
                         ? "bg-blue-50 text-blue-900"
@@ -691,17 +699,17 @@ export default function AdminPage() {
               onViewTeam={orgId => { setTeamOrgFilter(orgId); setSelectedSection("team"); }}
             />
           ) : selectedSection === "instruments" ? (
-            <InstrumentsPage />
+            <InstrumentsPage key={focus.n} focus={focus.target} />
           ) : selectedSection === "library" ? (
-            <LibraryPage key={libraryTab.n} initialTab={libraryTab.tab} />
+            <LibraryPage key={`${libraryTab.n}-${focus.n}`} initialTab={libraryTab.tab} focus={focus.target} />
           ) : selectedSection === "resources" ? (
-            <ResourcesPage />
+            <ResourcesPage key={focus.n} focus={focus.target} />
           ) : selectedSection === "health" ? (
             <HealthPage
               onOpen={(target) => {
                 if (target.assessmentId) return openAssessment(target.assessmentId);
                 if (target.section === "library") setLibraryTab(prev => ({ tab: target.tab || "Activities", n: prev.n + 1 }));
-                setSelectedSection(target.section);
+                goToSection(target.section, target);
               }}
             />
           ) : selectedSection === "tags" ? (

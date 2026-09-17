@@ -3,6 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { loadInstrument } from "@/lib/instruments";
 import { functionErrorMessage } from "@/lib/utils";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import { scrollToRecord, FOCUS_RING } from "@/lib/focus-record";
 
 // One instrument's content, edited where it lives.
 //
@@ -108,7 +109,7 @@ function QuestionForm({ draft, setDraft, sections, isNew, addsPoints, onSave, on
   );
 }
 
-export default function InstrumentEditor({ instrument, onBack }) {
+export default function InstrumentEditor({ instrument, onBack, focusQuestionId = null }) {
   const [questions, setQuestions] = useState([]);
   const [bands, setBands] = useState([]);
   const [axis, setAxis] = useState(null);
@@ -147,6 +148,7 @@ export default function InstrumentEditor({ instrument, onBack }) {
       setError(functionErrorMessage(e, "Could not load this instrument."));
     }
     setLoading(false);
+    scrollToRecord("data-question-id", focusQuestionId);
   };
 
   // The instrument's own sections, in its order, plus any a question names that
@@ -368,7 +370,7 @@ export default function InstrumentEditor({ instrument, onBack }) {
                       .filter((r) => r.active !== false && !(r.activity_ids || []).includes(q.id))
                       .sort((a, b) => (a.title || "").localeCompare(b.title || ""));
                     return (
-                      <li key={q.id} className={retired ? "bg-gray-50/60" : ""}>
+                      <li key={q.id} data-question-id={q.id} className={`${retired ? "bg-gray-50/60" : ""} ${q.id === focusQuestionId ? FOCUS_RING : ""}`}>
                         {editingId === q.id ? (
                           <QuestionForm draft={draft} setDraft={setDraft} sections={sections} isNew={false}
                             onSave={saveQuestion} onCancel={() => setEditingId(null)} busy={busy} />

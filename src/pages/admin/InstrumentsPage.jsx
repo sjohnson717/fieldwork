@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { seedInstruments } from "@/lib/instrument-seed-apply";
 import { INSTRUMENT_SEED } from "@/lib/instrument-seed";
@@ -25,7 +25,9 @@ import InstrumentEditor from "./InstrumentEditor";
 // is ever deleted — a question that vanished from the seed is named in the
 // notes and left alone, because Response rows key on it and dropping it would
 // take its answers with it.
-export default function InstrumentsPage() {
+// `focus` comes from System Health's Open: an instrument to open, and the
+// question in it to point at.
+export default function InstrumentsPage({ focus = null }) {
   const [instruments, setInstruments] = useState([]);
   const [counts, setCounts] = useState({});
   const [loading, setLoading] = useState(true);
@@ -36,6 +38,9 @@ export default function InstrumentsPage() {
   const [applyError, setApplyError] = useState("");
   const [editing, setEditing] = useState(null);
   const [downloading, setDownloading] = useState(false);
+  // Opened once. Coming back from the editor reloads this page, and must not
+  // open the same instrument again.
+  const focusApplied = useRef(false);
 
   useEffect(() => { load(); }, []);
 
@@ -48,6 +53,11 @@ export default function InstrumentsPage() {
         base44.entities.Activity.list(),
       ]);
       setInstruments(rows);
+      if (focus?.instrumentId && !focusApplied.current) {
+        focusApplied.current = true;
+        const target = rows.find(i => i.id === focus.instrumentId);
+        if (target) setEditing(target);
+      }
       const per = {};
       for (const q of questions) {
         for (const id of q.instrument_ids || []) per[id] = (per[id] || 0) + 1;
@@ -128,7 +138,7 @@ export default function InstrumentsPage() {
   const line = (t) => `${t.created} added · ${t.updated} updated · ${t.unchanged} unchanged`;
 
   if (editing) {
-    return <InstrumentEditor instrument={editing} onBack={() => { setEditing(null); load(); }} />;
+    return <InstrumentEditor instrument={editing} focusQuestionId={focus?.instrumentId === editing.id ? focus.questionId : null} onBack={() => { setEditing(null); load(); }} />;
   }
 
   return (

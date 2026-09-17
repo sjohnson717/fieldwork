@@ -9,6 +9,7 @@ import { functionErrorMessage } from "@/lib/utils";
 import ActivityImportDialog from "./ActivityImportDialog";
 import { CSV_COLUMNS } from "@/lib/activity-csv";
 import { ROW, ROW_ACTIONS, PAST_HANDLE, ACTION, DELETE_TONE } from "@/lib/row-actions";
+import { scrollToRecord } from "@/lib/focus-record";
 
 // ── Typeahead owner input ─────────────────────────────────────────────────────
 
@@ -58,7 +59,9 @@ function OwnerTypeahead({ value, onChange, jobTitleNames, placeholder = "Optiona
 
 // ── Activities tab ───────────────────────────────────────────────────────────
 
-function ActivitiesTab() {
+// `focusActivityId` comes from System Health's Open: the activity to open for
+// editing and scroll to.
+function ActivitiesTab({ focusActivityId = null }) {
   const [activities, setActivities] = useState([]);
   const [jobTitleNames, setJobTitleNames] = useState(new Set());
   const [loading, setLoading] = useState(true);
@@ -92,11 +95,14 @@ function ActivitiesTab() {
       setActivities(all);
       setJobTitleNames(new Set(titles.map(t => t.name)));
       setUsage(usageRes?.data?.usage || {});
+      const focused = focusActivityId && all.find(a => a.id === focusActivityId);
+      if (focused && !editingId) handleEdit(focused);
     } catch (e) {
       console.error("Failed to load the activity library", e);
       setError(functionErrorMessage(e, "Failed to load the activity library."));
     }
     setLoading(false);
+    if (focusActivityId) scrollToRecord("data-activity-id", focusActivityId);
   };
 
   // Absent from a loaded map means nothing references it. But an *unloaded* map
@@ -295,7 +301,7 @@ function ActivitiesTab() {
           }
         }}
         renderItem={(activity) => (
-          <div className={`bg-white rounded-xl border ${activity.active ? "border-gray-200" : "border-gray-100 opacity-60"}`}>
+          <div data-activity-id={activity.id} className={`bg-white rounded-xl border ${activity.active ? "border-gray-200" : "border-gray-100 opacity-60"}`}>
             {editingId === activity.id ? (
               <div className="p-4 space-y-3">
                 <div className="grid grid-cols-2 gap-3">
@@ -705,7 +711,7 @@ function JobTitlesTab() {
 
 const TABS = ["Activities", "Job Titles", "Activity Sets"];
 
-export default function LibraryPage({ initialTab = "Activities" }) {
+export default function LibraryPage({ initialTab = "Activities", focus = null }) {
   const [activeTab, setActiveTab] = useState(TABS.includes(initialTab) ? initialTab : "Activities");
 
   return (
@@ -735,7 +741,7 @@ export default function LibraryPage({ initialTab = "Activities" }) {
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-8 max-w-2xl">
-        {activeTab === "Activities" && <ActivitiesTab />}
+        {activeTab === "Activities" && <ActivitiesTab focusActivityId={focus?.activityId} />}
         {activeTab === "Job Titles" && <JobTitlesTab />}
         {activeTab === "Activity Sets" && <ActivitySetsTab />}
       </div>
