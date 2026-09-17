@@ -11,7 +11,7 @@ import { sameAddress } from "@/lib/same-address";
 
 // How old is old. Change them here; the page prints them in each check's title.
 export const THRESHOLDS = {
-  resourceYears: 3,          // a resource published longer ago than this
+  resourceYears: 5,          // a resource published longer ago than this
   quietActiveDays: 90,       // an open assessment with no response for this long
   unansweredActiveDays: 30,  // an open assessment nobody has started, this long after it was made
   draftDays: 60,             // a draft never opened to respondents
