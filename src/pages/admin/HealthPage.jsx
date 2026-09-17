@@ -2,6 +2,9 @@ import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { loadRespondentSummary } from "@/lib/unread-responses";
 import { runChecks } from "@/lib/health-checks";
+import { isLibraryActivity } from "@/lib/activities";
+import { functionErrorMessage } from "@/lib/utils";
+import { ResourceForm, EMPTY_RESOURCE } from "./ResourcesTab";
 
 // Settings → System Health: what a super-admin should look at, gathered on one page.
 //
@@ -24,6 +27,92 @@ const SOURCES = {
   blogPosts: () => base44.functions.invoke("fetchBlogFeed", {}).then(res => res?.data?.posts || []),
 };
 
+// Reading for an activity that has none, added without leaving the page: attach
+// an article already in Resources, or write a new one with the activity ticked.
+// The saved row goes back into the page's data, so the check updates at once.
+function AddReadingPanel({ activity, resources, activities, onSaved, onClose }) {
+  const [choice, setChoice] = useState("");
+  const [writing, setWriting] = useState(false);
+  const [draft, setDraft] = useState({ ...EMPTY_RESOURCE, activity_ids: [activity.id] });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  const existing = resources
+    .filter(r => r.active !== false)
+    .sort((a, b) => (a.title || "").localeCompare(b.title || ""));
+  const pickable = activities.filter(a => a.active !== false && isLibraryActivity(a));
+
+  const save = async (write) => {
+    setSaving(true);
+    setError("");
+    try {
+      onSaved(await write());
+    } catch (e) {
+      console.error("Failed to add reading", e);
+      setError(functionErrorMessage(e, "The reading could not be saved."));
+      setSaving(false);
+    }
+  };
+
+  const attach = () => save(() => {
+    const r = resources.find(x => x.id === choice);
+    return base44.entities.Resource.update(r.id, { activity_ids: [...(r.activity_ids || []), activity.id] });
+  });
+
+  const create = () => save(() => base44.entities.Resource.create({
+    ...draft,
+    title: draft.title.trim(),
+    sort_order: resources.reduce((m, r) => Math.max(m, r.sort_order ?? 0), -1) + 1,
+    active: true,
+  }));
+
+  return (
+    <div className="px-4 md:pl-16 pr-4 pb-4 pt-1 space-y-3">
+      {!writing ? (
+        <>
+          <div className="flex flex-wrap items-center gap-2">
+            <select
+              value={choice}
+              onChange={e => setChoice(e.target.value)}
+              aria-label={`Resource to attach to ${activity.name}`}
+              className="flex-1 min-w-[12rem] border border-gray-300 rounded-lg px-3 h-11 md:h-9 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#3366FF]"
+            >
+              <option value="">Attach a resource already in the list…</option>
+              {existing.map(r => <option key={r.id} value={r.id}>{r.title}</option>)}
+            </select>
+            <button
+              onClick={attach}
+              disabled={!choice || saving}
+              className="bg-[#3366FF] hover:bg-[#2952CC] disabled:opacity-50 text-white text-sm font-medium px-4 h-11 md:h-9 rounded-lg"
+            >
+              {saving ? "Saving…" : "Attach"}
+            </button>
+          </div>
+          <div className="flex items-center gap-4 text-sm">
+            <button onClick={() => setWriting(true)} className="text-[#3366FF] hover:text-[#2952CC] font-medium min-h-[44px] md:min-h-0">
+              Or add a new resource
+            </button>
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-600 min-h-[44px] md:min-h-0">Cancel</button>
+          </div>
+        </>
+      ) : (
+        <div className="bg-white rounded-xl border border-[#a3b8ff] px-4 py-3">
+          <p className="text-[11px] text-gray-400 mb-2">
+            New reading for <span className="font-medium text-gray-600">{activity.name}</span>, ticked below. Tick anything else it helps with too.
+          </p>
+          <ResourceForm
+            draft={draft} setDraft={setDraft} activities={pickable}
+            onSave={create}
+            onCancel={() => setWriting(false)}
+            saving={saving} saveLabel="Add"
+          />
+        </div>
+      )}
+      {error && <p className="text-xs text-red-500">{error}</p>}
+    </div>
+  );
+}
+
 const SECTIONS = [
   ["fix", "Needs fixing"],
   ["review", "Worth a look"],
@@ -44,6 +133,8 @@ export default function HealthPage({ onOpen }) {
   const [failed, setFailed] = useState(new Set());
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState(null);
+  // The item whose Add reading panel is open, if any.
+  const [addingFor, setAddingFor] = useState(null);
 
   const load = async () => {
     setLoading(true);
@@ -170,17 +261,41 @@ export default function HealthPage({ onOpen }) {
                       {open && (
                         <ul className="border-t border-gray-100 bg-gray-50/60 divide-y divide-gray-100">
                           {c.items.map(item => (
-                            <li key={item.key} className="flex items-center gap-3 pl-4 md:pl-16 pr-2 py-1.5">
-                              <span className="min-w-0 flex-1">
-                                <span className="block text-sm text-gray-700 truncate" title={item.label}>{item.label}</span>
-                                {item.detail && <span className="block text-xs text-gray-400 break-words">{item.detail}</span>}
-                              </span>
-                              <button
-                                onClick={() => onOpen(item.target)}
-                                className="shrink-0 text-sm text-[#3366FF] hover:text-[#2952CC] font-medium px-3 h-11 md:h-8 rounded-lg hover:bg-white"
-                              >
-                                Open
-                              </button>
+                            <li key={item.key}>
+                              <div className="flex items-center gap-3 pl-4 md:pl-16 pr-2 py-1.5">
+                                <span className="min-w-0 flex-1">
+                                  <span className="block text-sm text-gray-700 truncate" title={item.label}>{item.label}</span>
+                                  {item.detail && <span className="block text-xs text-gray-400 break-words">{item.detail}</span>}
+                                </span>
+                                {/* An activity with no reading is fixed here, in a panel under
+                                    it, rather than on another page. */}
+                                <button
+                                  onClick={() => item.addReadingFor
+                                    ? setAddingFor(addingFor === item.key ? null : item.key)
+                                    : onOpen(item.target)}
+                                  aria-expanded={item.addReadingFor ? addingFor === item.key : undefined}
+                                  className="shrink-0 text-sm text-[#3366FF] hover:text-[#2952CC] font-medium px-3 h-11 md:h-8 rounded-lg hover:bg-white"
+                                >
+                                  {item.addReadingFor ? "Add reading" : "Open"}
+                                </button>
+                              </div>
+                              {item.addReadingFor && addingFor === item.key && (
+                                <AddReadingPanel
+                                  activity={item.addReadingFor}
+                                  resources={data.resources || []}
+                                  activities={data.activities || []}
+                                  onClose={() => setAddingFor(null)}
+                                  onSaved={(saved) => {
+                                    setAddingFor(null);
+                                    setData(d => ({
+                                      ...d,
+                                      resources: d.resources.some(r => r.id === saved.id)
+                                        ? d.resources.map(r => r.id === saved.id ? saved : r)
+                                        : [...d.resources, saved],
+                                    }));
+                                  }}
+                                />
+                              )}
                             </li>
                           ))}
                         </ul>

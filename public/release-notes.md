@@ -8,18 +8,6 @@ Each entry is a `##` title, a `Released: YYYY-MM-DD` line, and a short
 explanation written for the people using the app. The title is the entry's
 identity — renaming one announces it again to everyone who already read it.
 
-## System Health
-
-Released: 2026-09-17
-
-Super-admins have a **System Health** page at the top of Settings. It gathers what needs tidying across every organization. **Needs fixing** covers resources no report can show, library activities with no reading, and owners that don't match a job title. **Worth a look** covers articles more than three years old, open assessments that have gone quiet, old drafts and closed assessments, blog posts waiting for a decision, and invitations nobody accepted. Tap a check to see what it found, and **Open** to go where you deal with it. Nothing on the page changes anything by itself.
-
-## New posts from the blog
-
-Released: 2026-09-17
-
-The Resources tab has a **New from the blog** button. It lists posts from the Product Growth Leaders blog that aren't resources yet. Press **Add** to open the add form with the post's title, address, and teaser filled in, then pick the activities it helps with. Press **Skip** for a post that doesn't belong, and it won't be offered again; the skipped list at the bottom of the panel puts one back.
-
 ## Discussion for instruments
 
 Released: 2026-09-16

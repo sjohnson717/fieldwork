@@ -142,7 +142,7 @@ export function runChecks(data, now = new Date()) {
   const libraryActivities = activities.filter(a => a.active !== false && isLibraryActivity(a));
   const noReading = libraryActivities
     .filter(a => !readingCount.get(a.id))
-    .map(a => ({ key: a.id, label: a.name, detail: a.facet || "", target: { section: "resources", addForActivityId: a.id } }));
+    .map(a => ({ key: a.id, label: a.name, detail: a.facet || "", target: { section: "resources", addForActivityId: a.id }, addReadingFor: a }));
 
   const liveInstruments = new Map(instruments.filter(i => i.active !== false).map(i => [i.id, i]));
   const questionsNoReading = activities

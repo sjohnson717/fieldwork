@@ -29,7 +29,7 @@ const TYPES = [
 
 const TYPE_LABEL = Object.fromEntries(TYPES.map(t => [t.key, t.label]));
 
-const EMPTY = {
+export const EMPTY_RESOURCE = {
   title: "", resource_type: "free_article", source: "", published_date: "", url: "", note: "", activity_ids: [],
   fallback: false,
 };
@@ -71,7 +71,7 @@ function ActivityPicker({ activities, selectedIds, onToggle }) {
   );
 }
 
-function ResourceForm({ draft, setDraft, activities, onSave, onCancel, saving, saveLabel }) {
+export function ResourceForm({ draft, setDraft, activities, onSave, onCancel, saving, saveLabel }) {
   // The picker lists library activities only. A link to anything else — an
   // instrument's question, or a retired activity — is kept, and counted apart
   // so the number matches what the picker shows.
@@ -177,7 +177,7 @@ export default function ResourcesTab({ focus = null }) {
   const [loading, setLoading] = useState(true);
   const [allActivities, setAllActivities] = useState([]);
   const [editingId, setEditingId] = useState(null);
-  const [draft, setDraft] = useState(EMPTY);
+  const [draft, setDraft] = useState(EMPTY_RESOURCE);
   const [saving, setSaving] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
   const [showFeed, setShowFeed] = useState(false);
@@ -216,7 +216,7 @@ export default function ResourcesTab({ focus = null }) {
       if (focus?.addForActivityId) {
         const activity = acts.find(a => a.id === focus.addForActivityId);
         if (activity) {
-          setDraft({ ...EMPTY, activity_ids: [activity.id] });
+          setDraft({ ...EMPTY_RESOURCE, activity_ids: [activity.id] });
           setAddingFor(activity);
           setShowAddForm(true);
         }
@@ -239,7 +239,7 @@ export default function ResourcesTab({ focus = null }) {
         active: true,
       });
       setResources(prev => [created, ...prev]);
-      setDraft(EMPTY);
+      setDraft(EMPTY_RESOURCE);
       setShowAddForm(false);
       setFeedPost(null);
       setAddingFor(null);
@@ -254,7 +254,7 @@ export default function ResourcesTab({ focus = null }) {
       const updated = await base44.entities.Resource.update(id, { ...draft, title: draft.title.trim() });
       setResources(prev => prev.map(r => r.id === id ? updated : r));
       setEditingId(null);
-      setDraft(EMPTY);
+      setDraft(EMPTY_RESOURCE);
     } catch (e) { console.error(e); }
     setSaving(false);
   };
@@ -341,14 +341,14 @@ export default function ResourcesTab({ focus = null }) {
           <ResourceForm
             draft={draft} setDraft={setDraft} activities={activities}
             onSave={handleAdd}
-            onCancel={() => { setShowAddForm(false); setDraft(EMPTY); setFeedPost(null); setAddingFor(null); }}
+            onCancel={() => { setShowAddForm(false); setDraft(EMPTY_RESOURCE); setFeedPost(null); setAddingFor(null); }}
             saving={saving} saveLabel="Add"
           />
         </div>
       ) : (
         <div className="flex items-center gap-5 flex-wrap">
           <button
-            onClick={() => { setDraft(EMPTY); setFeedPost(null); setShowAddForm(true); }}
+            onClick={() => { setDraft(EMPTY_RESOURCE); setFeedPost(null); setShowAddForm(true); }}
             className="flex items-center gap-2 text-sm text-gray-400 hover:text-[#3366FF] transition-colors px-1 min-h-[44px] md:min-h-0"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -376,7 +376,7 @@ export default function ResourcesTab({ focus = null }) {
           onClose={() => setShowFeed(false)}
           onAdd={(post) => {
             setDraft({
-              ...EMPTY, title: post.title, url: post.url, note: post.description,
+              ...EMPTY_RESOURCE, title: post.title, url: post.url, note: post.description,
               published_date: post.published ? post.published.slice(0, 10) : "",
             });
             setFeedPost(post);
@@ -392,7 +392,7 @@ export default function ResourcesTab({ focus = null }) {
               <ResourceForm
                 draft={draft} setDraft={setDraft} activities={activities}
                 onSave={() => handleSaveEdit(r.id)}
-                onCancel={() => { setEditingId(null); setDraft(EMPTY); }}
+                onCancel={() => { setEditingId(null); setDraft(EMPTY_RESOURCE); }}
                 saving={saving} saveLabel="Save"
               />
             ) : (
