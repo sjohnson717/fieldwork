@@ -149,6 +149,10 @@ not mistaken for a new regression:
   participant table clips at 320–375px. The respondent's own report, both
   registration screens, the resumed survey, the survey wrap-up and the dead-link
   screen are clean at every width.
+- As of 2026-09-17 all three of those are fixed: the buyer report (see below),
+  and the team dashboard's roster, which puts status and Copy link under the
+  name below sm. The personal profile report was already clean. The only layout
+  finding left is `admin-results-team-gap` scrolling 10px at 768.
 - The two admin results tabs joined the sweep in September 2026 and open with
   their own baseline: `admin-results-personal` clean at both widths,
   `admin-results-team-gap` 10px of sideways scroll at 768 — page padding plus
