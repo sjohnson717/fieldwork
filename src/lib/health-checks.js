@@ -1,7 +1,7 @@
 import { isLibraryActivity } from "@/lib/activities";
 import { sameAddress } from "@/lib/same-address";
 
-// The checks behind Settings → Health: things a super-admin should look at,
+// The checks behind Settings → System Health: things a super-admin should look at,
 // not things that are broken. Every one is a judgement call — an old article
 // may be a classic, a quiet assessment may be waiting on a client — so the page
 // lists and links, and never changes anything itself.
@@ -45,7 +45,7 @@ const olderThan = (date, days, now) => !!date && now - date > days * DAY;
 
 // "fix" is a defect with one right answer: a resource no report can show, an
 // owner no respondent can pick. "review" is a judgement call. Only fixes count
-// in the page's headline, as on Wisdom Studio's Health, so that a pile of old
+// in the page's headline, as on Wisdom Studio's Health page, so that a pile of old
 // but perfectly good articles never reads as a broken app.
 //
 // `needs` names the lists a check reads. A check whose data did not load

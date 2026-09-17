@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { loadRespondentSummary } from "@/lib/unread-responses";
 import { runChecks } from "@/lib/health-checks";
 
-// Settings → Health: what a super-admin should look at, gathered on one page.
+// Settings → System Health: what a super-admin should look at, gathered on one page.
 //
 // Read-only. Each finding links to the screen that deals with it, and every
 // change is made there, where its own guards already live. The rules and their
@@ -75,12 +75,14 @@ export default function HealthPage({ onOpen }) {
       <div className="bg-white border-b border-gray-200 px-4 md:px-8 py-4">
         <div className="flex items-start gap-3">
           <div className="min-w-0">
-            <h2 className="text-lg font-bold text-gray-900">
-              {!data ? "Health" : toFix === 0 ? "Nothing needs fixing" : `${toFix} ${toFix === 1 ? "thing" : "things"} to fix`}
-            </h2>
+            <h2 className="text-lg font-bold text-gray-900">System Health</h2>
+            {data && (
+              <p className="text-sm font-medium text-gray-700">
+                {toFix === 0 ? "Nothing needs fixing" : `${toFix} ${toFix === 1 ? "thing" : "things"} to fix`} · {toReview} worth a look
+              </p>
+            )}
             <p className="text-sm text-gray-400">
-              {data && `${toReview} worth a look. `}
-              Across every organization. Nothing here changes anything: each item opens the screen where you deal with it.
+              What needs tidying across every organization: gaps in the library, old reading, and assessments that have gone quiet. Nothing here changes anything; each item opens the screen where you deal with it.
             </p>
           </div>
           <button

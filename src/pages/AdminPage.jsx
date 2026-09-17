@@ -530,6 +530,28 @@ export default function AdminPage() {
             {(isAdmin || isOrgAdmin) && (
               <>
                 <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest px-3 mb-1.5 mt-5">Settings</p>
+                {/* Always here, so a dismissed announcement can still be read.
+                    First in Settings, where anyone looking for news finds it. */}
+                <button onClick={whatsNew.openDialog} className={navClass(false)}>
+                  What's new
+                  {/* Blue, not the red count: red means new responses everywhere else. */}
+                  {unreadNotes.length > 0 && <span className="ml-auto w-2 h-2 rounded-full bg-blue-500" aria-label="Unread" />}
+                </button>
+                {/* Named for someone who has never seen it: "Health" alone did
+                    not say whose. Super-admin only, since it reads across every
+                    organization. */}
+                {isAdmin && (
+                  <button
+                    onClick={() => setSelectedSection("health")}
+                    className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors text-sm font-medium ${
+                      selectedSection === "health"
+                        ? "bg-blue-50 text-blue-900"
+                        : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                    }`}
+                  >
+                    System Health
+                  </button>
+                )}
                 {isAdmin && (
                   <button
                     onClick={() => { setLibraryTab(prev => ({ tab: "Activities", n: prev.n + 1 })); setSelectedSection("library"); }}
@@ -591,21 +613,6 @@ export default function AdminPage() {
                 >
                   Facilitators
                 </button>
-                {/* Last in Settings: a page you visit now and then to tidy up,
-                    not one you work in. Super-admin only, since it reads across
-                    every organization. */}
-                {isAdmin && (
-                  <button
-                    onClick={() => setSelectedSection("health")}
-                    className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors text-sm font-medium ${
-                      selectedSection === "health"
-                        ? "bg-blue-50 text-blue-900"
-                        : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                    }`}
-                  >
-                    Health
-                  </button>
-                )}
               </>
             )}
             <a
@@ -619,12 +626,13 @@ export default function AdminPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
               </svg>
             </a>
-            {/* Always here, so a dismissed announcement can still be read. */}
-            <button onClick={whatsNew.openDialog} className={navClass(false)}>
-              What's new
-              {/* Blue, not the red count: red means new responses everywhere else. */}
-              {unreadNotes.length > 0 && <span className="ml-auto w-2 h-2 rounded-full bg-blue-500" aria-label="Unread" />}
-            </button>
+            {/* A facilitator has no Settings, so What's new sits here for them. */}
+            {!(isAdmin || isOrgAdmin) && (
+              <button onClick={whatsNew.openDialog} className={navClass(false)}>
+                What's new
+                {unreadNotes.length > 0 && <span className="ml-auto w-2 h-2 rounded-full bg-blue-500" aria-label="Unread" />}
+              </button>
+            )}
           </div>
 
           <div className="px-3 py-2 border-t border-gray-100">
