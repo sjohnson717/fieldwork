@@ -354,8 +354,8 @@ export default function ResourcesTab() {
                 saving={saving} saveLabel="Save"
               />
             ) : (
-              <div className="group">
-                <div className="flex items-baseline gap-2 flex-wrap">
+              <div className="group relative">
+                <div className="flex items-baseline gap-2 flex-wrap [@media(hover:hover)]:pr-36">
                   <span className="text-[10px] font-semibold text-gray-500 bg-gray-100 border border-gray-200 px-1.5 py-0.5 rounded">
                     {TYPE_LABEL[r.resource_type] || r.resource_type}
                   </span>
@@ -363,7 +363,11 @@ export default function ResourcesTab() {
                     {r.title}
                   </span>
                   {r.source && <span className="text-xs text-gray-400">{r.source}</span>}
-                  {rowActions(r, "ml-auto hidden [@media(hover:hover)]:flex opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity", "text-xs")}
+                  {/* Pinned to the corner, with the title line padded to clear
+                      them, rather than placed in the line: invisible, they
+                      still took up room, and beside a long title they wrapped
+                      onto a blank line of their own. */}
+                  {rowActions(r, "absolute top-0 right-0 hidden [@media(hover:hover)]:flex opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity", "text-xs")}
                 </div>
                 {r.note && <p className="text-xs text-gray-500 mt-1">{r.note}</p>}
                 {r.url && <p className="text-[11px] text-blue-600 mt-0.5 truncate font-mono">{r.url}</p>}
