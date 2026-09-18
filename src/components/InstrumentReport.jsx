@@ -1,4 +1,5 @@
 import { distributionFor, agendaOrder } from "@/lib/instrument-scoring";
+import { surveyNumbers } from "@/lib/instruments";
 import PrintCredit from "@/components/PrintCredit";
 import Commentary from "@/components/Commentary";
 
@@ -365,6 +366,13 @@ export default function InstrumentReport({
   }
   const ordered = agendaOrder(rated, distributions);
 
+  // Numbered by the survey, not by this list. The order below is the agenda —
+  // most disagreement first — and it moves as people finish, so a number
+  // counted off it would name a different question on Wednesday than the copy
+  // printed on Monday. The respondent's own page and the facilitator's list
+  // both show this number, which is the point of having one.
+  const numbers = surveyNumbers(questions);
+
   // Written answers, gathered rather than counted. Seven people's answers to
   // "where would you put an extra million" side by side is a page a facilitator
   // reads out; it is not a statistic and there is nothing to average.
@@ -403,6 +411,13 @@ export default function InstrumentReport({
             <> {splitCount === 1 ? "One question" : `${splitCount} questions`} came back genuinely split.</>
           )}
         </p>
+        {/* Said out loud, because the numbers below do not run in order. They
+            are the survey's, not this page's, so that a number called out in
+            the room finds the same question on everybody's own copy. */}
+        <p className="text-sm text-gray-500 leading-relaxed mt-2">
+          Each question keeps the number it had in the survey, so they do not run in order here.
+          That is the number on everybody&rsquo;s own copy of their answers.
+        </p>
       </section>
 
       {/* One key for the whole report. Colour is the only thing naming an
@@ -413,7 +428,7 @@ export default function InstrumentReport({
       </div>
 
       <ol className="space-y-8">
-        {ordered.map((q, i) => {
+        {ordered.map(q => {
           const d = distributions[q.id];
           const split = splitLabel(d.spread, agreedOnTheWorst(d));
           const worst = Math.min(...d.counts.filter(c => c.points !== null).map(c => c.points));
@@ -422,7 +437,7 @@ export default function InstrumentReport({
             <li key={q.id} className="break-inside-avoid">
               <div className="flex items-baseline justify-between gap-3 mb-1">
                 <h2 className="text-base font-semibold text-gray-900">
-                  <span className="text-gray-300 mr-2 tabular-nums">{i + 1}</span>
+                  <span className="text-gray-300 mr-2 tabular-nums">{numbers.get(q.id)}</span>
                   {q.name}
                 </h2>
                 <div className="flex items-center gap-1.5 shrink-0">

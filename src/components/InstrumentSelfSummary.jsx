@@ -1,4 +1,5 @@
 import { scoreFor, bandFor } from "@/lib/instrument-scoring";
+import { surveyNumbers } from "@/lib/instruments";
 import { capReading } from "@/lib/reading";
 import ResumeLink from "@/components/ResumeLink";
 import PrintCredit from "@/components/PrintCredit";
@@ -87,6 +88,10 @@ export default function InstrumentSelfSummary({
     capReading(resources.filter((r) => (r.activity_ids || []).includes(questionId)));
   const axis = instrument.axes?.[0];
   const rated = questions.filter(q => q.question_type !== "text");
+
+  // The same number the facilitator's list and the team report show, so that
+  // "number four" means one question in the room rather than three.
+  const numbers = surveyNumbers(questions);
   const score = axis ? scoreFor(questions, responses, axis) : null;
   const band = score ? bandFor(instrument.bands || [], score) : null;
 
@@ -130,7 +135,15 @@ export default function InstrumentSelfSummary({
               const given = q.question_type === "text" ? r.answer_text : r.answer;
               return (
                 <li key={q.id} className="break-inside-avoid">
-                  <h3 className="text-sm font-semibold text-gray-800">{q.name}</h3>
+                  <h3 className="text-sm font-semibold text-gray-800">
+                    {/* Written answers carry no number — they are gathered
+                        rather than discussed — so the heading keeps its place
+                        whether or not there is a figure in front of it. */}
+                    {numbers.has(q.id) && (
+                      <span className="text-gray-300 mr-2 tabular-nums">{numbers.get(q.id)}</span>
+                    )}
+                    {q.name}
+                  </h3>
                   {q.description && <p className="text-sm text-gray-500 mt-0.5">{q.description}</p>}
                   <p className="text-sm mt-1.5">
                     {given

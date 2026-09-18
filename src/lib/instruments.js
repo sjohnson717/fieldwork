@@ -117,3 +117,31 @@ export function sectionsWithQuestions(instrument, questions) {
   const present = new Set(questions.map((q) => q.section));
   return (instrument.sections || []).filter((s) => present.has(s));
 }
+
+// The number a question is known by, wherever it appears.
+//
+// A facilitator says "let's take number four" and everybody in the room — one
+// person holding their own copy, the report on the screen, the agenda the
+// facilitator is working down — has to land on the same question. So the number
+// is the question's place in the survey, counted once here and read everywhere,
+// rather than each page's own position in its own list.
+//
+// It could not be the agenda position, which is what the report and the
+// discussion page used to count: that order is by how much the team disagreed,
+// so it shuffles as people finish, and a report printed on Monday would number
+// differently from the same report on screen on Wednesday.
+//
+// Only rated questions are counted, because only those are discussed. The
+// written answers are gathered under their own heading at the end of the report
+// with no number, and numbering them here would push every number out of step.
+//
+// Takes questions already in survey order — orderQuestions above, which every
+// page that shows them has applied by the time it renders.
+export function surveyNumbers(questions) {
+  const numbers = new Map();
+  let n = 0;
+  for (const q of questions) {
+    if (q.question_type !== "text") numbers.set(q.id, ++n);
+  }
+  return numbers;
+}

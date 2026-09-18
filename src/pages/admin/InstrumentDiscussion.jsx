@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { loadResultsData } from "@/lib/respondents";
-import { loadInstrument, orderQuestions } from "@/lib/instruments";
+import { loadInstrument, orderQuestions, surveyNumbers } from "@/lib/instruments";
 import { distributionFor, agendaOrder } from "@/lib/instrument-scoring";
 import { Distribution, Legend, splitLabel, agreedOnTheWorst } from "@/components/InstrumentReport";
 
@@ -44,7 +44,7 @@ const isVeto = (q, d) => {
   return rated.some(c => c.points === worst && c.n > 0);
 };
 
-function QuestionRow({ index, question, dist, expected, note, draft, saving, onDraft, onSave, onToggleFlag, onStatusChange }) {
+function QuestionRow({ number, question, dist, expected, note, draft, saving, onDraft, onSave, onToggleFlag, onStatusChange }) {
   const [expanded, setExpanded] = useState(false);
   const split = splitLabel(dist.spread, agreedOnTheWorst(dist));
   const veto = isVeto(question, dist);
@@ -64,7 +64,7 @@ function QuestionRow({ index, question, dist, expected, note, draft, saving, onD
           onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); } }}
           className="flex items-start gap-3 flex-1 min-w-0 basis-full sm:basis-auto cursor-pointer"
         >
-          <span className="text-sm text-gray-300 tabular-nums w-5 shrink-0 text-right">{index + 1}</span>
+          <span className="text-sm text-gray-300 tabular-nums w-5 shrink-0 text-right">{number}</span>
           <div className="flex-1 min-w-0">
             <span className="text-sm font-medium text-gray-800">{question.name}</span>
             {question.section && <p className="text-xs text-gray-400 mt-0.5">{question.section}</p>}
@@ -277,6 +277,12 @@ export default function InstrumentDiscussion({ assessment }) {
   const distributions = {};
   for (const q of rated) distributions[q.id] = distributionFor(q, rowsByActivity[q.id] || [], axis);
   const ordered = agendaOrder(rated, distributions);
+
+  // The survey's number, not this list's. The rows below are the agenda and
+  // reorder themselves as people finish; the number has to be the one printed
+  // on everybody's own copy, or calling out "number four" starts an argument
+  // about which question that is.
+  const numbers = surveyNumbers(questions);
   const labelOf = (q) => splitLabel(distributions[q.id].spread, false)?.text ?? null;
 
   const counts = Object.fromEntries(FILTERS.map(f => [f.key, ordered.filter(q => labelOf(q) === f.key).length]));
@@ -302,6 +308,15 @@ export default function InstrumentDiscussion({ assessment }) {
         <span><span className="font-semibold" style={{ color: STATUS_CONFIG.parked.color }}>{parkedCount}</span> parked</span>
         <span className="text-gray-400">{rated.length} questions · {completedIds.size} finished</span>
       </div>
+
+      {/* The rows are ordered by disagreement and the numbers are the survey's,
+          so they do not run in order. Worth a line: the number is what makes
+          "let's take number four" land on one question in the room, because it
+          is the number printed on everybody's own copy of their answers. */}
+      <p className="text-xs text-gray-400 mb-4 -mt-4">
+        Numbers are the survey&rsquo;s, not this list&rsquo;s — the same number each person sees on
+        their own answers. The rows are ordered by disagreement.
+      </p>
 
       {completedIds.size === 0 && (
         <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6 text-sm text-gray-400">
@@ -351,7 +366,7 @@ export default function InstrumentDiscussion({ assessment }) {
         ) : visible.map(q => (
           <QuestionRow
             key={q.id}
-            index={ordered.indexOf(q)}
+            number={numbers.get(q.id)}
             question={q}
             dist={distributions[q.id]}
             expected={completedIds.size}
