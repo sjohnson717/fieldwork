@@ -70,6 +70,16 @@ Pushing to this repo reflects the code into the Base44 Builder; publishing from
 or an open pull request never reaches the Builder, so merge before expecting to
 see a change there.
 
+**The Builder's sync lags the push, and a publish inside that window ships the
+old code.** On 17 September 2026 a publish moments after a push left the live
+bundle unchanged; the Builder's activity list showed the commit arriving a few
+seconds *after* Publish was clicked, and the Publish dialog gave no hint —
+it reported success for the previous build. Before publishing, read that list
+in the Builder and confirm the newest commit is there. Afterwards, verify
+rather than assume: fetch the live page, take the `assets/index-*.js` it
+references, and check both that the hash changed and that the file contains a
+string only the new code has.
+
 **Publishing also re-applies every entity schema from `base44/entities/*.jsonc`.**
 Those files are the source of truth. A field added through the platform API
 works right up until the next publish and then vanishes — `create` succeeds and

@@ -433,7 +433,15 @@ On a scale with a true middle answer — No, between Unknown and Yes — that an
 
 **The badges name how split the room was.** **Split** means answers were spread far apart across the scale, and the most split questions come first — they are what the session is for. **Some disagreement** is worth a question; **Agreed** usually is not, unless what the room agreed on is the worst answer, in which case the badge turns grey rather than green. **Non-negotiable** marks a question the instrument treats as critical where anyone chose its worst answer.
 
-> **Suggested question for a split bar:** "Some of you see this every week and some of you never do. What's different about where you sit?"`,
+> **Suggested question for a split bar:** "Some of you see this every week and some of you never do. What's different about where you sit?"
+
+## Tell us what is missing
+
+You are in more sessions than we are, and you will see what the app should do long before we do. **Share an idea** is beside What's new in the sidebar, and the 💡 in the bottom-right corner of every admin page does the same thing. It opens over whatever you are looking at, so you keep your place, and it records which page you were on.
+
+It asks what the idea is and what problem it solves. The second one is the one that matters: an idea arrives as a solution, and the problem underneath it is often solvable a better way than the one either of us thought of first.
+
+Filing one promises nothing. We read every one, we build the ones where the problem turns out to be shared, and anything we build appears in **What's new**.`,
   },
 ];
 

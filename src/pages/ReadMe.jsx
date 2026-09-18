@@ -26,13 +26,18 @@ The two are separate records that can be linked, so a report can cross what a te
 
 | Entity | Holds |
 |---|---|
-| **Assessment** | One instrument. \`assessment_type\` is \`team_gap\` or \`personal\`; \`parent_assessment_id\` optionally links a personal assessment to a gap analysis; \`tag_ids\` group related assessments. Carries the access code and the buyer/team tokens. |
+| **Assessment** | One engagement, running one instrument. \`instrument_id\` names it; \`assessment_type\` (\`team_gap\` or \`personal\`) stays readable for the two library instruments and for everything created before instruments existed. \`subject\` is what the assessment is about where the instrument asks about one named thing. \`parent_assessment_id\` optionally links a personal assessment to a gap analysis; \`tag_ids\` group related assessments. \`title\` follows the naming standard — see \`src/lib/assessment-naming.js\`. \`status\` is **active** or **closed**, and an assessment is born active: the enum still accepts the legacy \`draft\`, which never held anything back, and every reader goes through \`displayStatus\`. Carries the access code and the buyer/team tokens. |
 | **Activity** | The library, and each instrument's own questions — those carry \`instrument_ids\`, and \`isLibraryActivity\` is the test that tells the two apart. Carries \`try_this\`, the one-line step shown on a personal report's development opportunity. Each belongs to a facet: the six Quartz facets (DEFINE, COMMIT, DESCRIBE, CREATE, PREPARE, DELIVER) plus LEARN, which runs across the whole cycle and reports as its own standalone section. Library activities have no \`assessment_id\`; custom ones name their assessment. |
 | **ActivitySet** | Named presets of activities for quick assessment setup. \`description\` says what the set is for, and shows wherever a preset is picked. |
 | **Respondent** | One person answering one assessment. Self-registering; \`token\` is their credential. Also carries \`closing_comments\` and \`missing_coverage\`, the two free-text answers from the wrap-up page — instrument feedback, admin-only, never reported. |
 | **Response** | One person's answer for one activity. Carries both question sets — importance/execution/suggested_owner, or experience/skills/interest — and only the fields its assessment type asks about are written. |
 | **DiscussionNote** | Facilitator's debrief notes and recorded decisions per activity. |
 | **TeamLeaderFlag** | Activities a team leader flagged for discussion before fielding. |
+| **Instrument** | One of the six things an assessment can run: its name, tagline, description, sections, which scales it uses, whether it asks about ownership, its report style, and the label for its \`subject\` where it has one. \`key\` is stable and is what the seed upserts on. |
+| **Scale** / **ScaleOption** | The answer scales an instrument offers and the options on each, with the treatment for "I don't know". |
+| **Band** | A score range on an instrument, with the advice written for landing in it. Only the instruments that carry a verdict have any. |
+| **Idea** | The suggestion box. Anyone with a login files one — the idea, the problem it solves, and where they were; super-admin decides. \`status\` of **pursue** is the one that means work. Reads narrower than it writes; see the entities README. |
+| **SkippedPost** | A blog post deliberately not made a resource, so the Resources panel stops offering it. |
 | **Tag** | Free grouping for assessments — a client, a cohort, a support group. Flat and many-to-many. |
 | **Organization** | The consulting org. The tenant boundary; \`org_id\` on other records points here. |
 | **Invitation** | Carries an application role until an invited user first signs in. |
@@ -52,7 +57,7 @@ Built-in fields on every entity: \`id\`, \`created_date\`, \`updated_date\`, \`c
 
 | Route | Purpose |
 |---|---|
-| \`/admin\` | Everything the facilitator does. Opens on the Assessments page (\`AssessmentsHome\`) — a searchable table with response counts and unread badges — with a ⌘K switcher (\`AssessmentSwitcher\`) and Pinned and Recent lists in the sidebar. Below the \`md\` breakpoint the sidebar becomes a drawer behind a menu button — the same element, not a copy. Then setup, results, discussion, instruments, library, tags, organizations, and facilitators. The only route behind \`ProtectedRoute\`. |
+| \`/admin\` | Everything the facilitator does. Opens on the Assessments page (\`AssessmentsHome\`) — a searchable table with response counts and unread badges — with a ⌘K switcher (\`AssessmentSwitcher\`) and Pinned and Recent lists in the sidebar. Below the \`md\` breakpoint the sidebar becomes a drawer behind a menu button — the same element, not a copy. Then setup, results, discussion, instruments, library, resources, tags, organizations, facilitators, and — super-admin only, below the rule in the sidebar — system health and ideas. **Share an idea** sits beside What's new and is also a lightbulb pinned bottom-right of every page; it opens over whatever is on screen and records which page that was. The only route behind \`ProtectedRoute\`. |
 
 ## Token-authenticated — no account needed
 
@@ -92,6 +97,7 @@ Built-in fields on every entity: \`id\`, \`created_date\`, \`updated_date\`, \`c
 | \`src/lib/responses.js\` | Response rows to answers keyed by activity id — the shape both the survey and the summary work in. Shared so the facilitator's preview reshapes a respondent's answers exactly as their own page did. |
 | \`src/lib/public-assessment.js\` | Client wrapper over the \`publicAssessment\` function. |
 | \`src/lib/assessment-naming.js\` | The naming standard: **instrument - client - which run this is**, joined by \`composeAssessmentTitle\`, plus \`titleCase\` and the \`YYMMDD\` date stamp. The three parts are collected separately by the new-assessment panel and joined into \`title\`; nothing parses the title back apart, so renaming on the Overview tab stays free text. The note and the worked example shown in both places live here too, so the standard is described in one voice. |
+| \`src/components/Commentary.jsx\` | The panel a question's commentary sits in, on a respondent's own report and on the team report. One component so the two cannot drift, and a tint rather than a rule because the paragraph is ours and the answer above it is theirs — a reader should not have to work out which is which. The tint prints. |
 | \`src/components/IdeaDialog.jsx\` | The suggestion box, open to anyone with a login. Asks for the problem as well as the idea, because an idea arrives as a solution and only the problem underneath it can be judged. Writes an \`Idea\`; the review page is \`src/pages/admin/IdeasPage.jsx\`, super-admin only, where a status of **pursue** is what a working session picks up. |
 | \`src/lib/reading.js\` | How much reading one activity may carry on a report: two, taken in the library's own \`sort_order\`. Both report surfaces that list reading \u2014 the instrument self-summary and the personal profile's shortlist \u2014 go through \`capReading\`. |
 | \`src/lib/roles.js\` | Application roles and org comparison. |
