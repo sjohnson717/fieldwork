@@ -8,6 +8,16 @@ Each entry is a `##` title, a `Released: YYYY-MM-DD` line, and a short
 explanation written for the people using the app. The title is the entry's
 identity — renaming one announces it again to everyone who already read it.
 
+## One number per question
+
+Released: 2026-09-18
+
+Every question now carries a number, and it is the same number everywhere the question appears: on each respondent's own copy of their answers, on the team report, and on the **Discussion** tab. Call out "let's take number four" in the room and everyone lands on the same question, whatever they are reading from.
+
+The number is the question's place in the survey, so it does not run in order on the report or the Discussion tab — both of those are ordered by how much the team disagreed, and that order changes as more people finish. The number does not. Each page says so where the questions start.
+
+Written answers are not numbered. They are gathered under their own heading rather than discussed, and giving them numbers would push every other number out of step.
+
 ## Share an idea
 
 Released: 2026-09-17
