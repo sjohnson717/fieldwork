@@ -12,7 +12,9 @@ identity — renaming one announces it again to everyone who already read it.
 
 Released: 2026-09-17
 
-**Share an idea** is in the sidebar, under Settings. Anything the app should do and doesn't — a report that should say something it doesn't, a step that takes longer than it should.
+The 💡 in the bottom-right corner of every admin page, and **Share an idea** in the sidebar. Anything the app should do and doesn't — a report that should say something it doesn't, a step that takes longer than it should.
+
+It opens over whatever you're looking at, so you never lose your place, and it records which page you were on.
 
 It asks two things: the idea in a few words, and what problem it solves. The second is the one that matters. An idea arrives as a solution, and a solution can only be weighed against the problem underneath it — which is often solvable a better way than the one either of us thought of first.
 

@@ -818,6 +818,28 @@ export default function AdminPage() {
 
       <ReleaseNotesDialog notes={releaseNotes} open={whatsNew.open} onOpenChange={whatsNew.setOpen} newIds={whatsNew.newIds} />
 
+      {/* The lightbulb, on every admin page and always in the same corner.
+          The sidebar entry needs scrolling to on a laptop and the drawer
+          opened on a phone, which is a long way to go for a thought that
+          arrives while you are looking at something else — and the thought is
+          usually *about* the thing you are looking at.
+
+          Hidden while a dialog is open: it would otherwise float over the
+          modal backdrop, including over the idea dialog it opens. Hidden in
+          print for the same reason as every other control. */}
+      {!ideaOpen && !showNewForm && !switcherOpen && !confirmingDelete && (
+        <button
+          onClick={() => setIdeaOpen(true)}
+          title="Share an idea"
+          aria-label="Share an idea"
+          className="no-print fixed bottom-5 right-5 z-30 w-12 h-12 flex items-center justify-center rounded-full bg-white border border-gray-200 shadow-lg text-amber-500 hover:text-amber-600 hover:border-amber-200 hover:shadow-xl active:scale-95 transition-all"
+        >
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 18h6M10 21h4M12 3a6 6 0 00-3.6 10.8c.5.4.8.9.9 1.5l.1.7h5.2l.1-.7c.1-.6.4-1.1.9-1.5A6 6 0 0012 3z" />
+          </svg>
+        </button>
+      )}
+
       {/* Where they were when they had the thought, captured rather than
           asked: the section, and the assessment if they were inside one. */}
       <IdeaDialog
