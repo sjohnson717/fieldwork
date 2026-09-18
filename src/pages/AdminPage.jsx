@@ -460,6 +460,26 @@ export default function AdminPage() {
     active ? "bg-blue-50 text-blue-900" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
   }`;
 
+  // Straight after What's new, wherever What's new lands — under Settings for
+  // an admin, and on its own for a facilitator, who has no Settings section.
+  //
+  // The two belong together. They are the halves of one conversation: what we
+  // built, and what you think we should build. Each explains the other, which a
+  // row on its own further down does not. They also behave alike — both open
+  // over the page you are on, where Tags and Facilitators navigate and the
+  // Facilitator Guide leaves the app — so the pairing is honest about what a
+  // click does. It sat between Facilitators and the Facilitator Guide before,
+  // which split those two and put it between the only two items in the list
+  // that share a word with it.
+  const shareAnIdea = (
+    <button onClick={() => setIdeaOpen(true)} className={navClass(false)}>
+      <svg className="w-4 h-4 text-amber-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 18h6M10 21h4M12 3a6 6 0 00-3.6 10.8c.5.4.8.9.9 1.5l.1.7h5.2l.1-.7c.1-.6.4-1.1.9-1.5A6 6 0 0012 3z" />
+      </svg>
+      Share an idea
+    </button>
+  );
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Across the whole screen rather than the main column, so it reads as
@@ -562,6 +582,7 @@ export default function AdminPage() {
                   {/* Blue, not the red count: red means new responses everywhere else. */}
                   {unreadNotes.length > 0 && <span className="ml-auto w-2 h-2 rounded-full bg-blue-500" aria-label="Unread" />}
                 </button>
+                {shareAnIdea}
                 {/* Tags, unlike the authored content below, is open to org admins:
                     Tag's own rules let them manage their organization's tags, and
                     listTags scopes the page to those. */}
@@ -577,16 +598,6 @@ export default function AdminPage() {
               </>
             )}
 
-            {/* Open to anyone with a login, and placed with the guide rather
-                than under Settings: it is a way to talk to us, not a thing to
-                configure. Filing one promises nothing — see IdeaDialog. */}
-            <button onClick={() => setIdeaOpen(true)} className={`${navClass(false)} flex items-center gap-2`}>
-              <svg className="w-4 h-4 text-amber-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 18h6M10 21h4M12 3a6 6 0 00-3.6 10.8c.5.4.8.9.9 1.5l.1.7h5.2l.1-.7c.1-.6.4-1.1.9-1.5A6 6 0 0012 3z" />
-              </svg>
-              Share an idea
-            </button>
-
             <a
               href="/facilitator-guide"
               target="_blank"
@@ -598,12 +609,16 @@ export default function AdminPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
               </svg>
             </a>
-            {/* A facilitator has no Settings, so What's new sits here for them. */}
+            {/* A facilitator has no Settings, so What's new — and the idea box
+                that belongs beside it — sit here for them instead. */}
             {!(isAdmin || isOrgAdmin) && (
-              <button onClick={whatsNew.openDialog} className={navClass(false)}>
-                What's new
-                {unreadNotes.length > 0 && <span className="ml-auto w-2 h-2 rounded-full bg-blue-500" aria-label="Unread" />}
-              </button>
+              <>
+                <button onClick={whatsNew.openDialog} className={navClass(false)}>
+                  What's new
+                  {unreadNotes.length > 0 && <span className="ml-auto w-2 h-2 rounded-full bg-blue-500" aria-label="Unread" />}
+                </button>
+                {shareAnIdea}
+              </>
             )}
 
             {isAdmin && (
