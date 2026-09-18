@@ -37,6 +37,8 @@ const state = {
   // the chip on a tagged row and the absence of one on an untagged row.
   tags: [{ id: "tag-1", name: "Northwind Systems" }],
   flags: [],
+  // One skipped post, so the panel's "Show 1 skipped post" branch renders.
+  skippedPosts: [{ id: "skip-1", url: "https://www.productgrowthleaders.com/post/not-for-quartz", title: "A post that does not belong in Quartz" }],
   // Two filed ideas, one still new and one already marked, so the Ideas page
   // exercises both the working list and a decision that has been recorded.
   ideas: [
@@ -187,6 +189,17 @@ export const base44 = {
     Tag: { list: async () => readOnly(state.tags) },
     // Filed by anyone with a login, read and decided by super-admin only.
     Idea: editable("Idea", "ideas", staffOnly),
+    // The blog panel's skip list. delete as well as the editable trio, since
+    // "Offer again" removes the row.
+    SkippedPost: {
+      ...editable("SkippedPost", "skippedPosts", staffOnly),
+      delete: async (id) => {
+        staffOnly("SkippedPost.delete");
+        state.skippedPosts = state.skippedPosts.filter(r => r.id !== id);
+        log("SkippedPost.delete", { id });
+        return {};
+      },
+    },
     Assessment: {
       // Staff-only, like Response.list: an anonymous caller must never be able
       // to enumerate assessments and read their access codes and tokens.
@@ -426,6 +439,15 @@ export const base44 = {
       // Called by AssessmentOverview on mount. Without it every admin route
       // reported a console error that belonged to the harness, not the app —
       // which is the kind of finding that teaches people to ignore findings.
+      // The Wix RSS feed, as fetchBlogFeed returns it. Two posts: one long
+      // enough to wrap its description, one with no categories.
+      if (name === "fetchBlogFeed") {
+        adminOnly("fn:fetchBlogFeed");
+        return { data: { posts: [
+          { url: "https://www.productgrowthleaders.com/post/ai-has-a-supplier-problem", title: "AI Has a Supplier Problem", published: "2026-06-08T00:00:00.000Z", categories: ["Leadership"], description: "The real AI shortage isn't computing. It's the knowledge ecosystem that feeds the models — and nobody's getting paid for it." },
+          { url: "https://www.productgrowthleaders.com/post/questions-every-product-leader", title: "Questions Every Product Leader Should Be Asking", published: "2026-01-12T00:00:00.000Z", categories: [], description: "Whether you're applying for a product leader role or already carrying the title, there are questions worth asking that go far beyond interviews." },
+        ] } };
+      }
       if (name === "listUsers") {
         if (!state.user) return forbid("listUsers");
         return { data: { users: [

@@ -162,6 +162,12 @@ not mistaken for a new regression:
 - Three routes joined on 2026-09-10 and 2026-09-11 and open clean at every
   width they run at: `revise-team-gap` and `revise-instrument` (the section
   strip a revision shows) and `admin-instrument-editor` (768 and 1280 only).
+- `admin-resources` joined on 2026-09-18, with the blog panel open: three
+  controls to a row now that a post can be read before it is triaged. Clean at
+  768 and 1280. Its one contrast finding is the `text-gray-300` Delete on a
+  resource card, the same class as the rest of this list. The stub answers
+  `fetchBlogFeed` with two posts and holds one `SkippedPost`, so both branches
+  of the panel render.
 - `admin-ideas` joined on 2026-09-17 with the suggestion box, and opens clean
   at 768 and 1280. The same run found two things worth keeping in mind. The
   sidebar grew past the viewport and did not scroll — `flex-1` without

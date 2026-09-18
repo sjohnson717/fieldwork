@@ -11,6 +11,10 @@ import { sameAddress } from "@/lib/same-address";
 // that form is saved. A post that does not belong in Quartz is skipped, and
 // the skip is stored (SkippedPost) so it is not offered again on the next
 // visit or to the next person. Skipping is undone from the same panel.
+//
+// Read opens the post itself. The feed carries a title, a date, and two lines
+// of description — enough to recognise a post, not enough to decide which
+// activities it is reading for, which is the decision Add exists to make.
 
 const formatDate = (iso) =>
   iso ? new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" }) : "";
@@ -118,6 +122,23 @@ export default function BlogFeedPanel({ resources, onAdd, onClose }) {
                   {p.description && <p className="text-xs text-gray-500 mt-1 line-clamp-2">{p.description}</p>}
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
+                  {/* Read it first. The feed gives a title, a date, and two
+                      lines of description, which is enough to recognise a post
+                      you wrote and not enough to decide which activities it is
+                      reading for — and that decision is the whole of adding
+                      one. Opens in a tab of its own so the panel, and the list
+                      of what is left to triage, is still here on the way back. */}
+                  <a
+                    href={p.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 border border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-600 hover:text-gray-900 text-sm font-medium px-3 h-11 md:h-8 rounded-lg transition-colors"
+                  >
+                    Read
+                    <svg className="w-3 h-3 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                  </a>
                   <button
                     onClick={() => onAdd(p)}
                     disabled={busyUrl === p.url}
@@ -151,7 +172,17 @@ export default function BlogFeedPanel({ resources, onAdd, onClose }) {
             <ul className="mt-1 space-y-1">
               {skipped.map(s => (
                 <li key={s.id} className="flex items-center gap-3">
-                  <span className="text-xs text-gray-500 flex-1 min-w-0 truncate">{s.title || s.url}</span>
+                  {/* The same courtesy on this side: "Offer again" is the
+                      same decision reversed, and it deserves the post rather
+                      than a remembered headline. */}
+                  <a
+                    href={s.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-gray-500 hover:text-[#3366FF] hover:underline flex-1 min-w-0 truncate"
+                  >
+                    {s.title || s.url}
+                  </a>
                   <button
                     onClick={() => unskip(s)}
                     disabled={busyUrl === s.url}

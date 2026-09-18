@@ -120,6 +120,16 @@ const ROUTES = [
     expect: "flagged for discussion",
   },
   {
+    // Settings → Resources with the blog panel open: the triage row, which
+    // carries three controls per post and is the widest row in the panel.
+    name: "admin-resources",
+    url: "/admin",
+    signIn: { email: "qa@example.com", role: "admin" },
+    admin: { section: "Resources", blogFeed: true },
+    widths: [768, 1280],
+    expect: "new from the blog",
+  },
+  {
     // The suggestion box's review page, super-admin only: the filed ideas, the
     // status chips that decide what a working session picks up, and the note
     // saying why. Desktop widths, like the rest of the admin pages behind the
@@ -201,12 +211,19 @@ const pageToWrapup = async (page) => {
 // Settings → Instruments, then an instrument's content editor when `edit`
 // names one. The sidebar sections are buttons like the assessments, but they
 // open a page of their own rather than an assessment's tabs.
-const openAdminSection = async (page, { section, edit }) => {
+const openAdminSection = async (page, { section, edit, blogFeed }) => {
   await page.evaluate((label) => {
     const b = [...document.querySelectorAll("aside button")].find(x => x.textContent.trim() === label);
     if (b) b.click();
   }, section);
   await wait(700);
+  if (blogFeed) {
+    await page.evaluate(() => {
+      const b = [...document.querySelectorAll("button")].find(x => /new from the blog/i.test(x.textContent.trim()));
+      if (b) b.click();
+    });
+    await wait(900);
+  }
   if (edit) {
     await page.evaluate((name) => {
       const li = [...document.querySelectorAll("li")].find(x =>
