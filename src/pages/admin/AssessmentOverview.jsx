@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Lock, LockOpen } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
 import { roleLabel, NO_ACCESS_ROLE } from "@/lib/roles";
@@ -23,6 +24,17 @@ const STATUS_LABELS = {
 
 export default function AssessmentOverview({ assessment, instrument, onUpdate, onDelete, deleting }) {
   const { user: currentUser } = useAuth();
+  // Delete is locked until somebody says otherwise, every time this screen is
+  // opened. There was already a confirmation, and a confirmation is a thing you
+  // click through — it arrives under the cursor that was already moving. The
+  // lock is a separate act on a separate control, which is the point: it cannot
+  // be satisfied by the same reflex that started the delete.
+  //
+  // Not a field on the assessment. A stored flag has to be remembered when the
+  // assessment is made, and the one that gets deleted by accident is the one
+  // nobody thought to protect. This way every assessment is locked, always,
+  // including the client engagement created five minutes ago.
+  const [unlocked, setUnlocked] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [allUsers, setAllUsers] = useState([]);
   const [loadingUsers, setLoadingUsers] = useState(true);
@@ -46,6 +58,13 @@ export default function AssessmentOverview({ assessment, instrument, onUpdate, o
   useEffect(() => {
     loadUsers();
   }, []);
+
+  // Locked again the moment the screen moves to another assessment. Without
+  // this the component is reused across assessments and an unlock meant for one
+  // would be sitting open on the next one somebody clicked into.
+  useEffect(() => {
+    setUnlocked(false);
+  }, [assessment.id]);
 
   // Candidate parents for a personal assessment. RLS already limits this to
   // assessments the caller may read, so no extra scoping is needed here.
@@ -355,15 +374,40 @@ export default function AssessmentOverview({ assessment, instrument, onUpdate, o
           <div className="mt-5 pt-5 border-t border-gray-100 flex items-center justify-between gap-4">
             <div>
               <p className="text-sm font-medium text-gray-700">Delete this assessment</p>
-              <p className="text-xs text-gray-400 mt-0.5">Permanently removes it along with all respondents, responses, and discussion notes.</p>
+              <p className="text-xs text-gray-400 mt-0.5">
+                {unlocked
+                  ? "Permanently removes it along with all respondents, responses, and discussion notes."
+                  : "Locked. Open the lock to delete this assessment."}
+              </p>
             </div>
-            <button
-              onClick={onDelete}
-              disabled={deleting}
-              className="shrink-0 text-sm font-medium px-4 py-2 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 disabled:opacity-50 transition-colors"
-            >
-              {deleting ? "Deleting…" : "Delete assessment"}
-            </button>
+            <div className="shrink-0 flex items-center gap-2">
+              {/* 44px square, because it is a control on a phone as well as a
+                  screen, and a 36px one was hard to hit. */}
+              <button
+                onClick={() => setUnlocked((u) => !u)}
+                disabled={deleting}
+                aria-pressed={unlocked}
+                aria-label={unlocked ? "Lock deleting again" : "Unlock deleting"}
+                title={unlocked ? "Lock deleting again" : "Unlock deleting"}
+                className={`w-11 h-11 flex items-center justify-center rounded-lg border transition-colors disabled:opacity-50 ${
+                  unlocked
+                    ? "border-red-200 text-red-600 hover:bg-red-50"
+                    : "border-gray-200 text-gray-400 hover:text-gray-600 hover:bg-gray-50"
+                }`}
+              >
+                {unlocked ? <LockOpen className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
+              </button>
+              <button
+                onClick={onDelete}
+                disabled={deleting || !unlocked}
+                // Not hidden while locked. A control that disappears reads as a
+                // permission somebody does not have; one that is visibly
+                // disabled beside a lock reads as the step it is.
+                className="text-sm font-medium px-4 py-2 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              >
+                {deleting ? "Deleting…" : "Delete assessment"}
+              </button>
+            </div>
           </div>
         )}
       </section>
