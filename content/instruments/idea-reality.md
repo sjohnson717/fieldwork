@@ -125,19 +125,18 @@ active: no
 
 Anything else you want to share?
 
-## Band: Discovery Required (high uncertainty)
-id: discovery-required-high-uncertainty
-from: 0
-to: 6
+## Band: Execution Candidate (lower risk, not no risk)
+id: execution-candidate-lower-risk-not-no-risk
+from: 13
+to: 18
 
-This idea carries significant unknowns. You’re dealing with an idea, not an opportunity yet. You’re not ready to invest significant resources yet—but you are ready to learn. Focus on problem discovery and solution validation before committing development resources.
+The fundamentals are in place. While execution risk still exists, this idea aligns with your market experience, capabilities, and competitive reality. This may justify deeper planning and a formal business case. The risk now shifts from whether to build to how well you execute.
 
-RECOMMENDED NEXT ACTIONS
-Conduct customer interviews to learn about the areas where you answered “no” or “unknown.” 
+Move forward with a formal Product Brief and business case. Prioritize go-to-market readiness alongside development.
 
-Identify the top "unknown" or "no" scores and assign owners to close them. Produce a lightweight Product Brief that documents assumptions, risks, and evidence gaps.
+Validate assumptions that still exist, but in parallel with execution, not as a gating step. Define clear success metrics tied to revenue, adoption, or retention—not output. Establish an early post-launch review to confirm the market response matches expectations.
 
-The biggest risk isn’t failure—it’s premature commitment.
+Don't assume a high score guarantees success. Execution discipline still matters—and overconfidence kills good products fast.
 
 ## Band: Conditional Opportunity (managed risk)
 id: conditional-opportunity-managed-risk
@@ -156,15 +155,16 @@ Set a decision checkpoint to proceed, pivot, or stop.
 
 Don't treat this idea as “basically approved” and drift into build mode without closing the gaps.
 
-## Band: Execution Candidate (lower risk, not no risk)
-id: execution-candidate-lower-risk-not-no-risk
-from: 13
-to: 18
+## Band: Discovery Required (high uncertainty)
+id: discovery-required-high-uncertainty
+from: 0
+to: 6
 
-The fundamentals are in place. While execution risk still exists, this idea aligns with your market experience, capabilities, and competitive reality. This may justify deeper planning and a formal business case. The risk now shifts from whether to build to how well you execute.
+This idea carries significant unknowns. You’re dealing with an idea, not an opportunity yet. You’re not ready to invest significant resources yet—but you are ready to learn. Focus on problem discovery and solution validation before committing development resources.
 
-Move forward with a formal Product Brief and business case. Prioritize go-to-market readiness alongside development.
+RECOMMENDED NEXT ACTIONS
+Conduct customer interviews to learn about the areas where you answered “no” or “unknown.” 
 
-Validate assumptions that still exist, but in parallel with execution, not as a gating step. Define clear success metrics tied to revenue, adoption, or retention—not output. Establish an early post-launch review to confirm the market response matches expectations.
+Identify the top "unknown" or "no" scores and assign owners to close them. Produce a lightweight Product Brief that documents assumptions, risks, and evidence gaps.
 
-Don't assume a high score guarantees success. Execution discipline still matters—and overconfidence kills good products fast.
+The biggest risk isn’t failure—it’s premature commitment.

@@ -302,6 +302,29 @@ export function planInstrument(content, live) {
     }
   }
 
+  // The order each collection ends up in, against the order it is in now. Only
+  // the rows both sides have are compared: a question the file adds is not a
+  // reordering of the ones already there.
+  const resequence = (before, after) => {
+    const shared = new Set(after.filter((n) => before.includes(n)));
+    const b = before.filter((n) => shared.has(n));
+    const a = after.filter((n) => shared.has(n));
+    return { before: b, after: a, changed: b.length === a.length && b.some((n, i) => n !== a[i]) };
+  };
+  const rank = new Map((existing?.sections || []).map((n, i) => [n, i]));
+  const appQuestionOrder = [...myQuestions].sort((x, y) => {
+    const at = (q) => (rank.has(q.section) ? rank.get(q.section) : rank.size);
+    return at(x) - at(y) || (x.section_sort ?? 0) - (y.section_sort ?? 0);
+  });
+  plan.order = {
+    questions: resequence(appQuestionOrder.map((q) => q.name), plan.questions.map((q) => q.name)),
+    bands: resequence(
+      [...mine(live.bands || [])].sort((x, y) => (x.sort_order ?? 0) - (y.sort_order ?? 0)).map((b) => b.name),
+      plan.bands.map((b) => b.name),
+    ),
+    dimensions: resequence(existing?.sections || [], content.dimensions.map((d) => d.name)),
+  };
+
   plan.counts = {
     questions: tally(plan.questions), bands: tally(plan.bands), dimensions: tally(plan.dimensions),
     reading: { create: plan.reading.filter((r) => r.action === "create").length, link: plan.reading.filter((r) => r.action === "link").length, unlink: plan.reading.filter((r) => r.action === "unlink").length },
@@ -322,13 +345,42 @@ const writeCount = (plan) =>
   [...plan.questions, ...plan.bands, ...plan.dimensions].filter((r) => r.action !== "unchanged").length +
   plan.reading.length;
 
+// Fields nobody wrote. An id, a position, a link, and the two flags derived
+// from a question's type: all of them real changes that have to be applied, and
+// none of them anything a person typed or would recognise as content.
+//
+// The distinction earns its place on the first run against a live app. Eleven
+// questions adopting their ids and ten taking their position from the file is
+// twenty-one true differences and nothing to decide about — and printed beside
+// the wording changes, it buries them. The first real sync reported "28 to
+// write" on one instrument, of which nought were content.
+const BOOKKEEPING = new Set([
+  "content_key", "reportable_text", "facet", "instrument_ids", "scale_ids", "instrument_id",
+]);
+
+// Position, which is neither content nor bookkeeping and must not be filed as
+// either. A position printed as a number is unreadable — "App 4, File 0" on one
+// band and "App 1, File 3" on another is the app holding its bands in reverse,
+// and nothing about those four numbers says so. So the two ordering fields are
+// pulled out of the field list entirely and reported as the sequence they
+// produce, which is the thing somebody can actually decide about.
+const ORDERING = new Set(["section_sort", "sort_order"]);
+
+export const isBookkeeping = (field) => BOOKKEEPING.has(field);
+export const isOrdering = (field) => ORDERING.has(field);
+
 // Every field that changes, flattened for the screen. One line per field, which
 // is the level the last round of this needed: "14 fields drifted" was true and
 // useless, and naming them was a bespoke script.
 export function planDiff(plan) {
   const out = [];
   const push = (kind, name, changes, act) => {
-    for (const c of changes) out.push({ kind, name, action: act, ...c });
+    for (const c of changes) {
+      out.push({
+        kind, name, action: act, ...c,
+        group: isOrdering(c.field) ? "order" : isBookkeeping(c.field) ? "bookkeeping" : "content",
+      });
+    }
     if (!changes.length && act === "create") out.push({ kind, name, action: act, field: null, from: null, to: null });
   };
   push("instrument", plan.name, plan.instrument.changes, plan.instrument.action);

@@ -147,20 +147,32 @@ active: no
 
 Which product are you assessing? Use a code name to keep the real name private.
 
-## Band: Sunset
-id: sunset
-from: 0
-to: 2
+## Band: Invest
+id: invest
+from: 8
+to: 9
 
-You should consider RETIRE (or spin down).
-
-You already knew this in your bones. The survey just puts the data behind the feeling. Low usage, weak revenue, poor differentiation, and little sales enthusiasm = slow-motion failure.
+You should INVEST. This product is doing what you want: strong performance, sticky customers, aligned strategy, sales traction, and a competitive posture that’s not collapsing under its own weight.
 
 Implications:
-• Plan a customer migration or replacement
-• Stop new feature investment
-• Communicate an orderly and respectful roadmap to end-of-life
-• Redeploy resources to higher-impact products
+• Allocate additional roadmap resources
+• Strengthen differentiation
+• Refresh messaging and pricing
+• Explore adjacent opportunities and expansions
+
+## Band: Maintain
+id: maintain
+from: 5
+to: 7
+
+You should MAINTAIN (but monitor).
+
+A basically healthy product, but the cracks are showing—usually in growth, competitive posture, or sales behavior. These aren’t emergency numbers, but they’re the early-warning lights on the dashboard.
+
+Implications:
+• Maintain current investment
+• Address the one or two weak areas (often innovation or sales engagement)
+• Watch quarterly indicators to ensure slide doesn’t accelerate
 
 ## Band: Reassess
 id: reassess
@@ -177,29 +189,17 @@ Implications:
 • Consider repositioning, bundling, or scaling down investment
 • Set a 6–12 month checkpoint to measure improvement
 
-## Band: Maintain
-id: maintain
-from: 5
-to: 7
+## Band: Sunset
+id: sunset
+from: 0
+to: 2
 
-You should MAINTAIN (but monitor).
+You should consider RETIRE (or spin down).
 
-A basically healthy product, but the cracks are showing—usually in growth, competitive posture, or sales behavior. These aren’t emergency numbers, but they’re the early-warning lights on the dashboard.
-
-Implications:
-• Maintain current investment
-• Address the one or two weak areas (often innovation or sales engagement)
-• Watch quarterly indicators to ensure slide doesn’t accelerate
-
-## Band: Invest
-id: invest
-from: 8
-to: 9
-
-You should INVEST. This product is doing what you want: strong performance, sticky customers, aligned strategy, sales traction, and a competitive posture that’s not collapsing under its own weight.
+You already knew this in your bones. The survey just puts the data behind the feeling. Low usage, weak revenue, poor differentiation, and little sales enthusiasm = slow-motion failure.
 
 Implications:
-• Allocate additional roadmap resources
-• Strengthen differentiation
-• Refresh messaging and pricing
-• Explore adjacent opportunities and expansions
+• Plan a customer migration or replacement
+• Stop new feature investment
+• Communicate an orderly and respectful roadmap to end-of-life
+• Redeploy resources to higher-impact products

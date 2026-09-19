@@ -172,7 +172,11 @@ test("a question dropped from the file is reported, never deleted", async () => 
 test("a band dropped from the file waits for a confirmation", async () => {
   const be = backend();
   await applyFile(be, "product-success");
-  const edited = fileFor("product-success").replace(/\n## Band: Invest[\s\S]*$/, "\n");
+  // The last band in the file, whichever it is — naming one meant the test
+  // broke the day the band order was corrected, and for a reason that had
+  // nothing to do with what it checks.
+  const whole = fileFor("product-success");
+  const edited = whole.slice(0, whole.lastIndexOf("\n## Band: ")) + "\n";
   const plan = planInstrument(parseInstrument(edited), be.live());
   assert.equal(plan.deletes.length, 1);
   assert.equal(plan.deletes[0].kind, "band");
@@ -304,4 +308,54 @@ test("the whole loop: files in, files out, byte for byte", async () => {
   assert.equal(teamGap.sections.length, 7, "a library instrument still declares its sections");
   assert.equal(be.store.Activity.filter((a) => (a.instrument_ids || []).includes(teamGap.id)).length, 0,
     "a library instrument's questions come from the activity library, not from a file");
+});
+
+test("a reordering is reported as the sequence, not as four numbers", async () => {
+  const be = backend();
+  await applyFile(be, "product-success");
+
+  // What the first live sync found: the app holding its bands in the reverse
+  // of the file's order. As numbers it reads "App 4, File 0" and says nothing.
+  const bands = be.store.Band.filter((b) => b.instrument_id === be.store.Instrument[0].id);
+  const reversed = [...bands].reverse();
+  reversed.forEach((b, i) => { b.sort_order = i; });
+
+  const plan = planInstrument(parseInstrument(fileFor("product-success")), be.live());
+  assert.equal(plan.order.bands.changed, true);
+  assert.deepEqual(plan.order.bands.before, reversed.map((b) => b.name));
+  assert.deepEqual(plan.order.bands.after, bands.map((b) => b.name));
+
+  // And it is not filed as bookkeeping, where it would be counted and hidden.
+  const diff = planDiff(plan);
+  assert.ok(diff.some((d) => d.field === "sort_order" && d.group === "order"));
+  assert.ok(!diff.some((d) => d.group === "content"), "no content differs, only the order");
+});
+
+test("numbering that changes nothing is not reported as a reordering", async () => {
+  const be = backend();
+  await applyFile(be, "fractional-cpo-practice");
+  // Every position shifted by one, in the same sequence — which is what five
+  // dimensions numbered from one instead of zero look like.
+  for (const row of [...be.store.Band, ...be.store.InstrumentSection, ...be.store.Activity]) {
+    if (row.sort_order !== undefined) row.sort_order += 1;
+    if (row.section_sort !== undefined) row.section_sort += 1;
+  }
+  const plan = planInstrument(parseInstrument(fileFor("fractional-cpo-practice")), be.live());
+  assert.equal(plan.order.bands.changed, false);
+  assert.equal(plan.order.questions.changed, false);
+  assert.equal(plan.order.dimensions.changed, false);
+  // The fields are still written; they are simply not worth reading about.
+  assert.ok(plan.writes > 0);
+  assert.ok(planDiff(plan).every((d) => d.group !== "content"));
+});
+
+test("the ids written on a first sync are bookkeeping, and nothing else is confused with them", async () => {
+  const be = backend();
+  await applyFile(be, "chaos");
+  for (const a of be.store.Activity) delete a.content_key;
+  const diff = planDiff(planInstrument(parseInstrument(fileFor("chaos")), be.live()));
+  const ids = diff.filter((d) => d.field === "content_key");
+  assert.equal(ids.length, 11, "every question adopts an id");
+  assert.ok(ids.every((d) => d.group === "bookkeeping"));
+  assert.ok(!diff.some((d) => d.group === "content"), "the wording is untouched by an adoption");
 });

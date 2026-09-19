@@ -197,27 +197,16 @@ When I encounter a difficult client situation I haven't seen before, I have expe
 
 **Commentary.** Independence removes the colleague you used to check a read with on the way out of a meeting. Replacing that deliberately is infrastructure too, even though it looks like a social arrangement rather than a tool.
 
-## Band: Ad Hoc
-id: ad-hoc
-from: 0
-to: 1.24
+## Band: Systematic
+id: systematic
+from: 2.5
+to: 3
 
-Your Fractional CPO practice currently relies more on your personal experience and improvisation than on repeatable consulting infrastructure.
+Your Fractional CPO practice is supported by a systematic consulting infrastructure.
 
-That's not necessarily a reflection of your product leadership expertise. In fact, experienced executives can operate this way surprisingly well because they've seen so many situations before. The cost is that every new client can begin to feel like a new consulting business: another assessment, another spreadsheet, another workshop, another deck.
+You have repeatable approaches for understanding a client organization, turning findings into decisions, developing capabilities, and demonstrating improvement. Your methods and materials can be reused across engagements without forcing every client into exactly the same process.
 
-The biggest opportunity is to identify which parts of your work can become systematic without making your consulting formulaic. Build or borrow the infrastructure around your expertise so you can keep your attention focused on judgment, leadership, coaching, and change.
-
-## Band: Developing
-id: developing
-from: 1.25
-to: 1.99
-
-Your Fractional CPO practice is still developing the infrastructure needed to make your expertise repeatable across clients.
-
-You may have strong approaches in some areas while relying on experience and improvisation in others. That can work—particularly when you're dealing with situations you've seen before—but it also means each new engagement may require more preparation, custom materials, and reinvention than it should.
-
-The goal isn't to standardize your judgment. It's to standardize the things surrounding your judgment so you can spend more time diagnosing problems, coaching leaders, facilitating decisions, and helping organizations change.
+At this stage, the opportunity is less about creating infrastructure and more about refining it. Look at your individual profile for areas where you still rely heavily on personal effort, where your materials could be strengthened, or where additional resources and practitioner support could give you more leverage.
 
 ## Band: Established
 id: established
@@ -230,13 +219,24 @@ You probably have approaches and materials that work well in familiar situations
 
 Look at the individual dimensions in your profile. Your lowest areas are likely places where reusable tools, materials, or outside resources could free you to spend more time on the work clients actually hired you to do.
 
-## Band: Systematic
-id: systematic
-from: 2.5
-to: 3
+## Band: Developing
+id: developing
+from: 1.25
+to: 1.99
 
-Your Fractional CPO practice is supported by a systematic consulting infrastructure.
+Your Fractional CPO practice is still developing the infrastructure needed to make your expertise repeatable across clients.
 
-You have repeatable approaches for understanding a client organization, turning findings into decisions, developing capabilities, and demonstrating improvement. Your methods and materials can be reused across engagements without forcing every client into exactly the same process.
+You may have strong approaches in some areas while relying on experience and improvisation in others. That can work—particularly when you're dealing with situations you've seen before—but it also means each new engagement may require more preparation, custom materials, and reinvention than it should.
 
-At this stage, the opportunity is less about creating infrastructure and more about refining it. Look at your individual profile for areas where you still rely heavily on personal effort, where your materials could be strengthened, or where additional resources and practitioner support could give you more leverage.
+The goal isn't to standardize your judgment. It's to standardize the things surrounding your judgment so you can spend more time diagnosing problems, coaching leaders, facilitating decisions, and helping organizations change.
+
+## Band: Ad Hoc
+id: ad-hoc
+from: 0
+to: 1.24
+
+Your Fractional CPO practice currently relies more on your personal experience and improvisation than on repeatable consulting infrastructure.
+
+That's not necessarily a reflection of your product leadership expertise. In fact, experienced executives can operate this way surprisingly well because they've seen so many situations before. The cost is that every new client can begin to feel like a new consulting business: another assessment, another spreadsheet, another workshop, another deck.
+
+The biggest opportunity is to identify which parts of your work can become systematic without making your consulting formulaic. Build or borrow the infrastructure around your expertise so you can keep your attention focused on judgment, leadership, coaching, and change.

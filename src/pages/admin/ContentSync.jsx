@@ -113,7 +113,7 @@ export default function ContentSync({ onApplied = null }) {
           // worth showing, whatever caused it.
           const appText = row ? writeInstrument(contentFromLive(row, live)) : null;
           const plan = planInstrument(i.content, live);
-          if (planDiff(plan).length) opening[i.content.key] = true;
+          if (planDiff(plan).some((d) => d.group === "content" || d.action === "create")) opening[i.content.key] = true;
           return { ...i, row, appText, fileText: loaded.files[i.path], plan };
         }),
       });
@@ -313,6 +313,9 @@ export default function ContentSync({ onApplied = null }) {
             const { plan } = entry;
             const key = entry.content.key;
             const diff = planDiff(plan);
+            const content = diff.filter((d) => d.group === "content" || d.action === "create");
+            const bookkeeping = diff.filter((d) => d.group === "bookkeeping");
+            const reordered = Object.entries(plan.order).filter(([, o]) => o.changed);
             const isOpen = !!open[key];
             const result = applied[key];
             const commitResult = committed[key];
@@ -334,9 +337,9 @@ export default function ContentSync({ onApplied = null }) {
                     <button onClick={() => saveFile(entry)} disabled={!plan.instrumentId} className="text-xs font-medium text-gray-500 hover:text-gray-800 disabled:opacity-40">
                       Save file
                     </button>
-                    {diff.length > 0 && (
+                    {content.length > 0 && (
                       <button onClick={() => setOpen((o) => ({ ...o, [key]: !isOpen }))} className="text-xs font-medium text-gray-500 hover:text-gray-800">
-                        {isOpen ? "Hide" : `Show ${diff.length} change${diff.length === 1 ? "" : "s"}`}
+                        {isOpen ? "Hide" : `Show ${content.length} change${content.length === 1 ? "" : "s"}`}
                       </button>
                     )}
                     {(plan.writes > 0 || plan.deletes.length > 0) && (
@@ -392,9 +395,49 @@ export default function ContentSync({ onApplied = null }) {
                   </p>
                 )}
 
-                {isOpen && (
+                {/* Order, as the sequence it produces. The numbers behind it are
+                    unreadable and the sequence is the decision: applying puts
+                    the questions in the file's order, committing keeps the
+                    app's. */}
+                {reordered.length > 0 && (
+                  <div className="mt-2 space-y-1">
+                    {reordered.map(([what, o]) => (
+                      <div key={what} className="text-xs">
+                        <p className="text-gray-500">
+                          <span className="uppercase tracking-wide text-[10px] text-gray-400">order</span>{" "}
+                          <span className="font-medium text-gray-700">{what}</span>
+                          {what === "questions" && " — the order they are asked in"}
+                          {what === "bands" && " — the order they are listed in"}
+                        </p>
+                        <p className="flex gap-2 mt-0.5">
+                          <span className="w-12 shrink-0 text-[10px] uppercase tracking-wide text-gray-400 pt-0.5">App</span>
+                          <span className="text-gray-700">{o.before.join(" · ")}</span>
+                        </p>
+                        <p className="flex gap-2">
+                          <span className="w-12 shrink-0 text-[10px] uppercase tracking-wide text-gray-400 pt-0.5">File</span>
+                          <span className="text-gray-700">{o.after.join(" · ")}</span>
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Counted, not listed. An id has no meaning to read and a
+                    position that changes nothing has nothing to decide — and
+                    printed in full they buried the wording changes they were
+                    sitting beside. */}
+                {bookkeeping.length > 0 && (
+                  <p className="mt-2 text-xs text-gray-400">
+                    Also {bookkeeping.length} field{bookkeeping.length === 1 ? "" : "s"} the app keeps for itself
+                    {bookkeeping.some((d) => d.field === "content_key") &&
+                      `, including ${bookkeeping.filter((d) => d.field === "content_key").length} id${bookkeeping.filter((d) => d.field === "content_key").length === 1 ? "" : "s"} written for the first time`}
+                    .
+                  </p>
+                )}
+
+                {isOpen && content.length > 0 && (
                   <dl className="mt-3 space-y-2 border-l-2 border-gray-100 pl-3">
-                    {diff.map((d, i) => (
+                    {content.map((d, i) => (
                       <div key={i} className="text-xs">
                         <dt className="text-gray-500">
                           <span className="uppercase tracking-wide text-[10px] text-gray-400">{d.kind}</span>{" "}
