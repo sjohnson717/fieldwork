@@ -1142,7 +1142,7 @@ export const INSTRUMENT_SEED = {
       "sort": "04",
       "question_type": "rating",
       "scale_key": "consistency",
-      "commentary": "Findings that are clear to you are not automatically discussable by a group, and a readout that lands like a verdict invites defence rather than decisions. The form matters as much as the content: evidence people can see the basis of gets argued with differently from an opinion delivered with authority.",
+      "commentary": "Findings that are clear to you are not automatically discussable by a group, and a readout that lands like a verdict invites defense rather than decisions. The form matters as much as the content: evidence people can see the basis of gets argued with differently from an opinion delivered with authority.",
       "critical": false,
       "required": true
     },
@@ -1172,7 +1172,7 @@ export const INSTRUMENT_SEED = {
       "sort": "06",
       "question_type": "rating",
       "scale_key": "consistency",
-      "commentary": "The test of a diagnosis is what the client can act on the week after you present it. A short prioritized list is the artefact that survives the engagement; a comprehensive assessment carrying thirty findings usually does not.",
+      "commentary": "The test of a diagnosis is what the client can act on the week after you present it. A short prioritized list is the artifact that survives the engagement; a comprehensive assessment carrying thirty findings usually does not.",
       "critical": false,
       "required": true
     },
@@ -1277,7 +1277,7 @@ export const INSTRUMENT_SEED = {
       "sort": "13",
       "question_type": "rating",
       "scale_key": "consistency",
-      "commentary": "Reuse is not standardization: the judgement stays bespoke, and the machinery around it does not have to be. The practical question is how much of your last engagement you could carry into the next one without apologising for it.",
+      "commentary": "Reuse is not standardization: the judgment stays bespoke, and the machinery around it does not have to be. The practical question is how much of your last engagement you could carry into the next one without apologizing for it.",
       "critical": false,
       "required": true
     },
