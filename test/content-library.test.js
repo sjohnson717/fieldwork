@@ -157,3 +157,85 @@ test("validation catches what would break a report", () => {
     /are the same address/,
   );
 });
+
+// ── Job titles ──────────────────────────────────────────────────────────────
+
+import { writeJobTitles, parseJobTitles, normalizeJobTitle, validateJobTitles } from "@/lib/content-format.js";
+import { planJobTitles, applyJobTitles, jobTitlesFromLive } from "@/lib/content-apply.js";
+
+const TITLES = [
+  { id: "head-of-product", name: "Head of Product Management / Principal Product Manager", active: true },
+  { id: "product-manager", name: "Product Manager / Product Owner", active: true },
+  { id: "product-marketing", name: "Product Marketing Manager", active: true },
+  { id: "sales-engineer", name: "Sales Engineer", active: false },
+];
+
+const titleBackend = (titles = [], activities = []) => {
+  const store = { JobTitle: [...titles], Activity: [...activities] };
+  let n = 0;
+  const entity = (name) => ({
+    create: async (p) => { const r = { id: `${name}-${++n}`, ...p }; store[name].push(r); return { ...r }; },
+    update: async (id, p) => { const r = store[name].find((x) => x.id === id); Object.assign(r, p); return { ...r }; },
+  });
+  return {
+    store,
+    entities: { JobTitle: entity("JobTitle"), Activity: entity("Activity") },
+    live: () => ({ jobTitles: store.JobTitle.map((r) => ({ ...r })), activities: store.Activity.map((r) => ({ ...r })) }),
+  };
+};
+
+test("job titles round-trip, and a slash in a name survives", () => {
+  const text = writeJobTitles(TITLES);
+  assert.deepEqual(parseJobTitles(text), TITLES.map(normalizeJobTitle));
+  assert.equal(writeJobTitles(parseJobTitles(text)), text);
+  assert.match(text, /## Title: Head of Product Management \/ Principal Product Manager/);
+  assert.match(text, /active: no/, "a retired title says so");
+});
+
+test("applying writes them in file order and reads back the same", async () => {
+  const be = titleBackend();
+  await applyJobTitles(be, planJobTitles(TITLES, be.live()));
+  assert.deepEqual(be.store.JobTitle.map((t) => t.sort_order), [0, 1, 2, 3]);
+  assert.equal(be.store.JobTitle.find((t) => t.content_key === "sales-engineer").active, false);
+  assert.equal(planJobTitles(TITLES, be.live()).writes, 0, "a second run does nothing");
+  assert.equal(writeJobTitles(jobTitlesFromLive(be.live())), writeJobTitles(TITLES));
+});
+
+test("a rename is allowed, counted, and never silent", async () => {
+  const be = titleBackend([], [
+    { id: "a1", name: "Win-Loss Analysis", preferred_owner: "Product Marketing Manager" },
+    { id: "a2", name: "Launch Plan", preferred_owner: "Product Marketing Manager" },
+    { id: "a3", name: "Roadmap", preferred_owner: "Product Manager / Product Owner" },
+  ]);
+  await applyJobTitles(be, planJobTitles(TITLES, be.live()));
+
+  const renamed = TITLES.map((t) => (t.id === "product-marketing" ? { ...t, name: "Product Marketing" } : t));
+  const plan = planJobTitles(renamed, be.live());
+  assert.equal(plan.renames.length, 1);
+  assert.deepEqual(plan.renames[0], { from: "Product Marketing Manager", to: "Product Marketing", activities: 2 });
+
+  const { notes } = await applyJobTitles(be, plan);
+  assert.match(notes[0], /2 activities still recommend the old name/);
+  assert.match(notes[0], /answers already given keep it/);
+  // The rename lands on the row that was already there, rather than making a second.
+  assert.equal(be.store.JobTitle.length, 4);
+  assert.equal(be.store.JobTitle.find((t) => t.content_key === "product-marketing").name, "Product Marketing");
+  // And it changes nothing else, which is the point of saying so.
+  assert.equal(be.store.Activity.filter((a) => a.preferred_owner === "Product Marketing Manager").length, 2);
+});
+
+test("a title dropped from the file is reported, never deleted", async () => {
+  const be = titleBackend();
+  await applyJobTitles(be, planJobTitles(TITLES, be.live()));
+  const plan = planJobTitles(TITLES.slice(0, 3), be.live());
+  assert.equal(plan.orphans.length, 1);
+  const { notes } = await applyJobTitles(be, plan);
+  assert.equal(be.store.JobTitle.length, 4);
+  assert.match(notes.join(" "), /Left alone \(already retired\) — answers name it/);
+});
+
+test("validation refuses two titles with one name", () => {
+  assert.deepEqual(validateJobTitles(TITLES), []);
+  assert.match(validateJobTitles([...TITLES, { id: "other", name: "Sales Engineer" }]).join(" "), /Two titles are called/);
+  assert.match(validateJobTitles([...TITLES, { id: "sales-engineer", name: "Another" }]).join(" "), /share the id/);
+});

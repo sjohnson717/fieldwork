@@ -122,6 +122,11 @@ const RESOURCE_ATTRS = [
   ["active", FLAG, true],
 ];
 
+const JOB_TITLE_ATTRS = [
+  ["id", STR],
+  ["active", FLAG, true],
+];
+
 const SCALE_ATTRS = [
   ["id", STR],
   ["hint", STR],
@@ -228,6 +233,13 @@ export function normalizeResource(src) {
   // The library activities this is offered for, by their ids. An instrument
   // question's reading is not here; it is in the instrument's file.
   out.activities = (src?.activities || []).map((a) => String(a)).filter(Boolean);
+  return out;
+}
+
+export function normalizeJobTitle(src) {
+  const out = normalizeAttrs(src, JOB_TITLE_ATTRS);
+  out.name = normalizeProse(src?.name);
+  if (!out.id) out.id = slugify(out.name);
   return out;
 }
 
@@ -340,6 +352,16 @@ export function writeResources(resources) {
   return sections.join("\n\n") + "\n";
 }
 
+export function writeJobTitles(titles) {
+  const sections = ["<!-- The functions an activity can recommend and a respondent can pick, in the order they are offered. -->"];
+  for (const raw of titles) {
+    const t = normalizeJobTitle(raw);
+    const attrs = attrLines(t, JOB_TITLE_ATTRS);
+    sections.push(`## Title: ${t.name}` + (attrs.length ? `\n${attrs.join("\n")}` : ""));
+  }
+  return sections.join("\n\n") + "\n";
+}
+
 export function writeScales(scales) {
   const sections = ["<!-- The answer scales every instrument shares. Referenced by id from an instrument's `scales:` list. -->"];
   for (const raw of scales) {
@@ -355,7 +377,7 @@ export function writeScales(scales) {
 
 // ── Parsing ─────────────────────────────────────────────────────────────────
 
-const HEADING = /^## (Dimension|Question|Band|Scale|Activity|Resource): (.+?)\s*$/;
+const HEADING = /^## (Dimension|Question|Band|Scale|Activity|Resource|Title): (.+?)\s*$/;
 // Two words where a field reads better as two: "**Try this.**" is what the
 // library calls it on screen, and a label the file spells differently from the
 // app is a translation somebody has to hold in their head.
@@ -465,6 +487,11 @@ export function parseResources(text) {
       activities: [...list.matchAll(/^-\s*(.+?)\s*$/gm)].map((m) => m[1]),
     });
   });
+}
+
+export function parseJobTitles(text) {
+  const { segments } = segmentsOf(String(text).replace(/\r\n/g, "\n"));
+  return segments.filter((s) => s.kind === "Title").map((seg) => normalizeJobTitle({ name: seg.name, ...seg.attrs }));
 }
 
 export function parseScales(text) {
@@ -586,6 +613,23 @@ export function validateAcross(contents) {
   return errors;
 }
 
+export function validateJobTitles(titles) {
+  const errors = [];
+  const ids = new Set();
+  const names = new Set();
+  for (const t of titles.map(normalizeJobTitle)) {
+    if (!t.name) errors.push("A title has no name.");
+    if (!/^[a-z0-9-]+$/.test(t.id)) errors.push(`"${t.id}" is not a usable id — lower case, digits, and hyphens.`);
+    if (ids.has(t.id)) errors.push(`Two titles share the id "${t.id}".`);
+    ids.add(t.id);
+    // Two titles with one name would put the same option in a respondent's
+    // list twice, and an activity's recommended owner could mean either.
+    if (names.has(t.name)) errors.push(`Two titles are called "${t.name}".`);
+    names.add(t.name);
+  }
+  return errors;
+}
+
 // The library, across every phase file: ids have to be unique, because one id
 // is one activity and the phase is only where it currently sits.
 export function validateLibrary(byFacet) {
@@ -655,6 +699,7 @@ export const ENTITY_FIELDS = {
   activity: { id: "content_key", name: "name", description: "description", owner: "preferred_owner", try_this: "try_this", active: "active" },
   // activities and sort_order likewise: the links are resolved to row ids, and
   // the order is the order they are written in.
+  job_title: { id: "content_key", name: "name", active: "active" },
   resource: { id: "content_key", title: "title", type: "resource_type", source: "source", published: "published_date", url: "url", note: "note", fallback: "fallback", active: "active" },
   dimension: { id: "content_key", name: "name", blurb: "blurb", strong: "strong", opportunity: "opportunity" },
 };

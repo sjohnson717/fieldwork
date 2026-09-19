@@ -16,6 +16,7 @@
 import {
   parseInstrument, parseScales, validateInstrument, validateAcross,
   parseLibrary, parseResources, validateLibrary, validateResources, FACETS,
+  parseJobTitles, validateJobTitles,
 } from "@/lib/content-format";
 
 export const OWNER = "sjohnson717";
@@ -63,7 +64,10 @@ export async function loadFromBranch({ branch = CONTENT_BRANCH, fetchImpl = fetc
     return (await res.json()).filter((e) => e.type === "file" && e.name.endsWith(".md")).map((e) => e.path);
   };
   const [instrumentPaths, libraryPaths] = await Promise.all([listDir("instruments"), listDir("library")]);
-  const paths = [`${CONTENT_DIR}/scales.md`, `${CONTENT_DIR}/resources.md`, ...instrumentPaths, ...libraryPaths];
+  const paths = [
+    `${CONTENT_DIR}/scales.md`, `${CONTENT_DIR}/resources.md`, `${CONTENT_DIR}/job-titles.md`,
+    ...instrumentPaths, ...libraryPaths,
+  ];
   // The commit is pinned rather than the branch name, so a push landing
   // between the listing and the reads cannot produce a half-and-half set —
   // and it sidesteps the raw CDN serving a file from a few minutes ago.
@@ -164,10 +168,25 @@ export function readContent(files) {
     : [];
   if (resourceErrors.length) problems.push({ path: resourcesPath, errors: resourceErrors });
 
+  const titlesPath = `${CONTENT_DIR}/job-titles.md`;
+  let jobTitles = [];
+  let titlesPresent = files[titlesPath] !== undefined;
+  if (titlesPresent) {
+    try {
+      jobTitles = parseJobTitles(files[titlesPath]);
+    } catch (e) {
+      titlesPresent = false;
+      problems.push({ path: titlesPath, errors: [`Could not be read: ${e?.message || e}`] });
+    }
+  }
+  const titleErrors = titlesPresent ? validateJobTitles(jobTitles) : [];
+  if (titleErrors.length) problems.push({ path: titlesPath, errors: titleErrors });
+
   return {
     scales,
     instruments,
     problems,
+    jobTitles: { rows: jobTitles, present: titlesPresent && !titleErrors.length },
     library: { byFacet, present: libraryPresent && !libraryErrors.length },
     resources: { rows: resources, present: resourcesPresent && !resourceErrors.length },
   };

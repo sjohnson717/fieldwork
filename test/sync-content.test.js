@@ -30,6 +30,7 @@ test("the content files are writable", () => {
     "content/resources.md",
     "content/library/define.md",
     "content/library/learn.md",
+    "content/job-titles.md",
   ]) {
     assert.ok(ALLOWED.test(p), `${p} should be writable`);
   }

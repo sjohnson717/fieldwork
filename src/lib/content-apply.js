@@ -804,3 +804,82 @@ export function resourcesFromLive(live) {
       activities: (row.activity_ids || []).map((id) => libraryKeyById.get(id)).filter(Boolean),
     }));
 }
+
+// ── Job titles ──────────────────────────────────────────────────────────────
+//
+// The functions an activity can recommend and a respondent can pick.
+//
+// A rename here does not cascade, and that is the whole reason this has a plan
+// rather than a write. Activity.preferred_owner holds the name as text, and so
+// does Response.suggested_owner on every answer ever given — so renaming a
+// title leaves activities recommending a function that no longer exists and
+// answers naming one nobody can pick. The rename is allowed, because sometimes
+// it is exactly what somebody means to do, and it is never silent: the plan
+// counts what still points at the old name and says so before anything is
+// written.
+//
+// Nothing is deleted. A title dropped from the file is reported; retiring one
+// (active: no) takes it out of the pickers and leaves every answer readable.
+
+export function planJobTitles(titles, live) {
+  const existing = live.jobTitles || [];
+  const activities = live.activities || [];
+  const plan = { titles: [], orphans: [], renames: [] };
+  for (const [i, t] of titles.entries()) {
+    const row = matcher(existing, existing, t.id, t.name);
+    const patch = { ...mapFields("job_title", t), content_key: t.id, sort_order: i };
+    const changes = changedFields(row, patch);
+    plan.titles.push({
+      id: t.id, name: t.name, rowId: row?.id || null, row,
+      adopted: !!row && !row.content_key,
+      changes, action: action(row, changes), patch,
+    });
+    if (row && row.name && row.name !== t.name) {
+      plan.renames.push({
+        from: row.name,
+        to: t.name,
+        // Countable here. The answers are not — there is no cheap count of
+        // every Response ever given — so they are named rather than numbered.
+        activities: activities.filter((a) => a.preferred_owner === row.name).length,
+      });
+    }
+  }
+  const ids = new Set(plan.titles.map((t) => t.id));
+  for (const row of existing) {
+    if (ids.has(row.content_key || slugify(row.name))) continue;
+    plan.orphans.push({ name: row.name, rowId: row.id, retired: row.active === false });
+  }
+  plan.counts = tally(plan.titles);
+  plan.writes = plan.titles.filter((t) => t.action !== "unchanged").length;
+  return plan;
+}
+
+export async function applyJobTitles(base44, plan, { onProgress } = {}) {
+  const e = base44.entities;
+  onProgress?.("Job titles");
+  const written = { titles: 0 };
+  for (const t of plan.titles) {
+    if (t.action === "unchanged") continue;
+    if (t.action === "create") await e.JobTitle.create(t.patch);
+    else await e.JobTitle.update(t.rowId, t.patch);
+    written.titles++;
+  }
+  const notes = [];
+  for (const r of plan.renames) {
+    notes.push(
+      `"${r.from}" is now "${r.to}". ${r.activities === 0 ? "No activity recommended the old name" : `${r.activities} activit${r.activities === 1 ? "y still recommends" : "ies still recommend"} the old name`}, ` +
+      `and answers already given keep it. Neither is changed by this.`,
+    );
+  }
+  for (const o of plan.orphans) {
+    notes.push(`"${o.name}" is in the app but not in the file. Left alone${o.retired ? " (already retired)" : ""} — answers name it.`);
+  }
+  return { written, notes };
+}
+
+export function jobTitlesFromLive(live) {
+  return (live.jobTitles || [])
+    .slice()
+    .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+    .map((row) => ({ ...unmap("job_title", row), id: row.content_key || slugify(row.name) }));
+}

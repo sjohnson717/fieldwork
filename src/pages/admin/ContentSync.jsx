@@ -4,10 +4,11 @@ import { loadContent, readContent, CONTENT_BRANCH } from "@/lib/content-source";
 import {
   planInstrument, applyPlan, planDiff, planScales, applyScales, contentFromLive, scalesFromLive, NEW_INSTRUMENT,
   planLibrary, applyLibrary, libraryFromLive, planResources, applyResources, resourcesFromLive,
+  planJobTitles, applyJobTitles, jobTitlesFromLive,
 } from "@/lib/content-apply";
 import {
   writeInstrument, writeScales, parseInstrument, validateInstrument,
-  writeLibrary, writeResources, FACETS,
+  writeLibrary, writeResources, writeJobTitles, FACETS,
 } from "@/lib/content-format";
 import { functionErrorMessage } from "@/lib/utils";
 
@@ -53,7 +54,7 @@ const statusLine = (plan) => {
 };
 
 const liveSnapshot = async () => {
-  const [instruments, activities, bands, sections, resources, scales, scaleOptions] = await Promise.all([
+  const [instruments, activities, bands, sections, resources, scales, scaleOptions, jobTitles] = await Promise.all([
     base44.entities.Instrument.list("sort_order"),
     base44.entities.Activity.list(),
     base44.entities.Band.list(),
@@ -61,8 +62,9 @@ const liveSnapshot = async () => {
     base44.entities.Resource.list("sort_order"),
     base44.entities.Scale.list("sort_order"),
     base44.entities.ScaleOption.list("sort_order"),
+    base44.entities.JobTitle.list("sort_order"),
   ]);
-  return { instruments, activities, bands, sections, resources, scales, scaleOptions };
+  return { instruments, activities, bands, sections, resources, scales, scaleOptions, jobTitles };
 };
 
 const download = (name, text) => {
@@ -94,7 +96,7 @@ export default function ContentSync({ onApplied = null }) {
     if (!keepApplied) { setApplied({}); setCommitted({}); }
     try {
       const loaded = await loadContent();
-      const { scales, instruments, problems, library, resources } = readContent(loaded.files);
+      const { scales, instruments, problems, library, resources, jobTitles } = readContent(loaded.files);
       const live = await liveSnapshot();
       // Shown rather than hidden behind a toggle: a difference is the result,
       // and the choice of which side is right cannot be made without reading
@@ -122,6 +124,12 @@ export default function ContentSync({ onApplied = null }) {
           differs: library.present
             ? FACETS.some((f) => loaded.files[`content/library/${f.toLowerCase()}.md`] !== libraryAppText()[`content/library/${f.toLowerCase()}.md`])
             : true,
+        },
+        jobTitles: {
+          ...jobTitles,
+          plan: jobTitles.present ? planJobTitles(jobTitles.rows, live) : null,
+          appText: writeJobTitles(jobTitlesFromLive(live)),
+          differs: !jobTitles.present || loaded.files["content/job-titles.md"] !== writeJobTitles(jobTitlesFromLive(live)),
         },
         resources: {
           ...resources,
@@ -188,6 +196,21 @@ export default function ContentSync({ onApplied = null }) {
     } catch (e) {
       console.error("Could not apply the library files", e);
       setError(e?.message || "Could not apply the library.");
+    }
+    setBusy("");
+    setProgress("");
+  };
+
+  const applyTheJobTitles = async () => {
+    setBusy("job-titles");
+    setError("");
+    try {
+      const res = await applyJobTitles(base44, compared.jobTitles.plan, { onProgress: setProgress });
+      setApplied((a) => ({ ...a, jobTitles: res }));
+      await compare({ keepApplied: true });
+    } catch (e) {
+      console.error("Could not apply the job titles", e);
+      setError(e?.message || "Could not apply the job titles.");
     }
     setBusy("");
     setProgress("");
@@ -472,6 +495,58 @@ export default function ContentSync({ onApplied = null }) {
               </p>
             )}
             {(applied.resources?.notes || []).slice(0, 5).map((n, i) => <p key={i} className="text-xs text-gray-500 mt-0.5">{n}</p>)}
+          </li>
+
+          <li className="px-6 py-4">
+            <div className="flex items-baseline justify-between gap-3">
+              <p className="text-sm font-semibold text-gray-800">
+                Job titles
+                <span className="ml-2 font-mono text-[11px] font-normal text-gray-400">job-titles.md</span>
+              </p>
+              <span className="flex items-baseline gap-3 shrink-0">
+                <span className="text-xs text-gray-400 tabular-nums">
+                  {!compared.jobTitles.present
+                    ? "not in the file yet"
+                    : compared.jobTitles.plan.writes > 0
+                      ? `${compared.jobTitles.plan.writes} to write`
+                      : compared.jobTitles.differs ? "the app differs" : "up to date"}
+                </span>
+                <button onClick={() => download("job-titles.md", compared.jobTitles.appText)} className="text-xs font-medium text-gray-500 hover:text-gray-800">
+                  Save file
+                </button>
+                {compared.jobTitles.present && compared.jobTitles.plan.writes > 0 && (
+                  <button onClick={applyTheJobTitles} disabled={!!busy} className="text-xs font-medium text-blue-600 hover:text-blue-800 disabled:opacity-50">
+                    {busy === "job-titles" ? `${progress || "Applying"}…` : "Apply"}
+                  </button>
+                )}
+                {compared.jobTitles.differs && (
+                  <button
+                    onClick={() => commit("job-titles", [{ path: "content/job-titles.md", text: compared.jobTitles.appText }], "Sync the job titles from the app")}
+                    disabled={!!busy}
+                    className="text-xs font-medium text-blue-600 hover:text-blue-800 disabled:opacity-50"
+                  >
+                    {busy === "job-titles" ? "Committing…" : compared.jobTitles.present ? "Commit" : "Commit to create"}
+                  </button>
+                )}
+              </span>
+            </div>
+            {/* A rename is the one thing here worth reading before it happens:
+                an activity's recommended owner and every answer ever given hold
+                the name as text, so nothing follows the title when it changes. */}
+            {compared.jobTitles.plan?.renames.map((r, i) => (
+              <p key={i} className="text-xs text-amber-700 mt-1">
+                "{r.from}" becomes "{r.to}". {r.activities === 0 ? "No activity recommends the old name" : `${r.activities} activit${r.activities === 1 ? "y" : "ies"} still recommend${r.activities === 1 ? "s" : ""} the old name`}, and answers already given keep it. Neither changes.
+              </p>
+            ))}
+            {applied.jobTitles && (
+              <p className="text-xs text-green-700 mt-1">{applied.jobTitles.written.titles} title{applied.jobTitles.written.titles === 1 ? "" : "s"} written.</p>
+            )}
+            {committed["job-titles"] && (
+              <p className="text-xs text-green-700 mt-1">
+                {committed["job-titles"].unchanged ? "The branch already had this." : <>Committed to {committed["job-titles"].branch}. <a href={committed["job-titles"].url} target="_blank" rel="noreferrer" className="underline">{committed["job-titles"].sha?.slice(0, 7)}</a></>}
+              </p>
+            )}
+            {(applied.jobTitles?.notes || []).map((n, i) => <p key={i} className="text-xs text-gray-500 mt-0.5">{n}</p>)}
           </li>
 
           {compared.instruments.map((entry) => {

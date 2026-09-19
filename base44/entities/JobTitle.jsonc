@@ -2,6 +2,10 @@
   "name": "JobTitle",
   "type": "object",
   "properties": {
+    "content_key": {
+      "type": "string",
+      "description": "The id this title has in content/job-titles.md. Renaming a title does not cascade: Activity.preferred_owner and Response.suggested_owner both hold the name as text, so a rename leaves those pointing at a title that no longer exists. The id is what lets a sync tell a rename from a new title, and so warn about it."
+    },
     "name": {
       "type": "string"
     },
