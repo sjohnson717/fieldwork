@@ -79,6 +79,12 @@ export default function InstrumentsPage({ focus = null, onApplied = null }) {
 
   return (
     <div className="p-8 max-w-3xl space-y-8">
+      {/* Above the list, because it is the screen's first question: are the app
+          and the files saying the same thing? Reading the instruments below
+          without knowing that is reading one of two answers and not knowing
+          which. */}
+      <ContentSync onApplied={async () => { await load(); await onApplied?.(); }} />
+
       <section className="bg-white rounded-xl border border-gray-200 overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-100">
           <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Instruments</h3>
@@ -148,8 +154,6 @@ export default function InstrumentsPage({ focus = null, onApplied = null }) {
           </ul>
         )}
       </section>
-
-      <ContentSync onApplied={async () => { await load(); await onApplied?.(); }} />
     </div>
   );
 }

@@ -90,6 +90,11 @@ export default function ContentSync({ onApplied = null }) {
       const loaded = await loadContent();
       const { scales, instruments, problems } = readContent(loaded.files);
       const live = await liveSnapshot();
+      // Shown rather than hidden behind a toggle: a difference is the result,
+      // and the choice of which side is right cannot be made without reading
+      // both values. Collapsing is still there for an instrument with a lot of
+      // them.
+      const opening = {};
       setCompared({
         loaded,
         live,
@@ -107,9 +112,12 @@ export default function ContentSync({ onApplied = null }) {
           // committed and a difference the writer would produce is a difference
           // worth showing, whatever caused it.
           const appText = row ? writeInstrument(contentFromLive(row, live)) : null;
-          return { ...i, row, appText, fileText: loaded.files[i.path], plan: planInstrument(i.content, live) };
+          const plan = planInstrument(i.content, live);
+          if (planDiff(plan).length) opening[i.content.key] = true;
+          return { ...i, row, appText, fileText: loaded.files[i.path], plan };
         }),
       });
+      setOpen(opening);
     } catch (e) {
       console.error("Could not compare the content files", e);
       setError(e?.message || "Could not read the content files.");
@@ -220,18 +228,19 @@ export default function ContentSync({ onApplied = null }) {
           disabled={comparing || !!busy}
           className="text-sm font-medium px-4 py-2 rounded-lg bg-[#3366FF] hover:bg-[#2952CC] text-white disabled:opacity-50 transition-colors"
         >
-          {comparing ? "Reading…" : compared ? "Check again" : "Compare with the files"}
+          {comparing ? "Reading…" : compared ? "Sync again" : "Sync with files"}
         </button>
       </div>
 
       <p className="text-xs text-gray-400 px-6 py-3 border-b border-gray-100">
         Each instrument is one file in content/instruments, edited here or on
-        GitHub. Comparing reads the files and says which field on which row
-        differs. Apply writes the file into the app, and never deletes a
-        question — Response rows key on it, so one dropped from a file is
-        reported instead. Commit writes what the app holds to the {CONTENT_BRANCH}{" "}
-        branch, which nothing rebuilds from. Save file is the same text as a
-        download, for committing by hand.
+        GitHub. Syncing reads the files and lists every field that differs, with
+        the app's value beside the file's — neither is automatically right, and
+        choosing is the point. Apply makes the file right, and never deletes a
+        question: Response rows key on it, so one dropped from a file is
+        reported instead. Commit makes the app right, writing to the{" "}
+        {CONTENT_BRANCH} branch, which nothing rebuilds from. Save file is that
+        same text as a download, for committing by hand.
       </p>
 
       {error && <p className="text-xs text-red-500 px-6 py-3">{error}</p>}
@@ -394,9 +403,20 @@ export default function ContentSync({ onApplied = null }) {
                           {d.action === "create" && <span className="ml-1 text-[10px] uppercase tracking-wide text-[#3366FF]">new</span>}
                         </dt>
                         {d.field && (
-                          <dd className="mt-0.5 space-y-0.5">
-                            <p className="text-gray-400 line-through decoration-gray-300">{short(d.from)}</p>
-                            <p className="text-gray-700">{short(d.to)}</p>
+                          <dd className="mt-0.5 space-y-1">
+                            {/* Labelled rather than struck through. A strikethrough
+                                says the file has won, and nothing here has decided
+                                that — Apply makes the file right, Commit makes the
+                                app right, and the person reading the two values is
+                                the one who knows which. */}
+                            <p className="flex gap-2">
+                              <span className="w-12 shrink-0 text-[10px] uppercase tracking-wide text-gray-400 pt-0.5">App</span>
+                              <span className="text-gray-700">{short(d.from)}</span>
+                            </p>
+                            <p className="flex gap-2">
+                              <span className="w-12 shrink-0 text-[10px] uppercase tracking-wide text-gray-400 pt-0.5">File</span>
+                              <span className="text-gray-700">{short(d.to)}</span>
+                            </p>
                           </dd>
                         )}
                       </div>
