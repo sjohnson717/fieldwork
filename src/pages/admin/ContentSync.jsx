@@ -2,7 +2,8 @@ import { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { loadContent, readContent, CONTENT_BRANCH } from "@/lib/content-source";
 import { planInstrument, applyPlan, planDiff, planScales, applyScales, contentFromLive, scalesFromLive, NEW_INSTRUMENT } from "@/lib/content-apply";
-import { writeInstrument, writeScales } from "@/lib/content-format";
+import { writeInstrument, writeScales, parseInstrument, validateInstrument } from "@/lib/content-format";
+import { functionErrorMessage } from "@/lib/utils";
 
 // Comparing the content files with the app, and applying one instrument at a
 // time after somebody has read what will change.
@@ -17,6 +18,13 @@ import { writeInstrument, writeScales } from "@/lib/content-format";
 // So: read first, apply one instrument, and nothing is guessed at. Every field
 // that changes is named with its old value beside its new one, because "14
 // fields have drifted" is true and useless.
+//
+// A difference is symmetric, and the screen says so. If a question's commentary
+// is one thing in the file and another in the app, neither of those facts makes
+// either side right — somebody edited one of them last and knows which. So a
+// difference offers both directions: Apply writes the file into the app, Commit
+// writes the app into the branch, and the choice belongs to whoever is looking
+// at the two values.
 
 const short = (v, n = 160) => {
   if (v === null || v === undefined || v === "") return "—";
@@ -69,6 +77,7 @@ export default function ContentSync({ onApplied = null }) {
   const [busy, setBusy] = useState("");
   const [progress, setProgress] = useState("");
   const [applied, setApplied] = useState({});
+  const [committed, setCommitted] = useState({});
 
   // `keepApplied` is for the re-read that follows an apply: the plan has to be
   // rebuilt from what the app now holds, but wiping what was just applied takes
@@ -76,7 +85,7 @@ export default function ContentSync({ onApplied = null }) {
   const compare = async ({ keepApplied = false } = {}) => {
     setComparing(true);
     setError("");
-    if (!keepApplied) setApplied({});
+    if (!keepApplied) { setApplied({}); setCommitted({}); }
     try {
       const loaded = await loadContent();
       const { scales, instruments, problems } = readContent(loaded.files);
@@ -85,8 +94,21 @@ export default function ContentSync({ onApplied = null }) {
         loaded,
         live,
         problems,
-        scales: { rows: scales, plan: planScales(scales, live) },
-        instruments: instruments.map((i) => ({ ...i, plan: planInstrument(i.content, live) })),
+        scales: {
+          rows: scales,
+          plan: planScales(scales, live),
+          appText: live.scales.length ? writeScales(scalesFromLive(live)) : null,
+          fileText: loaded.files["content/scales.md"] || null,
+        },
+        instruments: instruments.map((i) => {
+          const row = live.instruments.find((r) => r.key === i.content.key) || null;
+          // What the app would commit, compared with the file as text. Text
+          // rather than field by field, because it is the file that gets
+          // committed and a difference the writer would produce is a difference
+          // worth showing, whatever caused it.
+          const appText = row ? writeInstrument(contentFromLive(row, live)) : null;
+          return { ...i, row, appText, fileText: loaded.files[i.path], plan: planInstrument(i.content, live) };
+        }),
       });
     } catch (e) {
       console.error("Could not compare the content files", e);
@@ -132,13 +154,52 @@ export default function ContentSync({ onApplied = null }) {
     setProgress("");
   };
 
-  // The app's content as the file it would be committed as. Exact, and the same
-  // writer the app will push with, so this is a backup and a hand-commit path
-  // rather than a second format to keep in step.
+  // The app's content as the file it would be committed as. The same text the
+  // commit sends, so saving it and committing it cannot disagree.
   const saveFile = (entry) => {
-    const row = compared.live.instruments.find((i) => i.key === entry.content.key);
-    if (!row) return;
-    download(entry.path.split("/").pop(), writeInstrument(contentFromLive(row, compared.live)));
+    if (!entry.appText) return;
+    download(entry.path.split("/").pop(), entry.appText);
+  };
+
+  // The other direction: what the app holds, committed to the content branch.
+  //
+  // expectedSha is the commit this screen compared against. If the branch has
+  // moved since — somebody editing on GitHub, or another window of this screen
+  // — the function refuses and says so, rather than writing over whatever
+  // arrived in between. That refusal is the whole reason the sha is carried
+  // around.
+  const commit = async (key, files, message) => {
+    // Read back before it goes anywhere. The app will hold content the file
+    // format refuses — an active question typed into a section the instrument
+    // does not declare is the one that turned up, and it is asked of nobody,
+    // because the survey pages are built from the section list. Committing it
+    // would put a file on the branch that this same screen then refuses to
+    // read, which is a worse place to discover it than here.
+    const scaleKeys = compared.scales.rows.map((sc) => sc.id);
+    const refusals = files.flatMap((f) => {
+      if (!f.path.includes("/instruments/")) return [];
+      const { errors } = validateInstrument(parseInstrument(f.text), { scaleKeys });
+      return errors;
+    });
+    if (refusals.length) {
+      setError(`Not committed — the app holds content the file format refuses: ${refusals.join(" ")} Fix it with Edit content, then commit.`);
+      return;
+    }
+    setBusy(key);
+    setError("");
+    try {
+      const res = await base44.functions.invoke("syncContent", {
+        files,
+        message,
+        expectedSha: compared.loaded.source === "branch" ? compared.loaded.sha : undefined,
+      });
+      setCommitted((c) => ({ ...c, [key]: res.data }));
+      await compare({ keepApplied: true });
+    } catch (e) {
+      console.error("Could not commit the content file", e);
+      setError(functionErrorMessage(e, "Could not commit to the content branch."));
+    }
+    setBusy("");
   };
 
   return (
@@ -166,10 +227,11 @@ export default function ContentSync({ onApplied = null }) {
       <p className="text-xs text-gray-400 px-6 py-3 border-b border-gray-100">
         Each instrument is one file in content/instruments, edited here or on
         GitHub. Comparing reads the files and says which field on which row
-        differs; applying writes one instrument, and never deletes a question —
-        Response rows key on it, so one dropped from a file is reported instead.
-        Save file writes what the app holds, exactly as the file would be
-        committed.
+        differs. Apply writes the file into the app, and never deletes a
+        question — Response rows key on it, so one dropped from a file is
+        reported instead. Commit writes what the app holds to the {CONTENT_BRANCH}{" "}
+        branch, which nothing rebuilds from. Save file is the same text as a
+        download, for committing by hand.
       </p>
 
       {error && <p className="text-xs text-red-500 px-6 py-3">{error}</p>}
@@ -198,7 +260,11 @@ export default function ContentSync({ onApplied = null }) {
               <p className="text-sm font-semibold text-gray-800">Answer scales</p>
               <span className="flex items-baseline gap-3 shrink-0">
                 <span className="text-xs text-gray-400 tabular-nums">
-                  {compared.scales.plan.writes === 0 ? "up to date" : `${compared.scales.plan.writes} to write`}
+                  {compared.scales.plan.writes === 0
+                    ? compared.scales.appText && compared.scales.appText !== compared.scales.fileText
+                      ? "the app differs"
+                      : "up to date"
+                    : `${compared.scales.plan.writes} to write`}
                 </span>
                 {compared.scales.plan.writes > 0 && (
                   <button
@@ -209,8 +275,24 @@ export default function ContentSync({ onApplied = null }) {
                     {busy === "scales" ? `${progress || "Applying"}…` : "Apply"}
                   </button>
                 )}
+                {compared.scales.appText && compared.scales.appText !== compared.scales.fileText && (
+                  <button
+                    onClick={() => commit("scales", [{ path: "content/scales.md", text: compared.scales.appText }], "Sync the answer scales from the app")}
+                    disabled={!!busy}
+                    className="text-xs font-medium text-blue-600 hover:text-blue-800 disabled:opacity-50"
+                  >
+                    {busy === "scales" ? "Committing…" : "Commit"}
+                  </button>
+                )}
               </span>
             </div>
+            {committed.scales && (
+              <p className="text-xs text-green-700 mt-1">
+                {committed.scales.unchanged
+                  ? "The branch already had this."
+                  : <>Committed to {committed.scales.branch}. <a href={committed.scales.url} target="_blank" rel="noreferrer" className="underline">{committed.scales.sha?.slice(0, 7)}</a></>}
+              </p>
+            )}
             {applied.scales && (
               <p className="text-xs text-green-700 mt-1">
                 {applied.scales.written.scales} scale{applied.scales.written.scales === 1 ? "" : "s"} and {applied.scales.written.options} option{applied.scales.written.options === 1 ? "" : "s"} written.
@@ -224,6 +306,10 @@ export default function ContentSync({ onApplied = null }) {
             const diff = planDiff(plan);
             const isOpen = !!open[key];
             const result = applied[key];
+            const commitResult = committed[key];
+            // The app holds something the file does not say. Compared as text
+            // because text is what gets committed.
+            const differs = !!entry.appText && entry.appText !== entry.fileText;
             return (
               <li key={key} className="px-6 py-4">
                 <div className="flex items-baseline justify-between gap-3">
@@ -232,7 +318,10 @@ export default function ContentSync({ onApplied = null }) {
                     <span className="ml-2 font-mono text-[11px] font-normal text-gray-400">{entry.path.split("/").pop()}</span>
                   </p>
                   <span className="flex items-baseline gap-3 shrink-0">
-                    <span className="text-xs text-gray-400 tabular-nums">{statusLine(plan)}</span>
+                    <span className="text-xs text-gray-400 tabular-nums">
+                      {statusLine(plan)}
+                      {differs && plan.writes === 0 && plan.deletes.length === 0 && " · the app differs"}
+                    </span>
                     <button onClick={() => saveFile(entry)} disabled={!plan.instrumentId} className="text-xs font-medium text-gray-500 hover:text-gray-800 disabled:opacity-40">
                       Save file
                     </button>
@@ -246,8 +335,19 @@ export default function ContentSync({ onApplied = null }) {
                         onClick={() => applyInstrument(entry)}
                         disabled={!!busy}
                         className="text-xs font-medium text-blue-600 hover:text-blue-800 disabled:opacity-50"
+                        title="Write the file into the app"
                       >
                         {busy === key ? `${progress || "Applying"}…` : "Apply"}
+                      </button>
+                    )}
+                    {differs && (
+                      <button
+                        onClick={() => commit(key, [{ path: entry.path, text: entry.appText }], `Sync ${entry.content.name} from the app`)}
+                        disabled={!!busy}
+                        className="text-xs font-medium text-blue-600 hover:text-blue-800 disabled:opacity-50"
+                        title="Commit what the app holds to the content branch"
+                      >
+                        {busy === key ? "Committing…" : "Commit"}
                       </button>
                     )}
                   </span>
@@ -273,6 +373,14 @@ export default function ContentSync({ onApplied = null }) {
                       </ul>
                     )}
                   </div>
+                )}
+
+                {commitResult && (
+                  <p className="text-xs text-green-700 mt-1">
+                    {commitResult.unchanged
+                      ? "The branch already had this."
+                      : <>Committed to {commitResult.branch}. <a href={commitResult.url} target="_blank" rel="noreferrer" className="underline">{commitResult.sha?.slice(0, 7)}</a></>}
+                  </p>
                 )}
 
                 {isOpen && (
