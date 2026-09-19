@@ -256,6 +256,45 @@ function RatingButton({ options, value, onChange, colorMap }) {
 // distribution, and the median of that beats anyone's guess.
 const SECONDS_PER_ACTIVITY = 40;
 
+// The top of both intro cards: the mark, which engagement this is, and the
+// heading.
+//
+// One component because there were two copies of it, identical, on the
+// access-code card and the token card — the pair that greet a respondent who
+// arrives by a broadcast link and one who arrives by their own. Two copies of
+// a header is how a header drifts.
+//
+// The engagement's name sits beside the mark rather than under the heading. A
+// respondent often has a link and no memory of which of several assessments
+// it opens, and "Before we begin" answers nothing; the title carries the
+// instrument, the client, and which run this is. It is the same line, in the
+// same blue, that tops the summary they see at the end, so the page they
+// finish on names what the page they started on named.
+//
+// Falls back to the instrument for anything created before the naming
+// standard, and renders nothing at all rather than an empty line if neither
+// resolves.
+function IntroHeading({ assessment, instrument }) {
+  const label = assessment?.title || instrument?.name || "";
+  return (
+    <div className="mb-8">
+      <div className="flex items-center gap-3 mb-3">
+        <img
+          src="https://media.base44.com/images/public/6a29ff3bc8effbeb3d637555/9e97ff5e6_Quartzicon.png"
+          alt="Quartz Assessment"
+          className="h-10 w-10 shrink-0 object-contain"
+        />
+        {label && (
+          <p className="text-xs font-semibold text-blue-600 uppercase tracking-wide leading-snug">
+            {label}
+          </p>
+        )}
+      </div>
+      <h1 className="text-2xl font-bold text-gray-900">Before we begin</h1>
+    </div>
+  );
+}
+
 function IntroPurpose({ isPersonal, instrument, subject, activityCount, showOwnership, blurb }) {
   // An instrument describes itself. Its own words are the ones the facilitator
   // chose it by and the ones kept under review in the seed, so the intro cannot
@@ -1123,10 +1162,7 @@ export default function Assessment() {
       <div className="absolute inset-0" style={{ backgroundColor: "rgba(15, 40, 80, 0.35)" }} />
       <div className="relative z-10 w-full flex items-center justify-center p-4">
         <div className="bg-white/90 backdrop-blur-md border border-gray-200/60 rounded-2xl shadow-sm p-8 w-full max-w-md">
-          <div className="mb-8">
-            <img src="https://media.base44.com/images/public/6a29ff3bc8effbeb3d637555/9e97ff5e6_Quartzicon.png" alt="Quartz Assessment" className="h-10 w-10 mb-3 object-contain" />
-            <h1 className="text-2xl font-bold text-gray-900">Before we begin</h1>
-          </div>
+          <IntroHeading assessment={assessment} instrument={instrument} />
           <IntroPurpose
             isPersonal={isPersonal}
             instrument={instrument}
@@ -1209,10 +1245,7 @@ export default function Assessment() {
       <div className="absolute inset-0" style={{ backgroundColor: "rgba(15, 40, 80, 0.35)" }} />
       <div className="relative z-10 w-full flex items-center justify-center p-4">
         <div className="bg-white/90 backdrop-blur-md border border-gray-200/60 rounded-2xl shadow-sm p-8 w-full max-w-md">
-          <div className="mb-8">
-            <img src="https://media.base44.com/images/public/6a29ff3bc8effbeb3d637555/9e97ff5e6_Quartzicon.png" alt="Quartz Assessment" className="h-10 w-10 mb-3 object-contain" />
-            <h1 className="text-2xl font-bold text-gray-900">Before we begin</h1>
-          </div>
+          <IntroHeading assessment={assessment} instrument={instrument} />
           <IntroPurpose
             isPersonal={isPersonal}
             instrument={instrument}
