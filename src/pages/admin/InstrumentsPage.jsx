@@ -98,19 +98,44 @@ export default function InstrumentsPage({ focus = null, onApplied = null }) {
 
   // Everything an instrument carries, as it stands, in one file. The backup the
   // repository used to be, now that edits are made here rather than in a diff.
+  //
+  // "Everything" has to mean everything, and for a while it did not. Sections
+  // came out as a list of names while the prose attached to them — what a
+  // dimension is about, and the two paragraphs read when it is somebody's
+  // strongest or weakest — was left behind entirely. On the practice profile
+  // that is ten of its fifteen prose fields missing from its own backup, and
+  // the file looked complete, which is the worst way for a backup to be wrong.
+  //
+  // The instrument's own name, tagline and description are still absent, and
+  // that is deliberate rather than the same oversight: Apply source rewrites
+  // them from the seed on every run, so the repository is where they live and
+  // a copy here would be the stale one.
   const handleDownload = async () => {
     setDownloading(true);
     try {
-      const [rows, acts, bands, resources] = await Promise.all([
+      const [rows, acts, bands, resources, dimensions] = await Promise.all([
         base44.entities.Instrument.list("sort_order"),
         base44.entities.Activity.list(),
         base44.entities.Band.list(),
         base44.entities.Resource.list("sort_order"),
+        base44.entities.InstrumentSection.list("sort_order"),
       ]);
       const content = rows.filter((i) => i.question_source === "instrument").map((i) => ({
         key: i.key,
         name: i.name,
-        sections: i.sections || [],
+        // Objects rather than bare names, so a section carries its prose
+        // where it has any. The keys are omitted where there is none, which
+        // keeps the four instruments that have no dimensions reading as they
+        // did — a name and nothing invented around it.
+        sections: (i.sections || []).map((name) => {
+          const row = dimensions.find((d) => d.instrument_id === i.id && d.name === name);
+          return {
+            name,
+            ...(row?.blurb ? { blurb: row.blurb } : {}),
+            ...(row?.strong ? { strong: row.strong } : {}),
+            ...(row?.opportunity ? { opportunity: row.opportunity } : {}),
+          };
+        }),
         questions: orderQuestions(i, acts.filter((a) => (a.instrument_ids || []).includes(i.id))).map((q) => ({
           name: q.name,
           text: q.description || "",
