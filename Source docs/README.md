@@ -12,8 +12,11 @@ Nothing in this folder is loaded at build time or at run time.
 
 - `Fractional_CPO_Practice_Profile_Survey_Definition.docx` — the written
   definition behind the seventh instrument, seeded in
-  `src/lib/instrument-seed.js`. The scale differs from the document on purpose:
-  it was specified 1–5 and built four-point, 0–3, to match every other rating
-  scale in the app and to deny respondents a safe midpoint.
+  `src/lib/instrument-seed.js`. Two deliberate departures from it: the scale
+  was specified 1–5 and built four-point, 0–3, to match every other rating
+  scale in the app and to leave no safe midpoint; and its closing link points
+  at `/program/fractional-product-leadership`, which is a real page but the
+  wrong one — the bridge in `src/components/QuartzBridge.jsx` points at
+  `/program/quartz-product-leadership`.
 - `Posts.csv`, `Limericks.csv` — Wix blog exports behind the Resources library.
 - `customer-proof.md`, `stop-selling-at-trade-shows.md` — drafts.

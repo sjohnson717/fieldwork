@@ -36,7 +36,7 @@ export default function QuartzBridge() {
         {/* A real anchor with the address as its visible text, so the line
             survives being printed or pasted somewhere else. */}
         <a
-          href="https://www.productgrowthleaders.com/program/fractional-product-leadership"
+          href="https://www.productgrowthleaders.com/program/quartz-product-leadership"
           target="_blank"
           rel="noreferrer"
           className="text-blue-600 hover:text-blue-700 print:text-gray-600 print:no-underline break-words"
@@ -48,7 +48,7 @@ export default function QuartzBridge() {
           address underneath is clutter. On paper a link is a dead end without
           it. */}
       <p className="hidden print:block text-xs text-gray-500 mt-1 break-words">
-        www.productgrowthleaders.com/program/fractional-product-leadership
+        www.productgrowthleaders.com/program/quartz-product-leadership
       </p>
     </section>
   );
