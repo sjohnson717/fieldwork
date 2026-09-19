@@ -1,30 +1,35 @@
 import { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
-import { seedInstruments } from "@/lib/instrument-seed-apply";
-import { INSTRUMENT_SEED } from "@/lib/instrument-seed";
-import { orderQuestions } from "@/lib/instruments";
 import InstrumentEditor from "./InstrumentEditor";
+import ContentSync from "./ContentSync";
 
-// The six instruments: their content, edited here, and the button that brings
-// in any the app does not have yet.
+// The seven instruments: their content, edited here or in the content files,
+// and the panel that reconciles the two.
 //
-// The app is the master copy of an instrument's questions, commentary, bands,
-// and reading — opened with Edit content, in InstrumentEditor. The seed in
-// src/lib/instrument-seed.js used to be, and every change went through the
-// repository; it now brings a new instrument in, keeps the scales and the
-// instrument records current, and leaves alone any instrument that already has
-// questions. Download content is the backup that version control used to be.
+// An instrument's questions, commentary, bands, and reading are edited here with
+// Edit content, in InstrumentEditor, and equally in content/instruments/<key>.md
+// on GitHub. Neither one is the master copy. What makes that workable rather
+// than a race is that both ends write the same file through the same field map,
+// and Content files below compares them field by field before anything is
+// written — see ContentSync.
+//
+// Apply source and the JSON download are gone with the seed they belonged to.
+// Two writers for one field is the arrangement that produced the drift: a
+// spelling fixed in the seed reported "0 updated, 54 unchanged" and changed
+// nothing live, and a download that looked complete was missing ten prose
+// fields. There is one writer now, and Save file emits exactly the file the app
+// would commit.
 //
 // Super-admin only, matching the Library next to it and for the same reason:
 // these are authored content that every organization reads and nobody else
 // should be able to rewrite. A fractional CPO picks an instrument; they do not
 // get to edit the questions inside it.
 //
-// Applying is safe to repeat. Everything is matched on a stable key, so a
-// second run reports "unchanged" rather than doubling the library, and nothing
-// is ever deleted — a question that vanished from the seed is named in the
-// notes and left alone, because Response rows key on it and dropping it would
-// take its answers with it.
+// Applying is safe to repeat. Every row is matched on the content_key it keeps
+// across a rename, so a second run has nothing to do rather than doubling
+// anything, and a question the file no longer lists is named and left alone —
+// Response rows key on it, and deleting it would take its answers with it.
+//
 // `focus` comes from System Health's Open: an instrument to open, and the
 // question in it to point at.
 export default function InstrumentsPage({ focus = null, onApplied = null }) {
@@ -32,12 +37,7 @@ export default function InstrumentsPage({ focus = null, onApplied = null }) {
   const [counts, setCounts] = useState({});
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
-  const [applying, setApplying] = useState(false);
-  const [progress, setProgress] = useState("");
-  const [result, setResult] = useState(null);
-  const [applyError, setApplyError] = useState("");
   const [editing, setEditing] = useState(null);
-  const [downloading, setDownloading] = useState(false);
   // Opened once. Coming back from the editor reloads this page, and must not
   // open the same instrument again.
   const focusApplied = useRef(false);
@@ -72,102 +72,6 @@ export default function InstrumentsPage({ focus = null, onApplied = null }) {
     setLoading(false);
   };
 
-  const handleApply = async () => {
-    setApplying(true);
-    setApplyError("");
-    setResult(null);
-    setProgress("");
-    try {
-      const res = await seedInstruments(base44, { onProgress: setProgress });
-      setResult(res);
-      await load();
-      // The New Assessment panel reads its own copy of this list, loaded once
-      // when the admin shell mounted. Applying the seed is the one thing that
-      // can add an instrument to it, and without this the instrument that was
-      // just created is missing from the picker until the page is reloaded —
-      // which reads as the new instrument not working rather than as a stale
-      // list, because every other screen already shows it.
-      await onApplied?.();
-    } catch (e) {
-      console.error("Failed to apply the instrument seed", e);
-      setApplyError(e?.message || "Failed to apply the seed.");
-    }
-    setApplying(false);
-    setProgress("");
-  };
-
-  // Everything an instrument carries, as it stands, in one file. The backup the
-  // repository used to be, now that edits are made here rather than in a diff.
-  //
-  // "Everything" has to mean everything, and for a while it did not. Sections
-  // came out as a list of names while the prose attached to them — what a
-  // dimension is about, and the two paragraphs read when it is somebody's
-  // strongest or weakest — was left behind entirely. On the practice profile
-  // that is ten of its fifteen prose fields missing from its own backup, and
-  // the file looked complete, which is the worst way for a backup to be wrong.
-  //
-  // The instrument's own name, tagline and description are still absent, and
-  // that is deliberate rather than the same oversight: Apply source rewrites
-  // them from the seed on every run, so the repository is where they live and
-  // a copy here would be the stale one.
-  const handleDownload = async () => {
-    setDownloading(true);
-    try {
-      const [rows, acts, bands, resources, dimensions] = await Promise.all([
-        base44.entities.Instrument.list("sort_order"),
-        base44.entities.Activity.list(),
-        base44.entities.Band.list(),
-        base44.entities.Resource.list("sort_order"),
-        base44.entities.InstrumentSection.list("sort_order"),
-      ]);
-      const content = rows.filter((i) => i.question_source === "instrument").map((i) => ({
-        key: i.key,
-        name: i.name,
-        // Objects rather than bare names, so a section carries its prose
-        // where it has any. The keys are omitted where there is none, which
-        // keeps the four instruments that have no dimensions reading as they
-        // did — a name and nothing invented around it.
-        sections: (i.sections || []).map((name) => {
-          const row = dimensions.find((d) => d.instrument_id === i.id && d.name === name);
-          return {
-            name,
-            ...(row?.blurb ? { blurb: row.blurb } : {}),
-            ...(row?.strong ? { strong: row.strong } : {}),
-            ...(row?.opportunity ? { opportunity: row.opportunity } : {}),
-          };
-        }),
-        questions: orderQuestions(i, acts.filter((a) => (a.instrument_ids || []).includes(i.id))).map((q) => ({
-          name: q.name,
-          text: q.description || "",
-          section: q.section,
-          position: q.section_sort ?? null,
-          type: q.question_type || "rating",
-          commentary: q.commentary || "",
-          critical: !!q.critical,
-          required: !!q.required,
-          active: q.active !== false,
-          reading: resources.filter((r) => (r.activity_ids || []).includes(q.id)).map((r) => ({ title: r.title, url: r.url })),
-        })),
-        bands: bands.filter((b) => b.instrument_id === i.id)
-          .sort((a, b) => (a.min_score ?? 0) - (b.min_score ?? 0))
-          .map((b) => ({ name: b.name, min_score: b.min_score, max_score: b.max_score, advice: b.advice || "" })),
-      }));
-      const blob = new Blob([JSON.stringify({ exported: new Date().toISOString(), instruments: content }, null, 2)], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `quartz-instruments-${new Date().toISOString().slice(0, 10)}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-    } catch (e) {
-      console.error("Failed to download instrument content", e);
-      setApplyError("Could not download the content. Try again.");
-    }
-    setDownloading(false);
-  };
-
-  const seededCount = INSTRUMENT_SEED.instruments.length;
-  const line = (t) => `${t.created} added · ${t.updated} updated · ${t.unchanged} unchanged`;
 
   if (editing) {
     return <InstrumentEditor instrument={editing} focusQuestionId={focus?.instrumentId === editing.id ? focus.questionId : null} onBack={() => { setEditing(null); load(); }} />;
@@ -176,61 +80,21 @@ export default function InstrumentsPage({ focus = null, onApplied = null }) {
   return (
     <div className="p-8 max-w-3xl space-y-8">
       <section className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between gap-4">
-          <div>
-            <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Instruments</h3>
-            <p className="text-xs text-gray-400 mt-0.5">
-              {loading ? "Loading…" : `${instruments.length} in the app · ${seededCount} in the source`}
-            </p>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <button
-              onClick={handleDownload}
-              disabled={downloading || loading}
-              className="text-sm font-medium px-3 py-2 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-50 disabled:opacity-50 transition-colors"
-            >
-              {downloading ? "Preparing…" : "Download content"}
-            </button>
-            <button
-              onClick={handleApply}
-              disabled={applying}
-              className="text-sm font-medium px-4 py-2 rounded-lg bg-[#3366FF] hover:bg-[#2952CC] text-white disabled:opacity-50 transition-colors"
-            >
-              {applying ? (progress ? `${progress}…` : "Applying…") : "Apply source"}
-            </button>
-          </div>
+        <div className="px-6 py-4 border-b border-gray-100">
+          <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Instruments</h3>
+          <p className="text-xs text-gray-400 mt-0.5">
+            {loading ? "Loading…" : `${instruments.length} in the app`}
+          </p>
         </div>
 
         <p className="text-xs text-gray-400 px-6 py-3 border-b border-gray-100">
           Each instrument's questions, commentary, bands, and reading are edited
-          here — open one with Edit content. Apply source brings in any
-          instrument the app does not have yet and keeps the scales current; an
-          instrument that already has questions is left exactly as you edited
-          it. Reading already in Settings → Resources keeps your edits too.
-          Download content saves a copy of everything as it stands.
+          here — open one with Edit content. The same content is a file per
+          instrument in content/instruments, editable on GitHub; Content files
+          below compares the two and applies one at a time.
         </p>
 
         {loadError && <p className="text-xs text-red-500 px-6 py-3">{loadError}</p>}
-        {applyError && <p className="text-xs text-red-500 px-6 py-3">{applyError}</p>}
-
-        {result && (
-          <div className="px-6 py-4 border-b border-gray-100 bg-green-50/50 space-y-2">
-            <p className="text-xs font-semibold text-green-800 uppercase tracking-wide">Applied</p>
-            <dl className="text-xs text-gray-600 space-y-0.5">
-              {Object.entries(result.tally).map(([what, t]) => (
-                <div key={what} className="flex gap-2">
-                  <dt className="w-24 shrink-0 capitalize text-gray-500">{what}</dt>
-                  <dd className="tabular-nums">{line(t)}</dd>
-                </div>
-              ))}
-            </dl>
-            {result.notes.length > 0 && (
-              <ul className="text-xs text-gray-500 list-disc pl-4 space-y-0.5 pt-1">
-                {result.notes.map((n, i) => <li key={i}>{n}</li>)}
-              </ul>
-            )}
-          </div>
-        )}
 
         {loading ? (
           <div className="flex justify-center py-12">
@@ -238,7 +102,7 @@ export default function InstrumentsPage({ focus = null, onApplied = null }) {
           </div>
         ) : instruments.length === 0 ? (
           <p className="text-sm text-gray-400 text-center py-10">
-            Nothing yet. Apply the source to create them.
+            Nothing yet. Compare with the content files below, then apply them.
           </p>
         ) : (
           <ul className="divide-y divide-gray-50">
@@ -284,6 +148,8 @@ export default function InstrumentsPage({ focus = null, onApplied = null }) {
           </ul>
         )}
       </section>
+
+      <ContentSync onApplied={async () => { await load(); await onApplied?.(); }} />
     </div>
   );
 }

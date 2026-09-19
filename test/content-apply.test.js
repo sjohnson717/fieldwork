@@ -273,7 +273,9 @@ test("the whole loop: files in, files out, byte for byte", async () => {
 
   // The real scale rows, rather than the fake ids the other tests use.
   const live = () => ({ ...be.live(), ...liveScales() });
-  const names = ["chaos", "idea-reality", "portfolio-health", "product-success", "fractional-cpo-practice"];
+  // All seven, including the two whose questions come from the activity library
+  // and which therefore have no Question blocks at all.
+  const names = ["team-gap", "personal", "chaos", "idea-reality", "portfolio-health", "product-success", "fractional-cpo-practice"];
 
   for (const name of names) {
     const plan = planInstrument(parseInstrument(fileFor(name)), live());
@@ -292,4 +294,14 @@ test("the whole loop: files in, files out, byte for byte", async () => {
     assert.equal(writeInstrument(contentFromLive(row, live())), fileFor(name), `${name} did not come back out the same`);
   }
   assert.equal(writeScales(scalesFromLive(liveScales())), readFileSync(join(root, "content", "scales.md"), "utf8"));
+
+  // Only the dimensions that carry prose became rows: the practice profile's
+  // five. The other twenty-four sections are names in their instrument's own
+  // list, which is what the survey and the reports read.
+  assert.equal(be.store.InstrumentSection.length, 5);
+  assert.equal(be.store.Instrument.length, 7);
+  const teamGap = be.store.Instrument.find((i) => i.key === "team_gap");
+  assert.equal(teamGap.sections.length, 7, "a library instrument still declares its sections");
+  assert.equal(be.store.Activity.filter((a) => (a.instrument_ids || []).includes(teamGap.id)).length, 0,
+    "a library instrument's questions come from the activity library, not from a file");
 });

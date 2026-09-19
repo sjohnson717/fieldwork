@@ -8,11 +8,16 @@ import { scrollToRecord, FOCUS_RING } from "@/lib/focus-record";
 // One instrument's content, edited where it lives.
 //
 // The questions, their commentary, the bands, and the reading used to be
-// authored in src/lib/instrument-seed.js and pushed here by Apply source,
-// which meant every change went through the repository. They are edited here
-// now, and the app is the master copy: Apply source leaves an instrument alone
-// once it has questions, so nothing typed on this screen is reverted by the
-// next run.
+// authored in src/lib/instrument-seed.js, which meant every change went through
+// the repository. They are edited here now, and equally in
+// content/instruments/<key>.md — the same content, two ways in.
+//
+// Nothing typed here is reverted behind anybody's back: applying a file is a
+// diff somebody reads on the Instruments screen first, one instrument at a
+// time. What is typed here does not reach the file on its own either, so an
+// edit made on this screen and left alone will show up as a difference the next
+// time the two are compared. Save file, beside each instrument, writes what the
+// app holds as the file it would be committed as.
 //
 // Questions are never deleted while anything points at them — answers key on
 // them, and so do workshop notes. Retiring takes one out of the survey and the

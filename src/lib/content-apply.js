@@ -109,7 +109,18 @@ export function rowsFor(content, { scaleIdByKey }) {
   });
 
   const bands = content.bands.map((b, i) => ({ content: b, patch: { ...mapFields("band", b), sort_order: i } }));
-  const dimensions = content.dimensions.map((d, i) => ({ content: d, patch: { ...mapFields("dimension", d), sort_order: i } }));
+  // A dimension earns a row when it has prose to hold. Its name is already in
+  // the instrument's own section list, which is what the survey pages and the
+  // reports read, so a dimension block with nothing written under it is a
+  // heading rather than a record — and every section of the four Wix
+  // instruments and both library instruments is one of those. Twenty-odd empty
+  // rows that nothing reads is not a neutral cost: it is twenty-odd rows
+  // somebody has to understand later.
+  const dimensions = content.dimensions.map((d, i) => ({
+    content: d,
+    patch: { ...mapFields("dimension", d), sort_order: i },
+    prose: !!(d.blurb || d.strong || d.opportunity),
+  }));
 
   return { instrument, questions, bands, dimensions };
 }
@@ -179,8 +190,11 @@ export function planInstrument(content, live) {
     ["bands", bands, mine(live.bands || [])],
     ["dimensions", dimensions, mine(live.sections || [])],
   ]) {
-    for (const { content: c, patch } of rows) {
+    for (const { content: c, patch, prose } of rows) {
       const row = matcher(liveRows, liveRows, c.id, c.name);
+      // No prose and no row: nothing to write. A row that exists is kept in the
+      // plan, so prose deleted from a file is cleared rather than left behind.
+      if (prose === false && !row) continue;
       const full = { ...patch, content_key: c.id, instrument_id: selfId };
       plan[collection].push({
         id: c.id, name: c.name, rowId: row?.id || null, row,
@@ -523,10 +537,23 @@ export function contentFromLive(instrument, live) {
   const order = new Map([...declared, ...extra].map((n, i) => [n, i]));
   const at = (name) => (order.has(name) ? order.get(name) : order.size);
 
-  content.dimensions = (live.sections || [])
-    .filter((r) => r.instrument_id === iid)
-    .sort((a, b) => at(a.name) - at(b.name) || (a.sort_order ?? 0) - (b.sort_order ?? 0))
-    .map((r) => ({ ...unmap("dimension", r), id: r.content_key || slugify(r.name) }));
+  // From the instrument's own section list, which is the ordered, authoritative
+  // one, with the prose attached where a row holds any. Reading the rows instead
+  // would drop every section that has no prose — which is most of them, and was
+  // how a dimension came out of the old export as a bare name.
+  const sectionRows = (live.sections || []).filter((r) => r.instrument_id === iid);
+  // The declared list, plus any row that holds prose for a section the list has
+  // lost — never the sections that only a question names. Those are ordered
+  // after the declared ones and are not dimensions: writing them out as blocks
+  // would declare three retired comment boxes' sections as dimensions of the
+  // instrument.
+  const undeclaredWithProse = sectionRows.map((r) => r.name).filter((n) => !declared.includes(n));
+  content.dimensions = [...declared, ...new Set(undeclaredWithProse)].map((name) => {
+    const row = sectionRows.find((r) => r.name === name);
+    return row
+      ? { ...unmap("dimension", row), name, id: row.content_key || slugify(name) }
+      : { name, id: slugify(name) };
+  });
 
   content.questions = questionsHere
     .slice()
