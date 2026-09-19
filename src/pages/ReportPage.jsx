@@ -633,7 +633,14 @@ export default function ReportPage() {
   // branch threaded through this one. It sits after the gates deliberately: the
   // minimum-response rule is about protecting respondents, and it applies to
   // every instrument equally.
-  if (instrument && instrument.report_style === "distribution") {
+  //
+  // A dimension instrument reports as a distribution here too. The five-bar
+  // profile is one person's shape and belongs on their own copy; what a room
+  // of them produces is the same question-by-question spread every other
+  // fixed-question instrument produces, and averaging five dimensions across
+  // several practitioners would hide exactly the disagreement this report
+  // exists to show.
+  if (instrument && ["distribution", "dimension"].includes(instrument.report_style)) {
     return (
       <div className="min-h-screen bg-gray-50">
         <InstrumentReport

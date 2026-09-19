@@ -1,4 +1,4 @@
-// The six instruments, as data.
+// The seven instruments, as data.
 //
 // Generated from the Wix CMS exports and then hand-checked. This file was the
 // source of truth until September 2026; the app is now. Settings → Instruments
@@ -57,6 +57,18 @@
 // Retired, not removed, because Response rows key on the question and a delete
 // would take any answer to it with it. Restoring one is a matter of flipping
 // the flag back and applying the source again.
+
+// The seventh arrived differently from the six above: the Fractional CPO
+// Practice Profile was written here first rather than imported from Wix, and
+// it is the first instrument with `internal: true` — ours to run, never
+// offered to a customer organization in the New Assessment panel.
+//
+// It is also the first to band on a mean rather than a points total, and the
+// first with a `sections` block. Its report is five dimension scores rather
+// than one number, so each dimension needs prose of its own: what it is about,
+// and what to say to somebody who lands high or low in it. Those rows are
+// InstrumentSection, and like everything else here the seed only brings them
+// in — they are edited on Settings → Instruments afterwards.
 
 export const INSTRUMENT_SEED = {
   "scales": [
@@ -251,6 +263,31 @@ export const INSTRUMENT_SEED = {
         }
       ],
       "hint": null
+    },
+    {
+      "key": "consistency",
+      "name": "Consistency",
+      "hint": "how you typically work across your client engagements",
+      "unknown_label": null,
+      "unknown_treatment": "excluded",
+      "options": [
+        {
+          "label": "Consistently",
+          "points": 3
+        },
+        {
+          "label": "Usually",
+          "points": 2
+        },
+        {
+          "label": "Rarely",
+          "points": 1
+        },
+        {
+          "label": "Never",
+          "points": 0
+        }
+      ]
     }
   ],
   "instruments": [
@@ -386,6 +423,29 @@ export const INSTRUMENT_SEED = {
       "report_style": "distribution",
       "ask_ownership": false,
       "sort_order": 3,
+      "subject_label": null
+    },
+    {
+      "key": "fractional_cpo_practice",
+      "name": "Fractional CPO Practice Profile",
+      "tagline": "How repeatable is the practice around your expertise?",
+      "description": "You already know how to lead a product organization. But running a Fractional CPO practice requires something more: a repeatable way to diagnose client problems, align leaders around what needs to change, develop team capabilities, demonstrate improvement, and reuse what you've learned across engagements.\n\nThe Fractional CPO Practice Profile examines how well your consulting practice supports those activities today. This isn't an assessment of your product leadership expertise. It's a profile of the infrastructure around your expertise.\n\nFor each statement, consider how you typically work across your client engagements—not just your best client or your most recent one. Fifteen statements, about three minutes.\n\nYour answers are yours. We report what practitioners say only in aggregate, never attributed to you, your firm, or your clients.",
+      "sections": [
+        "DIAGNOSE",
+        "ALIGN",
+        "ENABLE",
+        "DEMONSTRATE",
+        "SCALE"
+      ],
+      "scale_keys": [
+        "consistency"
+      ],
+      "question_source": "instrument",
+      "report_style": "dimension",
+      "band_basis": "mean",
+      "internal": true,
+      "ask_ownership": false,
+      "sort_order": 7,
       "subject_label": null
     }
   ],
@@ -1017,6 +1077,231 @@ export const INSTRUMENT_SEED = {
       "critical": false,
       "required": false,
       "blog_id": ""
+    },
+    {
+      "label": "Repeatable Diagnosis",
+      "text": "I have a repeatable way to assess how a new client's product organization is operating.",
+      "instrument_keys": [
+        "fractional_cpo_practice"
+      ],
+      "section": "DIAGNOSE",
+      "section_sort": 1,
+      "sort": "01",
+      "question_type": "rating",
+      "scale_key": "consistency",
+      "commentary": "Most engagements begin with whatever the client happened to say in the first conversation, which means the starting point moves with the mood of the room. A repeatable assessment gives you the same starting point every time, and it gives the client something they can see for themselves rather than a conclusion they have to take on trust.",
+      "critical": false,
+      "required": true
+    },
+    {
+      "label": "From Concern to Problem",
+      "text": "I can turn a broad concern such as “product isn't working” into a specific set of problems that can be examined and prioritized.",
+      "instrument_keys": [
+        "fractional_cpo_practice"
+      ],
+      "section": "DIAGNOSE",
+      "section_sort": 2,
+      "sort": "02",
+      "question_type": "rating",
+      "scale_key": "consistency",
+      "commentary": "“Product isn't working” is a feeling, and nobody can prioritize a feeling. The work is turning it into a short list of specific problems with names and owners, because that is the first point at which a leadership team can disagree with you productively.",
+      "critical": false,
+      "required": true
+    },
+    {
+      "label": "Breadth of Diagnosis",
+      "text": "My diagnostic approach examines more than process—it helps me identify gaps in execution, ownership, skills, and organizational capability.",
+      "instrument_keys": [
+        "fractional_cpo_practice"
+      ],
+      "section": "DIAGNOSE",
+      "section_sort": 3,
+      "sort": "03",
+      "question_type": "rating",
+      "scale_key": "consistency",
+      "commentary": "Process is the easiest thing to look at and the least likely to be the whole answer. A diagnosis that stops there tends to prescribe ceremonies for problems that were really about who owns what, who knows how, and whether anyone has the time.",
+      "critical": false,
+      "required": true
+    },
+    {
+      "label": "Executive Readout",
+      "text": "I can present my findings in a form that helps executives and product leaders discuss the problems constructively.",
+      "instrument_keys": [
+        "fractional_cpo_practice"
+      ],
+      "section": "ALIGN",
+      "section_sort": 1,
+      "sort": "04",
+      "question_type": "rating",
+      "scale_key": "consistency",
+      "commentary": "Findings that are clear to you are not automatically discussable by a group, and a readout that lands like a verdict invites defence rather than decisions. The form matters as much as the content: evidence people can see the basis of gets argued with differently from an opinion delivered with authority.",
+      "critical": false,
+      "required": true
+    },
+    {
+      "label": "Facilitating Decisions",
+      "text": "I have repeatable ways to facilitate decisions about what needs to change, what matters most, and who should own it.",
+      "instrument_keys": [
+        "fractional_cpo_practice"
+      ],
+      "section": "ALIGN",
+      "section_sort": 2,
+      "sort": "05",
+      "question_type": "rating",
+      "scale_key": "consistency",
+      "commentary": "Agreeing that something is a problem is the cheap half. The expensive half is a room deciding what to do first and who owns it, and that rarely happens on its own—it happens because somebody ran a structure designed to produce a decision.",
+      "critical": false,
+      "required": true
+    },
+    {
+      "label": "Prioritized Improvements",
+      "text": "My engagements move clients from general concerns to a short list of specific, prioritized improvements.",
+      "instrument_keys": [
+        "fractional_cpo_practice"
+      ],
+      "section": "ALIGN",
+      "section_sort": 3,
+      "sort": "06",
+      "question_type": "rating",
+      "scale_key": "consistency",
+      "commentary": "The test of a diagnosis is what the client can act on the week after you present it. A short prioritized list is the artefact that survives the engagement; a comprehensive assessment carrying thirty findings usually does not.",
+      "critical": false,
+      "required": true
+    },
+    {
+      "label": "Ready Learning Materials",
+      "text": "When I identify a capability gap, I have learning or coaching materials I can use without creating them from scratch.",
+      "instrument_keys": [
+        "fractional_cpo_practice"
+      ],
+      "section": "ENABLE",
+      "section_sort": 1,
+      "sort": "07",
+      "question_type": "rating",
+      "scale_key": "consistency",
+      "commentary": "Finding a capability gap creates an obligation, and when the only way to meet it is to build a curriculum, the gap tends to get quietly downgraded to a recommendation. Having something ready is what lets you treat a skills gap as seriously as a process gap.",
+      "critical": false,
+      "required": true
+    },
+    {
+      "label": "Reusable Workshops",
+      "text": "I have reusable workshops, exercises, and facilitation materials that can be adapted to different clients.",
+      "instrument_keys": [
+        "fractional_cpo_practice"
+      ],
+      "section": "ENABLE",
+      "section_sort": 2,
+      "sort": "08",
+      "question_type": "rating",
+      "scale_key": "consistency",
+      "commentary": "Adapting a workshop takes an hour; building one takes a week. That difference decides whether a facilitated session is something you offer whenever it would help, or something you have to talk yourself into.",
+      "critical": false,
+      "required": true
+    },
+    {
+      "label": "Preparation Time",
+      "text": "I spend most of my preparation time understanding the client's situation rather than building slides, spreadsheets, exercises, or training materials.",
+      "instrument_keys": [
+        "fractional_cpo_practice"
+      ],
+      "section": "ENABLE",
+      "section_sort": 3,
+      "sort": "09",
+      "question_type": "rating",
+      "scale_key": "consistency",
+      "commentary": "Preparation time is the scarcest thing in a fractional practice, and production work is what usually eats it. Where that time actually goes is the most honest measure of how much infrastructure you have.",
+      "critical": false,
+      "required": true
+    },
+    {
+      "label": "Baseline at the Start",
+      "text": "At the beginning of an engagement, I establish a baseline that can be used to evaluate improvement later.",
+      "instrument_keys": [
+        "fractional_cpo_practice"
+      ],
+      "section": "DEMONSTRATE",
+      "section_sort": 1,
+      "sort": "10",
+      "question_type": "rating",
+      "scale_key": "consistency",
+      "commentary": "A baseline costs almost nothing at the start of an engagement and cannot be recovered afterwards. Without one, the case for what your work achieved rests on everyone's memory of how bad things were, and those memories tend to improve over time.",
+      "critical": false,
+      "required": true
+    },
+    {
+      "label": "Reassessment",
+      "text": "I have a repeatable way to reassess a client and show what has—and hasn't—improved.",
+      "instrument_keys": [
+        "fractional_cpo_practice"
+      ],
+      "section": "DEMONSTRATE",
+      "section_sort": 2,
+      "sort": "11",
+      "question_type": "rating",
+      "scale_key": "consistency",
+      "commentary": "Reassessment only means something if it asks the same questions the same way, which is why it depends on the diagnosis having been repeatable in the first place. It is also the most natural reason for a client to continue working with you, and it does not require you to ask.",
+      "critical": false,
+      "required": true
+    },
+    {
+      "label": "Evidence for What's Next",
+      "text": "The results of my work make it easier to have an evidence-based conversation about what the client should address next.",
+      "instrument_keys": [
+        "fractional_cpo_practice"
+      ],
+      "section": "DEMONSTRATE",
+      "section_sort": 3,
+      "sort": "12",
+      "question_type": "rating",
+      "scale_key": "consistency",
+      "commentary": "Every engagement ends with a question about what comes next, and it is usually answered with opinion. Evidence changes the character of that conversation from a pitch into a reading of where things now stand.",
+      "critical": false,
+      "required": true
+    },
+    {
+      "label": "Reusable Methods",
+      "text": "The methods, tools, and materials I use can be reused across clients with reasonable customization.",
+      "instrument_keys": [
+        "fractional_cpo_practice"
+      ],
+      "section": "SCALE",
+      "section_sort": 1,
+      "sort": "13",
+      "question_type": "rating",
+      "scale_key": "consistency",
+      "commentary": "Reuse is not standardization: the judgement stays bespoke, and the machinery around it does not have to be. The practical question is how much of your last engagement you could carry into the next one without apologising for it.",
+      "critical": false,
+      "required": true
+    },
+    {
+      "label": "Rights to Your IP",
+      "text": "I have the rights to use the intellectual property, frameworks, and materials on which my consulting practice depends.",
+      "instrument_keys": [
+        "fractional_cpo_practice"
+      ],
+      "section": "SCALE",
+      "section_sort": 2,
+      "sort": "14",
+      "question_type": "rating",
+      "scale_key": "consistency",
+      "commentary": "Plenty of independent practices run on frameworks and materials that came from somewhere else, and the question of who owns them only gets asked when something is at stake. It is worth knowing the answer before a client's legal team asks it.",
+      "critical": false,
+      "required": true
+    },
+    {
+      "label": "Peers to Call",
+      "text": "When I encounter a difficult client situation I haven't seen before, I have experienced product leaders I can turn to for perspective and advice.",
+      "instrument_keys": [
+        "fractional_cpo_practice"
+      ],
+      "section": "SCALE",
+      "section_sort": 3,
+      "sort": "15",
+      "question_type": "rating",
+      "scale_key": "consistency",
+      "commentary": "Independence removes the colleague you used to check a read with on the way out of a meeting. Replacing that deliberately is infrastructure too, even though it looks like a social arrangement rather than a tool.",
+      "critical": false,
+      "required": true
     }
   ],
   "bands": [
@@ -1075,6 +1360,38 @@ export const INSTRUMENT_SEED = {
       "max_score": 2,
       "sort": 4,
       "advice": "You should consider RETIRE (or spin down).\n\nYou already knew this in your bones. The survey just puts the data behind the feeling. Low usage, weak revenue, poor differentiation, and little sales enthusiasm = slow-motion failure.\n\nImplications:\n• Plan a customer migration or replacement\n• Stop new feature investment\n• Communicate an orderly and respectful roadmap to end-of-life\n• Redeploy resources to higher-impact products"
+    },
+    {
+      "instrument_key": "fractional_cpo_practice",
+      "name": "Systematic",
+      "min_score": 2.5,
+      "max_score": 3,
+      "sort": 1,
+      "advice": "Your Fractional CPO practice is supported by a systematic consulting infrastructure.\n\nYou have repeatable approaches for understanding a client organization, turning findings into decisions, developing capabilities, and demonstrating improvement. Your methods and materials can be reused across engagements without forcing every client into exactly the same process.\n\nAt this stage, the opportunity is less about creating infrastructure and more about refining it. Look at your individual profile for areas where you still rely heavily on personal effort, where your materials could be strengthened, or where additional resources and practitioner support could give you more leverage."
+    },
+    {
+      "instrument_key": "fractional_cpo_practice",
+      "name": "Established",
+      "min_score": 2,
+      "max_score": 2.49,
+      "sort": 2,
+      "advice": "You have established many of the practices needed to run a repeatable Fractional CPO practice, but some parts of your consulting infrastructure still depend heavily on you.\n\nYou probably have approaches and materials that work well in familiar situations. The challenge is consistency: making sure you can diagnose, facilitate, develop, and measure with the same confidence across different clients and different problems.\n\nLook at the individual dimensions in your profile. Your lowest areas are likely places where reusable tools, materials, or outside resources could free you to spend more time on the work clients actually hired you to do."
+    },
+    {
+      "instrument_key": "fractional_cpo_practice",
+      "name": "Developing",
+      "min_score": 1.25,
+      "max_score": 1.99,
+      "sort": 3,
+      "advice": "Your Fractional CPO practice is still developing the infrastructure needed to make your expertise repeatable across clients.\n\nYou may have strong approaches in some areas while relying on experience and improvisation in others. That can work—particularly when you're dealing with situations you've seen before—but it also means each new engagement may require more preparation, custom materials, and reinvention than it should.\n\nThe goal isn't to standardize your judgment. It's to standardize the things surrounding your judgment so you can spend more of your time diagnosing problems, coaching leaders, facilitating decisions, and helping organizations change."
+    },
+    {
+      "instrument_key": "fractional_cpo_practice",
+      "name": "Ad Hoc",
+      "min_score": 0,
+      "max_score": 1.24,
+      "sort": 4,
+      "advice": "Your Fractional CPO practice currently relies more on your personal experience and improvisation than on repeatable consulting infrastructure.\n\nThat's not necessarily a reflection of your product leadership expertise. In fact, experienced executives can operate this way surprisingly well because they've seen so many situations before. The cost is that every new client can begin to feel like a new consulting business: another assessment, another spreadsheet, another workshop, another deck.\n\nThe biggest opportunity is to identify which parts of your work can become systematic without making your consulting formulaic. Build or borrow the infrastructure around your expertise so your time stays focused on judgment, leadership, coaching, and change."
     }
   ],
   "resources": [
@@ -1328,6 +1645,48 @@ export const INSTRUMENT_SEED = {
         "Lost Deals"
       ],
       "slug": "unleashing-the-power-of-win-loss-analysis"
+    }
+  ],
+  "sections": [
+    {
+      "instrument_key": "fractional_cpo_practice",
+      "name": "DIAGNOSE",
+      "sort": 1,
+      "blurb": "Quickly understand what's really happening inside a client's product organization.",
+      "strong": "You have a consistent way to get inside a new organization and turn vague concerns into specific problems. That gives your engagements an evidence-based starting point rather than relying entirely on interviews, intuition, and whatever problem the loudest executive identified first.",
+      "opportunity": "Your diagnosis still depends heavily on your personal experience and the conversations you have when you arrive. Consider developing a repeatable way to examine execution, ownership, skills, and organizational capability so you can move more quickly from “something isn't working” to specific issues the leadership team can address."
+    },
+    {
+      "instrument_key": "fractional_cpo_practice",
+      "name": "ALIGN",
+      "sort": 2,
+      "blurb": "Turn diagnosis into shared understanding, priorities, and decisions.",
+      "strong": "You are able to turn findings into productive leadership conversations and decisions. Your clients are more likely to leave diagnosis with shared priorities, clearer ownership, and an actionable improvement agenda.",
+      "opportunity": "Your findings may be clear to you without consistently becoming shared decisions for the client. More structured executive readouts and facilitation approaches can help move the conversation from debating the diagnosis to deciding what to do about it."
+    },
+    {
+      "instrument_key": "fractional_cpo_practice",
+      "name": "ENABLE",
+      "sort": 3,
+      "blurb": "Help the organization develop the capabilities it needs without rebuilding everything yourself.",
+      "strong": "You have reusable ways to develop client capabilities without turning every engagement into a curriculum-development project. That lets you spend more of your preparation time on the client's actual situation.",
+      "opportunity": "Capability gaps are creating production work for you. Reusable workshops, exercises, learning materials, and coaching resources could reduce preparation time and let you focus more of your effort on interpretation, coaching, and change."
+    },
+    {
+      "instrument_key": "fractional_cpo_practice",
+      "name": "DEMONSTRATE",
+      "sort": 4,
+      "blurb": "Make improvement visible and create a natural path for continuing the engagement.",
+      "strong": "You have ways to establish a baseline and make improvement visible over time. That creates a stronger conversation about value delivered, remaining gaps, and appropriate next steps.",
+      "opportunity": "Your engagement may be producing useful change without making that change easy to see. Establishing a baseline and reassessing later can turn a list of activities and meetings into evidence of what improved—and what still needs attention."
+    },
+    {
+      "instrument_key": "fractional_cpo_practice",
+      "name": "SCALE",
+      "sort": 5,
+      "blurb": "Build a consulting practice that doesn't require you to reinvent your approach for every client.",
+      "strong": "Your practice is supported by reusable intellectual property, methods, and practitioner relationships. You can adapt to different clients without rebuilding the machinery of your practice every time.",
+      "opportunity": "Your practice still depends heavily on your personal time, custom materials, or intellectual property that may not be reusable across clients. Look for infrastructure you can build, license, or share so your expertise—not production work—remains the scarce resource."
     }
   ]
 };

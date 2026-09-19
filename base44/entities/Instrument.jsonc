@@ -52,10 +52,20 @@
       "enum": [
         "gap",
         "profile",
-        "distribution"
+        "distribution",
+        "dimension"
       ],
       "default": "distribution",
-      "description": "Which report this instrument produces. A facet wheel over importance-against-execution, a personal capability profile, and a per-question distribution are three different arguments, so they stay three renderers behind one route."
+      "description": "Which report this instrument produces. A facet wheel over importance-against-execution, a personal capability profile, a per-question distribution, and a five-dimension practice profile are four different arguments, so they stay four renderers behind one route. dimension is read on the respondent's own summary; on the admin side it is reported as a distribution like any other fixed-question instrument."
+    },
+    "band_basis": {
+      "type": "string",
+      "enum": [
+        "points",
+        "mean"
+      ],
+      "default": "points",
+      "description": "What a band's min_score and max_score are measured in. points: the total earned across the survey, which is how the four imported instruments have always banded. mean: the average points per answered question, which is what an instrument reporting on a 0-3 scale needs -- and it is also the honest one, because a total measures a skipped question as a low answer and an average leaves it out."
     },
     "subject_label": {
       "type": "string",
@@ -67,6 +77,11 @@
     "active": {
       "type": "boolean",
       "default": true
+    },
+    "internal": {
+      "type": "boolean",
+      "default": false,
+      "description": "Ours to run, never offered to a customer organization: it is filtered out of the New Assessment panel for anyone but a super-admin. A presentation rule and not a secret -- instrument content reads open so the unauthenticated survey can render it, so anything here is readable by anyone who asks the API for it."
     }
   },
   "required": [

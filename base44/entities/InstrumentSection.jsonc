@@ -1,0 +1,50 @@
+{
+  "name": "InstrumentSection",
+  "type": "object",
+  "properties": {
+    "instrument_id": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string",
+      "description": "Matches the section name its questions carry and the entry on Instrument.sections. That string is the join, so renaming a section means renaming it in all three places or the prose stops resolving."
+    },
+    "blurb": {
+      "type": "string",
+      "description": "One line saying what this dimension is about, read beside its bar on the respondent's report. Not shown during the survey, where the section name alone heads the page."
+    },
+    "strong": {
+      "type": "string",
+      "description": "What a high score in this dimension means, and what it earns the practitioner. Shown when the dimension is at or above the middle of the scale."
+    },
+    "opportunity": {
+      "type": "string",
+      "description": "What a low score means and what would change it. Shown below the middle of the scale. Written as an opportunity rather than a failing: the instrument profiles the infrastructure around somebody's expertise, not the expertise."
+    },
+    "sort_order": {
+      "type": "number"
+    }
+  },
+  "required": [
+    "instrument_id",
+    "name"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {},
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

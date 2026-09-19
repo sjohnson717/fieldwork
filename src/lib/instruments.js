@@ -49,7 +49,7 @@ export async function loadInstrument(assessment) {
     ? null
     : KEY_FOR_TYPE[assessment.assessment_type || "team_gap"] || "team_gap";
 
-  const [instruments, scales, options, bands] = await Promise.all([
+  const [instruments, scales, options, bands, sections] = await Promise.all([
     assessment.instrument_id
       ? base44.entities.Instrument.filter({ id: assessment.instrument_id })
       : base44.entities.Instrument.filter({ key: derivedKey }),
@@ -60,6 +60,14 @@ export async function loadInstrument(assessment) {
     // the bare unexplained number.
     assessment.instrument_id
       ? base44.entities.Band.filter({ instrument_id: assessment.instrument_id }, "sort_order")
+      : [],
+    // Fetched in the same round trip rather than on demand in the report,
+    // because Base44 calls spike to several seconds at random and this one
+    // would land on the page a respondent has just been thanked on. Only a
+    // dimension report reads them, and an assessment resolved by type is
+    // always team gap or personal, so neither case pays for the call.
+    assessment.instrument_id
+      ? base44.entities.InstrumentSection.filter({ instrument_id: assessment.instrument_id }, "sort_order")
       : [],
   ]);
   const instrument = instruments?.[0];
@@ -82,10 +90,21 @@ export async function loadInstrument(assessment) {
   // always readable bottom-to-top no matter what order it was authored in.
   const orderedBands = [...(bands || [])].sort((a, b) => (a.min_score ?? 0) - (b.min_score ?? 0));
 
+  // In the instrument's own section order rather than the order the rows come
+  // back in, so the bars read down the page in the order the survey asked
+  // them. A row whose name matches no section is dropped: it is prose with
+  // nothing to attach to, and a sixth bar under a heading no question carries
+  // would be worse than the paragraph going missing.
+  const sectionRank = new Map((instrument.sections || []).map((n, i) => [n, i]));
+  const orderedSections = (sections || [])
+    .filter((s) => sectionRank.has(s.name))
+    .sort((a, b) => sectionRank.get(a.name) - sectionRank.get(b.name));
+
   return {
     ...instrument,
     axes,
     bands: orderedBands,
+    sections_meta: orderedSections,
     // True when this was matched from assessment_type rather than stored on the
     // assessment. Nothing branches on it today; it is here so a later backfill
     // can be told what it would be changing.

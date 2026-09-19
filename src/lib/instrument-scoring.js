@@ -51,20 +51,136 @@ export function scoreFor(questions, answersByActivity, axis) {
   return { earned, possible, answered, of: rated.length };
 }
 
+// The average points per answered question — the same fraction `scoreFor`
+// returns, expressed on the scale the respondent answered on rather than as a
+// total. Null when nothing was answered, which is different from zero: zero is
+// a real score meaning the worst answer every time.
+export function meanFor(score) {
+  if (!score || !score.answered) return null;
+  return score.earned / score.answered;
+}
+
 // Which band a score falls in. Inclusive at both ends, and null when the score
 // is based on nothing — a band is a verdict, and there is nothing to give a
 // verdict on until somebody has answered something.
-export function bandFor(bands, score) {
+//
+// `basis` is the instrument's `band_basis` and defaults to the points total,
+// which is how the four imported instruments have always banded and what every
+// band row written before this argument existed holds.
+//
+// The mean basis exists because a total cannot be banded honestly on an
+// instrument that skips nothing by accident. Every other number in this file
+// leaves an unanswered question out of the numerator and the denominator
+// alike; a band compared against a total quietly puts it back in the
+// denominator, so somebody who answered thirteen of fifteen statements well is
+// measured against the boundary written for fifteen and drops a band for
+// having stopped early. On the mean they are measured against what they said.
+export function bandFor(bands, score, { basis = "points" } = {}) {
   if (!score || score.answered === 0) return null;
+  const value = basis === "mean" ? meanFor(score) : score.earned;
+  if (value === null) return null;
+
+  // A mean is continuous, and inclusive bounds cannot tile a continuous range
+  // exactly. A table written the way a reader reads one — 2.00–2.49 above
+  // 1.25–1.99 — leaves a hairline between every pair of bands, and a score
+  // landing in one would print no verdict at all: the same silent failure the
+  // bands were given numeric bounds to fix. So the mean climbs a ladder
+  // instead, taking the highest band whose floor it has reached, and
+  // `max_score` is what the editor validates and displays rather than what
+  // selects. Below the lowest floor is still no band, which is the one case
+  // that should stay empty.
+  if (basis === "mean") {
+    const rungs = bands
+      .filter((b) => typeof b.min_score === "number")
+      .sort((a, b) => a.min_score - b.min_score);
+    let found = null;
+    for (const b of rungs) if (value >= b.min_score) found = b;
+    return found;
+  }
+
   return (
     bands.find(
       (b) =>
         typeof b.min_score === "number" &&
         typeof b.max_score === "number" &&
-        score.earned >= b.min_score &&
-        score.earned <= b.max_score,
+        value >= b.min_score &&
+        value <= b.max_score,
     ) || null
   );
+}
+
+// One score per dimension, in the instrument's own section order.
+//
+// A dimension is three statements on this instrument, which is few enough that
+// the arithmetic has to be careful about what it leaves out: a dimension whose
+// three statements were all skipped is absent rather than zero, and one
+// answered twice out of three says so, so the report can show a bar it can
+// stand behind.
+//
+// `worst` travels with each one for the tie-break below. It is the lowest
+// single answer inside the dimension, which is the thing an average of three
+// hides — Consistently, Consistently, Never averages the same as three
+// Usuallys and is a different practice.
+export function dimensionScores(instrument, questions, answersByActivity, axis) {
+  const order = instrument.sections || [];
+  const points = pointsByLabel(axis);
+  return order
+    .map((name) => {
+      const mine = questions.filter((q) => q.section === name && q.question_type !== "text");
+      if (!mine.length) return null;
+      const score = scoreFor(mine, answersByActivity, axis);
+      const given = mine
+        .map((q) => points.get(answersByActivity[q.id]?.answer))
+        .filter((p) => p !== null && p !== undefined);
+      return {
+        name,
+        score,
+        mean: meanFor(score),
+        worst: given.length ? Math.min(...given) : null,
+      };
+    })
+    .filter(Boolean);
+}
+
+// The strongest dimension and the one with the most leverage in it.
+//
+// The document this instrument came from asks for both by name, and the reason
+// is that an overall average of fifteen statements hides a dimension that is
+// two points below the rest — which is exactly the finding worth paying for.
+//
+// Ties are common and are not smoothed over. Three statements on a four-point
+// scale give a dimension ten possible values, so two of five landing on the
+// same one is ordinary rather than remarkable. The tie-break is the lowest
+// single answer within the dimension, on the reasoning that a dimension
+// holding one Never has more in it to talk about than one holding three
+// Usuallys at the same average. Where even that ties, both names are returned
+// and the report says "areas" rather than picking a winner the numbers did not
+// pick — the same rule `distributionFor` follows when two answers tie for most
+// popular.
+export function dimensionCallouts(dimensions) {
+  const scored = dimensions.filter((d) => d.mean !== null);
+  if (scored.length < 2) return { strongest: [], leverage: [] };
+
+  const best = Math.max(...scored.map((d) => d.mean));
+  const worstMean = Math.min(...scored.map((d) => d.mean));
+
+  // A flat profile has no strongest area and no leverage opportunity, and
+  // saying so is more use than nominating one of five identical bars.
+  if (best === worstMean) return { strongest: [], leverage: [] };
+
+  const pick = (mean, prefer) => {
+    const tied = scored.filter((d) => d.mean === mean);
+    if (tied.length === 1) return tied;
+    const worsts = tied.map((d) => d.worst).filter((w) => w !== null);
+    if (!worsts.length) return tied;
+    const target = prefer === "low" ? Math.min(...worsts) : Math.max(...worsts);
+    return tied.filter((d) => d.worst === target);
+  };
+
+  return {
+    strongest: pick(best, "high"),
+    leverage: pick(worstMean, "low"),
+  };
 }
 
 // How a group answered one question.

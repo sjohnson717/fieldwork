@@ -188,7 +188,15 @@ export default function AdminPage() {
   const loadInstruments = async () => {
     try {
       const rows = await base44.entities.Instrument.list("sort_order");
-      setInstruments(rows.filter(i => i.active !== false));
+      // `internal` keeps one of ours out of a customer organization's choices
+      // — the Fractional CPO Practice Profile is run by us, on practitioners,
+      // and is not a thing a client's admin should be able to send their team.
+      //
+      // Presentation and not protection, and the difference matters: instrument
+      // content reads open so the unauthenticated survey can render it, so this
+      // hides the instrument from a list rather than hiding its questions from
+      // anybody. Nothing here is treated as confidential.
+      setInstruments(rows.filter(i => i.active !== false && (isAdmin || !i.internal)));
     } catch (e) {
       console.error("Could not load instruments", e);
       return;

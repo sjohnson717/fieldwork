@@ -1,9 +1,11 @@
-import { scoreFor, bandFor } from "@/lib/instrument-scoring";
+import { scoreFor, bandFor, dimensionScores, dimensionCallouts } from "@/lib/instrument-scoring";
 import { surveyNumbers } from "@/lib/instruments";
 import { capReading } from "@/lib/reading";
 import ResumeLink from "@/components/ResumeLink";
 import PrintCredit from "@/components/PrintCredit";
 import Commentary from "@/components/Commentary";
+import DimensionProfile from "@/components/DimensionProfile";
+import QuartzBridge from "@/components/QuartzBridge";
 
 // What one person sees when they finish one of the four imported instruments.
 //
@@ -89,13 +91,82 @@ export default function InstrumentSelfSummary({
   const axis = instrument.axes?.[0];
   const rated = questions.filter(q => q.question_type !== "text");
 
+  // The five-dimension profile, which is the deliverable on one instrument and
+  // nothing on the other four. Everything else on this page is shared, so it
+  // branches here rather than in a second copy of the whole summary.
+  const dimensional = instrument.report_style === "dimension";
+
   // The same number the facilitator's list and the team report show, so that
   // "number four" means one question in the room rather than three.
   const numbers = surveyNumbers(questions);
   const score = axis ? scoreFor(questions, responses, axis) : null;
-  const band = score ? bandFor(instrument.bands || [], score) : null;
+  const band = score ? bandFor(instrument.bands || [], score, { basis: instrument.band_basis }) : null;
+  const dimensions = dimensional && axis
+    ? dimensionScores(instrument, questions, responses, axis)
+    : [];
+  const callouts = dimensional
+    ? dimensionCallouts(dimensions)
+    : { strongest: [], leverage: [] };
 
   const answeredAny = rated.some(q => responses[q.id]?.answer);
+
+  // One answered question, with its commentary and reading. Extracted from
+  // the list below because a dimension report groups the same items under
+  // their dimension headings and a flat one does not, and two copies of this
+  // markup would drift the way the gap bar's two copies did.
+  const answerItem = (q) => {
+            const r = responses[q.id] || {};
+            const given = q.question_type === "text" ? r.answer_text : r.answer;
+            return (
+              <li key={q.id} className="break-inside-avoid">
+                <h3 className="text-sm font-semibold text-gray-800">
+                  {/* Written answers carry no number — they are gathered
+                      rather than discussed — so the heading keeps its place
+                      whether or not there is a figure in front of it. */}
+                  {numbers.has(q.id) && (
+                    <span className="text-gray-300 mr-2 tabular-nums">{numbers.get(q.id)}</span>
+                  )}
+                  {q.name}
+                </h3>
+                {q.description && <p className="text-sm text-gray-500 mt-0.5">{q.description}</p>}
+                <p className="text-sm mt-1.5">
+                  {given
+                    ? <><span className="text-gray-400">Your answer: </span><span className="font-medium text-blue-700">{given}</span></>
+                    : <span className="text-gray-400 italic">You skipped this one.</span>}
+                </p>
+                {/* The commentary explains the question, not the answer, which
+                    is why one paragraph serves whatever was chosen — and why
+                    it is worth showing even where somebody skipped.
+
+                    It sits in a panel with the reading that belongs to it:
+                    both are ours rather than theirs, and a reader scanning
+                    their own answers should be able to see at a glance which
+                    lines they wrote. */}
+                <Commentary text={q.commentary}>
+                  {/* Where to read more. On the person's own copy only — the
+                      team report carries none, because a reading list is advice
+                      to one reader rather than a finding about a room.
+
+                      A real anchor with the title as its text, so it survives
+                      being printed or pasted somewhere else. */}
+                  {readingFor(q.id).map(r => (
+                    <p key={r.id} className="text-sm mt-2">
+                      <a
+                        href={r.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-blue-600 hover:text-blue-700 print:text-gray-600 print:no-underline"
+                      >
+                        {r.title}
+                      </a>
+                      {r.source && <span className="text-gray-400"> · {r.source}</span>}
+                      {r.note && <span className="text-gray-400"> — {r.note}</span>}
+                    </p>
+                  ))}
+                </Commentary>
+              </li>
+            );
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 print-plain">
@@ -125,65 +196,45 @@ export default function InstrumentSelfSummary({
             for it. The score itself is gone from all four. */}
         {score && answeredAny && band && <Verdict score={score} band={band} />}
 
+        {/* Above the answers, because it is the finding and they are the
+            evidence for it. The bars come from the same numbers the band did,
+            so a profile with no answers in it renders nothing rather than five
+            empty rails. */}
+        {dimensional && (
+          <DimensionProfile
+            dimensions={dimensions}
+            sections={instrument.sections_meta || []}
+            callouts={callouts}
+          />
+        )}
+
         <section>
           <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-3">
             What you said
           </h2>
-          <ol className="space-y-6">
-            {questions.map(q => {
-              const r = responses[q.id] || {};
-              const given = q.question_type === "text" ? r.answer_text : r.answer;
-              return (
-                <li key={q.id} className="break-inside-avoid">
-                  <h3 className="text-sm font-semibold text-gray-800">
-                    {/* Written answers carry no number — they are gathered
-                        rather than discussed — so the heading keeps its place
-                        whether or not there is a figure in front of it. */}
-                    {numbers.has(q.id) && (
-                      <span className="text-gray-300 mr-2 tabular-nums">{numbers.get(q.id)}</span>
-                    )}
-                    {q.name}
-                  </h3>
-                  {q.description && <p className="text-sm text-gray-500 mt-0.5">{q.description}</p>}
-                  <p className="text-sm mt-1.5">
-                    {given
-                      ? <><span className="text-gray-400">Your answer: </span><span className="font-medium text-blue-700">{given}</span></>
-                      : <span className="text-gray-400 italic">You skipped this one.</span>}
-                  </p>
-                  {/* The commentary explains the question, not the answer, which
-                      is why one paragraph serves whatever was chosen — and why
-                      it is worth showing even where somebody skipped.
-
-                      It sits in a panel with the reading that belongs to it:
-                      both are ours rather than theirs, and a reader scanning
-                      their own answers should be able to see at a glance which
-                      lines they wrote. */}
-                  <Commentary text={q.commentary}>
-                    {/* Where to read more. On the person's own copy only — the
-                        team report carries none, because a reading list is advice
-                        to one reader rather than a finding about a room.
-
-                        A real anchor with the title as its text, so it survives
-                        being printed or pasted somewhere else. */}
-                    {readingFor(q.id).map(r => (
-                      <p key={r.id} className="text-sm mt-2">
-                        <a
-                          href={r.url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-blue-600 hover:text-blue-700 print:text-gray-600 print:no-underline"
-                        >
-                          {r.title}
-                        </a>
-                        {r.source && <span className="text-gray-400"> · {r.source}</span>}
-                        {r.note && <span className="text-gray-400"> — {r.note}</span>}
-                      </p>
-                    ))}
-                  </Commentary>
-                </li>
-              );
-            })}
-          </ol>
+          {/* Grouped under the dimension headings on the profile, flat on
+              the other four. The groups are what make the bars above
+              legible: a reader who wants to know why ENABLE is short reads
+              the three statements sitting under it, rather than hunting
+              them out of a list of fifteen. */}
+          {dimensional ? (
+            <div className="space-y-6">
+              {(instrument.sections || [])
+                .filter(name => questions.some(q => q.section === name))
+                .map(name => (
+                  <div key={name}>
+                    <h3 className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-3">{name}</h3>
+                    <ol className="space-y-6">
+                      {questions.filter(q => q.section === name).map(answerItem)}
+                    </ol>
+                  </div>
+                ))}
+            </div>
+          ) : (
+            <ol className="space-y-6">
+              {questions.map(answerItem)}
+            </ol>
+          )}
         </section>
 
         {/* Revising is offered here, not only promised by the link below.
@@ -195,6 +246,11 @@ export default function InstrumentSelfSummary({
             reported by then and a late change would move numbers already
             presented; looking back at your own answers stays available, which
             is the half that costs nobody anything. */}
+        {/* Last thing before the housekeeping: the reader has had the profile,
+            the two callouts, and every one of their own answers explained
+            before anything is offered to them. */}
+        {dimensional && <QuartzBridge />}
+
         {onRevise && !closed && (
           <div className="no-print flex items-center justify-between gap-4 bg-white rounded-xl border border-gray-200 p-5">
             <div>

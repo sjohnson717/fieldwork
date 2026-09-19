@@ -84,6 +84,7 @@ export async function seedInstruments(base44, { onProgress } = {}) {
     questions: { created: 0, updated: 0, unchanged: 0 },
     resources: { created: 0, updated: 0, unchanged: 0 },
     bands: { created: 0, updated: 0, unchanged: 0 },
+    sections: { created: 0, updated: 0, unchanged: 0 },
   };
   const notes = [];
   const say = (m) => { onProgress?.(m); };
@@ -139,6 +140,11 @@ export async function seedInstruments(base44, { onProgress } = {}) {
       scale_ids: inst.scale_keys.map((k) => scaleId.get(k)),
       ask_ownership: !!inst.ask_ownership,
       report_style: inst.report_style,
+      // Defaulted here rather than left to the schema, so re-applying an
+      // instrument that predates either field writes the value the seed says
+      // instead of leaving whatever the record happens to hold.
+      band_basis: inst.band_basis || "points",
+      internal: !!inst.internal,
       subject_label: inst.subject_label || undefined,
       sort_order: inst.sort_order,
       active: true,
@@ -364,11 +370,61 @@ export async function seedInstruments(base44, { onProgress } = {}) {
       }, tally.bands);
   }
 
+  // ── Dimensions ───────────────────────────────────────────────────────
+  //
+  // The prose a dimension report reads instead of a bare bar: what the
+  // dimension is about, and the two paragraphs for landing high or low in it.
+  //
+  // Matched on the section's name within its instrument, which is the same
+  // string its questions carry and the same string `Instrument.sections`
+  // orders the survey by. Renaming a dimension therefore means renaming it in
+  // all three, and the Instruments screen is where that happens together.
+  //
+  // Adopted instruments are skipped exactly as their questions and bands are:
+  // once the app holds the content, re-applying would revert what was written
+  // there.
+  say("Dimensions");
+  const existingSections = await e.InstrumentSection.list();
+  for (const sec of seed.sections || []) {
+    const iid = instrumentId.get(sec.instrument_key);
+    if (!iid || adopted.has(iid)) {
+      tally.sections.unchanged++;
+      continue;
+    }
+    await upsert(e.InstrumentSection, existingSections,
+      (r) => r.instrument_id === iid && r.name === sec.name,
+      {
+        instrument_id: iid,
+        name: sec.name,
+        blurb: sec.blurb || undefined,
+        strong: sec.strong || undefined,
+        opportunity: sec.opportunity || undefined,
+        sort_order: sec.sort,
+      }, tally.sections);
+  }
+
   // Content gaps worth naming on the screen rather than leaving to be noticed
   // in a client's report.
   if (adoptedKeys.size) {
     const names = seed.instruments.filter((i) => adoptedKeys.has(i.key)).map((i) => i.name);
     notes.push(`Edited in the app, so left as they are: ${names.join(", ")} — their questions, bands, and reading.`);
+  }
+  // A dimension report with no prose for a dimension prints a bar and a
+  // heading and nothing that explains either, which reads as a bug rather than
+  // as content still to write. Said here instead.
+  const sectionsNow = (seed.instruments || []).some((i) => i.report_style === "dimension")
+    ? await e.InstrumentSection.list()
+    : [];
+  for (const inst of seed.instruments) {
+    if (inst.report_style !== "dimension") continue;
+    const iid = instrumentId.get(inst.key);
+    const have = new Set(
+      sectionsNow
+        .filter((r) => r.instrument_id === iid && r.strong && r.opportunity)
+        .map((r) => r.name),
+    );
+    const missing = (inst.sections || []).filter((n) => !have.has(n));
+    if (missing.length) notes.push(`${inst.name}: ${missing.join(", ")} ${missing.length === 1 ? "has" : "have"} no dimension commentary yet.`);
   }
   for (const inst of seed.instruments) {
     if (inst.question_source !== "instrument" || adoptedKeys.has(inst.key)) continue;

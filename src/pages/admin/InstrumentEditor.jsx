@@ -34,8 +34,32 @@ const topPoints = (axis) => {
 // Where the bands fail to cover every possible score exactly once. A score
 // that lands in no band prints no verdict; two bands claiming it print
 // whichever sorts first. Both are silent in a report, so they are said here.
-export function bandProblems(bands, max) {
+//
+// On the mean basis there is no such thing as the next score up: the value is
+// an average on the scale the survey was answered on, so the whole-number
+// arithmetic below would report a hole between 1.99 and 2.00 that no reader
+// could fall into. `bandFor` climbs the sorted floors there instead of looking
+// for containment, which makes gaps impossible and leaves overlaps and a floor
+// above the bottom of the scale as the only two things worth saying.
+export function bandProblems(bands, max, basis = "points") {
   if (!bands.length || max === null) return [];
+  if (basis === "mean") {
+    const sorted = [...bands].sort((a, b) => (a.min_score ?? 0) - (b.min_score ?? 0));
+    const problems = [];
+    if ((sorted[0].min_score ?? 0) > 0) problems.push(`Averages below ${sorted[0].min_score} fall in no band.`);
+    for (let i = 0; i < sorted.length - 1; i++) {
+      const a = sorted[i];
+      const b = sorted[i + 1];
+      if (typeof a.max_score === "number" && b.min_score <= a.max_score) {
+        problems.push(`${a.name} runs to ${a.max_score} and ${b.name} starts at ${b.min_score}. ${b.name} wins the overlap.`);
+      }
+    }
+    const last = sorted[sorted.length - 1];
+    if (typeof last.max_score === "number" && last.max_score > max) {
+      problems.push(`${last.name} runs to ${last.max_score}, past the highest average of ${max}.`);
+    }
+    return problems;
+  }
   const sorted = [...bands].sort((a, b) => (a.min_score ?? 0) - (b.min_score ?? 0));
   const problems = [];
   if ((sorted[0].min_score ?? 0) > 0) problems.push(`Scores 0–${sorted[0].min_score - 1} fall in no band.`);
@@ -122,6 +146,9 @@ export default function InstrumentEditor({ instrument, onBack, focusQuestionId =
   const [draft, setDraft] = useState(EMPTY_QUESTION);
   const [editingBand, setEditingBand] = useState(null);
   const [bandDraft, setBandDraft] = useState(null);
+  const [dimensions, setDimensions] = useState([]);
+  const [editingDimension, setEditingDimension] = useState(null);
+  const [dimensionDraft, setDimensionDraft] = useState(null);
   const [deleting, setDeleting] = useState(null);
 
   useEffect(() => { load(); }, [instrument.id]);
@@ -140,6 +167,7 @@ export default function InstrumentEditor({ instrument, onBack, focusQuestionId =
       ]);
       setQuestions(all.filter((a) => (a.instrument_ids || []).includes(instrument.id)));
       setBands(loaded?.bands || []);
+      setDimensions(loaded?.sections_meta || []);
       setAxis(loaded?.axes?.[0] || null);
       setResources(res);
       setUsage(usageRes?.data?.usage || null);
@@ -164,8 +192,14 @@ export default function InstrumentEditor({ instrument, onBack, focusQuestionId =
 
   const top = topPoints(axis);
   const ratedCount = questions.filter((q) => q.active !== false && q.question_type !== "text").length;
-  const maxScore = top === null ? null : top * ratedCount;
-  const problems = bandProblems(bands, maxScore);
+  // Two different maximums, because two different things are banded. A points
+  // instrument bands the total earned across the survey, so its ceiling moves
+  // every time a question is added or retired. A mean instrument bands the
+  // average answer, so its ceiling is the best answer on the scale and adding
+  // a question does not move it at all.
+  const meanBasis = instrument.band_basis === "mean";
+  const maxScore = top === null ? null : (meanBasis ? top : top * ratedCount);
+  const problems = bandProblems(bands, maxScore, instrument.band_basis);
 
   // Numbered as the survey numbers them: live questions only, in order.
   const numbers = new Map();
@@ -313,9 +347,17 @@ export default function InstrumentEditor({ instrument, onBack, focusQuestionId =
   const saveBand = () => run(async () => {
     const min = Number(bandDraft.min_score);
     const max = Number(bandDraft.max_score);
+    // Whole numbers on a points instrument, where the score is a count and
+    // "7.5 correct" means nothing. Decimals on a mean instrument, where the
+    // boundaries are averages and 2.49 is the whole point.
+    const wellFormed = meanBasis
+      ? Number.isFinite(min) && Number.isFinite(max)
+      : Number.isInteger(min) && Number.isInteger(max);
     if (!bandDraft.name.trim() || bandDraft.min_score.trim() === "" || bandDraft.max_score.trim() === "" ||
-        !Number.isInteger(min) || !Number.isInteger(max) || min < 0 || max < min) {
-      setError("A band needs a name and two whole-number scores, the lower one first.");
+        !wellFormed || min < 0 || max < min) {
+      setError(meanBasis
+        ? "A band needs a name and two average scores, the lower one first."
+        : "A band needs a name and two whole-number scores, the lower one first.");
       return;
     }
     const updated = await base44.entities.Band.update(editingBand, {
@@ -325,7 +367,48 @@ export default function InstrumentEditor({ instrument, onBack, focusQuestionId =
     setEditingBand(null);
   }, "Could not save the band.");
 
-  const addsPoints = top !== null && bands.length > 0
+  // Only on a points instrument. On a mean the bands are expressed in answers
+  // rather than in totals, so a new question changes what the average is drawn
+  // from and not the range it can land in — there is nothing to check.
+  // Dimension prose. Created on demand rather than seeded empty, because a
+  // section with nothing written for it should leave the report quiet rather
+  // than carry a blank row: the report drops what it cannot resolve, and an
+  // empty string resolves.
+  const startDimension = (name) => {
+    setEditingId(null);
+    setEditingBand(null);
+    const row = dimensions.find((d) => d.name === name);
+    setEditingDimension(name);
+    setDimensionDraft({
+      blurb: row?.blurb || "",
+      strong: row?.strong || "",
+      opportunity: row?.opportunity || "",
+    });
+  };
+  const saveDimension = () => run(async () => {
+    const name = editingDimension;
+    const row = dimensions.find((d) => d.name === name);
+    const patch = {
+      instrument_id: instrument.id,
+      name,
+      blurb: dimensionDraft.blurb.trim(),
+      strong: dimensionDraft.strong.trim(),
+      opportunity: dimensionDraft.opportunity.trim(),
+      sort_order: (instrument.sections || []).indexOf(name) + 1,
+    };
+    const saved = row
+      ? await base44.entities.InstrumentSection.update(row.id, patch)
+      : await base44.entities.InstrumentSection.create(patch);
+    setDimensions((prev) => {
+      const without = prev.filter((d) => d.name !== name);
+      return [...without, saved].sort(
+        (a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0),
+      );
+    });
+    setEditingDimension(null);
+  }, "Could not save the dimension.");
+
+  const addsPoints = top !== null && bands.length > 0 && !meanBasis
     ? `Adding a rated question raises the maximum score from ${maxScore} to ${maxScore + top}. Check the bands below cover the new range.`
     : null;
 
@@ -440,12 +523,83 @@ export default function InstrumentEditor({ instrument, onBack, focusQuestionId =
               </div>
             ))}
 
+            {/* The prose a five-bar report reads instead of a bare bar:
+                what a dimension is about, and what to say to somebody who
+                lands high or low in it. Only where the instrument reports
+                that way; the other six have one verdict and no dimensions. */}
+            {meanBasis && instrument.report_style === "dimension" && (
+              <div className="px-6 py-5 border-b border-gray-100">
+                <h3 className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-1">Dimensions</h3>
+                <p className="text-xs text-gray-400 mb-3">
+                  Each dimension shows a bar on the respondent's own copy. The strongest and the
+                  weakest are called out by name, and these are the words that go with them.
+                </p>
+                <ul className="space-y-2">
+                  {sections.map((name) => {
+                    const row = dimensions.find((d) => d.name === name);
+                    const writing = editingDimension === name;
+                    return (
+                      <li key={name} className="border border-gray-100 rounded-lg">
+                        {writing ? (
+                          <div className="p-4 space-y-3 bg-blue-50/40">
+                            <p className="text-xs font-bold uppercase tracking-widest text-gray-500">{name}</p>
+                            <div>
+                              <label className={labelClass}>What this dimension is about</label>
+                              <input autoFocus value={dimensionDraft.blurb}
+                                onChange={(e) => setDimensionDraft((d) => ({ ...d, blurb: e.target.value }))}
+                                className={inputClass} />
+                            </div>
+                            <div>
+                              <label className={labelClass}>Strong — read when this is their best dimension</label>
+                              <textarea rows={3} value={dimensionDraft.strong}
+                                onChange={(e) => setDimensionDraft((d) => ({ ...d, strong: e.target.value }))}
+                                className={`${inputClass} resize-y`} />
+                            </div>
+                            <div>
+                              <label className={labelClass}>Opportunity — read when this is their weakest</label>
+                              <textarea rows={3} value={dimensionDraft.opportunity}
+                                onChange={(e) => setDimensionDraft((d) => ({ ...d, opportunity: e.target.value }))}
+                                className={`${inputClass} resize-y`} />
+                            </div>
+                            <div className="flex gap-2">
+                              <button onClick={saveDimension} disabled={busy}
+                                className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-medium px-4 py-1.5 rounded-lg transition-colors">
+                                {busy ? "Saving…" : "Save"}
+                              </button>
+                              <button onClick={() => setEditingDimension(null)} className="text-sm text-gray-400 hover:text-gray-600 px-2">Cancel</button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex items-baseline gap-3 px-4 py-3">
+                            <span className="text-xs font-bold uppercase tracking-widest text-gray-500 w-28 shrink-0">{name}</span>
+                            <div className="flex-1 min-w-0">
+                              {row?.blurb
+                                ? <p className="text-sm text-gray-700">{row.blurb}</p>
+                                : <p className="text-sm text-amber-700">Nothing written for this dimension yet.</p>}
+                              {row?.strong && <p className="text-xs text-gray-500 mt-1 leading-relaxed"><span className="font-semibold text-gray-600">Strong. </span>{row.strong}</p>}
+                              {row?.opportunity && <p className="text-xs text-gray-500 mt-1 leading-relaxed"><span className="font-semibold text-gray-600">Opportunity. </span>{row.opportunity}</p>}
+                            </div>
+                            <button onClick={() => startDimension(name)} disabled={busy}
+                              className="text-xs text-blue-600 hover:text-blue-800 px-2 py-1 shrink-0 disabled:opacity-50">
+                              {row ? "Edit" : "Write"}
+                            </button>
+                          </div>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            )}
+
             {bands.length > 0 && (
               <div className="px-6 py-5">
                 <h3 className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-1">Bands</h3>
                 <p className="text-xs text-gray-400 mb-3">
                   The verdict on a respondent's own copy, chosen by where their score falls.
-                  {maxScore !== null ? ` Scores run from 0 to ${maxScore}.` : ""}
+                  {maxScore === null ? "" : meanBasis
+                    ? ` Scored on the average answer, which runs from 0 to ${maxScore}. A score takes the highest band it has reached, so the bands cannot leave a gap between them.`
+                    : ` Scores run from 0 to ${maxScore}.`}
                 </p>
                 {problems.length > 0 && (
                   <ul className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-3 space-y-0.5" role="status">
@@ -485,7 +639,15 @@ export default function InstrumentEditor({ instrument, onBack, focusQuestionId =
                         </div>
                       ) : (
                         <div className="flex items-baseline gap-3 px-4 py-3">
-                          <span className="text-xs font-semibold text-gray-500 w-14 shrink-0 tabular-nums">{b.min_score}–{b.max_score}</span>
+                          {/* Two decimals on a mean, so a column of bounds
+                              lines up and 2 does not read as a different kind
+                              of number from 2.49. Left alone on a points
+                              instrument, where the scores are counts. */}
+                          <span className="text-xs font-semibold text-gray-500 w-16 shrink-0 tabular-nums">
+                            {meanBasis
+                              ? `${Number(b.min_score).toFixed(2)}–${Number(b.max_score).toFixed(2)}`
+                              : `${b.min_score}–${b.max_score}`}
+                          </span>
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-semibold text-gray-900">{b.name}</p>
                             {b.advice && <p className="text-xs text-gray-500 mt-1 leading-relaxed">{b.advice}</p>}

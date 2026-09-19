@@ -262,6 +262,29 @@ Token strength matters here. `buyer_token`, `team_token` and the per-respondent
 token are `crypto.randomUUID()`. `access_code` is deliberately short so it can
 be read aloud to a room — treat it as a convenience credential, not a secret.
 
+## Instrument content reads open, and `internal` is not a secret
+
+`Instrument`, `Scale`, `ScaleOption`, `Band` and `InstrumentSection` all read
+open. They have to: the survey at `/assess` and a respondent's own summary are
+unauthenticated, and what these five hold is the questions, the answer options,
+and the prose printed under them — everything the reader is about to be shown
+anyway. Nothing about a person, an assessment or an answer travels with them,
+which is why they are fetched directly rather than through `publicAssessment`.
+
+`Instrument.internal` is therefore a presentation rule and nothing more. It
+keeps an instrument out of the New Assessment panel for anyone but a
+super-admin, so a customer organization is never offered one of ours to run.
+It does not hide the questions from anybody who asks the API for them, and it
+must never be treated as though it does: the flag says "not for sale here", not
+"confidential".
+
+`InstrumentSection` is the third place a section name is written — the other
+two are `Activity.section` on each question and the entry in
+`Instrument.sections` that orders the survey's pages. That string is the join.
+Renaming a dimension means renaming it in all three or its prose silently stops
+resolving, which costs a paragraph on the report rather than an error, so the
+Instruments screen renames all three together.
+
 ## Why deleting an assessment goes through a function
 
 The child entities — `Response`, `Respondent`, `DiscussionNote`,

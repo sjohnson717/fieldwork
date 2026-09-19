@@ -213,7 +213,20 @@ export default function InstrumentsPage({ focus = null }) {
             {instruments.map(i => (
               <li key={i.id} className="px-6 py-4">
                 <div className="flex items-baseline justify-between gap-3">
-                  <p className="text-sm font-semibold text-gray-800">{i.name}</p>
+                  <p className="text-sm font-semibold text-gray-800">
+                    {i.name}
+                    {/* Said on the one screen where every instrument is listed
+                        together, because the difference is invisible
+                        otherwise: this one is missing from the New Assessment
+                        panel for everybody but us, and somebody wondering why
+                        an org admin cannot find it should be able to see the
+                        answer here. */}
+                    {i.internal && (
+                      <span className="ml-2 text-[10px] font-semibold uppercase tracking-wide text-[#3366FF] bg-blue-50 px-1.5 py-0.5 rounded align-middle">
+                        Ours only
+                      </span>
+                    )}
+                  </p>
                   <span className="flex items-baseline gap-3 shrink-0">
                     <span className="text-xs text-gray-400 tabular-nums">
                       {i.question_source === "library"
