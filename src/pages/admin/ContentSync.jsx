@@ -1,8 +1,14 @@
 import { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { loadContent, readContent, CONTENT_BRANCH } from "@/lib/content-source";
-import { planInstrument, applyPlan, planDiff, planScales, applyScales, contentFromLive, scalesFromLive, NEW_INSTRUMENT } from "@/lib/content-apply";
-import { writeInstrument, writeScales, parseInstrument, validateInstrument } from "@/lib/content-format";
+import {
+  planInstrument, applyPlan, planDiff, planScales, applyScales, contentFromLive, scalesFromLive, NEW_INSTRUMENT,
+  planLibrary, applyLibrary, libraryFromLive, planResources, applyResources, resourcesFromLive,
+} from "@/lib/content-apply";
+import {
+  writeInstrument, writeScales, parseInstrument, validateInstrument,
+  writeLibrary, writeResources, FACETS,
+} from "@/lib/content-format";
 import { functionErrorMessage } from "@/lib/utils";
 
 // Comparing the content files with the app, and applying one instrument at a
@@ -88,17 +94,41 @@ export default function ContentSync({ onApplied = null }) {
     if (!keepApplied) { setApplied({}); setCommitted({}); }
     try {
       const loaded = await loadContent();
-      const { scales, instruments, problems } = readContent(loaded.files);
+      const { scales, instruments, problems, library, resources } = readContent(loaded.files);
       const live = await liveSnapshot();
       // Shown rather than hidden behind a toggle: a difference is the result,
       // and the choice of which side is right cannot be made without reading
       // both values. Collapsing is still there for an instrument with a lot of
       // them.
       const opening = {};
+      const libraryIdByKey = new Map(
+        live.activities
+          .filter((a) => !a.assessment_id && !(a.instrument_ids || []).length)
+          .map((a) => [a.content_key || null, a.id])
+          .filter(([k]) => k),
+      );
+      const libraryAppText = () => {
+        const back = libraryFromLive(live);
+        return Object.fromEntries(FACETS.map((f) => [`content/library/${f.toLowerCase()}.md`, writeLibrary(f, back[f])]));
+      };
       setCompared({
         loaded,
         live,
         problems,
+        library: {
+          ...library,
+          plan: library.present ? planLibrary(library.byFacet, live) : null,
+          files: libraryAppText(),
+          differs: library.present
+            ? FACETS.some((f) => loaded.files[`content/library/${f.toLowerCase()}.md`] !== libraryAppText()[`content/library/${f.toLowerCase()}.md`])
+            : true,
+        },
+        resources: {
+          ...resources,
+          plan: resources.present ? planResources(resources.rows, live, { libraryIdByKey }) : null,
+          appText: writeResources(resourcesFromLive(live)),
+          differs: !resources.present || loaded.files["content/resources.md"] !== writeResources(resourcesFromLive(live)),
+        },
         scales: {
           rows: scales,
           plan: planScales(scales, live),
@@ -142,6 +172,37 @@ export default function ContentSync({ onApplied = null }) {
     } catch (e) {
       console.error("Could not apply the content file", e);
       setError(e?.message || "Could not apply the file.");
+    }
+    setBusy("");
+    setProgress("");
+  };
+
+  const applyLibraryFiles = async () => {
+    setBusy("library");
+    setError("");
+    try {
+      const res = await applyLibrary(base44, compared.library.plan, { onProgress: setProgress });
+      setApplied((a) => ({ ...a, library: res }));
+      await compare({ keepApplied: true });
+      await onApplied?.();
+    } catch (e) {
+      console.error("Could not apply the library files", e);
+      setError(e?.message || "Could not apply the library.");
+    }
+    setBusy("");
+    setProgress("");
+  };
+
+  const applyTheResources = async () => {
+    setBusy("resources");
+    setError("");
+    try {
+      const res = await applyResources(base44, compared.resources.plan, { onProgress: setProgress });
+      setApplied((a) => ({ ...a, resources: res }));
+      await compare({ keepApplied: true });
+    } catch (e) {
+      console.error("Could not apply the resources", e);
+      setError(e?.message || "Could not apply the resources.");
     }
     setBusy("");
     setProgress("");
@@ -307,6 +368,110 @@ export default function ContentSync({ onApplied = null }) {
                 {applied.scales.written.scales} scale{applied.scales.written.scales === 1 ? "" : "s"} and {applied.scales.written.options} option{applied.scales.written.options === 1 ? "" : "s"} written.
               </p>
             )}
+          </li>
+
+          {/* The activity library, a file per phase. Absent until somebody
+              commits it — and absent is said out loud, because an empty set of
+              files must never read as "the library is unchanged". */}
+          <li className="px-6 py-4">
+            <div className="flex items-baseline justify-between gap-3">
+              <p className="text-sm font-semibold text-gray-800">
+                Activity library
+                <span className="ml-2 font-mono text-[11px] font-normal text-gray-400">library/</span>
+              </p>
+              <span className="flex items-baseline gap-3 shrink-0">
+                <span className="text-xs text-gray-400 tabular-nums">
+                  {!compared.library.present
+                    ? "not in the files yet"
+                    : compared.library.plan.writes > 0
+                      ? `${compared.library.plan.writes} to write`
+                      : compared.library.differs ? "the app differs" : "up to date"}
+                </span>
+                <button
+                  onClick={() => Object.entries(compared.library.files).forEach(([path, text]) => download(path.split("/").pop(), text))}
+                  className="text-xs font-medium text-gray-500 hover:text-gray-800"
+                >
+                  Save files
+                </button>
+                {compared.library.present && compared.library.plan.writes > 0 && (
+                  <button onClick={applyLibraryFiles} disabled={!!busy} className="text-xs font-medium text-blue-600 hover:text-blue-800 disabled:opacity-50">
+                    {busy === "library" ? `${progress || "Applying"}…` : "Apply"}
+                  </button>
+                )}
+                {compared.library.differs && (
+                  <button
+                    onClick={() => commit("library", Object.entries(compared.library.files).map(([path, text]) => ({ path, text })), "Sync the activity library from the app")}
+                    disabled={!!busy}
+                    className="text-xs font-medium text-blue-600 hover:text-blue-800 disabled:opacity-50"
+                  >
+                    {busy === "library" ? "Committing…" : compared.library.present ? "Commit" : "Commit to create"}
+                  </button>
+                )}
+              </span>
+            </div>
+            {applied.library && (
+              <p className="text-xs text-green-700 mt-1">
+                {applied.library.written.activities} activit{applied.library.written.activities === 1 ? "y" : "ies"} written.
+              </p>
+            )}
+            {committed.library && (
+              <p className="text-xs text-green-700 mt-1">
+                {committed.library.unchanged ? "The branch already had this." : <>Committed to {committed.library.branch}. <a href={committed.library.url} target="_blank" rel="noreferrer" className="underline">{committed.library.sha?.slice(0, 7)}</a></>}
+              </p>
+            )}
+            {(applied.library?.notes || []).map((n, i) => <p key={i} className="text-xs text-gray-500 mt-0.5">{n}</p>)}
+            {compared.library.present && compared.library.plan.orphans.length > 0 && (
+              <p className="text-xs text-gray-400 mt-1">
+                {compared.library.plan.orphans.length} activit{compared.library.plan.orphans.length === 1 ? "y is" : "ies are"} in the app and not in the files. Left alone — assessments point at them.
+              </p>
+            )}
+          </li>
+
+          <li className="px-6 py-4">
+            <div className="flex items-baseline justify-between gap-3">
+              <p className="text-sm font-semibold text-gray-800">
+                Resources
+                <span className="ml-2 font-mono text-[11px] font-normal text-gray-400">resources.md</span>
+              </p>
+              <span className="flex items-baseline gap-3 shrink-0">
+                <span className="text-xs text-gray-400 tabular-nums">
+                  {!compared.resources.present
+                    ? "not in the files yet"
+                    : compared.resources.plan.writes > 0
+                      ? `${compared.resources.plan.writes} to write`
+                      : compared.resources.differs ? "the app differs" : "up to date"}
+                </span>
+                <button
+                  onClick={() => download("resources.md", compared.resources.appText)}
+                  className="text-xs font-medium text-gray-500 hover:text-gray-800"
+                >
+                  Save file
+                </button>
+                {compared.resources.present && compared.resources.plan.writes > 0 && (
+                  <button onClick={applyTheResources} disabled={!!busy} className="text-xs font-medium text-blue-600 hover:text-blue-800 disabled:opacity-50">
+                    {busy === "resources" ? `${progress || "Applying"}…` : "Apply"}
+                  </button>
+                )}
+                {compared.resources.differs && (
+                  <button
+                    onClick={() => commit("resources", [{ path: "content/resources.md", text: compared.resources.appText }], "Sync the resources from the app")}
+                    disabled={!!busy}
+                    className="text-xs font-medium text-blue-600 hover:text-blue-800 disabled:opacity-50"
+                  >
+                    {busy === "resources" ? "Committing…" : compared.resources.present ? "Commit" : "Commit to create"}
+                  </button>
+                )}
+              </span>
+            </div>
+            {applied.resources && (
+              <p className="text-xs text-green-700 mt-1">{applied.resources.written.resources} resource{applied.resources.written.resources === 1 ? "" : "s"} written.</p>
+            )}
+            {committed.resources && (
+              <p className="text-xs text-green-700 mt-1">
+                {committed.resources.unchanged ? "The branch already had this." : <>Committed to {committed.resources.branch}. <a href={committed.resources.url} target="_blank" rel="noreferrer" className="underline">{committed.resources.sha?.slice(0, 7)}</a></>}
+              </p>
+            )}
+            {(applied.resources?.notes || []).slice(0, 5).map((n, i) => <p key={i} className="text-xs text-gray-500 mt-0.5">{n}</p>)}
           </li>
 
           {compared.instruments.map((entry) => {

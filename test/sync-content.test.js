@@ -27,6 +27,9 @@ test("the content files are writable", () => {
     "content/instruments/chaos.md",
     "content/instruments/fractional-cpo-practice.md",
     "content/instruments/team-gap.md",
+    "content/resources.md",
+    "content/library/define.md",
+    "content/library/learn.md",
   ]) {
     assert.ok(ALLOWED.test(p), `${p} should be writable`);
   }
@@ -49,6 +52,11 @@ test("nothing else is", () => {
     "/content/instruments/chaos.md",
     "content/instruments/chaos.md ",
     "content/instruments/chaos.md\nsrc/App.jsx",
+    "content/library/define.md/../../../src/App.jsx",
+    "content/library/sub/define.md",
+    "content/Resources.md",
+    "content/resources.md\n",
+    "content/scales.md\n",
     "\ncontent/instruments/chaos.md",
     "",
   ]) {

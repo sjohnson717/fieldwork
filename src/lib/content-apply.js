@@ -32,7 +32,7 @@
 // the content no longer defines. Those are listed as deletes for somebody to
 // confirm rather than quietly kept.
 
-import { ENTITY_FIELDS, slugify } from "@/lib/content-format";
+import { ENTITY_FIELDS, slugify, FACETS } from "@/lib/content-format";
 
 
 // Where reading points. One line, as before: the articles stay on the site that
@@ -638,5 +638,169 @@ export function scalesFromLive(live) {
         .filter((o) => o.scale_id === s.id)
         .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
         .map((o) => ({ label: o.label, points: o.points === undefined ? null : o.points })),
+    }));
+}
+
+// ── The activity library ────────────────────────────────────────────────────
+//
+// A file per phase, and the phase is the file: an activity's facet comes from
+// which file it is in, and its position from where it sits in that file.
+//
+// Nothing is ever deleted here either, and the reason is the same shape as a
+// question's. Assessment.activity_ids, ActivitySet.activity_ids, Response and
+// DiscussionNote all point at these rows, and an assessment that used an
+// activity keeps pointing at it long after the library stops offering it.
+// Retiring is `active: no`, which takes it out of the picker and leaves every
+// answer where it is.
+
+export function planLibrary(byFacet, live) {
+  const existing = (live.activities || []).filter((a) => !a.assessment_id && !(a.instrument_ids || []).length);
+  const plan = { activities: [], orphans: [], moved: [] };
+  let position = 0;
+  for (const facet of FACETS) {
+    for (const a of (byFacet[facet] || [])) {
+      const row = matcher(existing, existing, a.id, a.name);
+      const patch = { ...mapFields("activity", a), content_key: a.id, facet, sort_order: position++ };
+      const changes = changedFields(row, patch);
+      plan.activities.push({
+        id: a.id, name: a.name, facet, rowId: row?.id || null, row,
+        adopted: !!row && !row.content_key,
+        changes, action: action(row, changes), patch,
+      });
+      // Worth naming rather than leaving in a list of field changes: moving an
+      // activity between phases moves it between pages of the survey.
+      if (row && row.facet && row.facet !== facet) plan.moved.push({ name: a.name, from: row.facet, to: facet });
+    }
+  }
+  const ids = new Set(plan.activities.map((a) => a.id));
+  for (const row of existing) {
+    if (ids.has(row.content_key || slugify(row.name))) continue;
+    plan.orphans.push({
+      name: row.name, rowId: row.id, retired: row.active === false,
+      advice: row.active === false ? "Retired already — left alone." : "Left alone. Retire it in the Library if it is finished with.",
+    });
+  }
+  plan.counts = tally(plan.activities);
+  plan.writes = plan.activities.filter((a) => a.action !== "unchanged").length;
+  return plan;
+}
+
+export async function applyLibrary(base44, plan, { onProgress } = {}) {
+  const e = base44.entities;
+  onProgress?.("Library");
+  const written = { activities: 0 };
+  let schemaChecked = false;
+  for (const a of plan.activities) {
+    if (a.action === "unchanged") continue;
+    const row = a.action === "create" ? await e.Activity.create(a.patch) : await e.Activity.update(a.rowId, a.patch);
+    if (!schemaChecked) {
+      schemaChecked = true;
+      if (row.content_key === undefined || row.content_key === null) {
+        throw new Error("Activity has no content_key column yet, so nothing here can be matched on a second run. Publish the app, then apply again.");
+      }
+    }
+    written.activities++;
+  }
+  const notes = plan.orphans.map((o) => `"${o.name}" is in the library but not in the files. ${o.advice}`);
+  for (const m of plan.moved) notes.push(`"${m.name}" moved from ${m.from} to ${m.to}.`);
+  return { written, notes };
+}
+
+export function libraryFromLive(live) {
+  const rows = (live.activities || [])
+    .filter((a) => !a.assessment_id && !(a.instrument_ids || []).length)
+    .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+  const byFacet = {};
+  for (const facet of FACETS) byFacet[facet] = [];
+  for (const row of rows) {
+    const facet = FACETS.includes(row.facet) ? row.facet : FACETS[0];
+    byFacet[facet].push({ ...unmap("activity", row), id: row.content_key || slugify(row.name) });
+  }
+  return byFacet;
+}
+
+// ── Resources ───────────────────────────────────────────────────────────────
+//
+// The record and the library activities it is offered for. An instrument
+// question's reading stays in the instrument's file: one link declared in two
+// places is the drift this format exists to remove, so applying a resource file
+// merges its library links and leaves every instrument link exactly as it is.
+
+export function planResources(resources, live, { libraryIdByKey = new Map() } = {}) {
+  const existing = live.resources || [];
+  const instrumentQuestionIds = new Set(
+    (live.activities || []).filter((a) => (a.instrument_ids || []).length).map((a) => a.id),
+  );
+  const plan = { resources: [], orphans: [], unknownActivities: [] };
+  for (const [i, r] of resources.entries()) {
+    const row = existing.find((x) => x.content_key && x.content_key === r.id)
+      || existing.find((x) => !x.content_key && slugOfUrl(x.url) === slugOfUrl(r.url))
+      || null;
+    const wanted = [];
+    for (const key of r.activities) {
+      const id = libraryIdByKey.get(key);
+      if (id) wanted.push(id);
+      else plan.unknownActivities.push({ resource: r.title, activity: key });
+    }
+    // Instrument links are the instrument files' business and are carried
+    // across untouched; only the library half of the list is restated here.
+    const keptInstrumentLinks = (row?.activity_ids || []).filter((id) => instrumentQuestionIds.has(id));
+    const patch = {
+      ...mapFields("resource", r),
+      content_key: r.id,
+      sort_order: i,
+      activity_ids: [...new Set([...keptInstrumentLinks, ...wanted])],
+    };
+    const changes = changedFields(row, patch);
+    plan.resources.push({
+      id: r.id, title: r.title, rowId: row?.id || null, row,
+      adopted: !!row && !row.content_key,
+      changes, action: action(row, changes), patch,
+    });
+  }
+  const ids = new Set(resources.map((r) => r.id));
+  for (const row of existing) {
+    if (ids.has(row.content_key || slugify(row.title))) continue;
+    plan.orphans.push({ title: row.title, rowId: row.id, active: row.active !== false });
+  }
+  plan.counts = tally(plan.resources);
+  plan.writes = plan.resources.filter((r) => r.action !== "unchanged").length;
+  return plan;
+}
+
+export async function applyResources(base44, plan, { onProgress } = {}) {
+  const e = base44.entities;
+  onProgress?.("Resources");
+  const written = { resources: 0 };
+  for (const r of plan.resources) {
+    if (r.action === "unchanged") continue;
+    if (r.action === "create") await e.Resource.create(r.patch);
+    else await e.Resource.update(r.rowId, r.patch);
+    written.resources++;
+  }
+  const notes = plan.orphans.map((o) =>
+    `"${o.title}" is in Settings → Resources but not in content/resources.md. Left alone${o.active ? "" : " (already switched off)"}.`);
+  for (const u of plan.unknownActivities) {
+    notes.push(`"${u.resource}" names "${u.activity}", which is not an activity in the library. That link was not made.`);
+  }
+  return { written, notes };
+}
+
+export function resourcesFromLive(live) {
+  const libraryKeyById = new Map(
+    (live.activities || [])
+      .filter((a) => !a.assessment_id && !(a.instrument_ids || []).length)
+      .map((a) => [a.id, a.content_key || slugify(a.name)]),
+  );
+  return (live.resources || [])
+    .slice()
+    .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+    .map((row) => ({
+      ...unmap("resource", row),
+      id: row.content_key || slugify(row.title),
+      // Only the library half. The instrument half is written in the
+      // instrument's own file, and repeating it here would be two places to
+      // keep in step.
+      activities: (row.activity_ids || []).map((id) => libraryKeyById.get(id)).filter(Boolean),
     }));
 }

@@ -2,6 +2,10 @@
   "name": "Resource",
   "type": "object",
   "properties": {
+    "content_key": {
+      "type": "string",
+      "description": "The id this resource has in content/resources.md. Matching on the address looked stable and is not -- moving the reading links from /article/ to /reading/ changed every url at once, and a run matching on url could not find the rows it had written itself. Matching on the title is worse: a title is editable on the blog."
+    },
     "title": {
       "type": "string"
     },

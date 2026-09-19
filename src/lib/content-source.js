@@ -13,7 +13,10 @@
 // The branch is not main on purpose: Base44 syncs main and only main, and a
 // wording fix should not re-sync the Builder or rebuild the app.
 
-import { parseInstrument, parseScales, validateInstrument, validateAcross } from "@/lib/content-format";
+import {
+  parseInstrument, parseScales, validateInstrument, validateAcross,
+  parseLibrary, parseResources, validateLibrary, validateResources, FACETS,
+} from "@/lib/content-format";
 
 export const OWNER = "sjohnson717";
 export const REPO = "fieldwork";
@@ -48,24 +51,31 @@ async function branchHead(branch, fetchImpl) {
 
 export async function loadFromBranch({ branch = CONTENT_BRANCH, fetchImpl = fetch } = {}) {
   const head = await branchHead(branch, fetchImpl);
-  const listed = await fetchImpl(apiUrl(branch, `${CONTENT_DIR}/instruments`), {
-    headers: { Accept: "application/vnd.github+json" },
-  });
-  if (!listed.ok) throw new Error(`Could not list ${CONTENT_DIR}/instruments on ${branch} (${listed.status}).`);
-  const entries = await listed.json();
-  const paths = [
-    `${CONTENT_DIR}/scales.md`,
-    ...entries.filter((e) => e.type === "file" && e.name.endsWith(".md")).map((e) => e.path),
-  ];
+  // Both directories, and a directory that is not there yet is not an error:
+  // the library and the resources have no file until the app writes one, and
+  // the screen has to be able to say so rather than fail to load.
+  const listDir = async (dir) => {
+    const res = await fetchImpl(apiUrl(branch, `${CONTENT_DIR}/${dir}`), {
+      headers: { Accept: "application/vnd.github+json" },
+    });
+    if (res.status === 404) return [];
+    if (!res.ok) throw new Error(`Could not list ${CONTENT_DIR}/${dir} on ${branch} (${res.status}).`);
+    return (await res.json()).filter((e) => e.type === "file" && e.name.endsWith(".md")).map((e) => e.path);
+  };
+  const [instrumentPaths, libraryPaths] = await Promise.all([listDir("instruments"), listDir("library")]);
+  const paths = [`${CONTENT_DIR}/scales.md`, `${CONTENT_DIR}/resources.md`, ...instrumentPaths, ...libraryPaths];
   // The commit is pinned rather than the branch name, so a push landing
   // between the listing and the reads cannot produce a half-and-half set —
   // and it sidesteps the raw CDN serving a file from a few minutes ago.
   const texts = await Promise.all(paths.map(async (path) => {
     const res = await fetchImpl(rawUrl(head.sha, path));
+    // A file that is not there yet is absent, not a failure. content/resources.md
+    // does not exist until somebody commits it.
+    if (res.status === 404) return null;
     if (!res.ok) throw new Error(`Could not read ${path} on ${branch} (${res.status}).`);
     return [path, await res.text()];
   }));
-  return { source: "branch", branch, ...head, files: Object.fromEntries(texts) };
+  return { source: "branch", branch, ...head, files: Object.fromEntries(texts.filter(Boolean)) };
 }
 
 export async function loadContent({ branch = CONTENT_BRANCH, fetchImpl = fetch, preferBranch = true } = {}) {
@@ -118,5 +128,47 @@ export function readContent(files) {
   const across = validateAcross(instruments.map((i) => i.content));
   if (across.length) problems.push({ path: "content/instruments", errors: across });
 
-  return { scales, instruments, problems };
+  // The library, a file per phase. Absent until somebody commits it, and absent
+  // is reported as absent: an empty set of files read as "the library is
+  // unchanged" would be the screen's most dangerous lie, since it would make
+  // every activity in the app look like one the files had dropped.
+  const byFacet = {};
+  let libraryPresent = false;
+  for (const facet of FACETS) {
+    const path = `${CONTENT_DIR}/library/${facet.toLowerCase()}.md`;
+    if (files[path] === undefined) continue;
+    libraryPresent = true;
+    try {
+      byFacet[facet] = parseLibrary(files[path]);
+    } catch (e) {
+      problems.push({ path, errors: [`Could not be read: ${e?.message || e}`] });
+    }
+  }
+  const libraryErrors = libraryPresent ? validateLibrary(byFacet) : [];
+  if (libraryErrors.length) problems.push({ path: `${CONTENT_DIR}/library`, errors: libraryErrors });
+
+  const activityIds = Object.values(byFacet).flat().map((a) => a.id);
+  const resourcesPath = `${CONTENT_DIR}/resources.md`;
+  let resources = [];
+  let resourcesPresent = files[resourcesPath] !== undefined;
+  if (resourcesPresent) {
+    try {
+      resources = parseResources(files[resourcesPath]);
+    } catch (e) {
+      resourcesPresent = false;
+      problems.push({ path: resourcesPath, errors: [`Could not be read: ${e?.message || e}`] });
+    }
+  }
+  const resourceErrors = resourcesPresent
+    ? validateResources(resources, { activityIds: libraryPresent ? activityIds : null })
+    : [];
+  if (resourceErrors.length) problems.push({ path: resourcesPath, errors: resourceErrors });
+
+  return {
+    scales,
+    instruments,
+    problems,
+    library: { byFacet, present: libraryPresent && !libraryErrors.length },
+    resources: { rows: resources, present: resourcesPresent && !resourceErrors.length },
+  };
 }

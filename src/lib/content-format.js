@@ -87,6 +87,41 @@ const BLOCKS = [
   },
 ];
 
+// ── The activity library and the resources ──────────────────────────────────
+//
+// The same treatment as an instrument, for the same reason: these are authored
+// content with no copy outside the platform, and the goal is a repository that
+// still holds the backbone of the app if it ever leaves Base44.
+//
+// The library is a file per phase, because the phase is what organises it and
+// moving an activity between phases should read as moving it between files. The
+// order inside a file is the order the assessment pages through, as everywhere
+// else here.
+//
+// A resource file holds the record — what the article is, where it lives, what
+// somebody wrote about it — and the library activities it is offered for. It
+// deliberately does not hold instrument questions' reading: that is declared in
+// the instrument's own file, and one link declared in two places is the drift
+// this whole format exists to remove.
+
+export const FACETS = ["DEFINE", "COMMIT", "DESCRIBE", "CREATE", "PREPARE", "DELIVER", "LEARN"];
+
+const ACTIVITY_ATTRS = [
+  ["id", STR],
+  ["owner", STR],
+  ["active", FLAG, true],
+];
+
+const RESOURCE_ATTRS = [
+  ["id", STR],
+  ["type", STR, "free_article"],
+  ["source", STR],
+  ["published", STR],
+  ["url", STR],
+  ["fallback", FLAG, false],
+  ["active", FLAG, true],
+];
+
 const SCALE_ATTRS = [
   ["id", STR],
   ["hint", STR],
@@ -176,6 +211,26 @@ export function normalizeInstrument(src) {
   return out;
 }
 
+export function normalizeActivity(src) {
+  const out = normalizeAttrs(src, ACTIVITY_ATTRS);
+  out.name = normalizeProse(src?.name);
+  if (!out.id) out.id = slugify(out.name);
+  out.description = normalizeProse(src?.description);
+  out.try_this = normalizeProse(src?.try_this);
+  return out;
+}
+
+export function normalizeResource(src) {
+  const out = normalizeAttrs(src, RESOURCE_ATTRS);
+  out.title = normalizeProse(src?.title);
+  if (!out.id) out.id = slugify(out.title);
+  out.note = normalizeProse(src?.note);
+  // The library activities this is offered for, by their ids. An instrument
+  // question's reading is not here; it is in the instrument's file.
+  out.activities = (src?.activities || []).map((a) => String(a)).filter(Boolean);
+  return out;
+}
+
 export function normalizeScale(src) {
   const out = normalizeAttrs(src, SCALE_ATTRS);
   out.name = normalizeProse(src?.name);
@@ -259,6 +314,32 @@ export function writeInstrument(input) {
   return sections.join("\n\n") + "\n";
 }
 
+export function writeLibrary(facet, activities) {
+  const sections = [`<!-- The ${facet} activities, in the order an assessment pages through them. -->`];
+  for (const raw of activities) {
+    const a = normalizeActivity(raw);
+    const attrs = attrLines(a, ACTIVITY_ATTRS);
+    const parts = [`## Activity: ${a.name}` + (attrs.length ? `\n${attrs.join("\n")}` : "")];
+    if (a.description) parts.push(a.description);
+    if (a.try_this) parts.push(`**Try this.** ${a.try_this}`);
+    sections.push(parts.join("\n\n"));
+  }
+  return sections.join("\n\n") + "\n";
+}
+
+export function writeResources(resources) {
+  const sections = ["<!-- Reading offered on reports. Each one names the library activities it is for; an instrument question's reading is declared in that instrument's file. -->"];
+  for (const raw of resources) {
+    const r = normalizeResource(raw);
+    const attrs = attrLines(r, RESOURCE_ATTRS);
+    const parts = [`## Resource: ${r.title}` + (attrs.length ? `\n${attrs.join("\n")}` : "")];
+    if (r.note) parts.push(r.note);
+    if (r.activities.length) parts.push(["**For.**", ...r.activities.map((a) => `- ${a}`)].join("\n"));
+    sections.push(parts.join("\n\n"));
+  }
+  return sections.join("\n\n") + "\n";
+}
+
 export function writeScales(scales) {
   const sections = ["<!-- The answer scales every instrument shares. Referenced by id from an instrument's `scales:` list. -->"];
   for (const raw of scales) {
@@ -274,8 +355,11 @@ export function writeScales(scales) {
 
 // ── Parsing ─────────────────────────────────────────────────────────────────
 
-const HEADING = /^## (Dimension|Question|Band|Scale): (.+?)\s*$/;
-const LABEL = /^\*\*([A-Za-z]+)\.\*\*\s*/;
+const HEADING = /^## (Dimension|Question|Band|Scale|Activity|Resource): (.+?)\s*$/;
+// Two words where a field reads better as two: "**Try this.**" is what the
+// library calls it on screen, and a label the file spells differently from the
+// app is a translation somebody has to hold in their head.
+const LABEL = /^\*\*([A-Za-z][A-Za-z ]*?)\.\*\*\s*/;
 const ATTR = /^([a-z_]+):[ \t]*(.*)$/;
 
 const parseValue = (raw) => {
@@ -361,6 +445,26 @@ export function parseInstrument(text) {
     content[spec.collection].push(row);
   }
   return normalizeInstrument(content);
+}
+
+export function parseLibrary(text) {
+  const { segments } = segmentsOf(String(text).replace(/\r\n/g, "\n"));
+  return segments.filter((s) => s.kind === "Activity").map((seg) => {
+    const { prose, labels } = splitLabels(seg.body);
+    return normalizeActivity({ name: seg.name, ...seg.attrs, description: prose, try_this: labels.get("Try this") || "" });
+  });
+}
+
+export function parseResources(text) {
+  const { segments } = segmentsOf(String(text).replace(/\r\n/g, "\n"));
+  return segments.filter((s) => s.kind === "Resource").map((seg) => {
+    const { prose, labels } = splitLabels(seg.body);
+    const list = labels.get("For") || "";
+    return normalizeResource({
+      title: seg.name, ...seg.attrs, note: prose,
+      activities: [...list.matchAll(/^-\s*(.+?)\s*$/gm)].map((m) => m[1]),
+    });
+  });
 }
 
 export function parseScales(text) {
@@ -482,6 +586,56 @@ export function validateAcross(contents) {
   return errors;
 }
 
+// The library, across every phase file: ids have to be unique, because one id
+// is one activity and the phase is only where it currently sits.
+export function validateLibrary(byFacet) {
+  const errors = [];
+  const seen = new Map();
+  const names = new Map();
+  for (const [facet, activities] of Object.entries(byFacet)) {
+    if (!FACETS.includes(facet)) errors.push(`"${facet}" is not a phase — expected one of ${FACETS.join(", ")}.`);
+    for (const a of activities.map(normalizeActivity)) {
+      if (!a.name) errors.push(`An activity in ${facet} has no name.`);
+      if (!/^[a-z0-9-]+$/.test(a.id)) errors.push(`"${a.id}" is not a usable id — lower case, digits, and hyphens.`);
+      if (seen.has(a.id)) errors.push(`"${a.name}" (${a.id}) is in ${facet} and in ${seen.get(a.id)}. One id is one activity.`);
+      else seen.set(a.id, facet);
+      // Two activities with one name is what the CSV import refused, and for a
+      // better reason than tidiness: an assessment names them on a page a room
+      // reads together.
+      const lower = a.name.toLowerCase();
+      if (names.has(lower)) errors.push(`Two activities are called "${a.name}" (${names.get(lower)} and ${facet}).`);
+      else names.set(lower, facet);
+    }
+  }
+  return errors;
+}
+
+// Resources, against the library they point at.
+export function validateResources(resources, { activityIds = null } = {}) {
+  const errors = [];
+  const seen = new Set();
+  const urls = new Map();
+  for (const r of resources.map(normalizeResource)) {
+    if (!r.title) errors.push("A resource has no title.");
+    if (!r.url) errors.push(`"${r.title}" has no address, so no report could offer it.`);
+    if (!/^[a-z0-9-]+$/.test(r.id)) errors.push(`"${r.id}" is not a usable id — lower case, digits, and hyphens.`);
+    if (seen.has(r.id)) errors.push(`Two resources share the id "${r.id}".`);
+    seen.add(r.id);
+    // The check System Health makes: one article, one row. Two rows for one
+    // address show the same reading twice under a question.
+    if (r.url) {
+      if (urls.has(r.url)) errors.push(`"${r.title}" and "${urls.get(r.url)}" are the same address.`);
+      else urls.set(r.url, r.title);
+    }
+    if (activityIds) {
+      for (const a of r.activities) {
+        if (!activityIds.includes(a)) errors.push(`"${r.title}" is offered for "${a}", which is not an activity in the library.`);
+      }
+    }
+  }
+  return errors;
+}
+
 // The entity fields each file field maps to, declared once so the applier
 // cannot drift from the format. Read by content-apply.js.
 export const ENTITY_FIELDS = {
@@ -496,5 +650,11 @@ export const ENTITY_FIELDS = {
   question: { id: "content_key", name: "name", text: "description", type: "question_type",
     section: "section", commentary: "commentary", critical: "critical", required: "required", active: "active" },
   band: { id: "content_key", name: "name", from: "min_score", to: "max_score", advice: "advice" },
+  // facet and sort_order are not here: a library activity's phase is the file
+  // it is in, and its position is where it sits in that file.
+  activity: { id: "content_key", name: "name", description: "description", owner: "preferred_owner", try_this: "try_this", active: "active" },
+  // activities and sort_order likewise: the links are resolved to row ids, and
+  // the order is the order they are written in.
+  resource: { id: "content_key", title: "title", type: "resource_type", source: "source", published: "published_date", url: "url", note: "note", fallback: "fallback", active: "active" },
   dimension: { id: "content_key", name: "name", blurb: "blurb", strong: "strong", opportunity: "opportunity" },
 };

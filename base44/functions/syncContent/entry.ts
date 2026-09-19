@@ -31,7 +31,7 @@ const FALLBACK_BASE = "main";
 // The only paths this function will write. Anchored at both ends, no "..",
 // lower case and hyphens in the name — a path is the one piece of this request
 // that decides what part of the repository is reachable.
-const ALLOWED = /^content\/(scales\.md|instruments\/[a-z0-9][a-z0-9-]*\.md)$/;
+const ALLOWED = /^content\/(scales\.md|resources\.md|instruments\/[a-z0-9][a-z0-9-]*\.md|library\/[a-z0-9][a-z0-9-]*\.md)$/;
 
 const API = "https://api.github.com";
 
@@ -91,7 +91,7 @@ Deno.serve(async (req) => {
         return fail("Each file needs a path and text.");
       }
       if (!ALLOWED.test(f.path)) {
-        return fail(`${f.path} is not a content file. Only content/scales.md and content/instruments/<name>.md can be written.`);
+        return fail(`${f.path} is not a content file. Only content/scales.md, content/resources.md, content/instruments/<name>.md and content/library/<phase>.md can be written.`);
       }
       // A file the writer produced is never empty, and an empty one would be a
       // bug upstream arriving as a deletion of somebody's content.
