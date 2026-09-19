@@ -143,12 +143,36 @@ const normalizeBlock = (spec, src) => {
   return out;
 };
 
+// Questions are grouped by section, in the order the dimensions are declared,
+// and within a section they keep the order they were written in. A section no
+// dimension declares sorts after the declared ones, by name.
+//
+// Grouping is part of the canonical form rather than a courtesy, because the
+// order has to be reproducible from the app as well as from the file: a
+// question's place in the app is its section plus its position inside it, and a
+// question sitting in an undeclared section had no defined place at all. Three
+// retired comment boxes are in exactly that position, and reading them back out
+// of the app put them somewhere the file had not said.
+//
+// It also means a hand edit that moves a question to another section is tidied
+// into that section on the next write, rather than leaving the file in an order
+// the survey does not ask in.
+const orderQuestions = (questions, dimensions) => {
+  const declared = dimensions.map((d) => d.name);
+  const extra = [...new Set(questions.map((q) => q.section).filter((s) => s && !declared.includes(s)))].sort();
+  const rank = new Map([...declared, ...extra].map((name, i) => [name, i]));
+  const at = (q) => (rank.has(q.section) ? rank.get(q.section) : rank.size);
+  // Stable, so position within a section is document order.
+  return questions.map((q, i) => [q, i]).sort((a, b) => at(a[0]) - at(b[0]) || a[1] - b[1]).map(([q]) => q);
+};
+
 export function normalizeInstrument(src) {
   const out = normalizeAttrs(src, INSTRUMENT_ATTRS);
   out.description = normalizeProse(src?.description);
   for (const spec of BLOCKS) {
     out[spec.collection] = (src?.[spec.collection] || []).map((b) => normalizeBlock(spec, b));
   }
+  out.questions = orderQuestions(out.questions, out.dimensions);
   return out;
 }
 
@@ -416,6 +440,30 @@ export function validateInstrument(content, { scaleKeys = null } = {}) {
     if (LABEL.test(p.split("\n").slice(1).join("\n"))) say("A paragraph begins with a **Label.** the parser would read as a field.");
   }
   return { errors, notes };
+}
+
+// A content_key is global across the files, because one row can serve two
+// instruments — the closing "Final Thoughts" is asked by both the idea screen
+// and the product quiz, and it is one question with one set of answers. That
+// only works while both files say the same thing about it: there is a single
+// row, so the second file applied would otherwise quietly overwrite what the
+// first one said.
+export function validateAcross(contents) {
+  const errors = [];
+  const seen = new Map();
+  for (const c of contents) {
+    for (const q of normalizeInstrument(c).questions) {
+      const before = seen.get(q.id);
+      if (!before) { seen.set(q.id, { q, key: c.key }); continue; }
+      if (JSON.stringify(before.q) !== JSON.stringify(q)) {
+        errors.push(
+          `"${q.name}" (${q.id}) is in both ${before.key} and ${c.key}, and the two do not match. ` +
+          `A shared question is one row, so both files have to say the same thing about it.`,
+        );
+      }
+    }
+  }
+  return errors;
 }
 
 // The entity fields each file field maps to, declared once so the applier

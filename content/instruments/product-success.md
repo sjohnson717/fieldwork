@@ -131,14 +131,6 @@ Are sales teams confident promoting and selling this product?
 **Reading.**
 - [Improve Your Sales Results with Better Sales Enablement](improve-your-sales-results-with-better-sales-enablement)
 
-## Question: About You
-id: about-you
-type: text
-section: Your Product
-active: no
-
-Which product are you assessing? Use a code name to keep the real name private.
-
 ## Question: Final Thoughts
 id: final-thoughts
 type: text
@@ -146,6 +138,14 @@ section: Comments
 active: no
 
 Anything else you want to share?
+
+## Question: About You
+id: about-you
+type: text
+section: Your Product
+active: no
+
+Which product are you assessing? Use a code name to keep the real name private.
 
 ## Band: Sunset
 id: sunset

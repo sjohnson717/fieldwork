@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint . --quiet",
-    "test": "node --test test/*.test.js",
+    "test": "node --import ./test/alias.mjs --test test/*.test.js",
     "lint:fix": "eslint . --fix",
     "typecheck": "tsc -p ./jsconfig.json",
     "preview": "vite preview"

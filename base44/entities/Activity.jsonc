@@ -2,6 +2,10 @@
   "name": "Activity",
   "type": "object",
   "properties": {
+    "content_key": {
+      "type": "string",
+      "description": "The id this question has in content/instruments/*.md, and the only thing that identifies it across an edit. Names are editable -- that is the point of the editor -- so matching a file's question to its row by name meant a reworded question arrived as a new one, with every answer left behind on a row nothing displayed any more. Set on instrument questions; library activities have none."
+    },
     "name": {
       "type": "string"
     },

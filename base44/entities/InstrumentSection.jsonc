@@ -2,6 +2,10 @@
   "name": "InstrumentSection",
   "type": "object",
   "properties": {
+    "content_key": {
+      "type": "string",
+      "description": "The id this dimension has in content/instruments/*.md. A dimension's name is carried by its questions and by Instrument.sections as well, so renaming one is a three-place change the applier makes together; this is what tells it which dimension was renamed rather than added."
+    },
     "instrument_id": {
       "type": "string"
     },

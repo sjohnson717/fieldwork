@@ -2,6 +2,10 @@
   "name": "Band",
   "type": "object",
   "properties": {
+    "content_key": {
+      "type": "string",
+      "description": "The id this band has in content/instruments/*.md. Bands are renamed more readily than anything else here -- the verdict is wording -- so identity cannot be the name."
+    },
     "instrument_id": {
       "type": "string"
     },
