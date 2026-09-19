@@ -1,4 +1,4 @@
-import { isLibraryActivity } from "@/lib/activities";
+import { isLibraryActivity } from "@/lib/activity-kind";
 import { sameAddress } from "@/lib/same-address";
 
 // The checks behind Settings → System Health: things a super-admin should look at,
@@ -149,6 +149,31 @@ export function runChecks(data, now = new Date()) {
       target: { section: "instruments", instrumentId: (a.instrument_ids || []).find(id => liveInstruments.has(id)), questionId: a.id },
     }));
 
+  // A live question in a section its instrument does not list is asked of
+  // nobody: the survey's pages are built from Instrument.sections, and a
+  // section that is not in that list has no page. The question sits in the
+  // app looking perfectly normal — it is active, it has its text, it shows in
+  // the editor — and no respondent ever sees it.
+  //
+  // It has one right answer either way round (add the section to the
+  // instrument, or move the question into a section it has), which is what
+  // makes it a fix rather than a judgement call. Three retired comment boxes
+  // are in this position on purpose and are excluded with every other
+  // inactive question.
+  const askedOfNobody = activities
+    .filter(a => a.active !== false && (a.instrument_ids || []).some(id => liveInstruments.has(id)))
+    .map(a => {
+      const instrument = (a.instrument_ids || []).map(id => liveInstruments.get(id)).find(Boolean);
+      return { a, instrument };
+    })
+    .filter(({ a, instrument }) => a.section && instrument && !(instrument.sections || []).includes(a.section))
+    .map(({ a, instrument }) => ({
+      key: a.id,
+      label: a.name,
+      detail: `In "${a.section}", which ${instrument.name} does not list`,
+      target: { section: "instruments", instrumentId: instrument.id, questionId: a.id },
+    }));
+
   const titleNames = new Set(jobTitles.filter(t => t.active !== false).map(t => t.name));
   const unknownOwner = libraryActivities
     .filter(a => a.preferred_owner && !titleNames.has(a.preferred_owner))
@@ -198,6 +223,9 @@ export function runChecks(data, now = new Date()) {
       "A report recommending one of these offers nothing to read for it.", ["resources", "activities"], noReading),
     check("questions-no-reading", "review", "Instrument questions with no reading",
       "Set their reading on the Instruments screen.", ["resources", "activities", "instruments"], questionsNoReading),
+    check("asked-of-nobody", "fix", "Questions in a section their instrument does not list",
+      "The survey's pages come from the instrument's section list, so these are never asked. Add the section to the instrument, or move the question.",
+      ["activities", "instruments"], askedOfNobody),
     check("unknown-owner", "fix", "Activities whose recommended owner is not a job title",
       "The owner suggestion will not match anything a respondent can pick.", ["activities", "jobTitles"], unknownOwner),
 

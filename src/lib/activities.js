@@ -1,12 +1,12 @@
 import { base44 } from "@/api/base44Client";
 import { facetRank } from "@/lib/scoring";
+import { isLibraryActivity } from "@/lib/activity-kind";
 
-// A library activity: shared across assessments, and not an instrument's own
-// question. Instrument questions carry no assessment_id either, so testing
-// that alone handed all of them to any assessment that uses the whole library,
-// and listed them in Library → Activities under LEARN, where editing them
-// fought the Instruments screen.
-export const isLibraryActivity = (a) => !a.assessment_id && !(a.instrument_ids || []).length;
+// Re-exported so the screens that have always imported it from here still can.
+// The rule itself lives in activity-kind.js, away from the client this module
+// builds on import.
+export { isLibraryActivity };
+
 
 /**
  * Returns the activities assigned to an assessment:

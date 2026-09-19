@@ -442,6 +442,22 @@ export function validateInstrument(content, { scaleKeys = null } = {}) {
   return { errors, notes };
 }
 
+// The id a new row keeps for the rest of its life. Written when a question or
+// a dimension is created — in the editor, or by applying a file — and never
+// again, because a renamed row has to stay the same row.
+//
+// Two questions can legitimately be called the same thing in different
+// sections, so a taken id gets a suffix. It is arbitrary and permanent, which
+// is fine: an id is only ever compared, never read for meaning.
+export function nextContentKey(name, taken = []) {
+  const base = slugify(name);
+  const used = new Set(taken.filter(Boolean));
+  if (!used.has(base)) return base;
+  for (let n = 2; ; n++) {
+    if (!used.has(`${base}-${n}`)) return `${base}-${n}`;
+  }
+}
+
 // A content_key is global across the files, because one row can serve two
 // instruments — the closing "Final Thoughts" is asked by both the idea screen
 // and the product quiz, and it is one question with one set of answers. That

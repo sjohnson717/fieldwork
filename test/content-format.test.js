@@ -16,7 +16,7 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import {
   writeInstrument, parseInstrument, normalizeInstrument,
-  writeScales, parseScales, validateInstrument, ENTITY_FIELDS, slugify,
+  writeScales, parseScales, validateInstrument, ENTITY_FIELDS, slugify, nextContentKey,
 } from "../src/lib/content-format.js";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -163,4 +163,18 @@ test("a retired question in an undeclared section is a note, not an error", () =
   const { errors, notes } = validateInstrument(c, { scaleKeys: ["agreement", "consistency"] });
   assert.deepEqual(errors, []);
   assert.match(notes.join(" "), /retired/);
+});
+
+test("a new row's id is derived once and kept", () => {
+  assert.equal(nextContentKey("Repeatable Diagnosis"), "repeatable-diagnosis");
+  assert.equal(nextContentKey("What's the point?"), "whats-the-point");
+  // Two questions can share a name across sections; the second gets a suffix,
+  // and the suffix is permanent rather than positional.
+  assert.equal(nextContentKey("Comments", ["comments"]), "comments-2");
+  assert.equal(nextContentKey("Comments", ["comments", "comments-2"]), "comments-3");
+  assert.equal(nextContentKey("Comments", ["comments-2"]), "comments");
+  // A name with nothing usable in it still produces an id rather than an
+  // empty string, which would match every other row with no id.
+  assert.equal(nextContentKey("???"), "untitled");
+  assert.equal(nextContentKey("???", ["untitled"]), "untitled-2");
 });

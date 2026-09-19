@@ -4,6 +4,7 @@ import { loadInstrument } from "@/lib/instruments";
 import { functionErrorMessage } from "@/lib/utils";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { scrollToRecord, FOCUS_RING } from "@/lib/focus-record";
+import { nextContentKey } from "@/lib/content-format";
 
 // One instrument's content, edited where it lives.
 //
@@ -268,6 +269,7 @@ export default function InstrumentEditor({ instrument, onBack, focusQuestionId =
     if (isNew) {
       const made = await base44.entities.Activity.create({
         ...fields,
+        content_key: nextContentKey(fields.name, questions.map((q) => q.content_key).filter(Boolean)),
         instrument_ids: [instrument.id],
         section_sort: nextSort(draft.section),
         question_type: draft.question_type,
@@ -403,7 +405,10 @@ export default function InstrumentEditor({ instrument, onBack, focusQuestionId =
     };
     const saved = row
       ? await base44.entities.InstrumentSection.update(row.id, patch)
-      : await base44.entities.InstrumentSection.create(patch);
+      : await base44.entities.InstrumentSection.create({
+          ...patch,
+          content_key: nextContentKey(name, dimensions.map((d) => d.content_key).filter(Boolean)),
+        });
     setDimensions((prev) => {
       const without = prev.filter((d) => d.name !== name);
       return [...without, saved].sort(
