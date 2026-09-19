@@ -221,14 +221,43 @@ export default function InstrumentSelfSummary({
             <div className="space-y-6">
               {(instrument.sections || [])
                 .filter(name => questions.some(q => q.section === name))
-                .map(name => (
-                  <div key={name}>
-                    <h3 className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-3">{name}</h3>
-                    <ol className="space-y-6">
-                      {questions.filter(q => q.section === name).map(answerItem)}
-                    </ol>
-                  </div>
-                ))}
+                .map(name => {
+                  // The heading travels with its first statement.
+                  //
+                  // On paper a dimension heading is the last thing that fits
+                  // on a page surprisingly often — iOS Safari printed this
+                  // report with ALIGN alone at the foot of page four and
+                  // DEMONSTRATE alone at the foot of page seven, each one
+                  // announcing a section that started overleaf. `break-after`
+                  // on the heading is the obvious fix and WebKit has never
+                  // honoured it reliably, so the heading and the first
+                  // statement are wrapped in one block that may not be split
+                  // instead. If that block will not fit, the whole thing moves
+                  // to the next page, which is the outcome wanted.
+                  //
+                  // The rest of the statements follow in their own list. The
+                  // numbers beside them are rendered from `numbers` rather
+                  // than by the list, so splitting the list in two changes
+                  // nothing a reader sees.
+                  const mine = questions.filter(q => q.section === name);
+                  const [first, ...rest] = mine;
+                  return (
+                    <div key={name}>
+                      {/* The legacy alias alongside the modern property:
+                          Tailwind's utility emits `break-inside` only, and
+                          WebKit has wanted `page-break-inside` for paged
+                          media for most of its life. Cheap insurance on the
+                          one engine this bug was found on. */}
+                      <div className="break-inside-avoid [page-break-inside:avoid]">
+                        <h3 className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-3 break-after-avoid">{name}</h3>
+                        {first && <ol className="space-y-6">{answerItem(first)}</ol>}
+                      </div>
+                      {rest.length > 0 && (
+                        <ol className="space-y-6 mt-6">{rest.map(answerItem)}</ol>
+                      )}
+                    </div>
+                  );
+                })}
             </div>
           ) : (
             <ol className="space-y-6">
