@@ -27,7 +27,7 @@ import InstrumentEditor from "./InstrumentEditor";
 // take its answers with it.
 // `focus` comes from System Health's Open: an instrument to open, and the
 // question in it to point at.
-export default function InstrumentsPage({ focus = null }) {
+export default function InstrumentsPage({ focus = null, onApplied = null }) {
   const [instruments, setInstruments] = useState([]);
   const [counts, setCounts] = useState({});
   const [loading, setLoading] = useState(true);
@@ -81,6 +81,13 @@ export default function InstrumentsPage({ focus = null }) {
       const res = await seedInstruments(base44, { onProgress: setProgress });
       setResult(res);
       await load();
+      // The New Assessment panel reads its own copy of this list, loaded once
+      // when the admin shell mounted. Applying the seed is the one thing that
+      // can add an instrument to it, and without this the instrument that was
+      // just created is missing from the picker until the page is reloaded —
+      // which reads as the new instrument not working rather than as a stale
+      // list, because every other screen already shows it.
+      await onApplied?.();
     } catch (e) {
       console.error("Failed to apply the instrument seed", e);
       setApplyError(e?.message || "Failed to apply the seed.");

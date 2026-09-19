@@ -712,7 +712,7 @@ export default function AdminPage() {
               onViewTeam={orgId => { setTeamOrgFilter(orgId); setSelectedSection("team"); }}
             />
           ) : selectedSection === "instruments" ? (
-            <InstrumentsPage key={focus.n} focus={focus.target} />
+            <InstrumentsPage key={focus.n} focus={focus.target} onApplied={loadInstruments} />
           ) : selectedSection === "library" ? (
             <LibraryPage key={`${libraryTab.n}-${focus.n}`} initialTab={libraryTab.tab} focus={focus.target} />
           ) : selectedSection === "resources" ? (
