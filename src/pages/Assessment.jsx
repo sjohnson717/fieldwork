@@ -266,7 +266,14 @@ function IntroPurpose({ isPersonal, instrument, subject, activityCount, showOwne
     const minutes = Math.max(3, Math.round((activityCount * 20) / 60));
     return (
       <div className="mb-6 text-sm text-gray-600 space-y-3">
-        {instrument.description && <p>{instrument.description}</p>}
+        {/* Preserves the paragraph breaks the description was written with.
+            Rendered as one <p> it came out as a wall of text: the four
+            imported descriptions all carry blank lines, and the Practice
+            Profile's runs to three paragraphs. Split the same way the band
+            advice is on a respondent's summary. */}
+        {instrument.description && instrument.description.split(/\n{2,}/).map((para, i) => (
+          <p key={i}>{para}</p>
+        ))}
         <p>
           <span className="font-semibold text-gray-800">{activityCount} questions</span>, about{" "}
           {minutes} minutes.
@@ -278,9 +285,16 @@ function IntroPurpose({ isPersonal, instrument, subject, activityCount, showOwne
             Everyone else answering is scoring the same one.
           </p>
         )}
+        {/* A dimension report is about the reader's own practice, and they
+            may well be the only person answering. Promising that their
+            answers sit alongside their colleagues' is wrong twice over: there
+            are no colleagues, and the disagreement this sentence offers as
+            the interesting part is not what the report shows them. */}
         <p className="text-gray-500">
-          Answer quickly and honestly — a first reaction is usually the more useful one. Your answers
-          are read alongside your colleagues', and where you disagree is the part worth discussing.
+          Answer quickly and honestly — a first reaction is usually the more useful one.
+          {instrument.report_style === "dimension"
+            ? " Nothing here is scored against anybody else; the profile is about your own practice."
+            : " Your answers are read alongside your colleagues', and where you disagree is the part worth discussing."}
         </p>
       </div>
     );
@@ -728,6 +742,11 @@ export default function Assessment() {
   // code entry, facet paging, resume, review, submission — is identical, so
   // this is the only thing the two types disagree about.
   const isPersonal = assessment?.assessment_type === "personal";
+  // Instruments whose output belongs to the one person who answered, rather
+  // than to a room. The personal assessment has always been one; a dimension
+  // report is the second, and the wrap-up's note about where free text goes
+  // has to name the right thing for both.
+  const ownReport = isPersonal || instrument?.report_style === "dimension";
 
   // The team assessment is only ever reported in aggregate. A personal
   // assessment is the opposite — it is read per person, and promising
@@ -1558,7 +1577,7 @@ export default function Assessment() {
           <h1 className="text-xl font-bold text-gray-900">Two last questions</h1>
           <p className="text-sm text-gray-500 mt-2 leading-relaxed">
             Both are optional. They go to the Quartz team, who use them to make the
-            assessment better — they are not part of {isPersonal ? "your profile" : "your team's report"}.
+            assessment better — they are not part of {ownReport ? "your profile" : "your team's report"}.
           </p>
         </div>
 

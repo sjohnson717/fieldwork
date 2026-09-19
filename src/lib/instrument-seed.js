@@ -69,6 +69,14 @@
 // and what to say to somebody who lands high or low in it. Those rows are
 // InstrumentSection, and like everything else here the seed only brings them
 // in — they are edited on Settings → Instruments afterwards.
+//
+// Its scale runs worst-first, like every other scale here, and that ordering
+// is load-bearing rather than editorial. The survey colours the answer pills
+// from a ramp keyed by position, on the documented assumption that a scale
+// runs none → most, and the distribution report draws its bar with the
+// lower-scoring answers on the left. Written Consistently-first, as the
+// source document lists it, the survey paints the best possible answer in the
+// ramp's grey "none" colour and the report's bar comes out mirrored.
 
 export const INSTRUMENT_SEED = {
   "scales": [
@@ -272,20 +280,20 @@ export const INSTRUMENT_SEED = {
       "unknown_treatment": "excluded",
       "options": [
         {
-          "label": "Consistently",
-          "points": 3
-        },
-        {
-          "label": "Usually",
-          "points": 2
+          "label": "Never",
+          "points": 0
         },
         {
           "label": "Rarely",
           "points": 1
         },
         {
-          "label": "Never",
-          "points": 0
+          "label": "Usually",
+          "points": 2
+        },
+        {
+          "label": "Consistently",
+          "points": 3
         }
       ]
     }
@@ -429,7 +437,7 @@ export const INSTRUMENT_SEED = {
       "key": "fractional_cpo_practice",
       "name": "Fractional CPO Practice Profile",
       "tagline": "How repeatable is the practice around your expertise?",
-      "description": "You already know how to lead a product organization. But running a Fractional CPO practice requires something more: a repeatable way to diagnose client problems, align leaders around what needs to change, develop team capabilities, demonstrate improvement, and reuse what you've learned across engagements.\n\nThe Fractional CPO Practice Profile examines how well your consulting practice supports those activities today. This isn't an assessment of your product leadership expertise. It's a profile of the infrastructure around your expertise.\n\nFor each statement, consider how you typically work across your client engagements—not just your best client or your most recent one. Fifteen statements, about three minutes.\n\nYour answers are yours. We report what practitioners say only in aggregate, never attributed to you, your firm, or your clients.",
+      "description": "You already know how to lead a product organization. But running a Fractional CPO practice requires something more: a repeatable way to diagnose client problems, align leaders around what needs to change, develop team capabilities, demonstrate improvement, and reuse what you've learned across engagements.\n\nThe Fractional CPO Practice Profile examines how well your consulting practice supports those activities today. This isn't an assessment of your product leadership expertise. It's a profile of the infrastructure around your expertise.\n\nFor each statement, consider how you typically work across your client engagements—not just your best client or your most recent one.\n\nYour answers are yours. We report what practitioners say only in aggregate, never attributed to you, your firm, or your clients.",
       "sections": [
         "DIAGNOSE",
         "ALIGN",
