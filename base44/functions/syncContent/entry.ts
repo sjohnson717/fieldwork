@@ -84,7 +84,11 @@ Deno.serve(async (req) => {
 
     const { files, message, expectedSha } = await req.json();
     if (!Array.isArray(files) || files.length === 0) return fail("files is required.");
-    if (files.length > 20) return fail("Too many files in one commit.");
+    // The whole set is one commit now — the screen offers "Commit everything",
+    // and every content file differing at once is an ordinary morning after a
+    // big edit, not a runaway. Still bounded, because the count is the only
+    // thing standing between a bug upstream and a very large commit.
+    if (files.length > 40) return fail("Too many files in one commit.");
 
     for (const f of files) {
       if (!f || typeof f.path !== "string" || typeof f.text !== "string") {

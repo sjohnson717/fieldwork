@@ -480,6 +480,67 @@ export default function ContentSync({ onApplied = null }) {
 
   const activityNames = new Map((compared?.live.activities || []).map((a) => [a.id, a.name]));
 
+  // Everything the app holds that its file does not, gathered once.
+  //
+  // The rows each offer their own Commit, and one per row is the right shape
+  // for deciding about a difference. It is the wrong shape for the ordinary
+  // afternoon: a wording fix in the library, two instruments edited, a post
+  // skipped, and keeping the repository current is four syncs and four
+  // commits — which is a routine that gets skipped, and a backup that goes
+  // quietly stale. The function takes files in one commit already; this is the
+  // screen finally offering it.
+  //
+  // Only this direction. There is no Apply everything, and there should not be:
+  // applying overwrites what somebody typed into the app, and that decision is
+  // made one file at a time after reading what changes.
+  const pending = [];
+  if (compared) {
+    const add = (label, path, text) => pending.push({ label, path, text });
+    if (compared.scales.appText && compared.scales.appText !== compared.scales.fileText) {
+      add("the answer scales", "content/scales.md", compared.scales.appText);
+    }
+    if (compared.library.differs) {
+      // A phase at a time, so an untouched phase file is not rewritten — but
+      // named once, because seven files are one library.
+      for (const facet of FACETS) {
+        const path = `content/library/${facet.toLowerCase()}.md`;
+        if (compared.loaded.files[path] !== compared.library.files[path]) {
+          add("the activity library", path, compared.library.files[path]);
+        }
+      }
+    }
+    for (const [key, label, path] of [
+      ["resources", "the resources", "content/resources.md"],
+      ["activitySets", "the activity sets", "content/activity-sets.md"],
+      ["skippedPosts", "the skipped posts", "content/skipped-posts.md"],
+      ["jobTitles", "the job titles", "content/job-titles.md"],
+    ]) {
+      if (compared[key].differs) add(label, path, compared[key].appText);
+    }
+    for (const entry of compared.instruments) {
+      if (entry.appText && entry.appText !== entry.fileText) add(entry.content.name, entry.path, entry.appText);
+    }
+  }
+  const pendingNames = [...new Set(pending.map((f) => f.label))];
+
+  // Oxford comma, as everywhere else the app lists things.
+  const listOf = (items) =>
+    items.length < 2 ? (items[0] || "")
+      : items.length === 2 ? `${items[0]} and ${items[1]}`
+      : `${items.slice(0, -1).join(", ")}, and ${items[items.length - 1]}`;
+
+  const commitEverything = () => commit(
+    "all",
+    pending.map(({ path, text }) => ({ path, text })),
+    // Short enough to read in a list of commits when it names a few things,
+    // and a count when it does not. The paths go in the body either way, so
+    // the commit says exactly what it touched without being opened.
+    (pendingNames.length <= 4
+      ? `Sync ${listOf(pendingNames)} from the app`
+      : `Sync ${pending.length} content files from the app`)
+    + (pending.length > 1 ? `\n\n${pending.map((f) => f.path).join("\n")}` : ""),
+  );
+
   const showChanges = (key, diff) => {
     const n = contentOf(diff).length;
     if (!n) return null;
@@ -503,13 +564,28 @@ export default function ContentSync({ onApplied = null }) {
               : `content/ on the ${CONTENT_BRANCH} branch`}
           </p>
         </div>
-        <button
-          onClick={() => compare()}
-          disabled={comparing || !!busy}
-          className="text-sm font-medium px-4 py-2 rounded-lg bg-[#3366FF] hover:bg-[#2952CC] text-white disabled:opacity-50 transition-colors"
-        >
-          {comparing ? "Reading…" : compared ? "Sync again" : "Sync with files"}
-        </button>
+        <div className="flex items-center gap-3 shrink-0">
+          {/* Beside Sync, because the two of them are the whole routine when
+              the editing is done in the app: read what differs, then put all
+              of it in the repository. */}
+          {pending.length > 0 && (
+            <button
+              onClick={commitEverything}
+              disabled={!!busy || comparing}
+              title={pendingNames.join("\n")}
+              className="text-sm font-medium px-4 min-h-[44px] md:min-h-0 py-2 rounded-lg border border-[#3366FF] text-[#3366FF] hover:bg-blue-50 disabled:opacity-50 transition-colors"
+            >
+              {busy === "all" ? "Committing…" : `Commit everything (${pendingNames.length})`}
+            </button>
+          )}
+          <button
+            onClick={() => compare()}
+            disabled={comparing || !!busy}
+            className="text-sm font-medium px-4 min-h-[44px] md:min-h-0 py-2 rounded-lg bg-[#3366FF] hover:bg-[#2952CC] text-white disabled:opacity-50 transition-colors"
+          >
+            {comparing ? "Reading…" : compared ? "Sync again" : "Sync with files"}
+          </button>
+        </div>
       </div>
 
       <p className="text-xs text-gray-400 px-6 py-3 border-b border-gray-100">
@@ -522,6 +598,14 @@ export default function ContentSync({ onApplied = null }) {
         {CONTENT_BRANCH} branch, which nothing rebuilds from. Save file is that
         same text as a download, for committing by hand.
       </p>
+
+      {committed.all && (
+        <p className="text-xs text-green-700 px-6 py-3 border-b border-gray-100 bg-green-50/40">
+          {committed.all.unchanged
+            ? "The branch already had all of it."
+            : <>{committed.all.committed?.length ?? 0} file{committed.all.committed?.length === 1 ? "" : "s"} committed to {committed.all.branch}. <a href={committed.all.url} target="_blank" rel="noreferrer" className="underline">{committed.all.sha?.slice(0, 7)}</a></>}
+        </p>
+      )}
 
       {error && <p className="text-xs text-red-500 px-6 py-3">{error}</p>}
       {compared?.loaded.warning && <p className="text-xs text-amber-600 px-6 py-3 bg-amber-50/50">{compared.loaded.warning}</p>}
