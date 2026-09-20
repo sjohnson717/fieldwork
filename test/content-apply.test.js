@@ -359,3 +359,47 @@ test("the ids written on a first sync are bookkeeping, and nothing else is confu
   assert.ok(ids.every((d) => d.group === "bookkeeping"));
   assert.ok(!diff.some((d) => d.group === "content"), "the wording is untouched by an adoption");
 });
+
+// Product Success Quiz, as the app holds it: two retired questions sitting in
+// sections no Dimension block declares. Both collapse to the end when the app's
+// asked-order is worked out, so their relative order stops matching the file
+// and the screen reported a reordering with nothing to write and no button to
+// write it with — "up to date", and a difference printed underneath.
+test("a question nobody is asked is not part of the order they are asked in", async () => {
+  const be = backend();
+  const content = parseInstrument(fileFor("product-success"));
+  await applyPlan(be, planInstrument(content, be.live()));
+  const clean = planInstrument(content, be.live());
+  assert.equal(clean.writes, 0);
+  assert.equal(clean.order.questions.changed, false);
+
+  // The retired pair swapped in the app, which is what it looked like on
+  // screen: still nothing to decide about, because neither is ever asked.
+  const live = be.live();
+  const retired = live.activities.filter((a) => !content.dimensions.some((d) => d.name === a.section));
+  assert.ok(retired.length >= 2, "the file should still have questions outside its dimensions");
+  const [a, b] = retired;
+  [a.section_sort, b.section_sort] = [b.section_sort, a.section_sort];
+  const after = planInstrument(content, live);
+  assert.equal(after.order.questions.changed, false);
+  assert.equal(after.writes, 0);
+});
+
+// And a real reordering is still a real reordering.
+test("a question that moves inside its own section still reports", async () => {
+  const be = backend();
+  const content = parseInstrument(fileFor("product-success"));
+  await applyPlan(be, planInstrument(content, be.live()));
+  const live = be.live();
+  // Two questions in one section, so the swap is a move within the order and
+  // not two sections passing each other.
+  const section = content.dimensions.find((d) =>
+    live.activities.filter((a) => a.section === d.name).length > 1).name;
+  const pair = live.activities
+    .filter((a) => a.section === section)
+    .sort((x, y) => (x.section_sort ?? 0) - (y.section_sort ?? 0));
+  [pair[0].section_sort, pair[1].section_sort] = [pair[1].section_sort, pair[0].section_sort];
+  const plan = planInstrument(content, live);
+  assert.equal(plan.order.questions.changed, true);
+  assert.ok(plan.writes > 0, "a reorder is a write, so there is a button to act on it");
+});

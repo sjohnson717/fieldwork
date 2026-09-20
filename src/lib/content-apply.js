@@ -330,12 +330,24 @@ export function planInstrument(content, live) {
     return { before: b, after: a, changed: b.length === a.length && b.some((n, i) => n !== a[i]) };
   };
   const rank = new Map((existing?.sections || []).map((n, i) => [n, i]));
-  const appQuestionOrder = [...myQuestions].sort((x, y) => {
+  // A question in a section no Dimension block declares is not asked at all —
+  // the survey pages are built from the section list — so it has no place in
+  // the order they are asked in. Left in the comparison it collapses to the
+  // end of the app's order while the file still holds it where it was written,
+  // and reports a reordering that is not one and cannot be acted on: the row
+  // reads "up to date" with a difference printed underneath it and no button
+  // beside it, which is the exact thing this screen exists not to do.
+  const declared = new Set(content.dimensions.map((d) => d.name));
+  const asked = (section) => declared.has(section);
+  const appQuestionOrder = [...myQuestions].filter((q) => asked(q.section)).sort((x, y) => {
     const at = (q) => (rank.has(q.section) ? rank.get(q.section) : rank.size);
     return at(x) - at(y) || (x.section_sort ?? 0) - (y.section_sort ?? 0);
   });
   plan.order = {
-    questions: resequence(appQuestionOrder.map((q) => q.name), plan.questions.map((q) => q.name)),
+    questions: resequence(
+      appQuestionOrder.map((q) => q.name),
+      plan.questions.filter((q) => asked(q.patch.section)).map((q) => q.name),
+    ),
     bands: resequence(
       [...mine(live.bands || [])].sort((x, y) => (x.sort_order ?? 0) - (y.sort_order ?? 0)).map((b) => b.name),
       plan.bands.map((b) => b.name),
