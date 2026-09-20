@@ -236,13 +236,6 @@ export function runChecks(data, now = new Date()) {
     blogPending: newPosts.length,
     blogAdded: blogPosts.filter(p => added.has(sameAddress(p.url))).length,
     blogSkipped: skippedPosts.length,
-    // A dash rather than a zero when the branch could not be read: "0 of 0 in
-    // step" would be a green answer to a question nobody managed to ask.
-    contentFiles: contentRows.length || null,
-    contentSynced: contentRows.length ? contentRows.filter((r) => r.state === "ok").length : null,
-    // Said out loud, because comparing against the copy inside this build is
-    // not comparing against the repository.
-    contentWarning: contentStatus?.warning || null,
   };
 
   return { totals, checks: [

@@ -96,7 +96,7 @@ test("System Health reports the two as different kinds of thing", () => {
   const files = filesFor(l);
   delete files["content/skipped-posts.md"];
   files["content/job-titles.md"] = writeJobTitles([{ id: "product-manager", name: "Product Owner", active: true }]);
-  const { checks, totals } = runChecks({ contentStatus: { rows: statusOf(files, l) } });
+  const { checks } = runChecks({ contentStatus: { rows: statusOf(files, l) } });
 
   const missing = checks.find((c) => c.key === "content-missing");
   assert.equal(missing.severity, "fix", "nothing would bring it back");
@@ -109,19 +109,17 @@ test("System Health reports the two as different kinds of thing", () => {
   assert.deepEqual(drift.items.map((i) => i.label), ["Job titles"]);
   assert.match(drift.items[0].detail, /1 row the file would write to the app/);
 
-  assert.equal(totals.contentFiles, statusOf(files, l).length);
-  assert.equal(totals.contentSynced, totals.contentFiles - 2);
 });
 
 test("a branch that could not be read is not a green tick", () => {
-  // Every check names the lists it needs; this one needs the comparison, and
-  // with none the page marks it unchecked rather than passing it.
-  const { checks, totals } = runChecks({});
+  // Every check names the lists it needs; these need the comparison, and with
+  // none the page marks them unchecked rather than passing them. content-live
+  // throws rather than comparing against the copy bundled into the build, so
+  // this is the state an unreachable GitHub produces.
+  const { checks } = runChecks({});
   for (const key of ["content-missing", "content-drift"]) {
     const c = checks.find((x) => x.key === key);
     assert.deepEqual(c.items, []);
-    assert.deepEqual(c.needs, ["contentStatus"]);
+    assert.deepEqual(c.needs, ["contentStatus"], "so the page can mark it unchecked");
   }
-  assert.equal(totals.contentFiles, null, "a dash, never a zero");
-  assert.equal(totals.contentSynced, null);
 });

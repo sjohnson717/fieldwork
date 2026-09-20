@@ -203,7 +203,7 @@ export default function HealthPage({ onOpen }) {
       ) : (
         <div className="px-4 md:px-8 py-6 max-w-3xl space-y-6">
           {/* Also where a failed list shows: a dash, never a zero. */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
             <Tile
               count={failed.has("assessments") ? null : totals.assessments}
               label="Assessments"
@@ -219,13 +219,6 @@ export default function HealthPage({ onOpen }) {
               count={failed.has("activities") || failed.has("instruments") ? null : totals.questions}
               label="Instrument questions"
               note={failed.has("instruments") ? null : `${totals.instruments} instruments`}
-            />
-            <Tile
-              count={failed.has("contentStatus") ? null : totals.contentSynced}
-              label="Files in step"
-              note={failed.has("contentStatus") ? null
-                : totals.contentWarning ? "Compared against this build, not the branch"
-                : `of ${totals.contentFiles} · with the content branch`}
             />
             <Tile
               count={failed.has("blogPosts") || failed.has("resources") || failed.has("skippedPosts") ? null : totals.blogPending}
