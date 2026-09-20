@@ -100,7 +100,10 @@ const collapse = (s) => s.replace(/\s+/g, " ").trim();
 // which is the screen saying "these differ" and "these are identical" at once,
 // and the second one is the lie. A paragraph break is a real edit: it is what
 // the report renders as two paragraphs.
-const whitespace = (s) => s.replace(/\r/g, "").replace(/\n/g, "⏎").replace(/\t/g, "→").replace(/ {2,}/g, (m) => "·".repeat(m.length));
+// Every space, not only a run of them: the first difference this was built to
+// show turned out to be one character of trailing whitespace, and a single
+// space left unmarked is exactly as invisible as the thing it was hiding.
+const whitespace = (s) => s.replace(/\r/g, "␍").replace(/\n/g, "⏎").replace(/\t/g, "→").replace(/ /g, "·");
 
 const FieldList = ({ content, names = null }) => {
   // A link is stored as an id and read as a name. "activity-210 → —" is a true
@@ -142,7 +145,7 @@ const FieldList = ({ content, names = null }) => {
         {d.field && (
           <dd className="mt-0.5 space-y-1">
             {shown.spacing && (
-              <p className="text-[10px] uppercase tracking-wide text-gray-400">spacing only · ⏎ is a line break</p>
+              <p className="text-[10px] uppercase tracking-wide text-gray-400">spacing only · ⏎ line break · · space</p>
             )}
             {/* Labelled rather than struck through. A strikethrough says the
                 file has won, and nothing here has decided that — Apply makes
