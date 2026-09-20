@@ -24,13 +24,12 @@ export const REPO = "fieldwork";
 export const CONTENT_BRANCH = "content";
 export const CONTENT_DIR = "content";
 
-// Vite reads these at build time. The keys are repository paths, which is what
-// everything downstream names a file by, so the bundled copy and the fetched
-// copy are the same shape.
-const bundled = import.meta.glob("/content/**/*.md", { query: "?raw", import: "default", eager: true });
+// Read at build time by the content-files plugin in vite.config.js, keyed by
+// repository path — which is what everything downstream names a file by, so
+// the bundled copy and the fetched copy are the same shape.
+import bundled from "virtual:content-files";
 
-export const bundledFiles = () =>
-  Object.fromEntries(Object.entries(bundled).map(([path, text]) => [path.replace(/^\//, ""), text]));
+export const bundledFiles = () => ({ ...bundled });
 
 const rawUrl = (branch, path) =>
   `https://raw.githubusercontent.com/${OWNER}/${REPO}/${branch}/${path}`;
