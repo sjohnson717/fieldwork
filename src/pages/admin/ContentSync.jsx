@@ -92,23 +92,46 @@ const divergence = (a, b) => {
   return i;
 };
 
+const clip = (s, n = 160) => (s.length > n ? `${s.slice(0, n)}…` : s);
+const collapse = (s) => s.replace(/\s+/g, " ").trim();
+
+// Whitespace, made visible for the one case where it is the whole difference.
+// Two notes that differ by a line break print as the same sentence twice —
+// which is the screen saying "these differ" and "these are identical" at once,
+// and the second one is the lie. A paragraph break is a real edit: it is what
+// the report renders as two paragraphs.
+const whitespace = (s) => s.replace(/\r/g, "").replace(/\n/g, "⏎").replace(/\t/g, "→").replace(/ {2,}/g, (m) => "·".repeat(m.length));
+
 const FieldList = ({ content, names = null }) => {
   // A link is stored as an id and read as a name. "activity-210 → —" is a true
   // description of a link being dropped and tells nobody which link it was.
-  const value = (v, from = 0) => {
-    if (names && Array.isArray(v)) return short(v.map((x) => names.get(x) || x));
-    if (!from || typeof v !== "string") return short(v);
-    return `…${short(v.slice(from))}`;
-  };
-  // Where both columns start, so the two lines stay comparable side by side.
-  const start = (d) => {
-    if (typeof d.from !== "string" || typeof d.to !== "string") return 0;
-    const at = divergence(d.from.replace(/\s+/g, " "), d.to.replace(/\s+/g, " "));
-    return at > WINDOW * 2 ? at - WINDOW : 0;
+  // Both columns of one field, windowed together so the lines stay comparable
+  // side by side, and cut from the raw text the index was found in — measuring
+  // the divergence on a tidied copy and slicing the original put the window in
+  // the wrong place and printed the same tail twice.
+  const pair = (d) => {
+    const { from, to } = d;
+    if (names && Array.isArray(to)) {
+      const named = (v) => short((Array.isArray(v) ? v : []).map((x) => names.get(x) || x));
+      return { from: named(from), to: named(to), spacing: false };
+    }
+    if (typeof from !== "string" || typeof to !== "string") {
+      return { from: short(from), to: short(to), spacing: false };
+    }
+    const spacing = collapse(from) === collapse(to);
+    const at = divergence(from, to);
+    const cut = at > WINDOW * 2 ? at - WINDOW : 0;
+    const one = (v) => {
+      const rest = v.slice(cut);
+      return `${cut ? "…" : ""}${spacing ? clip(whitespace(rest)) : short(rest)}`;
+    };
+    return { from: one(from), to: one(to), spacing };
   };
   return (
   <dl className="mt-3 space-y-2 border-l-2 border-gray-100 pl-3">
-    {content.map((d, i) => (
+    {content.map((d, i) => {
+      const shown = pair(d);
+      return (
       <div key={i} className="text-xs">
         <dt className="text-gray-500">
           <span className="uppercase tracking-wide text-[10px] text-gray-400">{d.kind}</span>{" "}
@@ -118,22 +141,26 @@ const FieldList = ({ content, names = null }) => {
         </dt>
         {d.field && (
           <dd className="mt-0.5 space-y-1">
+            {shown.spacing && (
+              <p className="text-[10px] uppercase tracking-wide text-gray-400">spacing only · ⏎ is a line break</p>
+            )}
             {/* Labelled rather than struck through. A strikethrough says the
                 file has won, and nothing here has decided that — Apply makes
                 the file right, Commit makes the app right, and the person
                 reading the two values is the one who knows which. */}
             <p className="flex gap-2">
               <span className="w-12 shrink-0 text-[10px] uppercase tracking-wide text-gray-400 pt-0.5">App</span>
-              <span className="text-gray-700">{value(d.from, start(d))}</span>
+              <span className="text-gray-700 whitespace-pre-wrap">{shown.from}</span>
             </p>
             <p className="flex gap-2">
               <span className="w-12 shrink-0 text-[10px] uppercase tracking-wide text-gray-400 pt-0.5">File</span>
-              <span className="text-gray-700">{value(d.to, start(d))}</span>
+              <span className="text-gray-700 whitespace-pre-wrap">{shown.to}</span>
             </p>
           </dd>
         )}
       </div>
-    ))}
+      );
+    })}
   </dl>
   );
 };
