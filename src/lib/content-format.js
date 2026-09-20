@@ -127,6 +127,11 @@ const JOB_TITLE_ATTRS = [
   ["active", FLAG, true],
 ];
 
+const ACTIVITY_SET_ATTRS = [
+  ["id", STR],
+  ["active", FLAG, true],
+];
+
 const SCALE_ATTRS = [
   ["id", STR],
   ["hint", STR],
@@ -243,6 +248,19 @@ export function normalizeJobTitle(src) {
   return out;
 }
 
+// A curated preset: a name, what it is for, and the library activities it
+// holds, in the order a facilitator reads them. The activities are named by
+// their library ids, because a set is a list of references and nothing else —
+// nothing about an activity is authored here.
+export function normalizeActivitySet(src) {
+  const out = normalizeAttrs(src, ACTIVITY_SET_ATTRS);
+  out.name = normalizeProse(src?.name);
+  if (!out.id) out.id = slugify(out.name);
+  out.description = normalizeProse(src?.description);
+  out.activities = (src?.activities || []).map((a) => String(a)).filter(Boolean);
+  return out;
+}
+
 export function normalizeScale(src) {
   const out = normalizeAttrs(src, SCALE_ATTRS);
   out.name = normalizeProse(src?.name);
@@ -352,6 +370,19 @@ export function writeResources(resources) {
   return sections.join("\n\n") + "\n";
 }
 
+export function writeActivitySets(sets) {
+  const sections = ["<!-- The presets a facilitator picks when setting up an assessment. Each one names the library activities it holds, in the order they are offered. -->"];
+  for (const raw of sets) {
+    const set = normalizeActivitySet(raw);
+    const attrs = attrLines(set, ACTIVITY_SET_ATTRS);
+    const parts = [`## Set: ${set.name}` + (attrs.length ? `\n${attrs.join("\n")}` : "")];
+    if (set.description) parts.push(set.description);
+    if (set.activities.length) parts.push(["**Activities.**", ...set.activities.map((a) => `- ${a}`)].join("\n"));
+    sections.push(parts.join("\n\n"));
+  }
+  return sections.join("\n\n") + "\n";
+}
+
 export function writeJobTitles(titles) {
   const sections = ["<!-- The functions an activity can recommend and a respondent can pick, in the order they are offered. -->"];
   for (const raw of titles) {
@@ -377,7 +408,7 @@ export function writeScales(scales) {
 
 // ── Parsing ─────────────────────────────────────────────────────────────────
 
-const HEADING = /^## (Dimension|Question|Band|Scale|Activity|Resource|Title): (.+?)\s*$/;
+const HEADING = /^## (Dimension|Question|Band|Scale|Activity|Resource|Title|Set): (.+?)\s*$/;
 // Two words where a field reads better as two: "**Try this.**" is what the
 // library calls it on screen, and a label the file spells differently from the
 // app is a translation somebody has to hold in their head.
@@ -484,6 +515,18 @@ export function parseResources(text) {
     const list = labels.get("For") || "";
     return normalizeResource({
       title: seg.name, ...seg.attrs, note: prose,
+      activities: [...list.matchAll(/^-\s*(.+?)\s*$/gm)].map((m) => m[1]),
+    });
+  });
+}
+
+export function parseActivitySets(text) {
+  const { segments } = segmentsOf(String(text).replace(/\r\n/g, "\n"));
+  return segments.filter((s) => s.kind === "Set").map((seg) => {
+    const { prose, labels } = splitLabels(seg.body);
+    const list = labels.get("Activities") || "";
+    return normalizeActivitySet({
+      name: seg.name, ...seg.attrs, description: prose,
       activities: [...list.matchAll(/^-\s*(.+?)\s*$/gm)].map((m) => m[1]),
     });
   });
@@ -680,6 +723,35 @@ export function validateResources(resources, { activityIds = null } = {}) {
   return errors;
 }
 
+// Sets, against the library they are built from. A set that names an activity
+// the library does not have is the failure worth catching here: applied, it
+// would write a preset quietly short of what its author picked.
+export function validateActivitySets(sets, { activityIds = null } = {}) {
+  const errors = [];
+  const ids = new Set();
+  const names = new Set();
+  for (const set of sets.map(normalizeActivitySet)) {
+    if (!set.name) errors.push("A set has no name.");
+    if (!/^[a-z0-9-]+$/.test(set.id)) errors.push(`"${set.id}" is not a usable id — lower case, digits, and hyphens.`);
+    if (ids.has(set.id)) errors.push(`Two sets share the id "${set.id}".`);
+    ids.add(set.id);
+    // A facilitator picks a preset by its name on one menu, so two sets called
+    // one thing is a choice nobody can make.
+    if (names.has(set.name)) errors.push(`Two sets are called "${set.name}".`);
+    names.add(set.name);
+    const held = new Set();
+    for (const a of set.activities) {
+      if (held.has(a)) errors.push(`"${set.name}" holds "${a}" twice.`);
+      held.add(a);
+      if (activityIds && !activityIds.includes(a)) {
+        errors.push(`"${set.name}" holds "${a}", which is not an activity in the library.`);
+      }
+    }
+    if (!set.activities.length) errors.push(`"${set.name}" holds no activities.`);
+  }
+  return errors;
+}
+
 // The entity fields each file field maps to, declared once so the applier
 // cannot drift from the format. Read by content-apply.js.
 export const ENTITY_FIELDS = {
@@ -700,6 +772,9 @@ export const ENTITY_FIELDS = {
   // activities and sort_order likewise: the links are resolved to row ids, and
   // the order is the order they are written in.
   job_title: { id: "content_key", name: "name", active: "active" },
+  // activities and sort_order are not here for the same reason as a resource's:
+  // the list is resolved to row ids, and the order is document order.
+  activity_set: { id: "content_key", name: "name", description: "description", active: "active" },
   resource: { id: "content_key", title: "title", type: "resource_type", source: "source", published: "published_date", url: "url", note: "note", fallback: "fallback", active: "active" },
   dimension: { id: "content_key", name: "name", blurb: "blurb", strong: "strong", opportunity: "opportunity" },
 };

@@ -835,6 +835,119 @@ export function resourcesFromLive(live) {
     }));
 }
 
+// ── Activity sets ───────────────────────────────────────────────────────────
+//
+// The curated presets, and the one thing in the content files that nothing else
+// could reproduce: a set is a judgement about which activities belong together,
+// held nowhere but in the row itself. Losing one means picking it again.
+//
+// A set names its activities by their library ids, so the library has to have
+// taken its ids before this is applied — the same ordering hazard the resources
+// have, and for the same reason. An id that resolves to nothing is reported and
+// left out rather than written away, because a preset quietly short of two
+// activities is a preset nobody notices is wrong.
+//
+// Membership is a set and not a sequence: the preset copies its ids onto the
+// assessment, which pages through the library's own order. So the file writes
+// the members in library order, and a re-ordering is not a change.
+
+export function planActivitySets(sets, live, { libraryIdByKey = new Map() } = {}) {
+  const existing = live.activitySets || [];
+  const plan = { sets: [], orphans: [], unknownActivities: [] };
+  for (const [i, set] of sets.entries()) {
+    const row = matcher(existing, existing, set.id, set.name);
+    const wanted = [];
+    for (const key of set.activities) {
+      const id = libraryIdByKey.get(key);
+      if (id) wanted.push(id);
+      else plan.unknownActivities.push({ set: set.name, activity: key });
+    }
+    const patch = {
+      ...mapFields("activity_set", set),
+      content_key: set.id,
+      sort_order: i,
+      activity_ids: [...new Set(wanted)],
+    };
+    const changes = changedFields(row, patch);
+    plan.sets.push({
+      id: set.id, name: set.name, rowId: row?.id || null, row,
+      adopted: !!row && !row.content_key,
+      changes, action: action(row, changes), patch,
+    });
+  }
+  const ids = new Set(sets.map((set) => set.id));
+  for (const row of existing) {
+    if (ids.has(row.content_key || slugify(row.name))) continue;
+    plan.orphans.push({ name: row.name, rowId: row.id, retired: row.active === false });
+  }
+  plan.counts = tally(plan.sets);
+  plan.writes = plan.sets.filter((set) => set.action !== "unchanged").length;
+  return plan;
+}
+
+export async function applyActivitySets(base44, plan, { onProgress } = {}) {
+  const e = base44.entities;
+  onProgress?.("Activity sets");
+  const written = { sets: 0 };
+  let schemaChecked = false;
+  for (const set of plan.sets) {
+    if (set.action === "unchanged") continue;
+    const row = set.action === "create"
+      ? await e.ActivitySet.create(set.patch)
+      : await e.ActivitySet.update(set.rowId, set.patch);
+    if (!schemaChecked) {
+      schemaChecked = true;
+      if (row.content_key === undefined || row.content_key === null) {
+        throw new Error("ActivitySet has no content_key column yet, so nothing here can be matched on a second run. Publish the app, then apply again.");
+      }
+    }
+    written.sets++;
+  }
+  const notes = plan.orphans.map((o) =>
+    `"${o.name}" is in the app but not in content/activity-sets.md. Left alone${o.retired ? " (already switched off)" : ""} — commit first if it is one to keep.`);
+  for (const u of plan.unknownActivities) {
+    notes.push(`"${u.set}" holds "${u.activity}", which is not an activity in the library. It was left out of the set.`);
+  }
+  return { written, notes };
+}
+
+// Ids in a live set that resolve to no library activity — a deleted row, or an
+// activity that has since become an instrument question. The file cannot hold
+// them, so the screen says how many a commit would drop rather than dropping
+// them quietly.
+export function unresolvedSetLinks(live) {
+  const known = new Set(
+    (live.activities || [])
+      .filter((a) => !a.assessment_id && !(a.instrument_ids || []).length)
+      .map((a) => a.id),
+  );
+  return (live.activitySets || [])
+    .map((row) => ({ name: row.name, count: (row.activity_ids || []).filter((id) => !known.has(id)).length }))
+    .filter((r) => r.count > 0);
+}
+
+export function activitySetsFromLive(live) {
+  const library = (live.activities || [])
+    .filter((a) => !a.assessment_id && !(a.instrument_ids || []).length)
+    .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+  // Library order, not the order the ids happen to sit in the row: the members
+  // are a set, and a file that reshuffles itself on every commit is a file
+  // nobody can read a diff of.
+  const keyById = new Map(library.map((a) => [a.id, a.content_key || slugify(a.name)]));
+  const position = new Map(library.map((a, i) => [a.id, i]));
+  return (live.activitySets || [])
+    .slice()
+    .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+    .map((row) => ({
+      ...unmap("activity_set", row),
+      id: row.content_key || slugify(row.name),
+      activities: [...new Set(row.activity_ids || [])]
+        .filter((id) => keyById.has(id))
+        .sort((a, b) => position.get(a) - position.get(b))
+        .map((id) => keyById.get(id)),
+    }));
+}
+
 // ── Job titles ──────────────────────────────────────────────────────────────
 //
 // The functions an activity can recommend and a respondent can pick.

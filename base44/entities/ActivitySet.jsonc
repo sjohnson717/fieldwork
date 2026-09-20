@@ -2,6 +2,10 @@
   "name": "ActivitySet",
   "type": "object",
   "properties": {
+    "content_key": {
+      "type": "string",
+      "description": "The id this set has in content/activity-sets.md. A set is a hand-picked list that nothing else reproduces, so the file is its backup; the id is what lets a sync tell a renamed set from a new one."
+    },
     "name": {
       "type": "string"
     },

@@ -17,6 +17,7 @@ import {
   parseInstrument, parseScales, validateInstrument, validateAcross,
   parseLibrary, parseResources, validateLibrary, validateResources, FACETS,
   parseJobTitles, validateJobTitles,
+  parseActivitySets, validateActivitySets,
 } from "@/lib/content-format";
 
 export const OWNER = "sjohnson717";
@@ -65,6 +66,7 @@ export async function loadFromBranch({ branch = CONTENT_BRANCH, fetchImpl = fetc
   const [instrumentPaths, libraryPaths] = await Promise.all([listDir("instruments"), listDir("library")]);
   const paths = [
     `${CONTENT_DIR}/scales.md`, `${CONTENT_DIR}/resources.md`, `${CONTENT_DIR}/job-titles.md`,
+    `${CONTENT_DIR}/activity-sets.md`,
     ...instrumentPaths, ...libraryPaths,
   ];
   // The commit is pinned rather than the branch name, so a push landing
@@ -167,6 +169,25 @@ export function readContent(files) {
     : [];
   if (resourceErrors.length) problems.push({ path: resourcesPath, errors: resourceErrors });
 
+  // The presets, which like the library and the resources have no file until
+  // the app writes one — and which name library activities, so they are read
+  // against the same ids.
+  const setsPath = `${CONTENT_DIR}/activity-sets.md`;
+  let activitySets = [];
+  let setsPresent = files[setsPath] !== undefined;
+  if (setsPresent) {
+    try {
+      activitySets = parseActivitySets(files[setsPath]);
+    } catch (e) {
+      setsPresent = false;
+      problems.push({ path: setsPath, errors: [`Could not be read: ${e?.message || e}`] });
+    }
+  }
+  const setErrors = setsPresent
+    ? validateActivitySets(activitySets, { activityIds: libraryPresent ? activityIds : null })
+    : [];
+  if (setErrors.length) problems.push({ path: setsPath, errors: setErrors });
+
   const titlesPath = `${CONTENT_DIR}/job-titles.md`;
   let jobTitles = [];
   let titlesPresent = files[titlesPath] !== undefined;
@@ -188,5 +209,6 @@ export function readContent(files) {
     jobTitles: { rows: jobTitles, present: titlesPresent && !titleErrors.length },
     library: { byFacet, present: libraryPresent && !libraryErrors.length },
     resources: { rows: resources, present: resourcesPresent && !resourceErrors.length },
+    activitySets: { rows: activitySets, present: setsPresent && !setErrors.length },
   };
 }

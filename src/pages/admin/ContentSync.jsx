@@ -5,10 +5,11 @@ import {
   planInstrument, applyPlan, planDiff, planScales, applyScales, contentFromLive, scalesFromLive, NEW_INSTRUMENT,
   planLibrary, applyLibrary, libraryFromLive, planResources, applyResources, resourcesFromLive,
   planJobTitles, applyJobTitles, jobTitlesFromLive, rowsDiff,
+  planActivitySets, applyActivitySets, activitySetsFromLive, unresolvedSetLinks,
 } from "@/lib/content-apply";
 import {
   writeInstrument, writeScales, parseInstrument, validateInstrument,
-  writeLibrary, writeResources, writeJobTitles, FACETS,
+  writeLibrary, writeResources, writeJobTitles, writeActivitySets, FACETS,
 } from "@/lib/content-format";
 import { functionErrorMessage } from "@/lib/utils";
 
@@ -54,7 +55,7 @@ const statusLine = (plan) => {
 };
 
 const liveSnapshot = async () => {
-  const [instruments, activities, bands, sections, resources, scales, scaleOptions, jobTitles] = await Promise.all([
+  const [instruments, activities, bands, sections, resources, scales, scaleOptions, jobTitles, activitySets] = await Promise.all([
     base44.entities.Instrument.list("sort_order"),
     base44.entities.Activity.list(),
     base44.entities.Band.list(),
@@ -63,8 +64,9 @@ const liveSnapshot = async () => {
     base44.entities.Scale.list("sort_order"),
     base44.entities.ScaleOption.list("sort_order"),
     base44.entities.JobTitle.list("sort_order"),
+    base44.entities.ActivitySet.list("sort_order"),
   ]);
-  return { instruments, activities, bands, sections, resources, scales, scaleOptions, jobTitles };
+  return { instruments, activities, bands, sections, resources, scales, scaleOptions, jobTitles, activitySets };
 };
 
 const download = (name, text) => {
@@ -231,7 +233,7 @@ export default function ContentSync({ onApplied = null }) {
     if (!keepApplied) { setApplied({}); setCommitted({}); }
     try {
       const loaded = await loadContent();
-      const { scales, instruments, problems, library, resources, jobTitles } = readContent(loaded.files);
+      const { scales, instruments, problems, library, resources, jobTitles, activitySets } = readContent(loaded.files);
       const live = await liveSnapshot();
       // Shown rather than hidden behind a toggle: a difference is the result,
       // and the choice of which side is right cannot be made without reading
@@ -271,6 +273,15 @@ export default function ContentSync({ onApplied = null }) {
           plan: resources.present ? planResources(resources.rows, live, { libraryIdByKey }) : null,
           appText: writeResources(resourcesFromLive(live)),
           differs: !resources.present || loaded.files["content/resources.md"] !== writeResources(resourcesFromLive(live)),
+        },
+        activitySets: {
+          ...activitySets,
+          plan: activitySets.present ? planActivitySets(activitySets.rows, live, { libraryIdByKey }) : null,
+          appText: writeActivitySets(activitySetsFromLive(live)),
+          differs: !activitySets.present || loaded.files["content/activity-sets.md"] !== writeActivitySets(activitySetsFromLive(live)),
+          // What a commit cannot carry: ids in a live set that name no library
+          // activity. Said on the screen rather than dropped in silence.
+          unresolved: unresolvedSetLinks(live),
         },
         scales: {
           rows: scales,
@@ -366,6 +377,21 @@ export default function ContentSync({ onApplied = null }) {
     setProgress("");
   };
 
+  const applyTheSets = async () => {
+    setBusy("activity-sets");
+    setError("");
+    try {
+      const res = await applyActivitySets(base44, compared.activitySets.plan, { onProgress: setProgress });
+      setApplied((a) => ({ ...a, activitySets: res }));
+      await compare({ keepApplied: true });
+    } catch (e) {
+      console.error("Could not apply the activity sets", e);
+      setError(e?.message || "Could not apply the activity sets.");
+    }
+    setBusy("");
+    setProgress("");
+  };
+
   const applyTheScales = async () => {
     setBusy("scales");
     setError("");
@@ -436,7 +462,8 @@ export default function ContentSync({ onApplied = null }) {
     library: compared.library.plan ? rowsDiff("activity", compared.library.plan.activities) : [],
     resources: compared.resources.plan ? rowsDiff("resource", compared.resources.plan.resources, (r) => r.title) : [],
     jobTitles: compared.jobTitles.plan ? rowsDiff("job title", compared.jobTitles.plan.titles) : [],
-  } : { library: [], resources: [], jobTitles: [] };
+    activitySets: compared.activitySets.plan ? rowsDiff("set", compared.activitySets.plan.sets) : [],
+  } : { library: [], resources: [], jobTitles: [], activitySets: [] };
 
   const activityNames = new Map((compared?.live.activities || []).map((a) => [a.id, a.name]));
 
@@ -682,6 +709,79 @@ export default function ContentSync({ onApplied = null }) {
               </p>
             )}
             {(applied.resources?.notes || []).slice(0, 5).map((n, i) => <p key={i} className="text-xs text-gray-500 mt-0.5">{n}</p>)}
+          </li>
+
+          <li className="px-6 py-4">
+            <div className="flex items-baseline justify-between gap-3">
+              <p className="text-sm font-semibold text-gray-800">
+                Activity sets
+                <span className="ml-2 font-mono text-[11px] font-normal text-gray-400">activity-sets.md</span>
+              </p>
+              <span className="flex items-baseline gap-3 shrink-0">
+                <span className="text-xs text-gray-400 tabular-nums">
+                  {!compared.activitySets.present
+                    ? "not in the file yet"
+                    : compared.activitySets.plan.writes > 0
+                      ? `${compared.activitySets.plan.writes} to write`
+                      : compared.activitySets.differs ? "the app differs" : "up to date"}
+                </span>
+                <button onClick={() => download("activity-sets.md", compared.activitySets.appText)} className="text-xs font-medium text-gray-500 hover:text-gray-800">
+                  Save file
+                </button>
+                {compared.activitySets.present && showChanges("activity-sets", fileDiffs.activitySets)}
+                {compared.activitySets.present && compared.activitySets.plan.writes > 0 && (
+                  <button onClick={applyTheSets} disabled={!!busy} className="text-xs font-medium text-blue-600 hover:text-blue-800 disabled:opacity-50">
+                    {busy === "activity-sets" ? `${progress || "Applying"}…` : "Apply"}
+                  </button>
+                )}
+                {compared.activitySets.differs && (
+                  <button
+                    onClick={() => commit("activity-sets", [{ path: "content/activity-sets.md", text: compared.activitySets.appText }], "Sync the activity sets from the app")}
+                    disabled={!!busy}
+                    className="text-xs font-medium text-blue-600 hover:text-blue-800 disabled:opacity-50"
+                  >
+                    {busy === "activity-sets" ? "Committing…" : compared.activitySets.present ? "Commit" : "Commit to create"}
+                  </button>
+                )}
+              </span>
+            </div>
+            {compared.activitySets.present && compared.activitySets.plan.writes > 0 && (
+              <FileChanges diff={fileDiffs.activitySets} counts={compared.activitySets.plan.counts} isOpen={!!open["activity-sets"]} names={activityNames} />
+            )}
+            {/* The same ordering hazard the resources have, and worth more
+                here: a set is a hand-picked list nothing else reproduces, so a
+                member dropped for want of an id is a judgement somebody has to
+                make again. */}
+            {compared.activitySets.present && compared.activitySets.plan.unknownActivities.length > 0 && (
+              <p className="text-xs text-amber-700 mt-1">
+                {compared.activitySets.plan.unknownActivities.length} activit{compared.activitySets.plan.unknownActivities.length === 1 ? "y is" : "ies are"} named by a set and have no id in the library
+                {compared.library.present && compared.library.plan.counts.adopted > 0
+                  ? ". Apply the activity library first — applied now, those members are left out."
+                  : ". Applied now, those members are left out."}
+              </p>
+            )}
+            {compared.activitySets.unresolved.length > 0 && (
+              <p className="text-xs text-amber-700 mt-1">
+                {compared.activitySets.unresolved.map((u) => `"${u.name}" holds ${u.count}`).join(", ")} activit{compared.activitySets.unresolved.reduce((n, u) => n + u.count, 0) === 1 ? "y" : "ies"} the library no longer has. A commit cannot carry them.
+              </p>
+            )}
+            {/* Nothing here is deleted. A set dropped from the file is the app's
+                to retire, and a set in the app the file has not seen is one to
+                commit rather than lose. */}
+            {compared.activitySets.present && compared.activitySets.plan.orphans.length > 0 && (
+              <p className="text-xs text-gray-400 mt-1">
+                {compared.activitySets.plan.orphans.length} set{compared.activitySets.plan.orphans.length === 1 ? " is" : "s are"} in the app and not in the file. Left alone — commit first if they are ones to keep.
+              </p>
+            )}
+            {applied.activitySets && (
+              <p className="text-xs text-green-700 mt-1">{applied.activitySets.written.sets} set{applied.activitySets.written.sets === 1 ? "" : "s"} written.</p>
+            )}
+            {committed["activity-sets"] && (
+              <p className="text-xs text-green-700 mt-1">
+                {committed["activity-sets"].unchanged ? "The branch already had this." : <>Committed to {committed["activity-sets"].branch}. <a href={committed["activity-sets"].url} target="_blank" rel="noreferrer" className="underline">{committed["activity-sets"].sha?.slice(0, 7)}</a></>}
+              </p>
+            )}
+            {(applied.activitySets?.notes || []).slice(0, 5).map((n, i) => <p key={i} className="text-xs text-gray-500 mt-0.5">{n}</p>)}
           </li>
 
           <li className="px-6 py-4">
