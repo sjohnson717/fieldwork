@@ -2,6 +2,10 @@
   "name": "SkippedPost",
   "type": "object",
   "properties": {
+    "content_key": {
+      "type": "string",
+      "description": "The id this post has in content/skipped-posts.md, which is the article's slug. A skip is a judgement somebody made about one post; the file is where the list survives, and the id is what keeps a re-titled post from reading as a new one."
+    },
     "url": {
       "type": "string",
       "description": "The blog post's address, as the feed gives it. A post in the feed whose address is here is not offered again under New from the blog."

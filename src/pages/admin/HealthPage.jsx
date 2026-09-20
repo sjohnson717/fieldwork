@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { loadRespondentSummary } from "@/lib/unread-responses";
 import { runChecks } from "@/lib/health-checks";
+import { loadContentStatus } from "@/lib/content-live";
 import { isLibraryActivity } from "@/lib/activities";
 import { functionErrorMessage } from "@/lib/utils";
 import { ResourceForm, EMPTY_RESOURCE } from "./ResourcesTab";
@@ -25,6 +26,10 @@ const SOURCES = {
   invitations: () => base44.entities.Invitation.filter({ status: "pending" }),
   skippedPosts: () => base44.entities.SkippedPost.list(),
   blogPosts: () => base44.functions.invoke("fetchBlogFeed", {}).then(res => res?.data?.posts || []),
+  // The content branch beside the app's own copy of the same content. The
+  // slowest source here by some way — a GitHub read and ten lists — and the
+  // only one that can say the repository has stopped being a backup.
+  contentStatus: () => loadContentStatus(),
 };
 
 // Reading for an activity that has none, added without leaving the page: attach
@@ -198,7 +203,7 @@ export default function HealthPage({ onOpen }) {
       ) : (
         <div className="px-4 md:px-8 py-6 max-w-3xl space-y-6">
           {/* Also where a failed list shows: a dash, never a zero. */}
-          <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
             <Tile
               count={failed.has("assessments") ? null : totals.assessments}
               label="Assessments"
@@ -214,6 +219,13 @@ export default function HealthPage({ onOpen }) {
               count={failed.has("activities") || failed.has("instruments") ? null : totals.questions}
               label="Instrument questions"
               note={failed.has("instruments") ? null : `${totals.instruments} instruments`}
+            />
+            <Tile
+              count={failed.has("contentStatus") ? null : totals.contentSynced}
+              label="Files in step"
+              note={failed.has("contentStatus") ? null
+                : totals.contentWarning ? "Compared against this build, not the branch"
+                : `of ${totals.contentFiles} · with the content branch`}
             />
             <Tile
               count={failed.has("blogPosts") || failed.has("resources") || failed.has("skippedPosts") ? null : totals.blogPending}

@@ -57,6 +57,7 @@ export function runChecks(data, now = new Date()) {
   const {
     assessments = [], summary = {}, resources = [], activities = [], instruments = [],
     jobTitles = [], invitations = [], blogPosts = [], skippedPosts = [],
+    contentStatus = null,
   } = data;
 
   const assessmentLabel = (a) => a.company_name ? `${a.title} · ${a.company_name}` : a.title;
@@ -179,6 +180,43 @@ export function runChecks(data, now = new Date()) {
     .filter(a => a.preferred_owner && !titleNames.has(a.preferred_owner))
     .map(a => ({ key: a.id, label: a.name, detail: `Recommended owner "${a.preferred_owner}" is not an active job title`, target: { section: "library", tab: "Activities", activityId: a.id } }));
 
+  // ── The repository ──
+  //
+  // Whether the app and the content branch still say the same thing. This is
+  // the failure nobody goes looking for: nothing about the app looks wrong
+  // while an afternoon's editing sits uncommitted, and the repository is only
+  // a backup for as long as it agrees.
+  //
+  // Two findings, because they are two different events. Content with no file
+  // has one right answer — commit it, since nothing would bring it back — and
+  // content that differs from its file is a judgement about which side is
+  // right, which is the sync screen's whole business.
+  const contentRows = contentStatus?.rows || [];
+  // Content files sits at the top of the Instruments screen.
+  const openContent = { section: "instruments" };
+  const uncommitted = contentRows
+    .filter((r) => r.state === "missing")
+    .map((r) => ({
+      key: r.key,
+      label: r.label,
+      detail: r.problems.length
+        ? `${r.path} cannot be read: ${r.problems[0]}`
+        : `Nothing in ${r.path} — losing the app loses this`,
+      target: openContent,
+    }));
+
+  const drifted = contentRows
+    .filter((r) => r.state === "drift")
+    .map((r) => ({
+      key: r.key,
+      label: r.label,
+      detail: [
+        r.differs ? "the app has edits the file does not" : null,
+        r.writes ? `${r.writes} row${r.writes === 1 ? "" : "s"} the file would write to the app` : null,
+      ].filter(Boolean).join(" · "),
+      target: openContent,
+    }));
+
   // ── People ──
   const staleInvites = invitations
     .filter(i => i.status === "pending" && olderThan(parseDate(i.created_date), T.pendingInviteDays, now))
@@ -198,6 +236,13 @@ export function runChecks(data, now = new Date()) {
     blogPending: newPosts.length,
     blogAdded: blogPosts.filter(p => added.has(sameAddress(p.url))).length,
     blogSkipped: skippedPosts.length,
+    // A dash rather than a zero when the branch could not be read: "0 of 0 in
+    // step" would be a green answer to a question nobody managed to ask.
+    contentFiles: contentRows.length || null,
+    contentSynced: contentRows.length ? contentRows.filter((r) => r.state === "ok").length : null,
+    // Said out loud, because comparing against the copy inside this build is
+    // not comparing against the repository.
+    contentWarning: contentStatus?.warning || null,
   };
 
   return { totals, checks: [
@@ -228,6 +273,13 @@ export function runChecks(data, now = new Date()) {
       ["activities", "instruments"], askedOfNobody),
     check("unknown-owner", "fix", "Activities whose recommended owner is not a job title",
       "The owner suggestion will not match anything a respondent can pick.", ["activities", "jobTitles"], unknownOwner),
+
+    check("content-missing", "fix", "Content the repository does not have",
+      "Nothing in the content branch holds this, so it exists only in the app. Commit it on Instruments → Content files.",
+      ["contentStatus"], uncommitted),
+    check("content-drift", "review", "Content that differs from the repository",
+      "Edited on one side since the last sync. Instruments → Content files names the field and lets you choose which side is right.",
+      ["contentStatus"], drifted),
 
     check("invites", "review", `Invitations pending more than ${T.pendingInviteDays} days`,
       "Follow up with the person, or revoke the invitation on Facilitators.", ["invitations"], staleInvites),

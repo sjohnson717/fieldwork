@@ -6,11 +6,13 @@ import {
   planLibrary, applyLibrary, libraryFromLive, planResources, applyResources, resourcesFromLive,
   planJobTitles, applyJobTitles, jobTitlesFromLive, rowsDiff,
   planActivitySets, applyActivitySets, activitySetsFromLive, unresolvedSetLinks,
+  planSkippedPosts, applySkippedPosts, skippedPostsFromLive,
 } from "@/lib/content-apply";
 import {
   writeInstrument, writeScales, parseInstrument, validateInstrument,
-  writeLibrary, writeResources, writeJobTitles, writeActivitySets, FACETS,
+  writeLibrary, writeResources, writeJobTitles, writeActivitySets, writeSkippedPosts, FACETS,
 } from "@/lib/content-format";
+import { liveContentSnapshot } from "@/lib/content-live";
 import { functionErrorMessage } from "@/lib/utils";
 
 // Comparing the content files with the app, and applying one instrument at a
@@ -54,20 +56,6 @@ const statusLine = (plan) => {
   return parts.length ? parts.join(" · ") : "up to date";
 };
 
-const liveSnapshot = async () => {
-  const [instruments, activities, bands, sections, resources, scales, scaleOptions, jobTitles, activitySets] = await Promise.all([
-    base44.entities.Instrument.list("sort_order"),
-    base44.entities.Activity.list(),
-    base44.entities.Band.list(),
-    base44.entities.InstrumentSection.list("sort_order"),
-    base44.entities.Resource.list("sort_order"),
-    base44.entities.Scale.list("sort_order"),
-    base44.entities.ScaleOption.list("sort_order"),
-    base44.entities.JobTitle.list("sort_order"),
-    base44.entities.ActivitySet.list("sort_order"),
-  ]);
-  return { instruments, activities, bands, sections, resources, scales, scaleOptions, jobTitles, activitySets };
-};
 
 const download = (name, text) => {
   const url = URL.createObjectURL(new Blob([text], { type: "text/markdown" }));
@@ -181,7 +169,10 @@ const writeSummary = (counts) => {
   const parts = [];
   if (counts.update) parts.push(`${counts.update} already in the app`);
   if (counts.create) parts.push(`${counts.create} not in the app yet`);
-  if (counts.adopted) parts.push(`${counts.adopted} matched by name, taking an id for the first time`);
+  // "matched" rather than "matched by name": a resource and a skipped post are
+  // matched on their address, and an adoption reported as a name match would
+  // send somebody looking for a renamed row.
+  if (counts.adopted) parts.push(`${counts.adopted} matched to a row already there, taking an id for the first time`);
   return parts.join(" · ");
 };
 
@@ -233,8 +224,8 @@ export default function ContentSync({ onApplied = null }) {
     if (!keepApplied) { setApplied({}); setCommitted({}); }
     try {
       const loaded = await loadContent();
-      const { scales, instruments, problems, library, resources, jobTitles, activitySets } = readContent(loaded.files);
-      const live = await liveSnapshot();
+      const { scales, instruments, problems, library, resources, jobTitles, activitySets, skippedPosts } = readContent(loaded.files);
+      const live = await liveContentSnapshot();
       // Shown rather than hidden behind a toggle: a difference is the result,
       // and the choice of which side is right cannot be made without reading
       // both values. Collapsing is still there for an instrument with a lot of
@@ -282,6 +273,12 @@ export default function ContentSync({ onApplied = null }) {
           // What a commit cannot carry: ids in a live set that name no library
           // activity. Said on the screen rather than dropped in silence.
           unresolved: unresolvedSetLinks(live),
+        },
+        skippedPosts: {
+          ...skippedPosts,
+          plan: skippedPosts.present ? planSkippedPosts(skippedPosts.rows, live) : null,
+          appText: writeSkippedPosts(skippedPostsFromLive(live)),
+          differs: !skippedPosts.present || loaded.files["content/skipped-posts.md"] !== writeSkippedPosts(skippedPostsFromLive(live)),
         },
         scales: {
           rows: scales,
@@ -392,6 +389,21 @@ export default function ContentSync({ onApplied = null }) {
     setProgress("");
   };
 
+  const applyTheSkipped = async () => {
+    setBusy("skipped-posts");
+    setError("");
+    try {
+      const res = await applySkippedPosts(base44, compared.skippedPosts.plan, { onProgress: setProgress });
+      setApplied((a) => ({ ...a, skippedPosts: res }));
+      await compare({ keepApplied: true });
+    } catch (e) {
+      console.error("Could not apply the skipped posts", e);
+      setError(e?.message || "Could not apply the skipped posts.");
+    }
+    setBusy("");
+    setProgress("");
+  };
+
   const applyTheScales = async () => {
     setBusy("scales");
     setError("");
@@ -463,7 +475,8 @@ export default function ContentSync({ onApplied = null }) {
     resources: compared.resources.plan ? rowsDiff("resource", compared.resources.plan.resources, (r) => r.title) : [],
     jobTitles: compared.jobTitles.plan ? rowsDiff("job title", compared.jobTitles.plan.titles) : [],
     activitySets: compared.activitySets.plan ? rowsDiff("set", compared.activitySets.plan.sets) : [],
-  } : { library: [], resources: [], jobTitles: [], activitySets: [] };
+    skippedPosts: compared.skippedPosts.plan ? rowsDiff("skipped post", compared.skippedPosts.plan.posts) : [],
+  } : { library: [], resources: [], jobTitles: [], activitySets: [], skippedPosts: [] };
 
   const activityNames = new Map((compared?.live.activities || []).map((a) => [a.id, a.name]));
 
@@ -782,6 +795,67 @@ export default function ContentSync({ onApplied = null }) {
               </p>
             )}
             {(applied.activitySets?.notes || []).slice(0, 5).map((n, i) => <p key={i} className="text-xs text-gray-500 mt-0.5">{n}</p>)}
+          </li>
+
+          <li className="px-6 py-4">
+            <div className="flex items-baseline justify-between gap-3">
+              <p className="text-sm font-semibold text-gray-800">
+                Skipped posts
+                <span className="ml-2 font-mono text-[11px] font-normal text-gray-400">skipped-posts.md</span>
+              </p>
+              <span className="flex items-baseline gap-3 shrink-0">
+                <span className="text-xs text-gray-400 tabular-nums">
+                  {!compared.skippedPosts.present
+                    ? "not in the file yet"
+                    : compared.skippedPosts.plan.writes > 0
+                      ? `${compared.skippedPosts.plan.writes} to write`
+                      : compared.skippedPosts.differs ? "the app differs" : "up to date"}
+                </span>
+                <button onClick={() => download("skipped-posts.md", compared.skippedPosts.appText)} className="text-xs font-medium text-gray-500 hover:text-gray-800">
+                  Save file
+                </button>
+                {compared.skippedPosts.present && showChanges("skipped-posts", fileDiffs.skippedPosts)}
+                {compared.skippedPosts.present && compared.skippedPosts.plan.writes > 0 && (
+                  <button onClick={applyTheSkipped} disabled={!!busy} className="text-xs font-medium text-blue-600 hover:text-blue-800 disabled:opacity-50">
+                    {busy === "skipped-posts" ? `${progress || "Applying"}…` : "Apply"}
+                  </button>
+                )}
+                {compared.skippedPosts.differs && (
+                  <button
+                    onClick={() => commit("skipped-posts", [{ path: "content/skipped-posts.md", text: compared.skippedPosts.appText }], "Sync the skipped posts from the app")}
+                    disabled={!!busy}
+                    className="text-xs font-medium text-blue-600 hover:text-blue-800 disabled:opacity-50"
+                  >
+                    {busy === "skipped-posts" ? "Committing…" : compared.skippedPosts.present ? "Commit" : "Commit to create"}
+                  </button>
+                )}
+              </span>
+            </div>
+            {compared.skippedPosts.present && compared.skippedPosts.plan.writes > 0 && (
+              <FileChanges diff={fileDiffs.skippedPosts} counts={compared.skippedPosts.plan.counts} isOpen={!!open["skipped-posts"]} />
+            )}
+            {/* Worth reading before applying: a post unskipped in the app comes
+                back if the file still names it, because Apply is the file
+                winning. Unskipping is followed by a commit. */}
+            {compared.skippedPosts.present && compared.skippedPosts.plan.counts.create > 0 && (
+              <p className="text-xs text-amber-700 mt-1">
+                {compared.skippedPosts.plan.counts.create} post{compared.skippedPosts.plan.counts.create === 1 ? " is" : "s are"} skipped in the file and not in the app. Applying skips {compared.skippedPosts.plan.counts.create === 1 ? "it" : "them"} again — if {compared.skippedPosts.plan.counts.create === 1 ? "it was" : "they were"} unskipped on purpose, commit instead.
+              </p>
+            )}
+            {compared.skippedPosts.present && compared.skippedPosts.plan.orphans.length > 0 && (
+              <p className="text-xs text-gray-400 mt-1">
+                {compared.skippedPosts.plan.orphans.length} post{compared.skippedPosts.plan.orphans.length === 1 ? " is" : "s are"} skipped in the app and not in the file. Left alone — commit to keep the decision.
+              </p>
+            )}
+            {applied.skippedPosts && (
+              <p className="text-xs text-green-700 mt-1">{applied.skippedPosts.written.posts} post{applied.skippedPosts.written.posts === 1 ? "" : "s"} written.</p>
+            )}
+            {committed["skipped-posts"] && (
+              <p className="text-xs text-green-700 mt-1">
+                {committed["skipped-posts"].unchanged ? "The branch already had this." : <>Committed to {committed["skipped-posts"].branch}. <a href={committed["skipped-posts"].url} target="_blank" rel="noreferrer" className="underline">{committed["skipped-posts"].sha?.slice(0, 7)}</a></>}
+              </p>
+            )}
+            {(applied.skippedPosts?.notes || []).slice(0, 5).map((n, i) => <p key={i} className="text-xs text-gray-500 mt-0.5">{n}</p>)}
           </li>
 
           <li className="px-6 py-4">

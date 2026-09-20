@@ -33,6 +33,7 @@
 // confirm rather than quietly kept.
 
 import { ENTITY_FIELDS, slugify, FACETS } from "@/lib/content-format";
+import { sameAddress } from "@/lib/same-address";
 
 
 // Where reading points. One line, as before: the articles stay on the site that
@@ -946,6 +947,84 @@ export function activitySetsFromLive(live) {
         .sort((a, b) => position.get(a) - position.get(b))
         .map((id) => keyById.get(id)),
     }));
+}
+
+// ── Skipped posts ───────────────────────────────────────────────────────────
+//
+// The blog posts deliberately not made resources. Each row is a judgement
+// somebody made about one post — read it, decided it does not belong in Quartz
+// — and nothing reproduces that judgement from anything else: losing the list
+// means reading the whole blog again.
+//
+// Identity is the address, compared the way the rest of the app compares one:
+// the feed and a hand-typed resource differ by scheme, "www.", a trailing
+// slash, and by /post/ against /reading/ for a single Wix article. A row is
+// matched on its content_key first and adopted by address after, which is how
+// the skips made before this file existed take their ids.
+//
+// A skip removed in the app comes back if the file still names it. That is
+// Apply doing what it says — the file wins — and it is why unskipping is
+// followed by a commit rather than left to the next sync.
+
+export function planSkippedPosts(posts, live) {
+  const existing = live.skippedPosts || [];
+  const plan = { posts: [], orphans: [] };
+  for (const p of posts) {
+    const row = existing.find((x) => x.content_key && x.content_key === p.id)
+      || existing.find((x) => !x.content_key && sameAddress(x.url) === sameAddress(p.url))
+      || null;
+    const patch = { ...mapFields("skipped_post", p), content_key: p.id };
+    const changes = changedFields(row, patch);
+    plan.posts.push({
+      id: p.id, name: p.title || p.id, rowId: row?.id || null, row,
+      adopted: !!row && !row.content_key,
+      changes, action: action(row, changes), patch,
+    });
+  }
+  const ids = new Set(posts.map((p) => p.id));
+  const addresses = new Set(posts.map((p) => sameAddress(p.url)));
+  for (const row of existing) {
+    if (ids.has(row.content_key) || addresses.has(sameAddress(row.url))) continue;
+    plan.orphans.push({ title: row.title || row.url, rowId: row.id });
+  }
+  plan.counts = tally(plan.posts);
+  plan.writes = plan.posts.filter((p) => p.action !== "unchanged").length;
+  return plan;
+}
+
+export async function applySkippedPosts(base44, plan, { onProgress } = {}) {
+  const e = base44.entities;
+  onProgress?.("Skipped posts");
+  const written = { posts: 0 };
+  let schemaChecked = false;
+  for (const p of plan.posts) {
+    if (p.action === "unchanged") continue;
+    const row = p.action === "create"
+      ? await e.SkippedPost.create(p.patch)
+      : await e.SkippedPost.update(p.rowId, p.patch);
+    if (!schemaChecked) {
+      schemaChecked = true;
+      if (row.content_key === undefined || row.content_key === null) {
+        throw new Error("SkippedPost has no content_key column yet, so nothing here can be matched on a second run. Publish the app, then apply again.");
+      }
+    }
+    written.posts++;
+  }
+  // Not deleted, for the same reason nothing else here is: the app is where a
+  // skip is undone, on the panel that made it, and a sync that silently
+  // un-skipped a post would put it back in front of the next person.
+  const notes = plan.orphans.map((o) =>
+    `"${o.title}" is skipped in the app but not in content/skipped-posts.md. Left alone — unskip it on Resources, or commit to keep it.`);
+  return { written, notes };
+}
+
+export function skippedPostsFromLive(live) {
+  // Oldest first, so a new skip is appended rather than dropped into the
+  // middle of the file.
+  return (live.skippedPosts || [])
+    .slice()
+    .sort((a, b) => String(a.created_date || "").localeCompare(String(b.created_date || "")))
+    .map((row) => ({ ...unmap("skipped_post", row), id: row.content_key || slugify(slugOfUrl(row.url) || "") }));
 }
 
 // ── Job titles ──────────────────────────────────────────────────────────────

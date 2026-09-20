@@ -127,6 +127,14 @@ const JOB_TITLE_ATTRS = [
   ["active", FLAG, true],
 ];
 
+// A skipped post carries its address and nothing else to author: the decision
+// is the record. The title is kept so the list reads as posts rather than
+// addresses.
+const SKIPPED_POST_ATTRS = [
+  ["id", STR],
+  ["url", STR],
+];
+
 const ACTIVITY_SET_ATTRS = [
   ["id", STR],
   ["active", FLAG, true],
@@ -261,6 +269,25 @@ export function normalizeActivitySet(src) {
   return out;
 }
 
+// The id is the article's slug rather than a slug of the title: the address is
+// what identifies a post everywhere else in the app, and a title edited on the
+// blog should not read here as a different post.
+const slugOfAddress = (url) =>
+  String(url || "").split("?")[0].split("#")[0].replace(/\/+$/, "").split("/").pop() || "";
+
+export function normalizeSkippedPost(src) {
+  const out = normalizeAttrs(src, SKIPPED_POST_ATTRS);
+  out.title = normalizeProse(src?.title);
+  // The address first, and only a post with no address at all falls back to
+  // its title — slugify never returns empty, so the two cannot be tried the
+  // other way round.
+  if (!out.id) {
+    const slug = slugOfAddress(out.url);
+    out.id = slug ? slugify(slug) : slugify(out.title);
+  }
+  return out;
+}
+
 export function normalizeScale(src) {
   const out = normalizeAttrs(src, SCALE_ATTRS);
   out.name = normalizeProse(src?.name);
@@ -383,6 +410,16 @@ export function writeActivitySets(sets) {
   return sections.join("\n\n") + "\n";
 }
 
+export function writeSkippedPosts(posts) {
+  const sections = ["<!-- Blog posts deliberately not made resources. Each line is a decision somebody made about one post, and the feed stops offering it. -->"];
+  for (const raw of posts) {
+    const p = normalizeSkippedPost(raw);
+    const attrs = attrLines(p, SKIPPED_POST_ATTRS);
+    sections.push(`## Skipped: ${p.title || p.id}` + (attrs.length ? `\n${attrs.join("\n")}` : ""));
+  }
+  return sections.join("\n\n") + "\n";
+}
+
 export function writeJobTitles(titles) {
   const sections = ["<!-- The functions an activity can recommend and a respondent can pick, in the order they are offered. -->"];
   for (const raw of titles) {
@@ -408,7 +445,7 @@ export function writeScales(scales) {
 
 // ── Parsing ─────────────────────────────────────────────────────────────────
 
-const HEADING = /^## (Dimension|Question|Band|Scale|Activity|Resource|Title|Set): (.+?)\s*$/;
+const HEADING = /^## (Dimension|Question|Band|Scale|Activity|Resource|Title|Set|Skipped): (.+?)\s*$/;
 // Two words where a field reads better as two: "**Try this.**" is what the
 // library calls it on screen, and a label the file spells differently from the
 // app is a translation somebody has to hold in their head.
@@ -530,6 +567,11 @@ export function parseActivitySets(text) {
       activities: [...list.matchAll(/^-\s*(.+?)\s*$/gm)].map((m) => m[1]),
     });
   });
+}
+
+export function parseSkippedPosts(text) {
+  const { segments } = segmentsOf(String(text).replace(/\r\n/g, "\n"));
+  return segments.filter((s) => s.kind === "Skipped").map((seg) => normalizeSkippedPost({ title: seg.name, ...seg.attrs }));
 }
 
 export function parseJobTitles(text) {
@@ -752,6 +794,28 @@ export function validateActivitySets(sets, { activityIds = null } = {}) {
   return errors;
 }
 
+// Skipped posts. Two rows for one article would be the same decision recorded
+// twice, which is what the address check catches — loosely, because the feed
+// and a hand-typed address differ by scheme, "www.", a trailing slash, and by
+// /post/ against /reading/ for one Wix article.
+export function validateSkippedPosts(posts, { sameAddress = (u) => u } = {}) {
+  const errors = [];
+  const ids = new Set();
+  const addresses = new Map();
+  for (const p of posts.map(normalizeSkippedPost)) {
+    if (!p.url) errors.push(`"${p.title || p.id}" has no address, so no post could be matched to it.`);
+    if (!/^[a-z0-9-]+$/.test(p.id)) errors.push(`"${p.id}" is not a usable id — lower case, digits, and hyphens.`);
+    if (ids.has(p.id)) errors.push(`Two skipped posts share the id "${p.id}".`);
+    ids.add(p.id);
+    if (p.url) {
+      const key = sameAddress(p.url);
+      if (addresses.has(key)) errors.push(`"${p.title || p.id}" and "${addresses.get(key)}" are the same post.`);
+      else addresses.set(key, p.title || p.id);
+    }
+  }
+  return errors;
+}
+
 // The entity fields each file field maps to, declared once so the applier
 // cannot drift from the format. Read by content-apply.js.
 export const ENTITY_FIELDS = {
@@ -775,6 +839,7 @@ export const ENTITY_FIELDS = {
   // activities and sort_order are not here for the same reason as a resource's:
   // the list is resolved to row ids, and the order is document order.
   activity_set: { id: "content_key", name: "name", description: "description", active: "active" },
+  skipped_post: { id: "content_key", title: "title", url: "url" },
   resource: { id: "content_key", title: "title", type: "resource_type", source: "source", published: "published_date", url: "url", note: "note", fallback: "fallback", active: "active" },
   dimension: { id: "content_key", name: "name", blurb: "blurb", strong: "strong", opportunity: "opportunity" },
 };
