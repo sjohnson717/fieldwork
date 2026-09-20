@@ -282,7 +282,7 @@ test("a library that is genuinely absent reads as new rows, field by field", () 
 
 test("a resource is named by its title, and a wording change is content", () => {
   const be = backend({
-    Resource: [{ id: "r1", content_key: "aspire", title: "ASPIRE to Your Capabilities", url: "https://example.com/aspire", note: "An older note.", resource_type: "free_article", source: "Steve Johnson", published_date: "2025-03-01", sort_order: 0, activity_ids: [], is_fallback: false, active: true }],
+    Resource: [{ id: "r1", content_key: "aspire", title: "ASPIRE to Your Capabilities", url: "https://example.com/aspire", note: "An older note.", resource_type: "free_article", source: "Steve Johnson", published_date: "2025-03-01", sort_order: 0, activity_ids: [], fallback: false, active: true }],
   });
   const plan = planResources(RESOURCES, be.live(), { libraryIdByKey: new Map() });
   const diff = rowsDiff("resource", plan.resources, (r) => r.title);
@@ -291,4 +291,47 @@ test("a resource is named by its title, and a wording change is content", () => 
   assert.equal(note.group, "content");
   assert.equal(note.from, "An older note.");
   assert.equal(note.to, "A note somebody wrote.");
+});
+
+// Nothing reads a resource's links in order — every reader calls includes() —
+// so the app holding the same links in another sequence is not a difference.
+// Reported as one, it was eleven of the twelve things a person was asked to
+// read before applying the resources, and the twelfth was the real one.
+test("a link list in another order is not a change", () => {
+  const be = backend({
+    Activity: [
+      { id: "act-1", content_key: "understand-the-market", name: "Understand the Market" },
+      { id: "act-2", content_key: "persona-definition", name: "Persona Definition" },
+    ],
+    Resource: [{
+      id: "r1", content_key: "aspire", title: "ASPIRE to Your Capabilities", url: "https://example.com/aspire",
+      note: "A note somebody wrote.", resource_type: "free_article", source: "Steve Johnson",
+      published_date: "2025-03-01", sort_order: 0, fallback: false, active: true,
+      // The file says understand-the-market then persona-definition.
+      activity_ids: ["act-2", "act-1"],
+    }],
+  });
+  const libraryIdByKey = new Map([["understand-the-market", "act-1"], ["persona-definition", "act-2"]]);
+  const plan = planResources([RESOURCES[0]], be.live(), { libraryIdByKey });
+  assert.equal(plan.writes, 0);
+  assert.deepEqual(rowsDiff("resource", plan.resources, (r) => r.title), []);
+});
+
+test("a link genuinely added is still a change", () => {
+  const be = backend({
+    Activity: [
+      { id: "act-1", content_key: "understand-the-market", name: "Understand the Market" },
+      { id: "act-2", content_key: "persona-definition", name: "Persona Definition" },
+    ],
+    Resource: [{
+      id: "r1", content_key: "aspire", title: "ASPIRE to Your Capabilities", url: "https://example.com/aspire",
+      note: "A note somebody wrote.", resource_type: "free_article", source: "Steve Johnson",
+      published_date: "2025-03-01", sort_order: 0, fallback: false, active: true,
+      activity_ids: ["act-1"],
+    }],
+  });
+  const libraryIdByKey = new Map([["understand-the-market", "act-1"], ["persona-definition", "act-2"]]);
+  const plan = planResources([RESOURCES[0]], be.live(), { libraryIdByKey });
+  assert.equal(plan.writes, 1);
+  assert.equal(plan.resources[0].changes[0].field, "activity_ids");
 });

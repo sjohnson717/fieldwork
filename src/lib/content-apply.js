@@ -61,13 +61,31 @@ const isBlank = (v) => v === null || v === undefined || (typeof v === "string" &
 // Same comparison the old seeder used, and for the same reason: a re-run with
 // nothing to say should make no requests and report "unchanged" honestly rather
 // than counting every row as an update.
+// Id lists nothing reads in order. A resource's activities are looked up with
+// includes(), never paged through, so the app holding the same links in
+// another sequence is not a difference — and reported as one it was eleven of
+// the twelve things a person was asked to read before applying the resources.
+//
+// scale_ids is deliberately not here: instruments.js takes it as the order the
+// axes are asked in, so for that field a resequence is the change.
+const SET_FIELDS = new Set(["activity_ids", "instrument_ids"]);
+
+const sameSet = (a, b) => {
+  const x = new Set(a);
+  const y = new Set(b);
+  return x.size === y.size && [...x].every((v) => y.has(v));
+};
+
 const changedFields = (row, patch) => {
   const out = [];
   for (const [field, to] of Object.entries(patch)) {
     const from = row?.[field];
     if (Array.isArray(to)) {
       const a = Array.isArray(from) ? from : [];
-      if (a.length !== to.length || to.some((x, i) => a[i] !== x)) out.push({ field, from: a, to });
+      const same = SET_FIELDS.has(field)
+        ? sameSet(a, to)
+        : a.length === to.length && to.every((x, i) => a[i] === x);
+      if (!same) out.push({ field, from: a, to });
       continue;
     }
     if (isBlank(to) ? !isBlank(from) : from !== to) out.push({ field, from, to });

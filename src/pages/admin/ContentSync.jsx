@@ -79,10 +79,33 @@ const download = (name, text) => {
 // The fields a person typed, one line each, with the two values side by side.
 // Shared by the instruments and the three flat files so a difference reads the
 // same wherever it is found.
+// Two long values whose difference is past the cut read as identical, which is
+// worse than not printing them at all: the screen asks for a decision and then
+// hides the thing to decide about. One resource's note differed somewhere in
+// its third line and both columns said the same words followed by an ellipsis.
+// So a long pair is shown from just before the point where the two part
+// company.
+const WINDOW = 40;
+const divergence = (a, b) => {
+  let i = 0;
+  while (i < a.length && i < b.length && a[i] === b[i]) i++;
+  return i;
+};
+
 const FieldList = ({ content, names = null }) => {
   // A link is stored as an id and read as a name. "activity-210 → —" is a true
   // description of a link being dropped and tells nobody which link it was.
-  const value = (v) => short(names && Array.isArray(v) ? v.map((x) => names.get(x) || x) : v);
+  const value = (v, from = 0) => {
+    if (names && Array.isArray(v)) return short(v.map((x) => names.get(x) || x));
+    if (!from || typeof v !== "string") return short(v);
+    return `…${short(v.slice(from))}`;
+  };
+  // Where both columns start, so the two lines stay comparable side by side.
+  const start = (d) => {
+    if (typeof d.from !== "string" || typeof d.to !== "string") return 0;
+    const at = divergence(d.from.replace(/\s+/g, " "), d.to.replace(/\s+/g, " "));
+    return at > WINDOW * 2 ? at - WINDOW : 0;
+  };
   return (
   <dl className="mt-3 space-y-2 border-l-2 border-gray-100 pl-3">
     {content.map((d, i) => (
@@ -101,11 +124,11 @@ const FieldList = ({ content, names = null }) => {
                 reading the two values is the one who knows which. */}
             <p className="flex gap-2">
               <span className="w-12 shrink-0 text-[10px] uppercase tracking-wide text-gray-400 pt-0.5">App</span>
-              <span className="text-gray-700">{value(d.from)}</span>
+              <span className="text-gray-700">{value(d.from, start(d))}</span>
             </p>
             <p className="flex gap-2">
               <span className="w-12 shrink-0 text-[10px] uppercase tracking-wide text-gray-400 pt-0.5">File</span>
-              <span className="text-gray-700">{value(d.to)}</span>
+              <span className="text-gray-700">{value(d.to, start(d))}</span>
             </p>
           </dd>
         )}
