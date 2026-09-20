@@ -4,7 +4,7 @@ import { loadContent, readContent, CONTENT_BRANCH } from "@/lib/content-source";
 import {
   planInstrument, applyPlan, planDiff, planScales, applyScales, contentFromLive, scalesFromLive, NEW_INSTRUMENT,
   planLibrary, applyLibrary, libraryFromLive, planResources, applyResources, resourcesFromLive,
-  planJobTitles, applyJobTitles, jobTitlesFromLive,
+  planJobTitles, applyJobTitles, jobTitlesFromLive, rowsDiff,
 } from "@/lib/content-apply";
 import {
   writeInstrument, writeScales, parseInstrument, validateInstrument,
@@ -74,6 +74,88 @@ const download = (name, text) => {
   a.download = name;
   a.click();
   URL.revokeObjectURL(url);
+};
+
+// The fields a person typed, one line each, with the two values side by side.
+// Shared by the instruments and the three flat files so a difference reads the
+// same wherever it is found.
+const FieldList = ({ content, names = null }) => {
+  // A link is stored as an id and read as a name. "activity-210 → —" is a true
+  // description of a link being dropped and tells nobody which link it was.
+  const value = (v) => short(names && Array.isArray(v) ? v.map((x) => names.get(x) || x) : v);
+  return (
+  <dl className="mt-3 space-y-2 border-l-2 border-gray-100 pl-3">
+    {content.map((d, i) => (
+      <div key={i} className="text-xs">
+        <dt className="text-gray-500">
+          <span className="uppercase tracking-wide text-[10px] text-gray-400">{d.kind}</span>{" "}
+          <span className="font-medium text-gray-700">{d.name}</span>
+          {d.field && <span className="font-mono text-[11px] text-gray-400"> · {d.field}</span>}
+          {d.action === "create" && <span className="ml-1 text-[10px] uppercase tracking-wide text-[#3366FF]">new</span>}
+        </dt>
+        {d.field && (
+          <dd className="mt-0.5 space-y-1">
+            {/* Labelled rather than struck through. A strikethrough says the
+                file has won, and nothing here has decided that — Apply makes
+                the file right, Commit makes the app right, and the person
+                reading the two values is the one who knows which. */}
+            <p className="flex gap-2">
+              <span className="w-12 shrink-0 text-[10px] uppercase tracking-wide text-gray-400 pt-0.5">App</span>
+              <span className="text-gray-700">{value(d.from)}</span>
+            </p>
+            <p className="flex gap-2">
+              <span className="w-12 shrink-0 text-[10px] uppercase tracking-wide text-gray-400 pt-0.5">File</span>
+              <span className="text-gray-700">{value(d.to)}</span>
+            </p>
+          </dd>
+        )}
+      </div>
+    ))}
+  </dl>
+  );
+};
+
+const contentOf = (diff) => diff.filter((d) => d.group === "content" || d.action === "create");
+
+// How the writes break down, which is the one thing a count cannot say. A first
+// run against a live app writes to every row it matches by name, so "65 to
+// write" beside a file of exactly 65 activities is either the whole library
+// taking its ids or the whole library about to be created a second time. Those
+// are the same number and opposite events, and the difference is here.
+const writeSummary = (counts) => {
+  const parts = [];
+  if (counts.update) parts.push(`${counts.update} already in the app`);
+  if (counts.create) parts.push(`${counts.create} not in the app yet`);
+  if (counts.adopted) parts.push(`${counts.adopted} matched by name, taking an id for the first time`);
+  return parts.join(" · ");
+};
+
+// What a flat file will do, read before it is applied: the library, the
+// resources, the job titles. Content is named a field at a time; ids and
+// positions are counted, because sixty-five ids written for the first time is
+// one fact and not sixty-five.
+//
+// Unlike an instrument's, this never opens on its own. These files hold ninety
+// rows and a first run has something to say about every one of them.
+const FileChanges = ({ diff, counts, isOpen, names = null }) => {
+  const content = contentOf(diff);
+  const bookkeeping = diff.filter((d) => d.group === "bookkeeping");
+  const ordering = diff.filter((d) => d.group === "order");
+  const ids = bookkeeping.filter((d) => d.field === "content_key").length;
+  return (
+    <>
+      <p className="text-xs text-gray-500 mt-1">{writeSummary(counts)}</p>
+      {(bookkeeping.length > 0 || ordering.length > 0) && (
+        <p className="mt-0.5 text-xs text-gray-400">
+          Also {bookkeeping.length} field{bookkeeping.length === 1 ? "" : "s"} the app keeps for itself
+          {ids > 0 && `, including ${ids} id${ids === 1 ? "" : "s"} written for the first time`}
+          {ordering.length > 0 && `, and ${ordering.length} row${ordering.length === 1 ? "" : "s"} taking the file's position`}
+          .
+        </p>
+      )}
+      {isOpen && content.length > 0 && <FieldList content={content} names={names} />}
+    </>
+  );
 };
 
 export default function ContentSync({ onApplied = null }) {
@@ -294,6 +376,27 @@ export default function ContentSync({ onApplied = null }) {
     setBusy("");
   };
 
+  // The three flat files' plans, flattened once for the row that shows them.
+  // Built here rather than in the compare so that a plan and the reading of it
+  // cannot fall out of step.
+  const fileDiffs = compared ? {
+    library: compared.library.plan ? rowsDiff("activity", compared.library.plan.activities) : [],
+    resources: compared.resources.plan ? rowsDiff("resource", compared.resources.plan.resources, (r) => r.title) : [],
+    jobTitles: compared.jobTitles.plan ? rowsDiff("job title", compared.jobTitles.plan.titles) : [],
+  } : { library: [], resources: [], jobTitles: [] };
+
+  const activityNames = new Map((compared?.live.activities || []).map((a) => [a.id, a.name]));
+
+  const showChanges = (key, diff) => {
+    const n = contentOf(diff).length;
+    if (!n) return null;
+    return (
+      <button onClick={() => setOpen((o) => ({ ...o, [key]: !o[key] }))} className="text-xs font-medium text-gray-500 hover:text-gray-800">
+        {open[key] ? "Hide" : `Show ${n} change${n === 1 ? "" : "s"}`}
+      </button>
+    );
+  };
+
   return (
     <section className="bg-white rounded-xl border border-gray-200 overflow-hidden">
       <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between gap-4">
@@ -416,6 +519,7 @@ export default function ContentSync({ onApplied = null }) {
                 >
                   Save files
                 </button>
+                {compared.library.present && showChanges("library", fileDiffs.library)}
                 {compared.library.present && compared.library.plan.writes > 0 && (
                   <button onClick={applyLibraryFiles} disabled={!!busy} className="text-xs font-medium text-blue-600 hover:text-blue-800 disabled:opacity-50">
                     {busy === "library" ? `${progress || "Applying"}…` : "Apply"}
@@ -432,6 +536,9 @@ export default function ContentSync({ onApplied = null }) {
                 )}
               </span>
             </div>
+            {compared.library.present && compared.library.plan.writes > 0 && (
+              <FileChanges diff={fileDiffs.library} counts={compared.library.plan.counts} isOpen={!!open.library} />
+            )}
             {applied.library && (
               <p className="text-xs text-green-700 mt-1">
                 {applied.library.written.activities} activit{applied.library.written.activities === 1 ? "y" : "ies"} written.
@@ -470,6 +577,7 @@ export default function ContentSync({ onApplied = null }) {
                 >
                   Save file
                 </button>
+                {compared.resources.present && showChanges("resources", fileDiffs.resources)}
                 {compared.resources.present && compared.resources.plan.writes > 0 && (
                   <button onClick={applyTheResources} disabled={!!busy} className="text-xs font-medium text-blue-600 hover:text-blue-800 disabled:opacity-50">
                     {busy === "resources" ? `${progress || "Applying"}…` : "Apply"}
@@ -486,6 +594,32 @@ export default function ContentSync({ onApplied = null }) {
                 )}
               </span>
             </div>
+            {compared.resources.present && compared.resources.plan.writes > 0 && (
+              <FileChanges diff={fileDiffs.resources} counts={compared.resources.plan.counts} isOpen={!!open.resources} names={activityNames} />
+            )}
+            {/* The order these two are applied in is not a preference. A
+                resource names its activities by content_key, and the key is
+                looked up among library rows that have one — so applying the
+                resources to a library that has not taken its ids yet resolves
+                nothing, and writes every one of those links away. Said here,
+                before the button, because afterwards it is eighty-odd links to
+                put back. */}
+            {compared.resources.present && compared.resources.plan.unknownActivities.length > 0 && (
+              <p className="text-xs text-amber-700 mt-1">
+                {compared.resources.plan.unknownActivities.length} link{compared.resources.plan.unknownActivities.length === 1 ? "" : "s"} name{compared.resources.plan.unknownActivities.length === 1 ? "s" : ""} an activity the library has no id for
+                {compared.library.present && compared.library.plan.counts.adopted > 0
+                  ? ". Apply the activity library first — applied now, those links are dropped."
+                  : ". Applied now, those links are dropped."}
+              </p>
+            )}
+            {/* Said before the apply, not only after it: an app resource the
+                file has forgotten is left alone, and somebody deciding whether
+                to apply wants to know it is there. */}
+            {compared.resources.present && compared.resources.plan.orphans.length > 0 && (
+              <p className="text-xs text-gray-400 mt-1">
+                {compared.resources.plan.orphans.length} resource{compared.resources.plan.orphans.length === 1 ? " is" : "s are"} in the app and not in the file. Left alone.
+              </p>
+            )}
             {applied.resources && (
               <p className="text-xs text-green-700 mt-1">{applied.resources.written.resources} resource{applied.resources.written.resources === 1 ? "" : "s"} written.</p>
             )}
@@ -514,6 +648,7 @@ export default function ContentSync({ onApplied = null }) {
                 <button onClick={() => download("job-titles.md", compared.jobTitles.appText)} className="text-xs font-medium text-gray-500 hover:text-gray-800">
                   Save file
                 </button>
+                {compared.jobTitles.present && showChanges("job-titles", fileDiffs.jobTitles)}
                 {compared.jobTitles.present && compared.jobTitles.plan.writes > 0 && (
                   <button onClick={applyTheJobTitles} disabled={!!busy} className="text-xs font-medium text-blue-600 hover:text-blue-800 disabled:opacity-50">
                     {busy === "job-titles" ? `${progress || "Applying"}…` : "Apply"}
@@ -533,6 +668,14 @@ export default function ContentSync({ onApplied = null }) {
             {/* A rename is the one thing here worth reading before it happens:
                 an activity's recommended owner and every answer ever given hold
                 the name as text, so nothing follows the title when it changes. */}
+            {compared.jobTitles.present && compared.jobTitles.plan.writes > 0 && (
+              <FileChanges diff={fileDiffs.jobTitles} counts={compared.jobTitles.plan.counts} isOpen={!!open["job-titles"]} />
+            )}
+            {compared.jobTitles.present && compared.jobTitles.plan.orphans.length > 0 && (
+              <p className="text-xs text-gray-400 mt-1">
+                {compared.jobTitles.plan.orphans.length} title{compared.jobTitles.plan.orphans.length === 1 ? " is" : "s are"} in the app and not in the file. Left alone — answers name them.
+              </p>
+            )}
             {compared.jobTitles.plan?.renames.map((r, i) => (
               <p key={i} className="text-xs text-amber-700 mt-1">
                 "{r.from}" becomes "{r.to}". {r.activities === 0 ? "No activity recommends the old name" : `${r.activities} activit${r.activities === 1 ? "y" : "ies"} still recommend${r.activities === 1 ? "s" : ""} the old name`}, and answers already given keep it. Neither changes.
@@ -675,37 +818,7 @@ export default function ContentSync({ onApplied = null }) {
                   </p>
                 )}
 
-                {isOpen && content.length > 0 && (
-                  <dl className="mt-3 space-y-2 border-l-2 border-gray-100 pl-3">
-                    {content.map((d, i) => (
-                      <div key={i} className="text-xs">
-                        <dt className="text-gray-500">
-                          <span className="uppercase tracking-wide text-[10px] text-gray-400">{d.kind}</span>{" "}
-                          <span className="font-medium text-gray-700">{d.name}</span>
-                          {d.field && <span className="font-mono text-[11px] text-gray-400"> · {d.field}</span>}
-                          {d.action === "create" && <span className="ml-1 text-[10px] uppercase tracking-wide text-[#3366FF]">new</span>}
-                        </dt>
-                        {d.field && (
-                          <dd className="mt-0.5 space-y-1">
-                            {/* Labelled rather than struck through. A strikethrough
-                                says the file has won, and nothing here has decided
-                                that — Apply makes the file right, Commit makes the
-                                app right, and the person reading the two values is
-                                the one who knows which. */}
-                            <p className="flex gap-2">
-                              <span className="w-12 shrink-0 text-[10px] uppercase tracking-wide text-gray-400 pt-0.5">App</span>
-                              <span className="text-gray-700">{short(d.from)}</span>
-                            </p>
-                            <p className="flex gap-2">
-                              <span className="w-12 shrink-0 text-[10px] uppercase tracking-wide text-gray-400 pt-0.5">File</span>
-                              <span className="text-gray-700">{short(d.to)}</span>
-                            </p>
-                          </dd>
-                        )}
-                      </div>
-                    ))}
-                  </dl>
-                )}
+                {isOpen && content.length > 0 && <FieldList content={content} />}
 
                 {plan.deletes.length > 0 && (
                   <label className="flex items-start gap-2 mt-3 text-xs text-gray-600">

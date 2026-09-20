@@ -883,3 +883,28 @@ export function jobTitlesFromLive(live) {
     .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
     .map((row) => ({ ...unmap("job_title", row), id: row.content_key || slugify(row.name) }));
 }
+
+// The same flattening as planDiff, for the three plans that are one flat list
+// of rows rather than an instrument's several: the library, the resources, the
+// job titles. Their rows carry the same { name, changes, action } shape, so the
+// screen can read them the same way — and until this existed those three could
+// only be applied unread, on a count alone. A count is where this went wrong
+// once already: "65 to write" against a file holding exactly 65 activities is
+// either every row adopting an id or every row about to be created a second
+// time, and nothing on the screen said which.
+export function rowsDiff(kind, rows, nameOf = (r) => r.name) {
+  const out = [];
+  for (const r of rows) {
+    if (r.action === "unchanged") continue;
+    for (const c of r.changes) {
+      out.push({
+        kind, name: nameOf(r), action: r.action, ...c,
+        group: isOrdering(c.field) ? "order" : isBookkeeping(c.field) ? "bookkeeping" : "content",
+      });
+    }
+    if (!r.changes.length && r.action === "create") {
+      out.push({ kind, name: nameOf(r), action: r.action, field: null, from: null, to: null });
+    }
+  }
+  return out;
+}

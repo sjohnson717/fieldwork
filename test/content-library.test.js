@@ -9,7 +9,7 @@ import {
 } from "@/lib/content-format.js";
 import {
   planLibrary, applyLibrary, libraryFromLive,
-  planResources, applyResources, resourcesFromLive,
+  planResources, applyResources, resourcesFromLive, rowsDiff,
 } from "@/lib/content-apply.js";
 
 const LIBRARY = {
@@ -238,4 +238,57 @@ test("validation refuses two titles with one name", () => {
   assert.deepEqual(validateJobTitles(TITLES), []);
   assert.match(validateJobTitles([...TITLES, { id: "other", name: "Sales Engineer" }]).join(" "), /Two titles are called/);
   assert.match(validateJobTitles([...TITLES, { id: "sales-engineer", name: "Another" }]).join(" "), /share the id/);
+});
+
+// The screen reads a flat plan through rowsDiff, and the thing it has to be
+// able to say is which of two opposite events a write count describes. A first
+// run against an app that already holds the library writes to every row —
+// exactly as many writes as a run that would create the library a second time.
+test("an adoption reads as an adoption, not as a library about to be duplicated", () => {
+  const be = backend({
+    Activity: [
+      { id: "a1", name: "Understand the Market", description: "Know who buys and why.\n\nAnd what they do instead.", preferred_owner: "Product Manager", try_this: "Interview three customers this week.", active: true },
+      { id: "a2", name: "Persona Definition", description: "Who you are building for.", preferred_owner: "Product Manager", active: true },
+      { id: "a3", name: "Roadmap", description: "What you have agreed to do.", preferred_owner: "Head of Product", try_this: "Cut the fourth quarter.", active: false },
+    ],
+  });
+  const plan = planLibrary(LIBRARY, be.live());
+  // Every row is written, and not one of them is new.
+  assert.equal(plan.writes, 3);
+  assert.equal(plan.counts.create, 0);
+  assert.equal(plan.counts.update, 3);
+  assert.equal(plan.counts.adopted, 3);
+  assert.equal(plan.orphans.length, 0);
+
+  const diff = rowsDiff("activity", plan.activities);
+  // Nothing a person typed is changing: it is ids and positions, which is what
+  // the row now says out loud instead of "3 to write".
+  assert.deepEqual(diff.filter((d) => d.group === "content"), []);
+  assert.equal(diff.filter((d) => d.field === "content_key").length, 3);
+  assert.ok(diff.every((d) => d.action === "update"));
+});
+
+test("a library that is genuinely absent reads as new rows, field by field", () => {
+  const plan = planLibrary(LIBRARY, backend().live());
+  const diff = rowsDiff("activity", plan.activities);
+  assert.equal(plan.counts.create, 3);
+  assert.equal(plan.counts.adopted, 0);
+  assert.ok(diff.every((d) => d.action === "create"));
+  assert.deepEqual(
+    [...new Set(diff.filter((d) => d.group === "content").map((d) => d.name))].sort(),
+    ["Persona Definition", "Roadmap", "Understand the Market"],
+  );
+});
+
+test("a resource is named by its title, and a wording change is content", () => {
+  const be = backend({
+    Resource: [{ id: "r1", content_key: "aspire", title: "ASPIRE to Your Capabilities", url: "https://example.com/aspire", note: "An older note.", resource_type: "free_article", source: "Steve Johnson", published_date: "2025-03-01", sort_order: 0, activity_ids: [], is_fallback: false, active: true }],
+  });
+  const plan = planResources(RESOURCES, be.live(), { libraryIdByKey: new Map() });
+  const diff = rowsDiff("resource", plan.resources, (r) => r.title);
+  const note = diff.find((d) => d.field === "note");
+  assert.equal(note.name, "ASPIRE to Your Capabilities");
+  assert.equal(note.group, "content");
+  assert.equal(note.from, "An older note.");
+  assert.equal(note.to, "A note somebody wrote.");
 });
