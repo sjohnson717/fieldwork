@@ -138,9 +138,10 @@ const FieldList = ({ content, names = null }) => {
               <p className="text-[10px] uppercase tracking-wide text-gray-400">spacing only · ⏎ line break · · space</p>
             )}
             {/* Labelled rather than struck through. A strikethrough says the
-                file has won, and nothing here has decided that — Apply makes
-                the file right, Commit makes the app right, and the person
-                reading the two values is the one who knows which. */}
+                file has won, and nothing here has decided that — Apply writes
+                the file into the app, Commit writes the app into the branch,
+                and the person reading the two values is the one who knows
+                which way it should go. */}
             <p className="flex gap-2">
               <span className="w-12 shrink-0 text-[10px] uppercase tracking-wide text-gray-400 pt-0.5">App</span>
               <span className="text-gray-700 whitespace-pre-wrap">{shown.from}</span>
@@ -210,6 +211,10 @@ export default function ContentSync({ onApplied = null }) {
   const [compared, setCompared] = useState(null);
   const [open, setOpen] = useState({});
   const [confirmDeletes, setConfirmDeletes] = useState({});
+  // The bulk commit asks before it writes. One click used to be the whole of
+  // it, which is how seven files were overwritten by a button somebody read as
+  // "save everything".
+  const [confirmAll, setConfirmAll] = useState(false);
   const [busy, setBusy] = useState("");
   const [progress, setProgress] = useState("");
   const [applied, setApplied] = useState({});
@@ -222,6 +227,7 @@ export default function ContentSync({ onApplied = null }) {
     setComparing(true);
     setError("");
     if (!keepApplied) { setApplied({}); setCommitted({}); }
+    setConfirmAll(false);
     try {
       const loaded = await loadContent();
       const { scales, instruments, problems, library, resources, jobTitles, activitySets, skippedPosts } = readContent(loaded.files);
@@ -493,11 +499,19 @@ export default function ContentSync({ onApplied = null }) {
   // Only this direction. There is no Apply everything, and there should not be:
   // applying overwrites what somebody typed into the app, and that decision is
   // made one file at a time after reading what changes.
+  //
+  // `waiting` is the one that matters: a file with writes outstanding holds
+  // wording the app has never been given, and committing would write the app's
+  // older copy over it. That happened — seven instruments reverted in one
+  // click, because the bulk button was the most prominent thing on the screen
+  // and asked nothing before firing. Those files are named and left alone now;
+  // their own Commit button still offers the same thing one file at a time,
+  // after somebody has read the two values.
   const pending = [];
   if (compared) {
-    const add = (label, path, text) => pending.push({ label, path, text });
+    const add = (label, path, text, waiting = false) => pending.push({ label, path, text, waiting });
     if (compared.scales.appText && compared.scales.appText !== compared.scales.fileText) {
-      add("the answer scales", "content/scales.md", compared.scales.appText);
+      add("the answer scales", "content/scales.md", compared.scales.appText, compared.scales.plan?.writes > 0);
     }
     if (compared.library.differs) {
       // A phase at a time, so an untouched phase file is not rewritten — but
@@ -515,13 +529,17 @@ export default function ContentSync({ onApplied = null }) {
       ["skippedPosts", "the skipped posts", "content/skipped-posts.md"],
       ["jobTitles", "the job titles", "content/job-titles.md"],
     ]) {
-      if (compared[key].differs) add(label, path, compared[key].appText);
+      if (compared[key].differs) add(label, path, compared[key].appText, compared[key].plan?.writes > 0);
     }
     for (const entry of compared.instruments) {
-      if (entry.appText && entry.appText !== entry.fileText) add(entry.content.name, entry.path, entry.appText);
+      if (entry.appText && entry.appText !== entry.fileText) {
+        add(entry.content.name, entry.path, entry.appText, entry.plan?.writes > 0);
+      }
     }
   }
-  const pendingNames = [...new Set(pending.map((f) => f.label))];
+  const committable = pending.filter((f) => !f.waiting);
+  const heldBack = pending.filter((f) => f.waiting);
+  const pendingNames = [...new Set(committable.map((f) => f.label))];
 
   // Oxford comma, as everywhere else the app lists things.
   const listOf = (items) =>
@@ -531,14 +549,14 @@ export default function ContentSync({ onApplied = null }) {
 
   const commitEverything = () => commit(
     "all",
-    pending.map(({ path, text }) => ({ path, text })),
+    committable.map(({ path, text }) => ({ path, text })),
     // Short enough to read in a list of commits when it names a few things,
     // and a count when it does not. The paths go in the body either way, so
     // the commit says exactly what it touched without being opened.
     (pendingNames.length <= 4
       ? `Sync ${listOf(pendingNames)} from the app`
-      : `Sync ${pending.length} content files from the app`)
-    + (pending.length > 1 ? `\n\n${pending.map((f) => f.path).join("\n")}` : ""),
+      : `Sync ${committable.length} content files from the app`)
+    + (committable.length > 1 ? `\n\n${committable.map((f) => f.path).join("\n")}` : ""),
   );
 
   const showChanges = (key, diff) => {
@@ -570,12 +588,12 @@ export default function ContentSync({ onApplied = null }) {
               of it in the repository. */}
           {pending.length > 0 && (
             <button
-              onClick={commitEverything}
+              onClick={() => setConfirmAll(true)}
               disabled={!!busy || comparing}
-              title={pendingNames.join("\n")}
+              title="Write what the app holds into the content branch"
               className="text-sm font-medium px-4 min-h-[44px] md:min-h-0 py-2 rounded-lg border border-[#3366FF] text-[#3366FF] hover:bg-blue-50 disabled:opacity-50 transition-colors"
             >
-              {busy === "all" ? "Committing…" : `Commit everything (${pendingNames.length})`}
+              {busy === "all" ? "Committing…" : `Commit everything to the branch (${pending.length})`}
             </button>
           )}
           <button
@@ -592,12 +610,55 @@ export default function ContentSync({ onApplied = null }) {
         Each instrument is one file in content/instruments, edited here or on
         GitHub. Syncing reads the files and lists every field that differs, with
         the app's value beside the file's — neither is automatically right, and
-        choosing is the point. Apply makes the file right, and never deletes a
-        question: Response rows key on it, so one dropped from a file is
-        reported instead. Commit makes the app right, writing to the{" "}
-        {CONTENT_BRANCH} branch, which nothing rebuilds from. Save file is that
-        same text as a download, for committing by hand.
+        choosing is the point. The two buttons go opposite ways.{" "}
+        <span className="font-semibold text-gray-600">Apply writes the file into the app</span>, and never
+        deletes a question: Response rows key on it, so one dropped from a file
+        is reported instead.{" "}
+        <span className="font-semibold text-gray-600">Commit writes the app into the {CONTENT_BRANCH} branch</span>,
+        which nothing rebuilds from, and overwrites whatever that file said.
+        Save file is that same text as a download, for committing by hand.
       </p>
+
+      {/* What the bulk commit will do, said before it does it and in the
+          direction it goes. The list is the files themselves: "2 files" is
+          true and useless, and the whole failure was somebody not knowing
+          which files a button was about to rewrite. */}
+      {confirmAll && (
+        <div className="px-6 py-4 border-b border-gray-100 bg-amber-50/50">
+          <p className="text-xs text-gray-700">
+            This writes what the app holds into {CONTENT_BRANCH}, replacing{" "}
+            {committable.length === 1 ? "one file" : `${committable.length} files`} with the app's copy:
+          </p>
+          <ul className="mt-2 text-xs text-gray-600 list-disc pl-4 space-y-0.5">
+            {committable.map((f) => <li key={f.path}><span className="font-mono text-[11px]">{f.path}</span></li>)}
+            {committable.length === 0 && <li>nothing — every file that differs is waiting to be applied.</li>}
+          </ul>
+          {heldBack.length > 0 && (
+            <p className="mt-2 text-xs text-gray-700">
+              {heldBack.length === 1 ? "One file is" : `${heldBack.length} files are`} left alone:{" "}
+              {listOf([...new Set(heldBack.map((f) => f.label))])}. {heldBack.length === 1 ? "It has" : "They have"}{" "}
+              changes waiting to be applied, so the app has never been given what{" "}
+              {heldBack.length === 1 ? "that file" : "those files"} say — committing would write the app's older
+              copy over it. Apply first, or use that row's own Commit if the app is the one that is right.
+            </p>
+          )}
+          <div className="flex items-center gap-3 mt-3">
+            <button
+              onClick={() => { setConfirmAll(false); commitEverything(); }}
+              disabled={!!busy || committable.length === 0}
+              className="text-xs font-medium px-3 min-h-[44px] md:min-h-0 md:py-2 rounded-lg bg-[#3366FF] hover:bg-[#2952CC] text-white disabled:opacity-40 transition-colors"
+            >
+              {committable.length === 1 ? "Commit that file" : `Commit those ${committable.length} files`}
+            </button>
+            <button
+              onClick={() => setConfirmAll(false)}
+              className="text-xs font-medium text-gray-500 hover:text-gray-800 min-h-[44px] md:min-h-0"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
 
       {committed.all && (
         <p className="text-xs text-green-700 px-6 py-3 border-b border-gray-100 bg-green-50/40">
@@ -641,7 +702,7 @@ export default function ContentSync({ onApplied = null }) {
                 </span>
                 {compared.scales.plan.writes > 0 && (
                   <button
-                    onClick={applyTheScales}
+                    title="Write this file into the app" onClick={applyTheScales}
                     disabled={!!busy}
                     className="text-xs font-medium text-blue-600 hover:text-blue-800 disabled:opacity-50"
                   >
@@ -650,6 +711,7 @@ export default function ContentSync({ onApplied = null }) {
                 )}
                 {compared.scales.appText && compared.scales.appText !== compared.scales.fileText && (
                   <button
+                    title="Write the app into the content branch, replacing this file"
                     onClick={() => commit("scales", [{ path: "content/scales.md", text: compared.scales.appText }], "Sync the answer scales from the app")}
                     disabled={!!busy}
                     className="text-xs font-medium text-blue-600 hover:text-blue-800 disabled:opacity-50"
@@ -698,12 +760,13 @@ export default function ContentSync({ onApplied = null }) {
                 </button>
                 {compared.library.present && showChanges("library", fileDiffs.library)}
                 {compared.library.present && compared.library.plan.writes > 0 && (
-                  <button onClick={applyLibraryFiles} disabled={!!busy} className="text-xs font-medium text-blue-600 hover:text-blue-800 disabled:opacity-50">
+                  <button title="Write these files into the app" onClick={applyLibraryFiles} disabled={!!busy} className="text-xs font-medium text-blue-600 hover:text-blue-800 disabled:opacity-50">
                     {busy === "library" ? `${progress || "Applying"}…` : "Apply"}
                   </button>
                 )}
                 {compared.library.differs && (
                   <button
+                    title="Write the app into the content branch, replacing this file"
                     onClick={() => commit("library", Object.entries(compared.library.files).map(([path, text]) => ({ path, text })), "Sync the activity library from the app")}
                     disabled={!!busy}
                     className="text-xs font-medium text-blue-600 hover:text-blue-800 disabled:opacity-50"
@@ -756,12 +819,13 @@ export default function ContentSync({ onApplied = null }) {
                 </button>
                 {compared.resources.present && showChanges("resources", fileDiffs.resources)}
                 {compared.resources.present && compared.resources.plan.writes > 0 && (
-                  <button onClick={applyTheResources} disabled={!!busy} className="text-xs font-medium text-blue-600 hover:text-blue-800 disabled:opacity-50">
+                  <button title="Write this file into the app" onClick={applyTheResources} disabled={!!busy} className="text-xs font-medium text-blue-600 hover:text-blue-800 disabled:opacity-50">
                     {busy === "resources" ? `${progress || "Applying"}…` : "Apply"}
                   </button>
                 )}
                 {compared.resources.differs && (
                   <button
+                    title="Write the app into the content branch, replacing this file"
                     onClick={() => commit("resources", [{ path: "content/resources.md", text: compared.resources.appText }], "Sync the resources from the app")}
                     disabled={!!busy}
                     className="text-xs font-medium text-blue-600 hover:text-blue-800 disabled:opacity-50"
@@ -827,12 +891,13 @@ export default function ContentSync({ onApplied = null }) {
                 </button>
                 {compared.activitySets.present && showChanges("activity-sets", fileDiffs.activitySets)}
                 {compared.activitySets.present && compared.activitySets.plan.writes > 0 && (
-                  <button onClick={applyTheSets} disabled={!!busy} className="text-xs font-medium text-blue-600 hover:text-blue-800 disabled:opacity-50">
+                  <button title="Write this file into the app" onClick={applyTheSets} disabled={!!busy} className="text-xs font-medium text-blue-600 hover:text-blue-800 disabled:opacity-50">
                     {busy === "activity-sets" ? `${progress || "Applying"}…` : "Apply"}
                   </button>
                 )}
                 {compared.activitySets.differs && (
                   <button
+                    title="Write the app into the content branch, replacing this file"
                     onClick={() => commit("activity-sets", [{ path: "content/activity-sets.md", text: compared.activitySets.appText }], "Sync the activity sets from the app")}
                     disabled={!!busy}
                     className="text-xs font-medium text-blue-600 hover:text-blue-800 disabled:opacity-50"
@@ -900,12 +965,13 @@ export default function ContentSync({ onApplied = null }) {
                 </button>
                 {compared.skippedPosts.present && showChanges("skipped-posts", fileDiffs.skippedPosts)}
                 {compared.skippedPosts.present && compared.skippedPosts.plan.writes > 0 && (
-                  <button onClick={applyTheSkipped} disabled={!!busy} className="text-xs font-medium text-blue-600 hover:text-blue-800 disabled:opacity-50">
+                  <button title="Write this file into the app" onClick={applyTheSkipped} disabled={!!busy} className="text-xs font-medium text-blue-600 hover:text-blue-800 disabled:opacity-50">
                     {busy === "skipped-posts" ? `${progress || "Applying"}…` : "Apply"}
                   </button>
                 )}
                 {compared.skippedPosts.differs && (
                   <button
+                    title="Write the app into the content branch, replacing this file"
                     onClick={() => commit("skipped-posts", [{ path: "content/skipped-posts.md", text: compared.skippedPosts.appText }], "Sync the skipped posts from the app")}
                     disabled={!!busy}
                     className="text-xs font-medium text-blue-600 hover:text-blue-800 disabled:opacity-50"
@@ -961,12 +1027,13 @@ export default function ContentSync({ onApplied = null }) {
                 </button>
                 {compared.jobTitles.present && showChanges("job-titles", fileDiffs.jobTitles)}
                 {compared.jobTitles.present && compared.jobTitles.plan.writes > 0 && (
-                  <button onClick={applyTheJobTitles} disabled={!!busy} className="text-xs font-medium text-blue-600 hover:text-blue-800 disabled:opacity-50">
+                  <button title="Write this file into the app" onClick={applyTheJobTitles} disabled={!!busy} className="text-xs font-medium text-blue-600 hover:text-blue-800 disabled:opacity-50">
                     {busy === "job-titles" ? `${progress || "Applying"}…` : "Apply"}
                   </button>
                 )}
                 {compared.jobTitles.differs && (
                   <button
+                    title="Write the app into the content branch, replacing this file"
                     onClick={() => commit("job-titles", [{ path: "content/job-titles.md", text: compared.jobTitles.appText }], "Sync the job titles from the app")}
                     disabled={!!busy}
                     className="text-xs font-medium text-blue-600 hover:text-blue-800 disabled:opacity-50"
@@ -1051,7 +1118,7 @@ export default function ContentSync({ onApplied = null }) {
                         onClick={() => commit(key, [{ path: entry.path, text: entry.appText }], `Sync ${entry.content.name} from the app`)}
                         disabled={!!busy}
                         className="text-xs font-medium text-blue-600 hover:text-blue-800 disabled:opacity-50"
-                        title="Commit what the app holds to the content branch"
+                        title="Write the app into the content branch, replacing this file"
                       >
                         {busy === key ? "Committing…" : "Commit"}
                       </button>
