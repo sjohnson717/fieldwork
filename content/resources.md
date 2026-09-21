@@ -958,7 +958,7 @@ Accountable for outcomes without the levers? Lead with clarity of purpose, value
 ## Resource: Customer Proof: Stop Asking Sales to Sell Promises
 id: customer-proof-stop-asking-sales-to-sell-promises
 published: 2026-09-21
-url: https://www.productgrowthleaders.com/post/customer-proof-stop-asking-sales-to-sell-promises
+url: https://www.productgrowthleaders.com/reading/customer-proof-stop-asking-sales-to-sell-promises
 
 Testimonials and logos aren't customer proof. Proof is evidence that a customer like this one got the outcome you promised. Here's how to build it.
 
