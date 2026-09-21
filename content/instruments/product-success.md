@@ -1,18 +1,16 @@
 ---
 key: product_success
 name: Product Success Quiz
-tagline: Find out whether this product has earned its next round of investment.
+tagline: Get insights on the health of your products and processes.
 report_style: distribution
 scales: [yes_no]
 subject_label: Which product are you assessing? A code name is fine.
 sort_order: 6
 ---
 
-Need to assess the health and strategic value of a single product? This survey evaluates performance, market alignment, and competitive position through straightforward yes or no questions. Each Yes marks a positive attribute, each No a potential concern.
+Need to assess the overall health and strategic value of a single product within your portfolio? This survey evaluates performance, market alignment, and competitive position using a set of straightforward yes/no questions. Each “Yes” indicates a positive attribute, while each “No” highlights a potential concern.
 
-Taken together, they give a clear picture of whether the product deserves continued investment, careful maintenance, a strategic rethink, or a graceful exit.
-
-**For the consultant.** One product at a time, answered yes or no. Performance, market fit, and competitive position, where each No marks a concern rather than a verdict. Read together, they place the product in a band: keep investing, maintain with caution, reassess, or wind down. Use it when a portfolio decision has to be defensible to a board, or when every product should face the same questions rather than the ones its advocate prefers.
+By reviewing these factors together, you’ll gain a clear, unbiased picture of whether the product is a strong candidate for continued investment, should be maintained with caution, needs a strategic reassessment, or may be approaching end-of-life.
 
 ## Dimension: Performance
 id: performance

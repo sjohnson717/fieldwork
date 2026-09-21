@@ -8,11 +8,9 @@ subject_label: Which idea are you evaluating? A code name is fine.
 sort_order: 5
 ---
 
-Most product ideas sound reasonable in isolation. The real question is whether your organization is positioned to make this one succeed.
+Most product ideas sound reasonable in isolation. The real question is whether your organization is positioned to make the idea succeed. The goal is not to green-light ideas prematurely, but to identify where additional learning, validation, or investment is required before committing serious resources.
 
-This check looks at three areas that consistently decide the outcome: market familiarity, internal capabilities, and competitive context. It does not judge the idea itself. It shows where you need more learning, validation, or investment before committing serious resources.
-
-**For the consultant.** For the conversation before the funding conversation. Three areas decide whether an idea survives contact with the market — market familiarity, internal capability, and competitive context — each answered yes, no, or don’t know. Don’t know counts, and it is usually both the most honest answer and the most expensive one. The report shows what the client needs to learn before committing people to it.
+The Idea Reality Check is a quick self-assessment designed to surface risk across three areas that consistently determine success or failure: market familiarity, internal capabilities, and competitive context. It doesn’t judge the quality of the idea itself. Instead, it evaluates whether you have the experience, evidence, and readiness required to turn the idea into a viable product.
 
 ## Dimension: Market
 id: market
@@ -52,6 +50,9 @@ section: Market
 Do you have customer success stories for this market segment?
 
 **Commentary.** Success stories demonstrate that customers not only buy—but achieve outcomes. Without them, marketing claims lack credibility and sales teams rely on promises instead of proof. If this is missing, expect heavier reliance on pilots, references, and executive involvement to establish trust.
+
+**Reading.**
+- [Customer Proof: Stop Asking Sales to Sell Promises](customer-proof-stop-asking-sales-to-sell-promises)
 
 ## Question: Domain Expertise
 id: domain-expertise

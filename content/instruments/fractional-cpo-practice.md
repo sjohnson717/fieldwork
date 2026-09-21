@@ -1,7 +1,7 @@
 ---
 key: fractional_cpo_practice
 name: Fractional CPO Practice Profile
-tagline: See how much of your practice is repeatable method, and how much is just you.
+tagline: How repeatable is the practice around your expertise?
 report_style: dimension
 band_basis: mean
 scales: [consistency]
@@ -16,8 +16,6 @@ The Fractional CPO Practice Profile examines how well your consulting practice s
 For each statement, consider how you typically work across your client engagements—not just your best client or your most recent one.
 
 Your answers are yours. We report what practitioners say only in aggregate, never attributed to you, your firm, or your clients.
-
-**For the consultant.** This one profiles your own practice, not a client’s. It examines the infrastructure around your expertise — how you diagnose, align, enable, demonstrate improvement, and reuse what you have learned — and shows where engagements still depend on you personally rather than on a method you can repeat. Answers are reported only in aggregate, never attributed.
 
 ## Dimension: DIAGNOSE
 id: diagnose
