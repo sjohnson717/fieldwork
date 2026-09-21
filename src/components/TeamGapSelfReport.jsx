@@ -5,8 +5,7 @@ import PrintCredit from "@/components/PrintCredit";
 import ResumeLink from "@/components/ResumeLink";
 import ChaosAssessmentPlug from "@/components/ChaosAssessmentPlug";
 import ActivityAnswerTable from "@/components/ActivityAnswerTable";
-
-const QUARTZ_ICON = "https://media.base44.com/images/public/6a29ff3bc8effbeb3d637555/9e97ff5e6_Quartzicon.png";
+import { QUARTZ_ICON } from "@/lib/assets";
 
 // What a respondent sees after submitting a team gap assessment: their own
 // summary, then every answer they gave. Lifted out of `Assessment` (the

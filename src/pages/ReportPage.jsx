@@ -23,9 +23,9 @@ import {
   computeActivityStats,
   computeGapMix,
 } from "@/lib/scoring";
-
-// ── Brand ────────────────────────────────────────────────────────────────────
-const QUARTZ_LOGO = "https://media.base44.com/images/public/6a29ff3bc8effbeb3d637555/9e97ff5e6_Quartzicon.png";
+// The report's mark. Named QUARTZ_LOGO here because that is what the report
+// calls it in its own layout; it is the same file the rest of the app uses.
+import { QUARTZ_ICON as QUARTZ_LOGO } from "@/lib/assets";
 
 // ── Sub-components ───────────────────────────────────────────────────────────
 

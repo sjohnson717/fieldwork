@@ -1,8 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
-
-const QUARTZ_ICON = "https://media.base44.com/images/public/6a29ff3bc8effbeb3d637555/9e97ff5e6_Quartzicon.png";
+import { QUARTZ_ICON } from "@/lib/assets";
 
 // Where a signed-in account with no role lands.
 //

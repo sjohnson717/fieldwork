@@ -2,13 +2,23 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="https://base44.com/logo_v2.svg" />
+    <!-- Our own icon, served from public/assets. This was
+         https://base44.com/logo_v2.svg — the Base44 logo mark, which is the
+         favicon every app built on the platform starts life with. So the tab
+         for Quartz Assessments wore someone else's logo, fetched from someone
+         else's origin on every cold load. The apple-touch-icon is the same art
+         at 192px, which is what iOS saves when the page is added to the home
+         screen; public/manifest.json names the same files. -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png" />
+    <link rel="apple-touch-icon" href="/assets/quartz-icon-192.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <!-- Access to /assess, /team/:token and /report/:token is the URL itself,
          so the path must never travel off-site. This sends only the origin on
-         cross-origin requests (images from base44 and wixstatic), never the
-         token. Modern browsers already default to this; pinning it means the
-         guarantee doesn't depend on a browser default. -->
+         cross-origin requests (the Product Growth Leaders logo on the team
+         leader page, served from wixstatic — the only image the app still
+         fetches off-site), never the token. Modern browsers already default
+         to this; pinning it means the guarantee doesn't depend on a browser
+         default. -->
     <meta name="referrer" content="strict-origin-when-cross-origin" />
     <!-- public/manifest.json, checked in, rather than the one the platform
          generates from its own app metadata. A password manager titles the

@@ -1,6 +1,5 @@
 import React from "react";
-
-const HERO_IMAGE = "https://media.base44.com/images/public/6a29ff3bc8effbeb3d637555/curated-lifestyle-H3ZVdxBRIW0-unsplash.jpg";
+import { HERO_IMAGE } from "@/lib/assets";
 
 export default function AuthLayout({ icon: Icon, title, subtitle, footer, children }) {
   return (

@@ -7,6 +7,7 @@ import { getAssessmentByCode, getRespondentSession, saveRespondentAnswers } from
 import { PERSONAL_AXES, computePersonProfile } from "@/lib/personal-scoring";
 import { ANSWER_FIELDS, rebuildResponses } from "@/lib/responses";
 import { usePrintSafeUrl } from "@/lib/print-safe-url";
+import { HERO_IMAGE, QUARTZ_ICON } from "@/lib/assets";
 import { claimToken, resumeLinkFor } from "@/lib/token-address";
 import ResumeLink from "@/components/ResumeLink";
 import { FACET_ORDER, IMPORTANCE_LABEL, EXECUTION_LABEL } from "@/lib/scoring";
@@ -94,8 +95,6 @@ function activitiesOnPage(activities, page, instrument) {
     .filter(a => a.section === page)
     .sort((a, b) => (a.section_sort ?? 0) - (b.section_sort ?? 0));
 }
-
-const HERO_IMAGE = "https://media.base44.com/images/public/6a29ff3bc8effbeb3d637555/2ffc15b8c_curated-lifestyle-H3ZVdxBRIW0-unsplash.jpg";
 
 // The rated options come from scoring.js, which is where their numeric values
 // live — retyped here, the two lists could drift and the survey would offer an
@@ -280,7 +279,7 @@ function IntroHeading({ assessment, instrument }) {
     <div className="mb-8">
       <div className="flex items-center gap-3 mb-3">
         <img
-          src="https://media.base44.com/images/public/6a29ff3bc8effbeb3d637555/9e97ff5e6_Quartzicon.png"
+          src={QUARTZ_ICON}
           alt="Quartz Assessment"
           className="h-10 w-10 shrink-0 object-contain"
         />
@@ -1123,7 +1122,7 @@ export default function Assessment() {
       <div className="absolute inset-0" style={{ backgroundColor: "rgba(15, 40, 80, 0.35)" }} />
       <div className="relative z-10 w-full flex items-center justify-center p-4">
         <div className="bg-white/90 backdrop-blur-md border border-gray-200/60 rounded-2xl shadow-sm p-8 w-full max-w-md text-center">
-          <img src="https://media.base44.com/images/public/6a29ff3bc8effbeb3d637555/9e97ff5e6_Quartzicon.png" alt="Quartz Assessment" className="h-10 w-10 mx-auto mb-4 object-contain" />
+          <img src={QUARTZ_ICON} alt="Quartz Assessment" className="h-10 w-10 mx-auto mb-4 object-contain" />
           <p className="text-gray-500">{error}</p>
         </div>
       </div>
@@ -1213,7 +1212,7 @@ export default function Assessment() {
       <div className="relative z-10 w-full flex items-center justify-center p-4">
         <div className="bg-white/90 backdrop-blur-md border border-gray-200/60 rounded-2xl shadow-sm p-8 w-full max-w-md">
           <div className="mb-8">
-            <img src="https://media.base44.com/images/public/6a29ff3bc8effbeb3d637555/9e97ff5e6_Quartzicon.png" alt="Quartz Assessment" className="h-10 w-10 mb-3 object-contain" />
+            <img src={QUARTZ_ICON} alt="Quartz Assessment" className="h-10 w-10 mb-3 object-contain" />
             <h1 className="text-2xl font-bold text-gray-900">Quartz Assessment</h1>
             <p className="text-gray-500 mt-2">Enter the code you received to begin.</p>
           </div>
@@ -1775,7 +1774,7 @@ export default function Assessment() {
       <div className="absolute inset-0" style={{ backgroundColor: "rgba(15, 40, 80, 0.35)" }} />
       <div className="relative z-10 w-full flex items-center justify-center p-4">
         <div className="bg-white/90 backdrop-blur-md border border-gray-200/60 rounded-2xl shadow-sm p-10 w-full max-w-md text-center">
-          <img src="https://media.base44.com/images/public/6a29ff3bc8effbeb3d637555/9e97ff5e6_Quartzicon.png" alt="Quartz Assessment" className="h-10 w-10 mx-auto mb-6 object-contain" />
+          <img src={QUARTZ_ICON} alt="Quartz Assessment" className="h-10 w-10 mx-auto mb-6 object-contain" />
           <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-5">
             <svg className="w-8 h-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
