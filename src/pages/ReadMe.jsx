@@ -119,6 +119,50 @@ Adding a facet means \`FACET_ORDER\`, \`FACET_SUBTITLES\`, a \`THEME_GROUPS\` en
 Facilitators have accounts. **Respondents, team leaders, and buyers never do** — an unguessable URL is the credential. Tokens are \`crypto.randomUUID()\`; the access code is short and shoutable but only permits joining, never reading anyone's data.`,
   },
   {
+    id: "super-admin",
+    group: null,
+    title: "Super-admin",
+    content: `Everything below the rule in the Admin sidebar, under **Product Growth Leaders — only super-admins see this**. A super-admin is \`User.role === "admin"\` (\`isSuperAdmin\` in \`src/lib/roles.js\`); an org admin or facilitator never sees any of it.
+
+The rule of thumb for all of it: it is authored content every organization reads, and only we may rewrite it. A fractional CPO picks an instrument; they do not get to edit the questions inside it.
+
+## The six screens
+
+| Screen | What it is for |
+| --- | --- |
+| **System Health** | Reads across every organization. Checks that would otherwise be nobody's job: content the repository does not have, content that differs from it, questions in sections no dimension declares. A *fix* is something nothing else would bring back; a *judgement* is a difference where somebody has to decide which side is right. |
+| **Library** | The shared activities every Team Gap and Personal Assessment draws from, their phases, owners, and **Try this** tips. Activity sets and job titles live here too. |
+| **Instruments** | The seven instruments: name, tagline, both descriptions, questions, commentary, bands, and reading. **Content files** is on this screen — see below. |
+| **Resources** | The reading offered on reports, and the blog feed that proposes new ones. Serves both the library and instrument questions, which is why it sits after both. |
+| **Organizations** | The firms, and who belongs to them. Facilitators and org admins are managed per organization from here. |
+| **Ideas** | What everyone else asked for through the lightbulb, and what we decided. A status of **pursue** is the one that means work. |
+
+## Content files, and which way it writes
+
+The panel at the bottom of **Instruments**. It compares the content files with the app and lists every field that differs, the app's value beside the file's. Neither side is automatically right, which is the whole point of the screen.
+
+- **Apply** writes the file into the app.
+- **Commit** writes the app into the \`content\` branch.
+
+Say it that way round every time. The sentence this guide used to carry — "Apply makes the file right" — meant *Apply treats the file as the authority* and read as *Apply fixes the file*; somebody read it the second way, pressed the bulk Commit, and seven instruments reverted to wording the app had never been given. **Commit everything** now names the files it would write and holds back any file with writes outstanding, because those are exactly the ones where the app holds the older copy.
+
+**Order matters when applying more than one thing.** Apply the activity library before the resources and the activity sets. Both resolve their links through library content keys, so applying them first silently drops every link to an activity that does not exist yet — the screen says so on the row.
+
+## Publishing, and where each thing comes from
+
+- **Entity schemas come from \`base44/entities/*.jsonc\`, applied on publish.** A field added through the API alone works until the next publish and then vanishes. A new field is not live until the Builder has the push *and* you publish.
+- **Base44 syncs \`main\`, and only \`main\`.** A branch or a PR never reaches the Builder, and the sync lags a push.
+- **The content files are read from the \`content\` branch, not \`main\`** (\`src/lib/content-source.js\`). That is deliberate: a wording fix should not rebuild the app. A commit pushed to \`main\` alone will not appear on the Content files screen.
+
+## Deleting
+
+Every delete belongs in the app, behind a backend function that refuses while anything still references the row — \`deleteOrganization\`, \`deleteTeamMember\`, \`deleteTag\`, \`deleteLibraryActivity\`, \`deleteAssessment\`. Nothing is ever deleted in the Builder: the guard is the function, and going around it is how a row's references outlive it. A question is never deleted at all, in either direction — Response rows key on it, so a question dropped from a file is reported and left alone.
+
+## What does not go in What's new
+
+Release notes are read by the people buying and running assessments. Everything on this page is ours, so none of it is announced there — a super-admin capability in What's new is an advertisement for a door nobody else can open.`,
+  },
+  {
     id: "notes",
     group: null,
     title: "Developer Notes",
