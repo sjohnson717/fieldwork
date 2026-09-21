@@ -49,6 +49,13 @@ const INSTRUMENT_ATTRS = [
   ["sort_order", NUM],
 ];
 
+// The one prose field an instrument keeps outside its attribute lines, besides
+// the description itself. `description` is what the person answering reads at
+// the top of the survey; the summary is what a facilitator reads in the New
+// Assessment panel when deciding which instrument to reach for. They are two
+// audiences and two voices, and one field could only ever serve one of them.
+const CONSULTANT_LABEL = "For the consultant";
+
 // `type` rather than question_type, and `from`/`to` rather than
 // min_score/max_score: the file is read by a person, and the entity names are
 // translated once, in entity-names below, rather than leaking their history
@@ -222,6 +229,7 @@ const orderQuestions = (questions, dimensions) => {
 export function normalizeInstrument(src) {
   const out = normalizeAttrs(src, INSTRUMENT_ATTRS);
   out.description = normalizeProse(src?.description);
+  out.summary = normalizeProse(src?.summary);
   for (const spec of BLOCKS) {
     out[spec.collection] = (src?.[spec.collection] || []).map((b) => normalizeBlock(spec, b));
   }
@@ -365,6 +373,7 @@ export function writeInstrument(input) {
   const sections = [];
   sections.push(["---", ...attrLines(c, INSTRUMENT_ATTRS), "---"].join("\n"));
   if (c.description) sections.push(c.description);
+  if (c.summary) sections.push(`**${CONSULTANT_LABEL}.** ${c.summary}`);
   for (const spec of BLOCKS) {
     for (const row of c[spec.collection]) sections.push(blockText(spec, row));
   }
@@ -521,7 +530,12 @@ export function parseInstrument(text) {
     }
   }
   const { preamble, segments } = segmentsOf(fm ? src.slice(fm[0].length) : src);
-  const content = { ...front, description: preamble };
+  // The preamble carries two descriptions: the prose a respondent reads at the
+  // top of the survey, and the labelled paragraph a facilitator reads when
+  // choosing between seven of them. Split the same way a question's body is.
+  const front_matter = splitLabels(preamble);
+  const content = { ...front, description: front_matter.prose,
+    summary: front_matter.labels.get(CONSULTANT_LABEL) || "" };
   for (const spec of BLOCKS) content[spec.collection] = [];
   for (const seg of segments) {
     const spec = BLOCKS.find((b) => b.heading === seg.kind);
@@ -649,12 +663,17 @@ export function validateInstrument(content, { scaleKeys = null } = {}) {
   }
   // A line that would be read back as a marker. Rare, and worth naming here
   // rather than discovering it as a truncated paragraph after a round trip.
-  const prose = [c.description, ...c.questions.flatMap((q) => [q.text, q.commentary]),
+  const prose = [c.description, c.summary, ...c.questions.flatMap((q) => [q.text, q.commentary]),
     ...c.bands.map((b) => b.advice), ...c.dimensions.flatMap((d) => [d.blurb, d.strong, d.opportunity])];
   for (const p of prose) {
     if (/^## (Dimension|Question|Band|Scale): /m.test(p)) say("A paragraph begins with a heading the parser would read as a new block.");
     if (LABEL.test(p.split("\n").slice(1).join("\n"))) say("A paragraph begins with a **Label.** the parser would read as a field.");
   }
+  // The description's *first* line counts too, which is not true of the others:
+  // a block's prose cannot begin with a label because the split would already
+  // have taken it, but the description is the preamble, and a label on its
+  // first line would quietly become the consultant's summary instead.
+  if (LABEL.test(c.description)) say(`The description begins with a **Label.** the parser would read as a field. Only "**${CONSULTANT_LABEL}.**" belongs there, after the description.`);
   return { errors, notes };
 }
 
@@ -824,6 +843,7 @@ export const ENTITY_FIELDS = {
   // It is listed anyway, because a field map with a hole in it is how the last
   // one drifted.
   instrument: { scales: "scale_ids", key: "key", name: "name", tagline: "tagline", description: "description",
+    summary: "summary",
     question_source: "question_source", report_style: "report_style", band_basis: "band_basis",
     subject_label: "subject_label", ask_ownership: "ask_ownership", internal: "internal",
     active: "active", sort_order: "sort_order" },

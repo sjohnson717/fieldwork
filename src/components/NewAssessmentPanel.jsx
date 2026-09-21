@@ -112,8 +112,12 @@ export default function NewAssessmentPanel({ instruments, creating, error, onCre
                     </span>
                   </div>
                   {i.tagline && <p className="text-xs text-gray-500 mt-0.5">{i.tagline}</p>}
-                  {i.description && (
-                    <p className="text-xs text-gray-400 mt-1.5 leading-relaxed line-clamp-3">{i.description}</p>
+                  {/* The consultant's summary, and only the survey intro if an
+                      instrument has not been given one yet: this list is the
+                      one screen where the choice is made, and the respondent's
+                      intro is the wrong voice for it. */}
+                  {(i.summary || i.description) && (
+                    <p className="text-xs text-gray-400 mt-1.5 leading-relaxed line-clamp-3">{i.summary || i.description}</p>
                   )}
                 </button>
               </li>
@@ -121,8 +125,8 @@ export default function NewAssessmentPanel({ instruments, creating, error, onCre
           </ul>
         ) : (
           <div className="overflow-y-auto px-6 py-5 space-y-4">
-            {chosen.description && (
-              <p className="text-xs text-gray-500 leading-relaxed border-l-2 border-gray-200 pl-3">{chosen.description}</p>
+            {(chosen.summary || chosen.description) && (
+              <p className="text-xs text-gray-500 leading-relaxed border-l-2 border-gray-200 pl-3">{chosen.summary || chosen.description}</p>
             )}
 
             {/* The standard, said at the top where it is read before the

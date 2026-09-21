@@ -15,7 +15,11 @@
     },
     "description": {
       "type": "string",
-      "description": "What this instrument is for and what it produces, written for a facilitator choosing between six of them. This is the whole point of the panel; a name alone does not say when to reach for Portfolio Health over Chaos."
+      "description": "What the person answering reads at the top of the survey: what they are about to be asked, in what spirit, and what they get back. Respondent voice. The facilitator's version of the same thing is `summary`."
+    },
+    "summary": {
+      "type": "string",
+      "description": "What this instrument is for and what it produces, written for the facilitator choosing between seven of them in the New Assessment panel. This is the whole point of the panel; a name alone does not say when to reach for Portfolio Health over Chaos. Kept apart from `description` because the survey intro speaks to the person answering and this speaks to the person who bought it, and copy written for one reads wrong to the other."
     },
     "question_source": {
       "type": "string",

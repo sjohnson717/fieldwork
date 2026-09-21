@@ -27,6 +27,7 @@ const files = readdirSync(join(contentDir, "instruments")).filter((f) => f.endsW
 const FULL = {
   key: "every_field", name: "Every Field", tagline: "A tagline: with a colon",
   description: "First paragraph.\n\nSecond paragraph, after a blank line.\nThird line, after a single break.",
+  summary: "What a facilitator reads.\n\nIn two paragraphs, after the description.",
   question_source: "instrument", report_style: "dimension", band_basis: "mean",
   scales: ["agreement", "consistency"], subject_label: "Client",
   ask_ownership: true, internal: true, active: false, sort_order: 9,
@@ -81,6 +82,28 @@ test("the committed files round-trip and validate", () => {
     assert.deepEqual(errors, [], `${f} has validation errors`);
     assert.equal(f, `${c.key.replace(/_/g, "-")}.md`, `${f} is not named after its key`);
   }
+});
+
+// The two descriptions are two audiences, and the whole point of splitting them
+// is that neither one leaks into the other: the survey intro must not pick up
+// the consultant's paragraph, and the panel must not print the respondent's.
+test("the consultant's summary and the respondent's description stay apart", () => {
+  const text = writeInstrument(FULL);
+  const back = parseInstrument(text);
+  assert.equal(back.description, normalizeInstrument(FULL).description);
+  assert.equal(back.summary, normalizeInstrument(FULL).summary);
+  assert.ok(!back.description.includes("facilitator"), "the summary leaked into the description");
+  assert.ok(!back.summary.includes("First paragraph"), "the description leaked into the summary");
+  // An instrument with no summary yet reads back with an empty one, not with
+  // its description doing double duty.
+  const none = parseInstrument(writeInstrument({ ...FULL, summary: "" }));
+  assert.equal(none.summary, "");
+  assert.equal(none.description, normalizeInstrument(FULL).description);
+});
+
+test("a label on the description's first line is refused rather than silently read as the summary", () => {
+  const { errors } = validateInstrument({ ...FULL, description: "**For the consultant.** Written in the wrong place." });
+  assert.ok(errors.some((e) => e.includes("description begins with")), errors.join(" | "));
 });
 
 test("scales round-trip, including an option that does not score", () => {

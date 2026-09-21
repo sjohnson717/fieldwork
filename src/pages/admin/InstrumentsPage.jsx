@@ -143,7 +143,19 @@ export default function InstrumentsPage({ focus = null, onApplied = null }) {
                   </span>
                 </div>
                 {i.tagline && <p className="text-xs text-gray-500 mt-0.5">{i.tagline}</p>}
-                {i.description && <p className="text-xs text-gray-400 mt-1.5 leading-relaxed">{i.description}</p>}
+                {/* Both descriptions, labelled: this is the screen where the
+                    two audiences are edited, and shown unlabelled they read as
+                    one paragraph somebody wrote twice. */}
+                {i.summary && (
+                  <p className="text-xs text-gray-400 mt-1.5 leading-relaxed">
+                    <span className="font-semibold text-gray-500">For the consultant. </span>{i.summary}
+                  </p>
+                )}
+                {i.description && (
+                  <p className="text-xs text-gray-400 mt-1.5 leading-relaxed">
+                    <span className="font-semibold text-gray-500">For the participant. </span>{i.description}
+                  </p>
+                )}
                 <div className="flex flex-wrap gap-1.5 mt-2">
                   {(i.sections || []).map(s => (
                     <span key={s} className="text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">{s}</span>

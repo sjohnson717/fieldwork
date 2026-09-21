@@ -7,9 +7,11 @@ scales: [challenge]
 sort_order: 3
 ---
 
-What really prevents you from defining, developing, and delivering products people actually want to buy and use? Most organizations don’t fail because they lack talent or effort—they fail because chaos creeps in. Priorities shift, roles blur, customer input gets drowned out, and soon the team is running from fire drill to fire drill instead of moving forward with purpose.
+Most organizations don’t fail because they lack talent or effort. They fail because chaos creeps in: priorities shift, roles blur, customer input gets drowned out, and soon the team is running from fire drill to fire drill instead of moving forward with purpose.
 
-This self-assessment will help you uncover whether you’re on a clear path to product success or stuck in a cycle of misalignment, disappointing launches, and endless churn. Answer honestly and quickly—don’t overthink it. Your first instinct usually reveals where the chaos lives.
+This self-assessment shows whether you’re on a clear path to product success or stuck in a cycle of misalignment, disappointing launches, and endless churn. Answer honestly and quickly — your first instinct usually reveals where the chaos lives.
+
+**For the consultant.** Use this when a leadership team knows something is wrong but cannot agree on what. A short list of the symptoms everyone recognizes — shifting priorities, blurred roles, launches that land flat — and a report showing which ones the group actually feels and how widely they agree. No preparation, no homework, and a first conversation that starts from evidence instead of the loudest opinion in the room.
 
 ## Dimension: Your Challenges
 id: your-challenges
