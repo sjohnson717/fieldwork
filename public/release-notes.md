@@ -8,6 +8,16 @@ Each entry is a `##` title, a `Released: YYYY-MM-DD` line, and a short
 explanation written for the people using the app. The title is the entry's
 identity — renaming one announces it again to everyone who already read it.
 
+## Every instrument says what it is for
+
+Released: 2026-09-21
+
+The **New assessment** panel now describes each instrument to you rather than to the people answering it. What it is for, what comes back, and when to reach for it rather than another one — so choosing between them does not depend on remembering what each one does.
+
+The people answering see something different: a description written for them, at the top of the survey, in their own terms. Team Gap Analysis and the Personal Assessment had never had one — they carried our working notes — and now they explain what is being asked and why the two ratings are the point.
+
+Every instrument also carries a call to action, the one line that prints under the title on the report.
+
 ## One number per question
 
 Released: 2026-09-18

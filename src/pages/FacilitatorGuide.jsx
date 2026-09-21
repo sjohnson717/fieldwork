@@ -12,7 +12,7 @@ const sections = [
 ## Create the assessment
 
 1. **Click New assessment.** It's the blue button at the top of the Assessments page. From anywhere else in Admin, press ⌘K (Ctrl+K on Windows) and choose **New assessment**.
-2. **Choose what you're running.** The panel lists every instrument with a one-line summary and a short description. On the right, each one says what it asks of respondents: **you pick the activities** for Team Gap Analysis and Personal Assessment, or the number of questions for the others. Click one to choose it; **Choose a different one** takes you back to the list.
+2. **Choose what you're running.** The panel lists every instrument with its call to action and a short summary written for you — what it is for, what comes back, and when to reach for it rather than another. The people answering never see that summary; they get a description written for them at the top of the survey. On the right, each one says what it asks of respondents: **you pick the activities** for Team Gap Analysis and Personal Assessment, or the number of questions for the others. Click one to choose it; **Choose a different one** takes you back to the list.
 3. **Name it to the standard.** Every assessment is named the same way, in three parts, and the panel joins them for you and shows the result under **Saved as**:
 
    > **Team Gap Analysis - Blackbaud - Initial assessment 260917**
