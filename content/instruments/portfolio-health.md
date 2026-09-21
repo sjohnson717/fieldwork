@@ -1,15 +1,17 @@
 ---
 key: portfolio_health
 name: Portfolio Health Check
-tagline: Which portfolio challenges resonate most with you and your team?
+tagline: Find out which portfolio problems are costing your team the most.
 report_style: distribution
 scales: [challenge]
 sort_order: 4
 ---
 
-Every product leader wrestles with the same tug-of-war: endless ideas, limited resources, and way too many opinions about what’s most important. It’s easy to get stretched thin—spreading teams across competing priorities until nothing makes a real impact. The result? Slower progress, frustrated stakeholders, and strategic goals that remain more aspiration than achievement.
+Every product leader wrestles with the same tug-of-war: endless ideas, limited resources, and too many opinions about what matters most. Teams get stretched across competing priorities until nothing makes a real impact.
 
-This quick survey is designed to surface which challenges resonate most with you and your team. Don’t overthink it—your first reaction is often the most telling. In just a few minutes, you’ll see where your organization’s biggest product headaches align with the patterns we see across dozens of companies like yours.
+This short survey surfaces which of those challenges resonate most with you. Don’t overthink it — your first reaction is usually the most telling.
+
+**For the consultant.** For the leader with too many products and not enough of everything else. The team picks which portfolio problems resonate — spread too thin, no criteria for saying no, ideas outrunning capacity — and the report shows where the group agrees and where it quietly splits. Useful early, when you still need to know whether the portfolio is the problem or the products are.
 
 ## Dimension: Challenges
 id: challenges
