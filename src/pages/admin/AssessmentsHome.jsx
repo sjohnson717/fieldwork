@@ -336,6 +336,9 @@ export default function AssessmentsHome({
                       <ResponseCount loading={summary === null} s={a._summary} onOpenResults={() => onOpen(a.id, "Results")} />
                       <span className="ml-auto text-gray-500 whitespace-nowrap">{relativeDate(a._activity)}</span>
                     </div>
+                    {a.access_code && (
+                      <p className="mt-1 text-xs text-gray-500">Access code: <span className="font-mono text-gray-700">{a.access_code}</span></p>
+                    )}
                     {showOwnerFilter && ownerFilter === "all" && (
                       <p className="mt-1 text-xs text-gray-400">Owner: {ownerNames.get(a.created_by_id) || "—"}</p>
                     )}
