@@ -351,6 +351,7 @@ export default function AssessmentsHome({
                     <SortHeader k="title">Assessment</SortHeader>
                     <SortHeader k="client">Client</SortHeader>
                     <th className="px-4 py-2.5 font-semibold uppercase tracking-wide">Type</th>
+                    <th className="px-4 py-2.5 font-semibold uppercase tracking-wide">Access code</th>
                     {showOwnerFilter && ownerFilter === "all" && (
                       <th className="px-4 py-2.5 font-semibold uppercase tracking-wide">Owner</th>
                     )}
@@ -405,6 +406,7 @@ export default function AssessmentsHome({
                         <td className="px-4 py-3">
                           <span className={`text-[11px] font-semibold px-1.5 py-0.5 rounded ${badge.tone}`}>{badge.label}</span>
                         </td>
+                        <td className="px-4 py-3 font-mono text-xs text-gray-600 whitespace-nowrap">{a.access_code || <span className="text-gray-300">—</span>}</td>
                         {showOwnerFilter && ownerFilter === "all" && (
                           <td className="px-4 py-3 text-gray-500">{ownerNames.get(a.created_by_id) || "—"}</td>
                         )}
