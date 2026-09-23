@@ -315,7 +315,7 @@ export default function AssessmentsHome({
                       {/* Always shown: there is no hover on a phone to reveal it. */}
                       <PinButton compact pinned={isPinned(a.id)} onToggle={() => onTogglePin(a.id)} className="ml-auto shrink-0" />
                     </div>
-                    <div className="mt-1 flex items-center gap-2 flex-wrap text-sm">
+                    <div className="mt-1 flex items-center justify-center gap-2 flex-wrap text-sm">
                       <span className="text-gray-600">{a.company_name || <span className="text-gray-300">No client</span>}</span>
                       <span className={`text-[11px] font-semibold px-1.5 py-0.5 rounded ${badge.tone}`}>{badge.label}</span>
                       <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${STATUS_COLORS[displayStatus(a)]}`}>
@@ -323,7 +323,7 @@ export default function AssessmentsHome({
                       </span>
                     </div>
                     {(a.tag_ids || []).length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-1.5">
+                      <div className="flex flex-wrap justify-center gap-1 mt-1.5">
                         {(a.tag_ids || [])
                           .map(id => tags.find(t => t.id === id))
                           .filter(Boolean)
@@ -332,15 +332,15 @@ export default function AssessmentsHome({
                           ))}
                       </div>
                     )}
-                    <div className="mt-2 pt-2 border-t border-gray-100 flex items-center gap-x-3 gap-y-1 flex-wrap text-sm tabular-nums">
+                    <div className="mt-2 pt-2 border-t border-gray-100 flex items-center justify-center gap-x-3 gap-y-1 flex-wrap text-sm tabular-nums">
                       <ResponseCount loading={summary === null} s={a._summary} onOpenResults={() => onOpen(a.id, "Results")} />
-                      <span className="ml-auto text-gray-500 whitespace-nowrap">{relativeDate(a._activity)}</span>
+                      <span className="text-gray-500 whitespace-nowrap">{relativeDate(a._activity)}</span>
                     </div>
                     {a.access_code && (
-                      <p className="mt-1 text-xs text-gray-500">Access code: <span className="font-mono text-gray-700">{a.access_code}</span></p>
+                      <p className="mt-1 text-xs text-gray-500 text-center">Access code: <span className="font-mono text-gray-700">{a.access_code}</span></p>
                     )}
                     {showOwnerFilter && ownerFilter === "all" && (
-                      <p className="mt-1 text-xs text-gray-400">Owner: {ownerNames.get(a.created_by_id) || "—"}</p>
+                      <p className="mt-1 text-xs text-gray-400 text-center">Owner: {ownerNames.get(a.created_by_id) || "—"}</p>
                     )}
                   </li>
                 );
