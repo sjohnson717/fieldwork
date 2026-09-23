@@ -354,7 +354,7 @@ export default function AssessmentsHome({
                     <SortHeader k="title">Assessment</SortHeader>
                     <SortHeader k="client">Client</SortHeader>
                     <th className="px-4 py-2.5 font-semibold uppercase tracking-wide">Type</th>
-                    <th className="px-4 py-2.5 font-semibold uppercase tracking-wide">Access code</th>
+                    <th className="text-center px-4 py-2.5 font-semibold uppercase tracking-wide">Access code</th>
                     {showOwnerFilter && ownerFilter === "all" && (
                       <th className="px-4 py-2.5 font-semibold uppercase tracking-wide">Owner</th>
                     )}
