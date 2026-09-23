@@ -352,15 +352,15 @@ export default function AssessmentsHome({
                 <thead className="bg-gray-50 border-b border-gray-200 text-left text-[11px] text-gray-500">
                   <tr>
                     <SortHeader k="title">Assessment</SortHeader>
-                    <SortHeader k="client">Client</SortHeader>
-                    <th className="px-4 py-2.5 font-semibold uppercase tracking-wide">Type</th>
+                    <SortHeader k="client" className="text-center">Client</SortHeader>
+                    <th className="text-center px-4 py-2.5 font-semibold uppercase tracking-wide">Type</th>
                     <th className="text-center px-4 py-2.5 font-semibold uppercase tracking-wide">Access code</th>
                     {showOwnerFilter && ownerFilter === "all" && (
-                      <th className="px-4 py-2.5 font-semibold uppercase tracking-wide">Owner</th>
+                      <th className="text-center px-4 py-2.5 font-semibold uppercase tracking-wide">Owner</th>
                     )}
-                    <SortHeader k="responses">Responses</SortHeader>
-                    <SortHeader k="activity">Last activity</SortHeader>
-                    <th className="px-4 py-2.5 font-semibold uppercase tracking-wide">Status</th>
+                    <SortHeader k="responses" className="text-center">Responses</SortHeader>
+                    <SortHeader k="activity" className="text-center">Last activity</SortHeader>
+                    <th className="text-center px-4 py-2.5 font-semibold uppercase tracking-wide">Status</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -405,21 +405,21 @@ export default function AssessmentsHome({
                             </div>
                           )}
                         </td>
-                        <td className="px-4 py-3 text-gray-600">{a.company_name || <span className="text-gray-300">—</span>}</td>
-                        <td className="px-4 py-3">
+                        <td className="text-center px-4 py-3 text-gray-600">{a.company_name || <span className="text-gray-300">—</span>}</td>
+                        <td className="text-center px-4 py-3">
                           <span className={`text-[11px] font-semibold px-1.5 py-0.5 rounded ${badge.tone}`}>{badge.label}</span>
                         </td>
                         <td className="text-center px-4 py-3 font-mono text-xs text-gray-600 whitespace-nowrap">{a.access_code || <span className="text-gray-300">—</span>}</td>
                         {showOwnerFilter && ownerFilter === "all" && (
-                          <td className="px-4 py-3 text-gray-500">{ownerNames.get(a.created_by_id) || "—"}</td>
+                          <td className="text-center px-4 py-3 text-gray-500">{ownerNames.get(a.created_by_id) || "—"}</td>
                         )}
-                        <td className="px-4 py-3 tabular-nums">
+                        <td className="text-center px-4 py-3 tabular-nums">
                           <ResponseCount loading={summary === null} s={s} onOpenResults={() => onOpen(a.id, "Results")} />
                         </td>
-                        <td className="px-4 py-3 text-gray-500 whitespace-nowrap" title={a._activity ? new Date(a._activity).toLocaleString() : ""}>
+                        <td className="text-center px-4 py-3 text-gray-500 whitespace-nowrap" title={a._activity ? new Date(a._activity).toLocaleString() : ""}>
                           {relativeDate(a._activity)}
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="text-center px-4 py-3">
                           <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${STATUS_COLORS[displayStatus(a)]}`}>
                             {displayStatus(a)}
                           </span>
