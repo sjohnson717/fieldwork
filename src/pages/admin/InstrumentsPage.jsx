@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import InstrumentEditor from "./InstrumentEditor";
 import ContentSync from "./ContentSync";
+import { instrumentMetadataCsv } from "@/lib/instrument-metadata-csv";
 
 // The seven instruments: their content, edited here or in the content files,
 // and the panel that reconciles the two.
@@ -73,6 +74,15 @@ export default function InstrumentsPage({ focus = null, onApplied = null }) {
   };
 
 
+  const downloadMetadata = () => {
+    const url = URL.createObjectURL(new Blob([instrumentMetadataCsv(instruments, counts)], { type: "text/csv;charset=utf-8" }));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "instruments.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   if (editing) {
     return <InstrumentEditor instrument={editing} focusQuestionId={focus?.instrumentId === editing.id ? focus.questionId : null} onBack={() => { setEditing(null); load(); }} />;
   }
@@ -86,11 +96,20 @@ export default function InstrumentsPage({ focus = null, onApplied = null }) {
       <ContentSync onApplied={async () => { await load(); await onApplied?.(); }} />
 
       <section className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100">
-          <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Instruments</h3>
-          <p className="text-xs text-gray-400 mt-0.5">
-            {loading ? "Loading…" : `${instruments.length} in the app`}
-          </p>
+        <div className="px-6 py-4 border-b border-gray-100 flex items-start justify-between gap-3">
+          <div>
+            <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Instruments</h3>
+            <p className="text-xs text-gray-400 mt-0.5">
+              {loading ? "Loading…" : `${instruments.length} in the app`}
+            </p>
+          </div>
+          {/* Names, taglines, calls to action, and both descriptions, for
+              sharing. Not the content files: no questions or bands. */}
+          {instruments.length > 0 && (
+            <button onClick={downloadMetadata} className="shrink-0 text-xs font-medium text-blue-600 hover:text-blue-800">
+              Download details (CSV)
+            </button>
+          )}
         </div>
 
         <p className="text-xs text-gray-400 px-6 py-3 border-b border-gray-100">
