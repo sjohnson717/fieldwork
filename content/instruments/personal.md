@@ -2,6 +2,8 @@
 key: personal
 name: Personal Assessment
 tagline: See where your experience, skills, and interest line up with the work ahead.
+cta: See where your experience, skills, and interest line up, and where they don’t.
+cta_label: Map your strengths
 question_source: library
 report_style: profile
 scales: [experience, skills, interest]

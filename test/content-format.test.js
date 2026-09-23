@@ -26,6 +26,7 @@ const files = readdirSync(join(contentDir, "instruments")).filter((f) => f.endsW
 // Every field, at a value nothing else would produce.
 const FULL = {
   key: "every_field", name: "Every Field", tagline: "A tagline: with a colon",
+  cta: "A call: to action", cta_label: "Go",
   description: "First paragraph.\n\nSecond paragraph, after a blank line.\nThird line, after a single break.",
   summary: "What a facilitator reads.\n\nIn two paragraphs, after the description.",
   question_source: "instrument", report_style: "dimension", band_basis: "mean",

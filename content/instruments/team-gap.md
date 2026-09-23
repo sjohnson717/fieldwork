@@ -2,6 +2,8 @@
 key: team_gap
 name: Team Gap Analysis
 tagline: See where the work that matters most is getting the least attention.
+cta: Learn where your team is succeeding and where it’s missing the mark.
+cta_label: Find your gaps
 question_source: library
 report_style: gap
 scales: [importance, execution]

@@ -2,6 +2,8 @@
 key: fractional_cpo_practice
 name: Fractional CPO Practice Profile
 tagline: See how much of your practice is repeatable method, and how much is just you.
+cta: See how much of your practice is repeatable method and how much is just you.
+cta_label: Profile your practice
 report_style: dimension
 band_basis: mean
 scales: [consistency]

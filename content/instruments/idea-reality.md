@@ -2,6 +2,8 @@
 key: idea_reality
 name: Idea Reality Check
 tagline: Test the idea against reality before the market does.
+cta: Test the idea against reality before the market does.
+cta_label: Test your idea
 report_style: distribution
 scales: [yes_no_unknown]
 subject_label: Which idea are you evaluating? A code name is fine.

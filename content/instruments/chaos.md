@@ -2,6 +2,8 @@
 key: chaos
 name: Chaos Assessment
 tagline: Find out which obstacles are preventing you from consistently achieving product success.
+cta: Find out whether you’re on a clear path to product success or stuck in the fire drills.
+cta_label: Find your chaos
 report_style: distribution
 scales: [challenge]
 sort_order: 3

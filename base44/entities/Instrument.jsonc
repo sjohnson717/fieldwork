@@ -13,6 +13,14 @@
       "type": "string",
       "description": "One line under the name in the New Assessment panel."
     },
+    "cta": {
+      "type": "string",
+      "description": "The line that invites someone to take this instrument, written for the Wix pages that link to it. Kept here so the wording is not lost; nothing in the app displays it."
+    },
+    "cta_label": {
+      "type": "string",
+      "description": "The button text that goes with `cta`, e.g. 'Find your gaps'."
+    },
     "description": {
       "type": "string",
       "description": "What the person answering reads at the top of the survey: what they are about to be asked, in what spirit, and what they get back. Respondent voice. The facilitator's version of the same thing is `summary`."

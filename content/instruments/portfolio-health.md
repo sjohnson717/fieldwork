@@ -2,6 +2,8 @@
 key: portfolio_health
 name: Portfolio Health Check
 tagline: Find out which portfolio problems are costing your team the most.
+cta: Too many ideas and not enough capacity? See which portfolio problems are costing you most.
+cta_label: Check your portfolio
 report_style: distribution
 scales: [challenge]
 sort_order: 4

@@ -38,6 +38,8 @@ const INSTRUMENT_ATTRS = [
   ["key", STR],
   ["name", STR],
   ["tagline", STR],
+  ["cta", STR],
+  ["cta_label", STR],
   ["question_source", STR, "instrument"],
   ["report_style", STR],
   ["band_basis", STR, "points"],
@@ -842,7 +844,7 @@ export const ENTITY_FIELDS = {
   // scales by key and the entity holds ids, so content-apply.js resolves them.
   // It is listed anyway, because a field map with a hole in it is how the last
   // one drifted.
-  instrument: { scales: "scale_ids", key: "key", name: "name", tagline: "tagline", description: "description",
+  instrument: { scales: "scale_ids", key: "key", name: "name", tagline: "tagline", cta: "cta", cta_label: "cta_label", description: "description",
     summary: "summary",
     question_source: "question_source", report_style: "report_style", band_basis: "band_basis",
     subject_label: "subject_label", ask_ownership: "ask_ownership", internal: "internal",

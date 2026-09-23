@@ -146,6 +146,12 @@ export default function InstrumentsPage({ focus = null, onApplied = null }) {
                 {/* Both descriptions, labelled: this is the screen where the
                     two audiences are edited, and shown unlabelled they read as
                     one paragraph somebody wrote twice. */}
+                {i.cta && (
+                  <p className="text-xs text-gray-400 mt-1.5 leading-relaxed">
+                    <span className="font-semibold text-gray-500">Call to action. </span>{i.cta}
+                    {i.cta_label && <span className="ml-1.5 text-[11px] font-semibold text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded">{i.cta_label}</span>}
+                  </p>
+                )}
                 {i.summary && (
                   <p className="text-xs text-gray-400 mt-1.5 leading-relaxed">
                     <span className="font-semibold text-gray-500">For the consultant. </span>{i.summary}

@@ -2,6 +2,8 @@
 key: product_success
 name: Product Success Quiz
 tagline: Find out whether this product has earned its next round of investment.
+cta: Find out whether this product has earned its next round of investment.
+cta_label: Score your product
 report_style: distribution
 scales: [yes_no]
 subject_label: Which product are you assessing? A code name is fine.
