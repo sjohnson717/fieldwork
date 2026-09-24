@@ -14,6 +14,7 @@ import { FACET_ORDER, IMPORTANCE_LABEL, EXECUTION_LABEL } from "@/lib/scoring";
 import PersonalProfileReport from "@/components/PersonalProfileReport";
 import TeamGapSelfReport from "@/components/TeamGapSelfReport";
 import InstrumentSelfSummary from "@/components/InstrumentSelfSummary";
+import { kindOf, asksOwnQuestions, isOwnReport, PERSONAL, TEAM_GAP } from "@/lib/instrument-kind";
 
 // The facets this assessment actually uses, in order. Extracted because the
 // resume calculation below needs it before any state is set, and the render
@@ -77,7 +78,7 @@ const snapshotOf = (rows) => Object.fromEntries(
 // four that carry their own questions page by section and store an `answer`.
 // A missing instrument counts as library, because that is what the app did
 // before any of them existed.
-const usesLibrary = (instrument) => !instrument || instrument.question_source === "library";
+const usesLibrary = (instrument) => !asksOwnQuestions(instrument);
 
 // A survey page: a facet for the instruments that draw on the library, a named
 // section for the ones that carry their own questions. One pair of helpers
@@ -296,10 +297,10 @@ function IntroHeading({ assessment, instrument }) {
 
 function IntroPurpose({ isPersonal, instrument, subject, activityCount, showOwnership, blurb }) {
   // An instrument describes itself. Its own words are the ones the facilitator
-  // chose it by and the ones kept under review in the seed, so the intro cannot
+  // chose it by and the ones kept under review in its content file, so the intro cannot
   // promise something the survey does not ask — which is the same reason the
   // two library instruments build their list from the axes they render.
-  if (instrument && instrument.question_source === "instrument") {
+  if (asksOwnQuestions(instrument)) {
     const scale = instrument.axes?.[0];
     const minutes = Math.max(3, Math.round((activityCount * 20) / 60));
     return (
@@ -415,8 +416,8 @@ export default function Assessment() {
   const [respondent, setRespondent] = useState(null);
   const [activities, setActivities] = useState([]);
   // The instrument this assessment runs, with its axes resolved, or null for
-  // every assessment made before instruments existed. Null is the signal to
-  // use the library path, so nothing here branches on assessment_type.
+  // an assessment whose instrument could not be loaded. Which kind of survey
+  // this is comes from kindOf, which reads assessment_type only then.
   const [instrument, setInstrument] = useState(null);
   const [responses, setResponses] = useState({});
   const [currentFacetIndex, setCurrentFacetIndex] = useState(0);
@@ -502,13 +503,16 @@ export default function Assessment() {
       : "Assess | Quartz Assessments";
   }, [assessment?.title]);
 
-  const isPersonalAssessment = assessment?.assessment_type === "personal";
+  // Which kind of survey this is: which questions it asks, whether it offers
+  // reading, and whose report comes out of it. See instrument-kind.js.
+  const kind = kindOf(assessment, instrument);
+  const isPersonal = kind === PERSONAL;
   // Reading is loaded for the personal profile and for the four instruments
   // that carry their own questions. Both hand it to one person on their own
   // copy; neither the team report nor the buyer report offers any, which is
   // the existing rule and the right one — a reading list is advice to a
   // reader, not a finding about a team.
-  const wantsResources = isPersonalAssessment || instrument?.question_source === "instrument";
+  const wantsResources = kind !== TEAM_GAP;
   useEffect(() => {
     if (!wantsResources || step !== "done") return;
     base44.entities.Resource
@@ -556,7 +560,7 @@ export default function Assessment() {
     // Section order belongs to the instrument, so it is applied here rather
     // than in getAssignedActivities — which deliberately returns an
     // instrument's questions unsorted so this is the only place that decides.
-    const acts = inst && inst.question_source === "instrument" ? orderQuestions(inst, rawActs) : rawActs;
+    const acts = asksOwnQuestions(inst) ? orderQuestions(inst, rawActs) : rawActs;
     setInstrument(inst);
     setActivities(acts);
     const titles = await base44.entities.JobTitle.filter({ active: true }, "sort_order");
@@ -567,7 +571,7 @@ export default function Assessment() {
     // Open on the first unfinished page rather than the first page. Set here
     // because this is the one place holding the activities and the saved
     // answers together, before anything renders.
-    setCurrentFacetIndex(resumeFacetIndex(acts, rebuilt, a.assessment_type === "personal", inst));
+    setCurrentFacetIndex(resumeFacetIndex(acts, rebuilt, kindOf(a, inst) === PERSONAL, inst));
     // Handed back because the caller decides which screen a returning
     // respondent lands on, and state set here is not readable until the next
     // render — reading `instrument` there would see the previous value.
@@ -620,8 +624,7 @@ export default function Assessment() {
         // screen in between only tells them what they already know. The team
         // gap keeps its interstitial, because what it shows on "done" is a
         // confirmation of what was sent rather than a document.
-        const goesStraightToSummary =
-          a.assessment_type === "personal" || inst?.question_source === "instrument";
+        const goesStraightToSummary = kindOf(a, inst) !== TEAM_GAP;
         setStep(goesStraightToSummary ? "done" : "already-done");
         return;
       }
@@ -635,7 +638,10 @@ export default function Assessment() {
       // because an engagement wrapped up would be the wrong default. Note
       // this only protects people who already have a token: handleCodeSubmit
       // still refuses *new* registrations once closed.
-      if (a.status === "closed" && a.assessment_type !== "personal") {
+      //
+      // Read before the instrument is loaded, from assessment_type alone. That
+      // is exact for this one question: every personal assessment carries it.
+      if (a.status === "closed" && kindOf(a, null) !== PERSONAL) {
         setError("This assessment is no longer accepting responses.");
         setStep("dead-end");
         return;
@@ -776,15 +782,11 @@ export default function Assessment() {
     }));
   };
 
-  // Which questions this assessment asks. Everything else about the flow —
-  // code entry, facet paging, resume, review, submission — is identical, so
-  // this is the only thing the two types disagree about.
-  const isPersonal = assessment?.assessment_type === "personal";
   // Instruments whose output belongs to the one person who answered, rather
   // than to a room. The personal assessment has always been one; a dimension
   // report is the second, and the wrap-up's note about where free text goes
   // has to name the right thing for both.
-  const ownReport = isPersonal || instrument?.report_style === "dimension";
+  const ownReport = isOwnReport(kind, instrument);
 
   // The team assessment is only ever reported in aggregate. A personal
   // assessment is the opposite — it is read per person, and promising
@@ -1730,7 +1732,7 @@ export default function Assessment() {
     // against execution to bucket what you said. An instrument answer has
     // neither, so that would render an empty summary under a heading promising
     // one.
-    if (instrument && instrument.question_source === "instrument") {
+    if (asksOwnQuestions(instrument)) {
       return (
         <InstrumentSelfSummary
           instrument={instrument}

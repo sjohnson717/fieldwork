@@ -934,6 +934,25 @@ await flow("client filter narrows the list, merges spellings, and survives openi
   };
 });
 
+// A personal assessment links to a team gap, and only a team gap: Results
+// crosses the two on importance and execution. The list used to be "anything
+// not personal", and the Chaos fixture carries no assessment_type, which is
+// exactly what every own-questions assessment looks like.
+await flow("a personal assessment offers only team gaps to link to", async (page) => {
+  await openHomeWithUnread(page);
+  await openAdminTab(page, { assessment: "Product Manager Self-Assessment", tab: "Overview" });
+  const offered = await page.evaluate(() => {
+    const heading = [...document.querySelectorAll("h3")].find(h => h.textContent.trim() === "Linked team assessment");
+    const select = heading?.parentElement.querySelector("select");
+    return select ? [...select.options].map(o => o.textContent.trim()) : null;
+  });
+  const has = (t) => (offered || []).some(o => o.startsWith(t));
+  return {
+    pass: !!offered && has("Product Team Effectiveness") && has("Team Roles") && !has("Chaos Assessment") && !has("Product Manager Profile"),
+    detail: `offered ${JSON.stringify(offered)}`,
+  };
+});
+
 // ── The Instruments content editor ──────────────────────────────────────────
 // Signed in as an admin, on the fixture's Product Success instrument. Each flow
 // asserts against the stub's state, not the screen: "the page shows the edit"

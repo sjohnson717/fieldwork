@@ -6,6 +6,7 @@ import { rebuildResponses } from "@/lib/responses";
 import PersonalProfileReport from "@/components/PersonalProfileReport";
 import TeamGapSelfReport from "@/components/TeamGapSelfReport";
 import InstrumentSelfSummary from "@/components/InstrumentSelfSummary";
+import { kindOf, PERSONAL, OWN_QUESTIONS } from "@/lib/instrument-kind";
 
 // The respondent's own end-of-assessment page, as the facilitator sees it.
 //
@@ -28,13 +29,14 @@ import InstrumentSelfSummary from "@/components/InstrumentSelfSummary";
 // across the top of it. As a sibling of #root it can be printed alone: the
 // print rules hide #root and let this flow normally.
 export default function RespondentPreview({ assessment, respondent, activities, responses, instrument, onClose }) {
-  const isPersonal = assessment?.assessment_type === "personal";
+  const kind = kindOf(assessment, instrument);
+  const isPersonal = kind === PERSONAL;
   // The four instruments that ask their own questions show the respondent a
   // third thing — their answers with the band they landed in. The instrument
   // arrives already loaded rather than being fetched here: the results tab that
   // opens this has it, and a second read of the same rows to learn what the
   // caller already knows is a request for nothing.
-  const isInstrument = instrument?.question_source === "instrument";
+  const isInstrument = kind === OWN_QUESTIONS;
   const [resources, setResources] = useState([]);
   // The respondent's own page gets org_name resolved server-side by
   // publicAssessment; the admin side loads the Assessment record itself, which

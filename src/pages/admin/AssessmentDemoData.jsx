@@ -5,6 +5,7 @@ import { ownerOptionsFor } from "@/lib/ownership";
 import { EXPERIENCE_OPTIONS, SKILLS_OPTIONS, INTEREST_OPTIONS } from "@/lib/personal-scoring";
 import { IMPORTANCE_LABEL, EXECUTION_LABEL } from "@/lib/scoring";
 import { loadInstrument, orderQuestions } from "@/lib/instruments";
+import { kindOf, PERSONAL, OWN_QUESTIONS } from "@/lib/instrument-kind";
 
 // Same lists as the survey offers, from the file that scores them. Retyped
 // here, generated demo data could carry a label nothing knows how to score.
@@ -324,7 +325,8 @@ export default function AssessmentDemoData({ assessment, instrument }) {
   // An instrument that asks its own questions scores them on one scale, which
   // is the axis every generated answer is drawn from. Everything else — the
   // library pair — keeps the two paths that were already here.
-  const isInstrument = instrument?.question_source === "instrument";
+  const kind = kindOf(assessment, instrument);
+  const isInstrument = kind === OWN_QUESTIONS;
 
   // The instrument arrives as a raw row: AdminPage lists Instrument records and
   // hands the matching one down, which carries `scale_ids` but not the scales
@@ -371,18 +373,18 @@ export default function AssessmentDemoData({ assessment, instrument }) {
     const ownerOptions = ownerOptionsFor(activities, assessment.roles || []);
     if (activities.length === 0) {
       setProgress(isInstrument
-        ? "This instrument has no active questions. Apply the instrument seed from Settings › Instruments first."
+        ? "This instrument has no active questions. Apply its content file on Settings › Instruments first."
         : "No activities assigned to this assessment. Add an activity set first.");
       setGenerating(false);
       return;
     }
     if (isInstrument && !scale) {
-      setProgress("This instrument has no scale. Apply the instrument seed from Settings › Instruments first.");
+      setProgress("This instrument has no scale. Apply the scales on Settings › Instruments first.");
       setGenerating(false);
       return;
     }
 
-    const isPersonal = assessment.assessment_type === "personal";
+    const isPersonal = kind === PERSONAL;
     const facets = [...new Set(activities.map(a => a.facet).filter(Boolean))];
     const plan = isInstrument ? questionPlan(activities) : null;
     // Where in each written-answer pool this run starts, so two runs of the

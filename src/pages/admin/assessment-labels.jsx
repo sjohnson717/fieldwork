@@ -1,4 +1,5 @@
 import { Pin, PinOff } from "lucide-react";
+import { kindOf, TEAM_GAP, PERSONAL, OWN_QUESTIONS } from "@/lib/instrument-kind";
 
 // The labels an assessment carries wherever it is listed — the Assessments
 // page, the sidebar's recent list and the ⌘K switcher. One copy, so the three
@@ -30,26 +31,23 @@ export const displayStatus = (a) => (a?.status === "closed" ? "closed" : "active
 // distinction, so the two never read as the same kind of label even when teal
 // sits near the green of "active".
 const TYPE_BADGE = {
-  team_gap: { label: "Team",     tone: "text-teal-700 bg-teal-50" },
-  personal: { label: "Personal", tone: "text-indigo-600 bg-indigo-50" },
+  [TEAM_GAP]: { label: "Team",     tone: "text-teal-700 bg-teal-50" },
+  [PERSONAL]: { label: "Personal", tone: "text-indigo-600 bg-indigo-50" },
 };
 
-// Absent means team_gap — the field was added after the first assessments
-// existed, and the Assessment schema documents the same default.
-export const assessmentType = (a) => (a.assessment_type === "personal" ? "personal" : "team_gap");
-
-// An instrument names itself, and the four imported ones are neither Team nor
-// Personal — labelling a Chaos Assessment "Team" because assessment_type is
-// absent would be worse than the unlabelled rows this badge was added to fix.
+// An instrument names itself, and the ones that ask their own questions are
+// neither Team nor Personal — labelling a Chaos Assessment "Team" because
+// assessment_type is absent would be worse than the unlabelled rows this badge
+// was added to fix.
 //
-// Short: the first word of the instrument's name is enough to tell six apart,
+// Short: the first word of the instrument's name is enough to tell them apart,
 // and the row already carries the full title beside it.
 export const badgeFor = (assessment, instrument) => {
-  if (!instrument) return TYPE_BADGE[assessmentType(assessment)];
-  if (instrument.question_source === "library") {
-    return TYPE_BADGE[instrument.report_style === "profile" ? "personal" : "team_gap"];
+  const kind = kindOf(assessment, instrument);
+  if (kind === OWN_QUESTIONS) {
+    return { label: instrument.name.split(" ")[0], tone: "text-amber-700 bg-amber-50" };
   }
-  return { label: instrument.name.split(" ")[0], tone: "text-amber-700 bg-amber-50" };
+  return TYPE_BADGE[kind];
 };
 
 // The red count, as a messaging app shows unread. Nothing at zero: a "0" on

@@ -1,4 +1,5 @@
 import { facetRank } from "@/lib/scoring";
+import { asksOwnQuestions } from "@/lib/instrument-kind";
 
 // What kind of row an Activity is, as a rule with nothing behind it.
 //
@@ -13,9 +14,9 @@ import { facetRank } from "@/lib/scoring";
 // both fields is what separates the three kinds of row this entity holds.
 export const isLibraryActivity = (a) => !a.assessment_id && !(a.instrument_ids || []).length;
 
-// An instrument with its own fixed question list, as opposed to team gap and
-// personal, which are instruments too but ask from the shared library.
-export const asksOwnQuestions = (instrument) => instrument?.question_source === "instrument";
+// Re-exported for the callers that have always imported it from here. The rule
+// lives with the other kind rules in instrument-kind.js.
+export { asksOwnQuestions };
 
 /**
  * The activities an assessment asks, given its instrument and every active

@@ -7,6 +7,7 @@ import AssessmentDemoData from "./AssessmentDemoData";
 import TagPicker from "@/components/TagPicker";
 import { displayStatus } from "./assessment-labels";
 import { NAMING_EXAMPLE, NAMING_NOTE, GENERIC_COMPANY } from "@/lib/assessment-naming";
+import { kindOf, PERSONAL, TEAM_GAP } from "@/lib/instrument-kind";
 
 // Two states. An assessment is open from the moment it exists — the access
 // code works immediately — and the only real event in its life is being closed.
@@ -22,7 +23,7 @@ const STATUS_LABELS = {
   closed: { active: "Reopen assessment" },
 };
 
-export default function AssessmentOverview({ assessment, instrument, onUpdate, onDelete, deleting }) {
+export default function AssessmentOverview({ assessment, instrument, instrumentOf = () => null, onUpdate, onDelete, deleting }) {
   const { user: currentUser } = useAuth();
   // Delete is locked until somebody says otherwise, every time this screen is
   // opened. There was already a confirmation, and a confirmation is a thing you
@@ -49,11 +50,11 @@ export default function AssessmentOverview({ assessment, instrument, onUpdate, o
   const [companyDraft, setCompanyDraft] = useState(assessment.company_name || "");
   const [taglineDraft, setTaglineDraft] = useState(assessment.tagline || "");
   const [savingTitle, setSavingTitle] = useState(false);
-  const [teamAssessments, setTeamAssessments] = useState([]);
+  const [otherAssessments, setOtherAssessments] = useState([]);
   const [savingParent, setSavingParent] = useState(false);
   const [tagError, setTagError] = useState("");
 
-  const isPersonal = assessment.assessment_type === "personal";
+  const isPersonal = kindOf(assessment, instrument) === PERSONAL;
 
   useEffect(() => {
     loadUsers();
@@ -68,12 +69,24 @@ export default function AssessmentOverview({ assessment, instrument, onUpdate, o
 
   // Candidate parents for a personal assessment. RLS already limits this to
   // assessments the caller may read, so no extra scoping is needed here.
+  //
   useEffect(() => {
     if (!isPersonal) return;
     base44.entities.Assessment.list("created_date")
-      .then(all => setTeamAssessments(all.filter(a => a.assessment_type !== "personal")))
+      .then(setOtherAssessments)
       .catch(e => console.error("Failed to load team assessments", e));
   }, [isPersonal]);
+
+  // Team gap only. This read "anything not personal", which let a Chaos or
+  // Portfolio Health assessment be linked as the team side, and Results then
+  // looked for importance and execution answers it had never collected.
+  //
+  // A link already made to one stays listed, so it shows as what it is rather
+  // than as "Not linked" while still being stored. Filtered here rather than on
+  // load because this component is reused as the selection moves between
+  // assessments, and the one kept depends on which is open.
+  const teamAssessments = otherAssessments.filter(a =>
+    kindOf(a, instrumentOf(a)) === TEAM_GAP || a.id === assessment.parent_assessment_id);
 
   const handleParentChange = async (parentId) => {
     setSavingParent(true);

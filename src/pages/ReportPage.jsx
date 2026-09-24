@@ -4,6 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { getAssignedActivities } from "@/lib/activities";
 import { loadInstrument, orderQuestions } from "@/lib/instruments";
 import InstrumentReport from "@/components/InstrumentReport";
+import { kindOf, PERSONAL, OWN_QUESTIONS } from "@/lib/instrument-kind";
 import { getBuyerReport } from "@/lib/public-assessment";
 import { ownerMatchesRecommendation } from "@/lib/ownership";
 import { usePrintSafeUrl } from "@/lib/print-safe-url";
@@ -507,15 +508,6 @@ export default function ReportPage() {
         return;
       }
       const a = result.assessment;
-      // This report is built entirely from importance and execution, which a
-      // personal assessment never collects. Every buyer token resolves, so
-      // without this the page would render a full report of empty bars.
-      if (a.assessment_type === "personal") {
-        setError("This link points to a personal assessment, which doesn't have a gap report.");
-        setLoading(false);
-        return;
-      }
-      setAssessment(a);
 
       // The answers come back with the token lookup rather than being read
       // from the browser: Response.read is no longer open to the world, and an
@@ -529,6 +521,16 @@ export default function ReportPage() {
         base44.entities.DiscussionNote.filter({ assessment_id: a.id }),
         loadInstrument(a),
       ]);
+
+      // This report is built entirely from importance and execution, which a
+      // personal assessment never collects. Every buyer token resolves, so
+      // without this the page would render a full report of empty bars.
+      if (kindOf(a, inst) === PERSONAL) {
+        setError("This link points to a personal assessment, which doesn't have a gap report.");
+        setLoading(false);
+        return;
+      }
+      setAssessment(a);
 
       const acts = inst ? orderQuestions(inst, rawActs) : rawActs;
       setInstrument(inst);
@@ -640,7 +642,7 @@ export default function ReportPage() {
   // fixed-question instrument produces, and averaging five dimensions across
   // several practitioners would hide exactly the disagreement this report
   // exists to show.
-  if (instrument && ["distribution", "dimension"].includes(instrument.report_style)) {
+  if (kindOf(assessment, instrument) === OWN_QUESTIONS) {
     return (
       <div className="min-h-screen bg-gray-50">
         <InstrumentReport

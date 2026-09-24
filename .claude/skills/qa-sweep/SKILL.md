@@ -80,6 +80,7 @@ actually rendered, so a blank screen cannot pass as clean.
 | switcher opens an assessment from the keyboard | ⌘K/Ctrl+K doing nothing, or a search that cannot reach an assessment |
 | client filter narrows the list, merges spellings, and survives opening an assessment | a client listed twice for a capital letter, rows from the wrong client, or the choice lost on coming back |
 | pinning puts an assessment in the sidebar, survives a reload, and unpins | a pin that is lost on reload, repeated under Recent, or cannot be taken off |
+| a personal assessment offers only team gaps to link to | a Chaos or other own-questions assessment offered as the team side, which Results cannot cross against because it has no importance or execution answers |
 
 **Permissions.** The stub enforces the real rules: `Response.update`,
 `Response.create` and unauthenticated reads of `Response` all throw, exactly as

@@ -32,31 +32,16 @@ import NewAssessmentPanel from "@/components/NewAssessmentPanel";
 import IdeaDialog from "@/components/IdeaDialog";
 import IdeasPage from "./admin/IdeasPage";
 import { functionErrorMessage } from "@/lib/utils";
+import { kindOf, TABS, PERSONAL, OWN_QUESTIONS } from "@/lib/instrument-kind";
 
 // If assessment_type ever starts arriving as undefined on freshly created
-// assessments, the cause is almost certainly base44/entities/Assessment.jsonc
-// rather than anything here — a publish re-applies schemas from those files
-// and drops any field they don't declare. See that folder's README.
+// team gap or personal assessments, the cause is almost certainly
+// base44/entities/Assessment.jsonc rather than anything here — a publish
+// re-applies schemas from those files and drops any field they don't declare.
+// See that folder's README.
 //
-// A personal assessment never asks who should own an activity and produces no
-// team gap to discuss, so those two tabs would be empty rather than merely
-// unused. Everything else is common to both types.
-const TEAM_TABS = ["Overview", "Activities", "Ownership Roles", "Results", "Discussion"];
-const PERSONAL_TABS = ["Overview", "Activities", "Results"];
-
-// Instruments that ask their own fixed question list have no activity picker
-// and no ownership question — the questions are the instrument's, not the
-// assessment's. Discussion stays: DiscussionNote keys on assessment plus
-// question, and a question is an Activity row like any other.
-const INSTRUMENT_TABS = ["Overview", "Results", "Discussion"];
-
-const tabsFor = (assessment, instrument) => {
-  if (instrument && instrument.question_source === "instrument") return INSTRUMENT_TABS;
-  if (instrument) return instrument.report_style === "profile" ? PERSONAL_TABS : TEAM_TABS;
-  // Assessments predating instruments, which is every one of them until the
-  // library pair is migrated. Absent means team_gap, as the schema says.
-  return assessment?.assessment_type === "personal" ? PERSONAL_TABS : TEAM_TABS;
-};
+// Which tabs an assessment has is decided by its kind; see instrument-kind.js.
+const tabsFor = (assessment, instrument) => TABS[kindOf(assessment, instrument)];
 
 // Which assessment was open, so leaving the admin page and coming back doesn't
 // dump you somewhere else. Session-scoped on purpose: restoring a selection
@@ -447,6 +432,7 @@ export default function AdminPage() {
   const instrumentById = new Map(instruments.map(i => [i.id, i]));
   const instrumentOf = (a) => (a?.instrument_id ? instrumentById.get(a.instrument_id) : null);
   const selectedInstrument = instrumentOf(selected);
+  const selectedKind = kindOf(selected, selectedInstrument);
   const visibleTabs = tabsFor(selected, selectedInstrument);
   const effectiveTab = visibleTabs.includes(activeTab) ? activeTab : "Overview";
   const pinned = pinnedIn(pinnedIds, assessments);
@@ -797,6 +783,7 @@ export default function AdminPage() {
                 {effectiveTab === "Overview" && (
                   <AssessmentOverview
                     instrument={selectedInstrument}
+                    instrumentOf={instrumentOf}
                     assessment={selected}
                     onUpdate={handleAssessmentUpdate}
                     // Deleting is creator-or-super-admin, matching both
@@ -819,17 +806,14 @@ export default function AdminPage() {
                   />
                 )}
                 {effectiveTab === "Results" && (
-                  // Routed by the instrument where there is one, and by
-                  // assessment_type where there is not — which is every
-                  // assessment made before instruments existed.
-                  selectedInstrument?.question_source === "instrument"
+                  selectedKind === OWN_QUESTIONS
                     ? <InstrumentResults assessment={selected} />
-                    : selected.assessment_type === "personal"
+                    : selectedKind === PERSONAL
                       ? <PersonalResults assessment={selected} />
                       : <AssessmentResults assessment={selected} />
                 )}
                 {effectiveTab === "Discussion" && (
-                  selectedInstrument?.question_source === "instrument"
+                  selectedKind === OWN_QUESTIONS
                     ? <InstrumentDiscussion assessment={selected} />
                     : <AssessmentDiscussion assessment={selected} />
                 )}
