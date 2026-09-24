@@ -131,10 +131,16 @@ export function useAdminCache() {
     forgetActivities(assessmentId) {
       qc.removeQueries({ queryKey: ["assigned-activities", assessmentId] });
     },
-    // Decisions written on a Discussion tab, which the instrument Results tab
-    // reports.
-    forgetNotes(assessmentId) {
-      qc.removeQueries({ queryKey: adminKeys.notes(assessmentId) });
+    // A note saved on a Discussion tab, written into the cache the tab reads
+    // from, so the instrument Results tab, which reports the decisions, has
+    // it the moment it opens rather than after a refetch.
+    putNote(assessmentId, saved) {
+      qc.setQueryData(adminKeys.notes(assessmentId), (rows) => {
+        const list = rows || [];
+        return list.some((n) => n.id === saved.id)
+          ? list.map((n) => (n.id === saved.id ? saved : n))
+          : [...list, saved];
+      });
     },
   };
 }

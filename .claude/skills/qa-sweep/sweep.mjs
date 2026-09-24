@@ -1020,6 +1020,81 @@ await flow("results shows what it has on a return visit, and still refreshes", a
   };
 });
 
+// The Discussion tabs keep only what has been typed and not yet saved; the
+// saved note comes from the query cache (lib/admin-queries.js). Two ways that
+// goes wrong: a saved note that the tab no longer shows once it comes back, and
+// a decision the instrument Results tab cannot see until it refetches.
+const openRow = (page, name) => page.evaluate((n) => {
+  const row = [...document.querySelectorAll("[role=button]")].find(el => el.textContent.includes(n));
+  if (row) row.click();
+  return !!row;
+}, name);
+const typeInto = async (page, placeholder, text) => {
+  // By placeholder, whatever the element: the instrument tab's decision is a
+  // one-line input where the team gap's is a textarea.
+  await page.click(`[placeholder="${placeholder}"]`);
+  await page.type(`[placeholder="${placeholder}"]`, text);
+};
+// The Save beside that field: the nearest ancestor holding one.
+const saveBeside = (page, placeholder) => page.evaluate((ph) => {
+  let el = document.querySelector(`[placeholder="${ph}"]`);
+  while (el && ![...el.querySelectorAll("button")].some(b => b.textContent.trim() === "Save")) el = el.parentElement;
+  const b = el && [...el.querySelectorAll("button")].find(x => x.textContent.trim() === "Save");
+  if (b) b.click();
+  return !!b;
+}, placeholder);
+const clickTabNamed = (page, label) => page.evaluate((l) => {
+  const b = [...document.querySelectorAll("button")].find(x => x.textContent.trim() === l);
+  if (b) b.click();
+}, label);
+
+await flow("a note saved on Discussion is still there on coming back", async (page) => {
+  await openHomeWithUnread(page);
+  await openAdminTab(page, { assessment: "Product Team Effectiveness", tab: "Discussion" });
+  const opened = await openRow(page, "Understand the Market");
+  await wait(200);
+  await typeInto(page, "Add notes for the debrief conversation…", "Raised by three of four.");
+  const saved = await saveBeside(page, "Add notes for the debrief conversation…");
+  await wait(600);
+  const stored = await page.evaluate(() => window.__qa.notes.find(n => n.assessment_id === "asmt-gap" && n.activity_id === "act-1")?.note || null);
+  await clickTabNamed(page, "Overview");
+  await wait(400);
+  await clickTabNamed(page, "Discussion");
+  await wait(300);
+  await openRow(page, "Understand the Market");
+  await wait(200);
+  const shown = await page.evaluate(() => document.querySelector('textarea[placeholder="Add notes for the debrief conversation…"]')?.value || null);
+  return {
+    pass: opened && saved && stored === "Raised by three of four." && shown === stored,
+    detail: `row opened=${opened}, saved=${saved}, stored ${JSON.stringify(stored)}, shown on return ${JSON.stringify(shown)}`,
+  };
+});
+
+await flow("a decision saved on an instrument's Discussion is on its Results at once", async (page) => {
+  // Decisions reach Results once the assessment is closed, the gap report's
+  // rule; and slowed, so a Results tab that has to refetch to see the decision
+  // is told apart from one that already has it.
+  await page.evaluateOnNewDocument(() => {
+    window.__qaSetup = (s) => { s.assessments.find(a => a.id === "asmt-chaos").status = "closed"; s.latencyMs = 1500; };
+  });
+  await openHomeWithUnread(page);
+  await openAdminTab(page, { assessment: "Chaos Assessment — Northwind", tab: "Discussion" });
+  await wait(1800);
+  const opened = await openRow(page, "Prioritization Challenges");
+  await wait(200);
+  await typeInto(page, "What was decided or committed to?", "Say no in the planning meeting, in writing.");
+  const saved = await saveBeside(page, "What was decided or committed to?");
+  await wait(600);
+  const stored = await page.evaluate(() => window.__qa.notes.find(n => n.assessment_id === "asmt-chaos")?.decision || null);
+  await clickTabNamed(page, "Results");
+  await wait(150);
+  const onResults = await page.evaluate(() => document.body.innerText.includes("Say no in the planning meeting, in writing."));
+  return {
+    pass: opened && saved && stored === "Say no in the planning meeting, in writing." && onResults,
+    detail: `row opened=${opened}, saved=${saved}, stored ${JSON.stringify(stored)}, on Results within 150ms=${onResults}`,
+  };
+});
+
 // A personal assessment links to a team gap, and only a team gap: Results
 // crosses the two on importance and execution. The list used to be "anything
 // not personal", and the Chaos fixture carries no assessment_type, which is

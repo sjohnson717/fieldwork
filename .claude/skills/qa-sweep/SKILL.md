@@ -83,6 +83,8 @@ actually rendered, so a blank screen cannot pass as clean.
 | the team dashboard withholds resume links where the report is the person's own | a practice profile's team leader able to reopen and edit a practitioner's answers, or a roster of Copy link buttons pointing at tokens the server withheld |
 | the team dashboard offers activity flags only where the set can change | a Chaos, Portfolio Health or practice profile dashboard asking its leader to flag fixed questions for a set nobody can change |
 | results shows what it has on a return visit, and still refreshes | the Results tab back behind a spinner on every visit, or cached rows shown with no refresh behind them |
+| a note saved on Discussion is still there on coming back | a saved note that the tab shows blank after leaving and returning, now that drafts hold only unsaved typing |
+| a decision saved on an instrument's Discussion is on its Results at once | a decision the Results tab cannot show until it refetches, or never |
 | a personal assessment offers only team gaps to link to | a Chaos or other own-questions assessment offered as the team side, which Results cannot cross against because it has no importance or execution answers |
 
 **Permissions.** The stub enforces the real rules: `Response.update`,

@@ -1,8 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
-import { loadResultsData } from "@/lib/respondents";
-import { useAdminCache } from "@/lib/admin-queries";
-import { loadInstrument, orderQuestions, surveyNumbers } from "@/lib/instruments";
+import { useAssignedActivities, useRespondents, useResponses, useInstrument, useDiscussionNotes, useAdminCache } from "@/lib/admin-queries";
+import { orderQuestions, surveyNumbers } from "@/lib/instruments";
 import { distributionFor, agendaOrder } from "@/lib/instrument-scoring";
 import { Distribution, Legend, splitLabel, agreedOnTheWorst } from "@/components/InstrumentReport";
 
@@ -185,43 +184,40 @@ function QuestionRow({ number, question, dist, expected, note, draft, saving, on
 
 export default function InstrumentDiscussion({ assessment }) {
   const cache = useAdminCache();
-  const [instrument, setInstrument] = useState(null);
-  const [questions, setQuestions] = useState([]);
-  const [respondents, setRespondents] = useState([]);
-  const [responses, setResponses] = useState([]);
-  const [notes, setNotes] = useState({});
-  const [drafts, setDrafts] = useState({});
+  const activitiesQuery = useAssignedActivities(assessment);
+  const instrumentQuery = useInstrument(assessment);
+  const respondentsQuery = useRespondents(assessment.id);
+  const responsesQuery = useResponses(assessment.id);
+  const notesQuery = useDiscussionNotes(assessment.id);
+  const instrument = instrumentQuery.data || null;
+  const questions = instrument ? orderQuestions(instrument, activitiesQuery.data) : activitiesQuery.data;
+  const respondents = respondentsQuery.data;
+  const responses = responsesQuery.data;
+  const notes = useMemo(
+    () => Object.fromEntries(notesQuery.data.map(n => [n.activity_id, n])),
+    [notesQuery.data],
+  );
+  // Only the first visit waits; see lib/admin-queries.js.
+  const loading = [activitiesQuery, instrumentQuery, respondentsQuery, responsesQuery, notesQuery].some(q => q.isPending);
+
+  // Only what has been typed and not yet saved. Anything untouched shows the
+  // saved note, so a refetch behind the page updates it and leaves typing
+  // alone. Building drafts from every note on load, as this did, would have
+  // meant choosing on each refetch between overwriting someone mid-sentence
+  // and never showing a change made in another tab.
+  const [edits, setEdits] = useState({});
   const [saving, setSaving] = useState({});
   const [filter, setFilter] = useState(null); // null: split and some disagreement
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => { loadData(); }, [assessment.id]);
+  // This component is reused as the selection moves between assessments, and
+  // library questions share ids across them, so an unsaved edit must not
+  // follow the facilitator into the next assessment. The old reload on
+  // assessment change reset drafts for the same reason.
+  useEffect(() => { setEdits({}); setError(null); }, [assessment.id]);
 
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      const [{ activities, respondents: resps, responses: ress }, inst, existing] = await Promise.all([
-        loadResultsData(assessment),
-        loadInstrument(assessment),
-        base44.entities.DiscussionNote.filter({ assessment_id: assessment.id }),
-      ]);
-      setInstrument(inst);
-      setQuestions(inst ? orderQuestions(inst, activities) : activities);
-      setRespondents(resps);
-      setResponses(ress);
-      const noteMap = {}, draftMap = {};
-      for (const n of existing) {
-        noteMap[n.activity_id] = n;
-        draftMap[n.activity_id] = { note: n.note || "", decision: n.decision || "", decision_role: n.decision_role || "" };
-      }
-      setNotes(noteMap);
-      setDrafts(draftMap);
-    } catch (e) {
-      console.error("Failed to load discussion data", e);
-    }
-    setLoading(false);
-  };
+  const savedFields = (n) => ({ note: n?.note || "", decision: n?.decision || "", decision_role: n?.decision_role || "" });
+  const draftFor = (id) => edits[id] || savedFields(notes[id]);
 
   // One write per change, creating the row the first time a question is
   // touched. A failure is said on screen: a facilitator mid-session who thinks
@@ -242,19 +238,30 @@ export default function InstrumentDiscussion({ assessment }) {
             status: "not_discussed",
             ...patch,
           });
-      setNotes(prev => ({ ...prev, [activityId]: saved }));
-      // The Results tab reports these decisions from its own cached copy.
-      cache.forgetNotes(assessment.id);
+      cache.putNote(assessment.id, saved);
+      return true;
     } catch (e) {
       console.error("Failed to save discussion note", e);
       setError("That change didn't save. Check your connection and try again.");
+      return false;
     }
   };
 
   const handleSave = async (activityId) => {
     setSaving(s => ({ ...s, [activityId]: true }));
-    const d = drafts[activityId] || {};
-    await writeNote(activityId, { note: d.note || "", decision: d.decision || "", decision_role: d.decision_role || "" });
+    const d = draftFor(activityId);
+    const ok = await writeNote(activityId, { note: d.note, decision: d.decision, decision_role: d.decision_role });
+    // Saved, the edit is the note now. Unsaved, it stays, so nothing typed is
+    // lost to a failed save.
+    // Only if it still holds what was sent: typing that carried on during the
+    // save is kept.
+    if (ok) setEdits(prev => {
+      const now = prev[activityId];
+      if (!now || now.note !== d.note || now.decision !== d.decision || now.decision_role !== d.decision_role) return prev;
+      const next = { ...prev };
+      delete next[activityId];
+      return next;
+    });
     setSaving(s => ({ ...s, [activityId]: false }));
   };
 
@@ -375,9 +382,9 @@ export default function InstrumentDiscussion({ assessment }) {
             dist={distributions[q.id]}
             expected={completedIds.size}
             note={notes[q.id]}
-            draft={drafts[q.id] || { note: "", decision: "", decision_role: "" }}
+            draft={draftFor(q.id)}
             saving={!!saving[q.id]}
-            onDraft={(id, patch) => setDrafts(prev => ({ ...prev, [id]: { note: "", decision: "", decision_role: "", ...prev[id], ...patch } }))}
+            onDraft={(id, patch) => setEdits(prev => ({ ...prev, [id]: { ...savedFields(notes[id]), ...prev[id], ...patch } }))}
             onSave={handleSave}
             onToggleFlag={id => writeNote(id, { flagged: !notes[id]?.flagged })}
             onStatusChange={(id, status) => writeNote(id, { status })}

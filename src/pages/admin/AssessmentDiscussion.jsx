@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
-import { getAssignedActivities } from "@/lib/activities";
+import { useAssignedActivities, useResponses, useDiscussionNotes, useAdminCache } from "@/lib/admin-queries";
 import { ownerMatchesRecommendation, ownerOptionsFor } from "@/lib/ownership";
 import GapBar from "@/components/GapBar";
 import {
@@ -311,48 +311,47 @@ function ThemeSection({ group, activities, activityStats, filterLevel, notes, dr
 // ── Main component ────────────────────────────────────────────────────────────
 
 export default function AssessmentDiscussion({ assessment }) {
-  const [activities, setActivities] = useState([]);
-  const [notes, setNotes] = useState({});
-  const [responses, setResponses] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const cache = useAdminCache();
+  const activitiesQuery = useAssignedActivities(assessment);
+  const responsesQuery = useResponses(assessment.id);
+  // This assessment's notes only. It read DiscussionNote.list(), every note in
+  // the app the caller may see, and kept this assessment's in the browser.
+  const notesQuery = useDiscussionNotes(assessment.id);
+  const activities = activitiesQuery.data;
+  const responses = responsesQuery.data;
+  const notes = useMemo(
+    () => Object.fromEntries(notesQuery.data.map(n => [n.activity_id, n])),
+    [notesQuery.data],
+  );
+  // Only the first visit waits; see lib/admin-queries.js.
+  const loading = activitiesQuery.isPending || responsesQuery.isPending || notesQuery.isPending;
   const [filterLevel, setFilterLevel] = useState("problems");
-  const [draftNote, setDraftNote] = useState({});
-  const [draftDecision, setDraftDecision] = useState({});
-  const [draftRole, setDraftRole] = useState({});
+
+  // Only what has been typed and not yet saved, one map per field. Anything
+  // untouched shows the saved note, so a refetch behind the page updates it
+  // and leaves typing alone.
+  const [noteEdits, setNoteEdits] = useState({});
+  const [decisionEdits, setDecisionEdits] = useState({});
+  const [roleEdits, setRoleEdits] = useState({});
   const [saving, setSaving] = useState({});
 
-  useEffect(() => {
-    loadData();
-  }, [assessment.id]);
+  // Reused as the selection moves between assessments, and library activities
+  // share ids across them, so an unsaved edit must not follow the facilitator
+  // into the next assessment.
+  useEffect(() => { setNoteEdits({}); setDecisionEdits({}); setRoleEdits({}); }, [assessment.id]);
 
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      const [acts, allNotes, resps] = await Promise.all([
-        getAssignedActivities(assessment),
-        base44.entities.DiscussionNote.list(),
-        base44.entities.Response.filter({ assessment_id: assessment.id }),
-      ]);
-      const existingNotes = allNotes.filter(n => n.assessment_id === assessment.id);
-      setActivities(acts);
-      setResponses(resps);
-      const noteMap = {};
-      for (const n of existingNotes) noteMap[n.activity_id] = n;
-      setNotes(noteMap);
-      const noteDrafts = {}, decDrafts = {}, roleDrafts = {};
-      for (const n of existingNotes) {
-        noteDrafts[n.activity_id] = n.note || "";
-        decDrafts[n.activity_id] = n.decision || "";
-        roleDrafts[n.activity_id] = n.decision_role || "";
-      }
-      setDraftNote(noteDrafts);
-      setDraftDecision(decDrafts);
-      setDraftRole(roleDrafts);
-    } catch (e) {
-      console.error("Failed to load discussion data", e);
-    }
-    setLoading(false);
-  };
+  const savedField = (field) => Object.fromEntries(Object.entries(notes).map(([id, n]) => [id, n[field] || ""]));
+  const draftNote = { ...savedField("note"), ...noteEdits };
+  const draftDecision = { ...savedField("decision"), ...decisionEdits };
+  const draftRole = { ...savedField("decision_role"), ...roleEdits };
+  // Dropped only if it still holds what was sent: someone who kept typing
+  // while the save was in flight keeps what they typed after it.
+  const dropEdit = (setter, id, sent) => setter(prev => {
+    if (!(id in prev) || prev[id] !== sent) return prev;
+    const next = { ...prev };
+    delete next[id];
+    return next;
+  });
 
   const handleSave = async (activityId) => {
     setSaving(s => ({ ...s, [activityId]: true }));
@@ -369,7 +368,12 @@ export default function AssessmentDiscussion({ assessment }) {
       const saved = existing
         ? await base44.entities.DiscussionNote.update(existing.id, payload)
         : await base44.entities.DiscussionNote.create(payload);
-      setNotes(prev => ({ ...prev, [activityId]: saved }));
+      cache.putNote(assessment.id, saved);
+      // Saved, the edits are the note now. On a failure they stay, so nothing
+      // typed is lost.
+      dropEdit(setNoteEdits, activityId, noteEdits[activityId]);
+      dropEdit(setDecisionEdits, activityId, decisionEdits[activityId]);
+      dropEdit(setRoleEdits, activityId, roleEdits[activityId]);
     } catch (e) {
       console.error("Failed to save note", e);
     }
@@ -390,7 +394,7 @@ export default function AssessmentDiscussion({ assessment }) {
             flagged: false,
             status: newStatus,
           });
-      setNotes(prev => ({ ...prev, [activityId]: saved }));
+      cache.putNote(assessment.id, saved);
     } catch (e) {
       console.error("Failed to update status", e);
     }
@@ -409,7 +413,7 @@ export default function AssessmentDiscussion({ assessment }) {
             decision: "",
             flagged: newFlagged,
           });
-      setNotes(prev => ({ ...prev, [activityId]: saved }));
+      cache.putNote(assessment.id, saved);
     } catch (e) {
       console.error("Failed to toggle flag", e);
     }
@@ -521,9 +525,9 @@ export default function AssessmentDiscussion({ assessment }) {
           draftRole={draftRole}
           assessmentRoles={ownerOptionsFor(activities, assessment.roles || [])}
           saving={saving}
-          onDraftNoteChange={(id, val) => setDraftNote(prev => ({ ...prev, [id]: val }))}
-          onDraftDecisionChange={(id, val) => setDraftDecision(prev => ({ ...prev, [id]: val }))}
-          onDraftRoleChange={(id, val) => setDraftRole(prev => ({ ...prev, [id]: val }))}
+          onDraftNoteChange={(id, val) => setNoteEdits(prev => ({ ...prev, [id]: val }))}
+          onDraftDecisionChange={(id, val) => setDecisionEdits(prev => ({ ...prev, [id]: val }))}
+          onDraftRoleChange={(id, val) => setRoleEdits(prev => ({ ...prev, [id]: val }))}
           onSave={handleSave}
           onToggleFlag={handleToggleFlag}
           onStatusChange={handleStatusChange}
