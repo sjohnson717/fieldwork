@@ -2,7 +2,7 @@
 // by the same field map.
 //
 // This file exists because there used to be two hand-written serializers of
-// one thing — the seed in instrument-seed.js and the export on the Instruments
+// one thing — the seed (instrument-seed.js, since deleted) and the export on the Instruments
 // screen — kept in agreement only by memory. They fell out of agreement: an
 // export that looked complete was missing ten of the practice profile's
 // fifteen prose fields, because whoever added InstrumentSection updated the

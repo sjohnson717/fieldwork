@@ -9,7 +9,7 @@ import { nextContentKey } from "@/lib/content-format";
 // One instrument's content, edited where it lives.
 //
 // The questions, their commentary, the bands, and the reading used to be
-// authored in src/lib/instrument-seed.js, which meant every change went through
+// authored in a seed file, deleted in September 2026, which meant every change went through
 // the repository. They are edited here now, and equally in
 // content/instruments/<key>.md — the same content, two ways in.
 //

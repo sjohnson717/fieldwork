@@ -4,7 +4,7 @@
   "properties": {
     "key": {
       "type": "string",
-      "description": "Stable slug: importance, execution, experience, skills, interest, challenge, yes_no, yes_no_unknown. What the seed matches on when it re-runs, and the only stable identity a scale has — two scales can legitimately share a name and differ in points, as Yes/No does across two instruments."
+      "description": "Stable slug: importance, execution, experience, skills, interest, challenge, yes_no, yes_no_unknown. What content/scales.md is matched on when it is applied, and the only stable identity a scale has — two scales can legitimately share a name and differ in points, as Yes/No does across two instruments."
     },
     "name": {
       "type": "string"
