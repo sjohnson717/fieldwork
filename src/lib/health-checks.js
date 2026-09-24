@@ -1,4 +1,4 @@
-import { isLibraryActivity } from "@/lib/activity-kind";
+import { isLibraryActivity, asksOwnQuestions, selectAssignedActivities } from "@/lib/activity-kind";
 import { sameAddress } from "@/lib/same-address";
 
 // The checks behind Settings → System Health: things a super-admin should look at,
@@ -222,6 +222,36 @@ export function runChecks(data, now = new Date()) {
     .filter(i => i.status === "pending" && olderThan(parseDate(i.created_date), T.pendingInviteDays, now))
     .map(i => ({ key: i.id, label: i.email, detail: `Invited ${ago(parseDate(i.created_date), now)}`, target: { section: "team" } }));
 
+  // An open assessment whose survey would open with nothing to answer. Worked
+  // out with the survey's own rule rather than a second reading of the fields,
+  // so it catches whatever empties one, not only the causes already known: in
+  // September 2026 every team gap made from the New Assessment panel opened
+  // empty for two weeks, because the rule read its instrument_id as "asks its
+  // own list", and nothing said so until a client's survey showed it. An
+  // instrument's question counts only in a section the instrument lists, which
+  // is the one it is asked in.
+  const liveActivities = activities.filter(a => a.active !== false);
+  const instrumentById = new Map(instruments.map(i => [i.id, i]));
+  const asksNothing = assessments
+    .filter(a => a.status !== "closed")
+    .map(a => ({ a, instrument: instrumentById.get(a.instrument_id) || null }))
+    .filter(({ a, instrument }) => {
+      const asked = selectAssignedActivities(a, instrument, liveActivities);
+      const reachable = asksOwnQuestions(instrument)
+        ? asked.filter(q => (instrument.sections || []).includes(q.section))
+        : asked;
+      return reachable.length === 0;
+    })
+    .map(({ a, instrument }) => {
+      const selected = (a.activity_ids || []).length;
+      const detail = asksOwnQuestions(instrument)
+        ? `${instrument.name} has no active question in a section it lists`
+        : selected
+          ? `None of its ${selected} selected activit${selected === 1 ? "y is" : "ies are"} active in the library`
+          : "The library has no active activities";
+      return { key: a.id, label: assessmentLabel(a), detail, target: openAssessment(a) };
+    });
+
   const totals = {
     assessments: assessments.length,
     open: assessments.filter(a => a.status !== "closed").length,
@@ -244,6 +274,9 @@ export function runChecks(data, now = new Date()) {
       ["assessments", "summary"], quiet),
     check("unanswered", "review", `Open assessments nobody has started after ${T.unansweredActiveDays} days`,
       "The link may never have been sent.", ["assessments", "summary"], unanswered),
+    check("asks-nothing", "fix", "Open assessments whose survey has no questions",
+      "Anyone opening the link gets nothing to answer. Pick activities on the assessment, or restore the instrument's questions.",
+      ["assessments", "activities", "instruments"], asksNothing),
     check("closed", "review", `Assessments closed more than ${T.closedYears} years ago`,
       "Kept with every respondent's answers. Delete the ones nobody will read again.", ["assessments"], longClosed),
 
