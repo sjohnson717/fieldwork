@@ -44,6 +44,13 @@ const ROUTES = [
   { name: "respondent-team-gap", url: "/assess?t=TOKEN-RESP-1", review: true },
   { name: "respondent-personal", url: "/assess?t=TOKEN-PERSONAL", review: true },
   { name: "buyer-report", url: "/report/TOKEN-BUYER" },
+  // Added September 2026. The instruments that ask their own questions have
+  // their own report on both sides, and neither was being printed: a Chaos
+  // respondent's summary, and the Chaos buyer report. A panel-made personal
+  // profile carries an instrument_id where the older fixture does not.
+  { name: "respondent-personal-panel", url: "/assess?t=TOKEN-PANEL-P-DONE", review: true },
+  { name: "respondent-instrument", url: "/assess?t=TOKEN-CHAOS-1" },
+  { name: "buyer-report-instrument", url: "/report/TOKEN-BUYER-CHAOS" },
 ];
 
 const FORMATS = ["letter", "a4"];
