@@ -1,0 +1,34 @@
+# Tests, lint and a build on every push to main and every pull request.
+#
+# Base44 publishes from main and runs none of this, so a push that breaks a
+# test reaches the Builder all the same. This is what says so: a red cross on
+# the commit in GitHub, and an email to whoever pushed it.
+#
+# The build needs no Base44 settings. The app reads its app id at run time,
+# so a build without .env.local, which is not in git, is the same build.
+#
+# The QA sweep is not run here. It needs a browser and a harness server and
+# takes minutes; run it with the qa-sweep skill before a publish.
+name: Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm test
+      - run: npm run lint
+      - run: npm run build
