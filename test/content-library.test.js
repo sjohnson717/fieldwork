@@ -141,6 +141,26 @@ test("applying resources leaves every instrument link alone", async () => {
   assert.equal(planResources(RESOURCES, be.live(), { libraryIdByKey: libraryIds(be) }).writes, 0, "a second run does nothing");
 });
 
+test("a resource made before kept_unattached existed matches a file that does not keep it", async () => {
+  // Read through the file, as Sync does: a parsed resource always carries every
+  // flag, `kept` included, where the fixture above leaves it out.
+  const FILE = parseResources(writeResources(RESOURCES));
+  const be = backend();
+  await applyLibrary(be, planLibrary(LIBRARY, be.live()));
+  await applyResources(be, planResources(FILE, be.live(), { libraryIdByKey: libraryIds(be) }));
+  // Rows from before the field carry nothing for it, which the app reads as off.
+  for (const r of be.store.Resource) delete r.kept_unattached;
+  const plan = planResources(FILE, be.live(), { libraryIdByKey: libraryIds(be) });
+  assert.equal(plan.writes, 0, "every resource was reported as changed the day the field was added");
+
+  // Kept in the app, it is a real difference, and reads back into the file as kept.
+  be.store.Resource.find((r) => r.content_key === "aspire").kept_unattached = true;
+  const kept = planResources(FILE, be.live(), { libraryIdByKey: libraryIds(be) });
+  assert.equal(kept.writes, 1);
+  assert.deepEqual(kept.resources.find((r) => r.id === "aspire").changes.map((c) => c.field), ["kept_unattached"]);
+  assert.equal(resourcesFromLive(be.live()).find((r) => r.id === "aspire").kept, true);
+});
+
 test("resources read back as the file, with only the library half of the links", async () => {
   const be = backend();
   await applyLibrary(be, planLibrary(LIBRARY, be.live()));

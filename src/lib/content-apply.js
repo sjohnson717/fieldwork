@@ -89,6 +89,11 @@ const changedFields = (row, patch) => {
       if (!same) out.push({ field, from: a, to });
       continue;
     }
+    // A flag the row has never had is off. Rows made before a flag existed carry
+    // nothing for it, and the app reads that as false; reported as a change,
+    // kept_unattached turned every resource in the file into one the day it
+    // was added.
+    if (to === false && (from === undefined || from === null)) continue;
     if (isBlank(to) ? !isBlank(from) : from !== to) out.push({ field, from, to });
   }
   return out;
