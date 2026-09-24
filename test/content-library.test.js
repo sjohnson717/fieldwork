@@ -60,6 +60,15 @@ test("resources round-trip, including the activities they are offered for", () =
   assert.match(text, /\*\*For\.\*\*\n- understand-the-market\n- persona-definition/);
 });
 
+test("a resource kept while attached to nothing says so in its file, and comes back kept", () => {
+  const kept = { ...RESOURCES[0], activities: [], kept: true };
+  const text = writeResources([kept]);
+  assert.match(text, /^kept: yes$/m);
+  assert.equal(parseResources(text)[0].kept, true);
+  // Not kept is the default, and writes nothing, so no other file changes.
+  assert.doesNotMatch(writeResources([{ ...kept, kept: false }]), /kept:/);
+});
+
 test("the field maps cover every field the two formats carry", () => {
   const a = normalizeActivity(LIBRARY.DEFINE[0]);
   assert.deepEqual(Object.keys(a).sort(), Object.keys(ENTITY_FIELDS.activity).sort());

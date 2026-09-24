@@ -9,8 +9,10 @@ import { ResourceForm, EMPTY_RESOURCE } from "./ResourcesTab";
 
 // Settings → System Health: what a super-admin should look at, gathered on one page.
 //
-// Read-only. Each finding links to the screen that deals with it, and every
-// change is made there, where its own guards already live. The rules and their
+// Each finding links to the screen that deals with it, and most changes are
+// made there, where their own guards already live. Two are made here, because
+// they are small and belong to the finding: attaching reading to an activity
+// that has none, and keeping a resource that is attached to nothing. The rules and their
 // thresholds are in lib/health-checks.js.
 
 // Every source is loaded on its own, so one that fails marks only the checks
@@ -140,11 +142,32 @@ export default function HealthPage({ onOpen }) {
   const [expanded, setExpanded] = useState(null);
   // The item whose Add reading panel is open, if any.
   const [addingFor, setAddingFor] = useState(null);
+  // A resource being kept or un-kept, and what went wrong if it failed.
+  const [keeping, setKeeping] = useState(null);
+  const [keepError, setKeepError] = useState(null);
+
+  // Keep a resource that is attached to nothing, or count it again. Written to
+  // the row, so the decision travels with the resource and into its content
+  // file, and the page updates in place rather than reloading every list.
+  const setKept = async (resource, kept) => {
+    setKeeping(resource.id);
+    setKeepError(null);
+    try {
+      const saved = await base44.entities.Resource.update(resource.id, { kept_unattached: kept });
+      setData(d => ({ ...d, resources: d.resources.map(r => (r.id === resource.id ? { ...r, ...saved, kept_unattached: kept } : r)) }));
+    } catch (e) {
+      console.error("Failed to keep resource", e);
+      setKeepError({ id: resource.id, message: functionErrorMessage(e, "That did not save. Try again.") });
+    }
+    setKeeping(null);
+  };
 
   const load = async () => {
     setLoading(true);
     const keys = Object.keys(SOURCES);
-    const settled = await Promise.allSettled(keys.map(k => SOURCES[k]()));
+    // Started inside a promise, so a source that throws before it returns one
+    // is caught like any other failure and marks only its own checks.
+    const settled = await Promise.allSettled(keys.map(k => Promise.resolve().then(SOURCES[k])));
     const next = {};
     const bad = new Set();
     settled.forEach((s, i) => {
@@ -178,7 +201,7 @@ export default function HealthPage({ onOpen }) {
               </p>
             )}
             <p className="text-sm text-gray-400">
-              What needs tidying across every organization: gaps in the library, old reading, and assessments that have gone quiet. Nothing here changes anything; each item opens the screen where you deal with it.
+              What needs tidying across every organization: gaps in the library, old reading, and assessments that have gone quiet. Each item opens the screen where you deal with it, and a few can be settled here: adding reading, or keeping a resource as it is.
             </p>
           </div>
           <button
@@ -233,8 +256,9 @@ export default function HealthPage({ onOpen }) {
               <ul className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100">
                 {checks.filter(c => c.severity === severity).map(c => {
                   const count = c.items.length;
+                  const keptCount = c.kept.length;
                   const open = expanded === c.key;
-                  const canOpen = !c.unchecked && count > 0;
+                  const canOpen = !c.unchecked && (count > 0 || keptCount > 0);
                   return (
                     <li key={c.key}>
                       <button
@@ -251,6 +275,11 @@ export default function HealthPage({ onOpen }) {
                         </span>
                         <span className="min-w-0 flex-1">
                           <span className={`block text-sm ${count > 0 && !c.unchecked ? "font-medium text-gray-800" : "text-gray-500"}`}>{c.title}</span>
+                          {/* What the tick or the count leaves out, always shown, so a
+                              clean check with kept items says so without opening it. */}
+                          {!c.unchecked && keptCount > 0 && (
+                            <span className="block text-xs text-gray-500 mt-0.5">{count} new · {keptCount} kept</span>
+                          )}
                           {(open || c.unchecked) && (
                             <span className="block text-xs text-gray-400 mt-0.5">
                               {c.unchecked ? "Could not check: a list it needs did not load." : c.why}
@@ -265,13 +294,26 @@ export default function HealthPage({ onOpen }) {
                       </button>
                       {open && (
                         <ul className="border-t border-gray-100 bg-gray-50/60 divide-y divide-gray-100">
-                          {c.items.map(item => (
+                          {[...c.items, ...c.kept.map(k => ({ ...k, isKept: true }))].map(item => (
                             <li key={item.key}>
-                              <div className="flex items-center gap-3 pl-4 md:pl-16 pr-2 py-1.5">
+                              <div className="flex items-center gap-1 md:gap-3 pl-4 md:pl-16 pr-2 py-1.5">
                                 <span className="min-w-0 flex-1">
-                                  <span className="block text-sm text-gray-700 truncate" title={item.label}>{item.label}</span>
+                                  <span className={`block text-sm truncate ${item.isKept ? "text-gray-500" : "text-gray-700"}`} title={item.label}>{item.label}</span>
                                   {item.detail && <span className="block text-xs text-gray-400 break-words">{item.detail}</span>}
+                                  {keepError?.id === item.keepResource?.id && (
+                                    <span className="block text-xs text-red-600 mt-0.5">{keepError.message}</span>
+                                  )}
                                 </span>
+                                {item.keepResource && (
+                                  <button
+                                    onClick={() => setKept(item.keepResource, !item.isKept)}
+                                    disabled={keeping === item.keepResource.id}
+                                    title={item.isKept ? "Count it as something to fix again" : "Leave it attached to nothing, and stop counting it"}
+                                    className="shrink-0 text-sm text-gray-600 hover:text-gray-900 font-medium px-3 h-11 md:h-8 rounded-lg hover:bg-white disabled:opacity-50"
+                                  >
+                                    {keeping === item.keepResource.id ? "Saving…" : item.isKept ? "Undo" : "Keep"}
+                                  </button>
+                                )}
                                 {/* An activity with no reading is fixed here, in a panel under
                                     it, rather than on another page. */}
                                 <button

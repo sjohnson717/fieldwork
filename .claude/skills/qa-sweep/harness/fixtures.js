@@ -268,6 +268,9 @@ export const PS_BANDS = [
 ];
 export const PS_RESOURCES = [
   { id: "res-bc", title: "Never Write Another Business Case", resource_type: "free_article", source: "Steve Johnson", url: "https://www.productgrowthleaders.com/reading/never-write-another-business-case", activity_ids: ["ps-1"], fallback: false, sort_order: 1, active: true },
+  // Attached to nothing and kept on purpose, beside res-ms, which is attached to
+  // nothing and not kept: System Health counts one and lists the other as kept.
+  { id: "res-kept", title: "The Product Manager's Reading List", resource_type: "free_article", source: "Steve Johnson", url: "https://www.productgrowthleaders.com/reading/the-product-managers-reading-list", published_date: "2025-03-01", activity_ids: [], fallback: false, kept_unattached: true, sort_order: 3, active: true },
   { id: "res-ms", title: "Market Sizing That Doesn't Suck", resource_type: "free_article", source: "Steve Johnson", url: "https://www.productgrowthleaders.com/reading/market-sizing-that-doesn-t-suck-ditch-tam-sam-som-for-something-useful", activity_ids: [], fallback: false, sort_order: 2, active: true },
 ];
 

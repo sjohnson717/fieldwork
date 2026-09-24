@@ -128,6 +128,7 @@ const RESOURCE_ATTRS = [
   ["published", STR],
   ["url", STR],
   ["fallback", FLAG, false],
+  ["kept", FLAG, false],
   ["active", FLAG, true],
 ];
 
@@ -862,6 +863,6 @@ export const ENTITY_FIELDS = {
   // the list is resolved to row ids, and the order is document order.
   activity_set: { id: "content_key", name: "name", description: "description", active: "active" },
   skipped_post: { id: "content_key", title: "title", url: "url" },
-  resource: { id: "content_key", title: "title", type: "resource_type", source: "source", published: "published_date", url: "url", note: "note", fallback: "fallback", active: "active" },
+  resource: { id: "content_key", title: "title", type: "resource_type", source: "source", published: "published_date", url: "url", note: "note", fallback: "fallback", kept: "kept_unattached", active: "active" },
   dimension: { id: "content_key", name: "name", blurb: "blurb", strong: "strong", opportunity: "opportunity" },
 };

@@ -84,3 +84,24 @@ test("a closed assessment is not reported", () => {
   const assessment = { id: "a1", title: "Old", status: "closed", instrument_id: "tg", activity_ids: ["gone"] };
   assert.deepEqual(asksNothing({ assessments: [assessment], instruments: [teamGapInstrument] }).items, []);
 });
+
+// Resources attached to nothing, some kept on purpose.
+const unattached = (resources) => runChecks({ resources }).checks.find(c => c.key === "unattached");
+const resource = (over) => ({ id: "r1", title: "An Article", url: "https://example.com/a", published_date: "2026-01-01", activity_ids: [], active: true, ...over });
+
+test("a kept resource is listed as kept, not counted", () => {
+  const found = unattached([
+    resource({ id: "r1", title: "Kept One", kept_unattached: true }),
+    resource({ id: "r2", title: "New One", url: "https://example.com/b" }),
+  ]);
+  assert.deepEqual(found.items.map(i => i.label), ["New One"]);
+  assert.deepEqual(found.kept.map(i => i.label), ["Kept One"]);
+  // Both carry the resource, so the page can offer Keep on one and Undo on the other.
+  assert.equal(found.items[0].keepResource.id, "r2");
+  assert.equal(found.kept[0].keepResource.id, "r1");
+});
+
+test("a kept resource that has since been attached drops out of both lists", () => {
+  const found = unattached([resource({ kept_unattached: true, activity_ids: ["act-1"] })]);
+  assert.deepEqual([found.items, found.kept], [[], []]);
+});

@@ -50,7 +50,11 @@ const olderThan = (date, days, now) => !!date && now - date > days * DAY;
 // `needs` names the lists a check reads. A check whose data did not load
 // reports that rather than a pass: a green tick over a list that was never
 // read is the one wrong answer this page can give.
-const check = (key, severity, title, why, needs, items) => ({ key, severity, title, why, needs, items });
+//
+// `kept` lists items somebody has decided to leave as they are. They are shown
+// under the check but not counted, so the check can read clean and still say
+// what it is not counting.
+const check = (key, severity, title, why, needs, items, kept = []) => ({ key, severity, title, why, needs, items, kept });
 
 export function runChecks(data, now = new Date()) {
   const T = THRESHOLDS;
@@ -114,9 +118,17 @@ export function runChecks(data, now = new Date()) {
     .filter(r => !parseDate(r.published_date))
     .map(r => ({ key: r.id, label: r.title, detail: r.url || "", target: { section: "resources", resourceIds: [r.id] } }));
 
-  const unattached = activeResources
-    .filter(r => !(r.activity_ids || []).length && !r.fallback)
-    .map(r => ({ key: r.id, label: r.title, detail: "Attached to nothing, so it never reaches a report", target: { section: "resources", resourceIds: [r.id] } }));
+  // A resource can be kept on purpose while attached to nothing, in case a use
+  // turns up. Those are listed apart as kept, so the check reads clean without
+  // hiding them, and a new stray one still counts.
+  const unattachedRows = activeResources.filter(r => !(r.activity_ids || []).length && !r.fallback);
+  const unattachedItem = (r) => ({
+    key: r.id, label: r.title, target: { section: "resources", resourceIds: [r.id] }, keepResource: r,
+  });
+  const unattached = unattachedRows.filter(r => !r.kept_unattached)
+    .map(r => ({ ...unattachedItem(r), detail: "Attached to nothing, so it never reaches a report" }));
+  const keptUnattached = unattachedRows.filter(r => r.kept_unattached)
+    .map(r => ({ ...unattachedItem(r), detail: "Kept on purpose, attached to nothing" }));
 
   const byAddress = new Map();
   for (const r of resources) {
@@ -285,7 +297,8 @@ export function runChecks(data, now = new Date()) {
       ["resources", "activities"], oldResources),
     check("undated", "fix", "Resources with no published date", "Without a date they cannot be checked for age.", ["resources"], undated),
     check("unattached", "fix", "Resources attached to nothing",
-      "Enabled, but offered for no activity and not for thin shortlists, so no report shows them.", ["resources"], unattached),
+      "Enabled, but offered for no activity and not for thin shortlists, so no report shows them. Attach one on Resources, or Keep it here if a use may turn up.",
+      ["resources"], unattached, keptUnattached),
     check("duplicates", "fix", "Articles added more than once", "Two resources with the same article, perhaps at different addresses.", ["resources"], duplicates),
     check("blog", "review", "Blog posts waiting for a decision", "In the blog feed but neither added as a resource nor skipped. Decide on Settings → Resources → New from the blog.",
       ["resources", "blogPosts", "skippedPosts"], newPosts),

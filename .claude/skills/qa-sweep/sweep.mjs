@@ -151,6 +151,16 @@ const ROUTES = [
     expect: "the problem",
   },
   {
+    // System Health, super-admin only: every check, with the unattached
+    // resources opened so the Keep and Undo buttons and the kept count render.
+    name: "admin-health",
+    url: "/admin",
+    signIn: { email: "qa@example.com", role: "admin" },
+    admin: { section: "System Health", openCheck: "Resources attached to nothing" },
+    widths: [375, 768, 1280],
+    expect: "1 new · 1 kept",
+  },
+  {
     // The content editor on Settings → Instruments, on the fixture's small
     // Product Success instrument: sections, commentary, reading chips, bands.
     name: "admin-instrument-editor",
@@ -220,12 +230,19 @@ const pageToWrapup = async (page) => {
 // Settings → Instruments, then an instrument's content editor when `edit`
 // names one. The sidebar sections are buttons like the assessments, but they
 // open a page of their own rather than an assessment's tabs.
-const openAdminSection = async (page, { section, edit, blogFeed }) => {
+const openAdminSection = async (page, { section, edit, blogFeed, openCheck }) => {
   await page.evaluate((label) => {
     const b = [...document.querySelectorAll("aside button")].find(x => x.textContent.trim() === label);
     if (b) b.click();
   }, section);
   await wait(700);
+  if (openCheck) {
+    await page.evaluate((title) => {
+      const b = [...document.querySelectorAll("button[aria-expanded]")].find(x => x.textContent.includes(title));
+      if (b) b.click();
+    }, openCheck);
+    await wait(300);
+  }
   if (blogFeed) {
     await page.evaluate(() => {
       const b = [...document.querySelectorAll("button")].find(x => /new from the blog/i.test(x.textContent.trim()));
@@ -440,6 +457,37 @@ await flow("a panel-made personal assessment asks its questions and saves all th
   return {
     pass: asked && !unselected && row?.experience === "Extensive" && row?.skills === "Excellent" && row?.interest === "Passionate",
     detail: `asked act-1=${asked}, asked unselected act-2=${unselected}, stored ${JSON.stringify(row)}`,
+  };
+});
+
+// Keep takes a resource out of System Health's count and writes the decision to
+// the row; Undo puts it back. Asserted on the stored row as well as the screen:
+// a count that changes without a save would come back on the next Recheck.
+await flow("keeping an unattached resource takes it out of the count, and Undo puts it back", async (page) => {
+  await page.goto(baseUrl + "/landing", { waitUntil: "domcontentloaded" });
+  await page.evaluate(() => window.qaSignIn({ email: "qa@example.com", role: "admin" }));
+  await page.goto(baseUrl + "/admin", { waitUntil: "networkidle0" });
+  await openAdminSection(page, { section: "System Health", openCheck: "Resources attached to nothing" });
+  const summary = () => page.evaluate(() => document.body.innerText.match(/\d+ new · \d+ kept/)?.[0] || null);
+  const stored = () => page.evaluate(() => !!window.__qa.resources.find(r => r.id === "res-ms")?.kept_unattached);
+  const press = (label) => page.evaluate((l) => {
+    // The innermost match: the check's own <li> holds every row's text too.
+    const row = [...document.querySelectorAll("li")].filter(li => li.textContent.includes("Market Sizing That Doesn't Suck") && li.querySelector("button")).pop();
+    const b = row && [...row.querySelectorAll("button")].find(x => x.textContent.trim() === l);
+    if (b) b.click();
+    return !!b;
+  }, label);
+  const before = await summary();
+  const kept = await press("Keep");
+  await wait(600);
+  const afterKeep = { summary: await summary(), stored: await stored() };
+  const undone = await press("Undo");
+  await wait(600);
+  const afterUndo = { summary: await summary(), stored: await stored() };
+  return {
+    pass: before === "1 new · 1 kept" && kept && afterKeep.summary === "0 new · 2 kept" && afterKeep.stored === true
+      && undone && afterUndo.summary === "1 new · 1 kept" && afterUndo.stored === false,
+    detail: `before "${before}", Keep ${kept} → "${afterKeep.summary}" stored=${afterKeep.stored}, Undo ${undone} → "${afterUndo.summary}" stored=${afterUndo.stored}`,
   };
 });
 

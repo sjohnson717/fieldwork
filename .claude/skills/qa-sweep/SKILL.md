@@ -58,6 +58,7 @@ actually rendered, so a blank screen cannot pass as clean.
 | back then forward re-saves | the RLS refusal that produced "Error saving responses" |
 | a panel-made team gap asks its questions and saves both ratings | a team gap made from the New Assessment panel opening with no questions, or its importance and execution dropped on save |
 | a panel-made personal assessment asks its questions and saves all three ratings | the same for personal: an empty survey, or experience, skills, and interest dropped on save |
+| keeping an unattached resource takes it out of the count, and Undo puts it back | a Keep that changes the count without saving, so the resource comes back on the next Recheck, or an Undo that cannot take it back |
 | next is single-submit | duplicate saves from a double tap |
 | finishing completes the respondent | a full set of answers stuck at "started" |
 | revise re-reads and rewrites | a revision that starts blank, or writes a second row |
@@ -181,6 +182,13 @@ not mistaken for a new regression:
   been answered on the live app when they were added. The profile route
   asserts "Strengths you enjoy using", which only real answers produce. The
   client-filter flow counts five fixtures now.
+- `admin-health` joined on 2026-09-24 with Keep on unattached resources, and
+  opens clean at 375, 768, and 1280 with that check opened. The stub gained
+  `JobTitle.list` and `Invitation.filter`, which System Health reads, and
+  `@/lib/content-live` is aliased to `harness/stub-content-live.js`, which is
+  the real module with `loadContentStatus` replaced: it reports everything
+  committed, so the sweep never reaches GitHub. The fixtures carry one
+  unattached resource that is kept (`res-kept`) beside one that is not.
 - `admin-resources` joined on 2026-09-18, with the blog panel open: three
   controls to a row now that a post can be read before it is triaged. Clean at
   768 and 1280. Its one contrast finding is the `text-gray-300` Delete on a

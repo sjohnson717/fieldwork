@@ -190,7 +190,14 @@ export const base44 = {
     // `list` as well as `filter`: the admin sidebar counts each instrument's
     // questions from the whole table rather than trusting a stored count.
     Activity: editable("Activity", "activities", staffOnly),
-    JobTitle: { filter: async () => [{ name: "Product Management" }, { name: "Product Marketing" }, { name: "Engineering" }, { name: "Design" }] },
+    JobTitle: {
+      filter: async () => [{ name: "Product Management" }, { name: "Product Marketing" }, { name: "Engineering" }, { name: "Design" }],
+      // System Health reads the whole table, to check recommended owners against it.
+      list: async () => [{ name: "Product Management" }, { name: "Product Marketing" }, { name: "Engineering" }, { name: "Design" }]
+        .map((t, i) => ({ id: `jt-${i}`, active: true, ...t })),
+    },
+    // System Health's pending invitations. None, so its check reads clean.
+    Invitation: { filter: async () => [] },
     Resource: editable("Resource", "resources", staffOnly),
     // Admin reads these two directly. The sweep's own routes are public and
     // reach an assessment through publicAssessment, so the stub went without
