@@ -123,7 +123,9 @@ const assignedIds = async (svc, assessment, instrument) => {
 };
 
 // An instrument with its own fixed question list, as opposed to team gap and
-// personal, which are instruments too but ask from the shared library.
+// personal, which are instruments too but ask from the shared library. The
+// survey applies the same rule in src/lib/activity-kind.js, where it is tested;
+// change one and change the other.
 const asksOwnQuestions = (instrument) => instrument?.question_source === "instrument";
 
 // The option labels an instrument's scales actually offer, for validating
