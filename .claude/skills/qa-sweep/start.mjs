@@ -54,13 +54,18 @@ await writeFile(path.join(HARNESS, "index.html"), `<!doctype html>
 // repo root and ESM has no __dirname.
 await writeFile(path.join(HARNESS, "vite.config.js"), `import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
+import appConfig from ${JSON.stringify(path.join(REPO, "vite.config.js"))}
 
 const REPO = ${JSON.stringify(REPO)}
 const DIR = ${JSON.stringify(HARNESS)}
 
 export default defineConfig({
   root: DIR,
-  plugins: [react()],
+  // The app's own content-files plugin, borrowed rather than copied: it serves
+  // virtual:content-files, which the admin screens import, and a harness
+  // without it fails every page. It went missing once already, when the app
+  // gained it and this config did not.
+  plugins: [react(), appConfig.plugins.find((p) => p?.name === 'content-files')],
   // The base44 client and the auth context are the only two modules the pages
   // cannot reach in a harness: one needs a live backend, the other a signed-in
   // user. Everything else is the real code.

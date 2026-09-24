@@ -49,6 +49,10 @@ const state = {
   // Instruments editor writes them and the sweep reads the result back.
   activities: [...ACTIVITIES, ...CHAOS_QUESTIONS, ...PS_QUESTIONS].map(a => ({ ...a })),
   bands: PS_BANDS.map(b => ({ ...b })),
+  // A dimension instrument's per-section prose. None of the fixture instruments
+  // report by dimension, so it is empty — but loadInstrument reads it for every
+  // instrument, and without the entity every instrument page failed to load.
+  instrumentSections: [],
   resources: PS_RESOURCES.map(r => ({ ...r })),
   calls: [],
   violations: [],
@@ -239,6 +243,7 @@ export const base44 = {
     Scale: { list: async () => readOnly(state.scales || []) },
     ScaleOption: { list: async () => readOnly(state.scaleOptions || []) },
     Band: editable("Band", "bands", adminOnly),
+    InstrumentSection: editable("InstrumentSection", "instrumentSections", adminOnly),
     // Filtered and writable, so both Discussion tabs can be driven. The filter
     // stays open, as the real read rule is: the buyer report reads decisions.
     DiscussionNote: editable("DiscussionNote", "notes", staffOnly),
