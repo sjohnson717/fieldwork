@@ -70,6 +70,11 @@
 // InstrumentSection, and like everything else here the seed only brings them
 // in — they are edited on Settings → Instruments afterwards.
 //
+// Its written definition, a Word document that has since been retired, asked
+// for a 1–5 scale. It was built four-point, 0–3 (`consistency` below), on
+// purpose: every other rating scale in the app is four-point, and an even
+// number leaves no safe midpoint to hide in.
+//
 // Its wording was synced back from the app on 2026-09-19, after the text was
 // proofread and edited there. The app is the master copy and this file no
 // longer speaks for it — the sync exists so a fresh environment seeds what is

@@ -450,7 +450,7 @@ export async function seedInstruments(base44, { onProgress } = {}) {
   );
   if (unlinked.length) {
     notes.push(
-      `${unlinked.length} question${unlinked.length === 1 ? "" : "s"} reference an article that is not in Posts.csv — ` +
+      `${unlinked.length} question${unlinked.length === 1 ? "" : "s"} reference an article the seed has no title or path for — ` +
       `${unlinked.map((q) => q.label).join(", ")}. Add the title and path to the seed to link them.`,
     );
   }

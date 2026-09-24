@@ -11,6 +11,10 @@
 // score. A low dimension turning into a sales line is the thing the instrument
 // was written to avoid — the diagnostic commentary above has already done the
 // useful work, and this is where it says where the infrastructure comes from.
+//
+// The instrument's written definition linked to
+// /program/fractional-product-leadership. That page is real, but it is the
+// wrong one; the program this offers is quartz-product-leadership.
 export default function QuartzBridge() {
   return (
     <section className="bg-white rounded-xl border border-gray-200 p-6 break-inside-avoid">
