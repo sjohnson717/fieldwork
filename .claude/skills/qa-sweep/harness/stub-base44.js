@@ -123,6 +123,11 @@ state.instruments.push({ ...PS_INSTRUMENT });
 state.responses.push(...CHAOS_ANSWERS.map((a, i) => ({ id: `chaos-${i}`, assessment_id: CHAOS.id, ...a })));
 
 if (typeof window !== "undefined") {
+  // A flow that needs a fixture changed before the app reads it sets
+  // window.__qaSetup with page.evaluateOnNewDocument. State is rebuilt on every
+  // load, so a change made after one is gone by the next, and a page that reads
+  // its token once cannot be moved to another assessment in place.
+  if (typeof window.__qaSetup === "function") window.__qaSetup(state);
   window.__qa = state;
   window.__qaReset = () => { state.calls.length = 0; state.violations.length = 0; };
 }
@@ -372,7 +377,12 @@ export const base44 = {
           for (const row of state.responses) {
             if (ANSWER_FIELDS.some(f => row[f])) counts[row.respondent_id] = (counts[row.respondent_id] || 0) + 1;
           }
-          const withholdTokens = a.assessment_type === "personal";
+          // The real function's rule: withheld where the report belongs to the
+          // person who answered, which is personal and the practice profile.
+          const inst = a.instrument_id ? (state.instruments || []).find(i => i.id === a.instrument_id) : null;
+          const withholdTokens = inst
+            ? inst.report_style === "profile" || inst.report_style === "dimension"
+            : a.assessment_type === "personal";
           return {
             data: {
               assessment: a,

@@ -346,14 +346,15 @@ export default function TeamLeaderPage() {
               {respondents.length} total · {receivedCount(respondents)} received
             </p>
           </div>
-          {/* No per-person links on a personal assessment — see the token
-              handling in publicAssessment. The server already withholds the
-              tokens, so this is presentation rather than protection: without
-              it the column would render a row of buttons producing links with
-              "undefined" in them. */}
+          {/* No per-person links where the server sent no tokens: a personal
+              assessment and the practice profile, whose reports belong to the
+              person who answered. See the token handling in publicAssessment.
+              Following the payload rather than repeating the rule here keeps
+              the two from disagreeing, and without it the column would render
+              a row of buttons producing links with "undefined" in them. */}
           <RosterTable
             rows={respondents}
-            linkFor={assessment.assessment_type === "personal" ? null : (r => personalLink(r.token))}
+            linkFor={respondents.some(r => r.token) ? (r => personalLink(r.token)) : null}
           />
         </section>
 

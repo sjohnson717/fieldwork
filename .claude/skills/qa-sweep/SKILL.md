@@ -80,6 +80,7 @@ actually rendered, so a blank screen cannot pass as clean.
 | switcher opens an assessment from the keyboard | ⌘K/Ctrl+K doing nothing, or a search that cannot reach an assessment |
 | client filter narrows the list, merges spellings, and survives opening an assessment | a client listed twice for a capital letter, rows from the wrong client, or the choice lost on coming back |
 | pinning puts an assessment in the sidebar, survives a reload, and unpins | a pin that is lost on reload, repeated under Recent, or cannot be taken off |
+| the team dashboard withholds resume links where the report is the person's own | a practice profile's team leader able to reopen and edit a practitioner's answers, or a roster of Copy link buttons pointing at tokens the server withheld |
 | a personal assessment offers only team gaps to link to | a Chaos or other own-questions assessment offered as the team side, which Results cannot cross against because it has no importance or execution answers |
 
 **Permissions.** The stub enforces the real rules: `Response.update`,
@@ -251,6 +252,14 @@ laptop, so phone widths report sideways scroll nobody intends to fix.
 Never log in with real credentials to test. The stub's permission checks key off
 the signed-in user, so a route that should be anonymous must not carry `signIn` —
 a stray session hides exactly the refusals this sweep exists to catch.
+
+**A fixture changed for one flow** goes through `window.__qaSetup`, set with
+`page.evaluateOnNewDocument` before the page loads; the stub calls it with its
+state before anything reads it. Changing `window.__qa` after load does not move
+a page that reads its token once, and a new fixture assessment changes the
+counts the Assessments page flows assert. The practice-profile dashboard flow
+is the example. `start.mjs` copies the harness when it starts, so restart it
+after editing anything under `harness/`.
 
 **Awkward data belongs in `fixtures.js`**, not in the driver. The fixtures
 already carry the long activity names, the half-answered activity, the activity

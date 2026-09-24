@@ -249,7 +249,18 @@ Deno.serve(async (req) => {
         // but a leader holding the personal assessment's *own* team token came
         // through this path and got the lot — the guard was keyed to the route
         // rather than to the data, which is how it looked correct and wasn't.
-        const withholdTokens = (a.assessment_type || "team_gap") === "personal";
+        //
+        // The practice profile is withheld the same way. It asks its own
+        // questions, so it carries no assessment_type, but its report is the
+        // practitioner's own, read on their own copy: the same reason, the same
+        // rule. This is isOwnReport in src/lib/instrument-kind.js, which a
+        // function cannot import; change one and change the other.
+        const instrument = a.instrument_id
+          ? (await svc.Instrument.filter({ id: a.instrument_id }))?.[0] || null
+          : null;
+        const withholdTokens = instrument
+          ? instrument.report_style === "profile" || instrument.report_style === "dimension"
+          : (a.assessment_type || "team_gap") === "personal";
 
         return Response.json({
           assessment: await shapeWithOrg(svc, a, ["access_code"]),

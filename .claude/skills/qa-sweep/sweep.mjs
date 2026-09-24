@@ -934,6 +934,36 @@ await flow("client filter narrows the list, merges spellings, and survives openi
   };
 });
 
+// The team dashboard hands a leader resume links, which reopen and edit
+// someone's answers. Right for a team gap; wrong where the report belongs to
+// the person who answered. No fixture is a practice profile, so this one turns
+// the Chaos fixture into one before the page loads: a dimension report is
+// the whole difference, and nothing else on the dashboard reads it.
+await flow("the team dashboard withholds resume links where the report is the person's own", async (page) => {
+  // Per-person links only: the roster's rows. The invite and co-leader links
+  // above it are Copy link buttons too, and belong on every dashboard.
+  const copyLinks = () => page.evaluate(() =>
+    [...document.querySelectorAll("tbody tr button")].filter(b => b.textContent.trim() === "Copy link").length);
+  await page.goto(baseUrl + "/team/" + "TOKEN-TEAM", { waitUntil: "networkidle0" });
+  await wait(500);
+  const teamGapLinks = await copyLinks();
+  await page.evaluateOnNewDocument(() => {
+    window.__qaSetup = (s) => {
+      s.assessments.find(a => a.id === "asmt-chaos").team_token = "TOKEN-PRACTICE";
+      s.instruments.find(i => i.id === "inst-chaos").report_style = "dimension";
+    };
+  });
+  await page.goto(baseUrl + "/team/TOKEN-PRACTICE", { waitUntil: "networkidle0" });
+  await wait(500);
+  const practiceLinks = await copyLinks();
+  const listed = await page.evaluate(() => document.body.innerText.includes("Ada Okonjo"));
+  const sent = await page.evaluate(() => document.body.innerText.includes("undefined"));
+  return {
+    pass: teamGapLinks > 0 && practiceLinks === 0 && listed && !sent,
+    detail: `team gap Copy link ×${teamGapLinks}, practice profile Copy link ×${practiceLinks}, roster listed=${listed}, "undefined" on page=${sent}`,
+  };
+});
+
 // A personal assessment links to a team gap, and only a team gap: Results
 // crosses the two on importance and execution. The list used to be "anything
 // not personal", and the Chaos fixture carries no assessment_type, which is
