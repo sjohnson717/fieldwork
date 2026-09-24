@@ -6,6 +6,7 @@ import { EXPERIENCE_OPTIONS, SKILLS_OPTIONS, INTEREST_OPTIONS } from "@/lib/pers
 import { IMPORTANCE_LABEL, EXECUTION_LABEL } from "@/lib/scoring";
 import { loadInstrument, orderQuestions } from "@/lib/instruments";
 import { kindOf, PERSONAL, OWN_QUESTIONS } from "@/lib/instrument-kind";
+import { useAdminCache } from "@/lib/admin-queries";
 
 // Same lists as the survey offers, from the file that scores them. Retyped
 // here, generated demo data could carry a label nothing knows how to score.
@@ -327,6 +328,7 @@ export default function AssessmentDemoData({ assessment, instrument }) {
   // library pair — keeps the two paths that were already here.
   const kind = kindOf(assessment, instrument);
   const isInstrument = kind === OWN_QUESTIONS;
+  const cache = useAdminCache();
 
   // The instrument arrives as a raw row: AdminPage lists Instrument records and
   // hands the matching one down, which carries `scale_ids` but not the scales
@@ -438,6 +440,8 @@ export default function AssessmentDemoData({ assessment, instrument }) {
       console.error(e);
       setProgress("Error generating data. Check console.");
     }
+    // Even after a failure part way: whatever was written is new to Results.
+    cache.forgetAssessment(assessment.id);
     setGenerating(false);
   };
 

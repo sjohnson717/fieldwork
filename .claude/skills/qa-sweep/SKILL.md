@@ -82,6 +82,7 @@ actually rendered, so a blank screen cannot pass as clean.
 | pinning puts an assessment in the sidebar, survives a reload, and unpins | a pin that is lost on reload, repeated under Recent, or cannot be taken off |
 | the team dashboard withholds resume links where the report is the person's own | a practice profile's team leader able to reopen and edit a practitioner's answers, or a roster of Copy link buttons pointing at tokens the server withheld |
 | the team dashboard offers activity flags only where the set can change | a Chaos, Portfolio Health or practice profile dashboard asking its leader to flag fixed questions for a set nobody can change |
+| results shows what it has on a return visit, and still refreshes | the Results tab back behind a spinner on every visit, or cached rows shown with no refresh behind them |
 | a personal assessment offers only team gaps to link to | a Chaos or other own-questions assessment offered as the team side, which Results cannot cross against because it has no importance or execution answers |
 
 **Permissions.** The stub enforces the real rules: `Response.update`,

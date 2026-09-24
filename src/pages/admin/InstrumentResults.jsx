@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
-import { loadResultsData, deleteRespondentCascade } from "@/lib/respondents";
-import { loadInstrument, orderQuestions } from "@/lib/instruments";
+import { useState } from "react";
+import { useAuth } from "@/lib/AuthContext";
+import { deleteRespondentCascade } from "@/lib/respondents";
+import { orderQuestions } from "@/lib/instruments";
+import { useAssignedActivities, useRespondents, useResponses, useInstrument, useDiscussionNotes, useAdminCache } from "@/lib/admin-queries";
 import RespondentRoster from "@/components/RespondentRoster";
 import RespondentPreview from "@/components/RespondentPreview";
 import InstrumentReport from "@/components/InstrumentReport";
@@ -20,47 +21,30 @@ import ConfirmDialog from "@/components/ConfirmDialog";
 // The gap tab next door offers importance/execution/gap views because those are
 // genuinely different cuts of a two-axis instrument. One axis has one cut.
 export default function InstrumentResults({ assessment }) {
-  const [instrument, setInstrument] = useState(null);
-  const [questions, setQuestions] = useState([]);
-  const [respondents, setRespondents] = useState([]);
-  const [responses, setResponses] = useState([]);
-  const [notes, setNotes] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const { user } = useAuth();
+  const isSuperAdmin = user?.role === "admin";
+  const cache = useAdminCache();
+  const activitiesQuery = useAssignedActivities(assessment);
+  const instrumentQuery = useInstrument(assessment);
+  const respondentsQuery = useRespondents(assessment.id);
+  const responsesQuery = useResponses(assessment.id);
+  const notesQuery = useDiscussionNotes(assessment.id);
+  const instrument = instrumentQuery.data || null;
+  const questions = instrument ? orderQuestions(instrument, activitiesQuery.data) : activitiesQuery.data;
+  const respondents = respondentsQuery.data;
+  const responses = responsesQuery.data;
+  const notes = notesQuery.data;
+  // Only the first visit waits; see lib/admin-queries.js.
+  const loading = [activitiesQuery, instrumentQuery, respondentsQuery, responsesQuery, notesQuery].some(q => q.isPending);
+  const refresh = () => Promise.all([activitiesQuery, instrumentQuery, respondentsQuery, responsesQuery, notesQuery].map(q => q.refetch()));
   const [removingRespondent, setRemovingRespondent] = useState(null);
   const [previewRespondent, setPreviewRespondent] = useState(null);
-
-  useEffect(() => {
-    base44.auth.me().then(u => setIsSuperAdmin(u?.role === "admin")).catch(() => {});
-  }, []);
-
-  useEffect(() => { loadData(); }, [assessment.id]);
-
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      const [{ activities, respondents: resps, responses: ress }, inst, discussionNotes] = await Promise.all([
-        loadResultsData(assessment),
-        loadInstrument(assessment),
-        base44.entities.DiscussionNote.filter({ assessment_id: assessment.id }),
-      ]);
-      setNotes(discussionNotes);
-      setInstrument(inst);
-      setQuestions(inst ? orderQuestions(inst, activities) : activities);
-      setRespondents(resps);
-      setResponses(ress);
-    } catch (e) {
-      console.error("Failed to load results", e);
-    }
-    setLoading(false);
-  };
 
   const handleDeleteRespondent = async (id) => {
     setRemovingRespondent(null);
     try {
       await deleteRespondentCascade(id);
-      setRespondents(prev => prev.filter(r => r.id !== id));
-      setResponses(prev => prev.filter(r => r.respondent_id !== id));
+      cache.removeRespondent(assessment.id, id);
     } catch (e) {
       console.error("Failed to delete respondent", e);
     }
@@ -98,7 +82,7 @@ export default function InstrumentResults({ assessment }) {
       <RespondentRoster
         respondents={respondents}
         isEmptyFor={r => !answeredCount[r.id]}
-        onRefresh={loadData}
+        onRefresh={refresh}
         onRemove={setRemovingRespondent}
         canPreview={isSuperAdmin}
         onPreview={setPreviewRespondent}

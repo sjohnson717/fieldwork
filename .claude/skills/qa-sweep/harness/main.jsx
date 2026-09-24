@@ -12,6 +12,10 @@ import AdminPage from '@/pages/AdminPage'
 // The stub, via the alias in vite.config.js. Staff pages read useAuth(), so the
 // provider has to wrap the routes exactly as App.jsx wraps them.
 import { AuthProvider } from '@/lib/AuthContext'
+// The app's own query client, as App.jsx provides it. The admin tabs read
+// through React Query (lib/admin-queries.js) and throw without it.
+import { QueryClientProvider } from '@tanstack/react-query'
+import { queryClientInstance } from '@/lib/query-client'
 
 // Every route a respondent, team leader or buyer can reach, mounted against the
 // stub. Deliberately the real page components — a harness that renders its own
@@ -39,6 +43,7 @@ function Missing() {
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <AuthProvider>
+  <QueryClientProvider client={queryClientInstance}>
   <BrowserRouter>
     <Routes>
       <Route path="/assess" element={<Assessment />} />
@@ -57,5 +62,6 @@ ReactDOM.createRoot(document.getElementById('root')).render(
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   </BrowserRouter>
+  </QueryClientProvider>
   </AuthProvider>
 )

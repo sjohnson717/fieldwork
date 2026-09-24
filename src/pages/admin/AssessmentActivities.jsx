@@ -4,6 +4,7 @@ import { base44 } from "@/api/base44Client";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { FACET_ORDER } from "@/lib/scoring";
 import { ROW, ROW_ACTIONS, ACTION, DELETE_TONE } from "@/lib/row-actions";
+import { useAdminCache } from "@/lib/admin-queries";
 
 // ── OwnerTypeahead (same pattern as LibraryPage) ──────────────────────────────
 
@@ -66,6 +67,7 @@ function FacetGroup({ facet, children }) {
 // ── Main component ────────────────────────────────────────────────────────────
 
 export default function AssessmentActivities({ assessment, onUpdate }) {
+  const cache = useAdminCache();
   const [activitySets, setActivitySets] = useState([]);
   const [libraryActivities, setLibraryActivities] = useState([]); // no assessment_id
   const [customActivities, setCustomActivities] = useState([]); // assessment_id = this assessment
@@ -193,6 +195,7 @@ export default function AssessmentActivities({ assessment, onUpdate }) {
     try {
       const updated = await base44.entities.Activity.update(id, editDraft);
       setCustomActivities(prev => prev.map(a => a.id === id ? updated : a));
+      cache.forgetActivities(assessment.id);
       setEditingCustomId(null);
     } catch (e) {
       console.error(e);
@@ -207,6 +210,7 @@ export default function AssessmentActivities({ assessment, onUpdate }) {
     try {
       await base44.entities.Activity.delete(id);
       setCustomActivities(prev => prev.filter(a => a.id !== id));
+      cache.forgetActivities(assessment.id);
     } catch (e) {
       console.error(e);
       setCustomError(e?.message || "Failed to delete activity. Please try again.");
@@ -235,6 +239,7 @@ export default function AssessmentActivities({ assessment, onUpdate }) {
         active: true,
       });
       setCustomActivities(prev => [...prev, created]);
+      cache.forgetActivities(assessment.id);
       setNewItem({ name: "", description: "", facet: "DEFINE", preferred_owner: "" });
       setShowAddForm(false);
     } catch (e) {

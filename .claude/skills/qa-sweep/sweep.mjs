@@ -989,6 +989,37 @@ await flow("the team dashboard offers activity flags only where the set can chan
   };
 });
 
+// Results reads through React Query (lib/admin-queries.js): a tab opened
+// before shows its rows at once and refreshes behind them. Every visit used to
+// wait for listRespondents from scratch, and on Base44 that is the call that
+// spikes to several seconds. The stub is slowed to 1.5s here so waiting and not
+// waiting look different, and the call count proves the refresh still runs.
+await flow("results shows what it has on a return visit, and still refreshes", async (page) => {
+  await page.evaluateOnNewDocument(() => { window.__qaSetup = (s) => { s.latencyMs = 1500; }; });
+  await openHomeWithUnread(page);
+  const calls = () => page.evaluate(() => window.__qa.calls.filter(c => c.name === "fn:listRespondents").length);
+  const showsRoster = () => page.evaluate(() => document.body.innerText.includes("Sam Okafor"));
+  const clickTab = (label) => page.evaluate((l) => {
+    const b = [...document.querySelectorAll("button")].find(x => x.textContent.trim() === l);
+    if (b) b.click();
+  }, label);
+  await openAdminTab(page, { assessment: "Product Team Effectiveness", tab: "Results" });
+  await wait(1800);
+  const firstVisit = await showsRoster();
+  const before = await calls();
+  await clickTab("Overview");
+  await wait(400);
+  await clickTab("Results");
+  await wait(150);
+  const instant = await showsRoster();
+  await wait(1800);
+  const after = await calls();
+  return {
+    pass: firstVisit && instant && after > before,
+    detail: `first visit roster=${firstVisit}, return visit roster within 150ms=${instant}, listRespondents ${before}→${after}`,
+  };
+});
+
 // A personal assessment links to a team gap, and only a team gap: Results
 // crosses the two on importance and execution. The list used to be "anything
 // not personal", and the Chaos fixture carries no assessment_type, which is

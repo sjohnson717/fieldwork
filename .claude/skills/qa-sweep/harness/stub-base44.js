@@ -477,6 +477,11 @@ export const base44 = {
       }
 
       if (name === "listRespondents") {
+        // Logged, and slowed when a flow asks: Base44 spikes to several
+        // seconds at random, and a stub that answers at once cannot tell a page
+        // that waits on every visit from one that shows what it already has.
+        log("fn:listRespondents", {});
+        if (state.latencyMs) await new Promise(r => setTimeout(r, state.latencyMs));
         return { data: { respondents: readOnly(state.respondents) } };
       }
 

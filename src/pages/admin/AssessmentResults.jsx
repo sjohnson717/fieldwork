@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
+import React, { useState, useMemo } from "react";
+import { useAuth } from "@/lib/AuthContext";
 import { FACET_ORDER, IMPORTANCE_SCORE, EXECUTION_SCORE, responseGap, avg, fmt } from "@/lib/scoring";
-import { loadResultsData, deleteRespondentCascade } from "@/lib/respondents";
+import { deleteRespondentCascade } from "@/lib/respondents";
+import { useAssignedActivities, useRespondents, useResponses, useAdminCache } from "@/lib/admin-queries";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import RespondentRoster from "@/components/RespondentRoster";
 import RespondentPreview from "@/components/RespondentPreview";
@@ -37,24 +38,30 @@ const gapCellClass = (gap) => {
 };
 
 export default function AssessmentResults({ assessment }) {
-  const [activities, setActivities] = useState([]);
-  const [respondents, setRespondents] = useState([]);
-  const [responses, setResponses] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
+  const isSuperAdmin = user?.role === "admin";
+  const cache = useAdminCache();
+  const activitiesQuery = useAssignedActivities(assessment);
+  const respondentsQuery = useRespondents(assessment.id);
+  const responsesQuery = useResponses(assessment.id);
+  const activities = activitiesQuery.data;
+  const respondents = respondentsQuery.data;
+  const responses = responsesQuery.data;
+  // Only the first visit waits. After that the cached rows show at once and
+  // refresh behind them; see lib/admin-queries.js.
+  const loading = activitiesQuery.isPending || respondentsQuery.isPending || responsesQuery.isPending;
   const [view, setView] = useState("summary"); // summary | importance | execution | gap
   const [selectedFacet, setSelectedFacet] = useState("ALL");
   const [showGapHelp, setShowGapHelp] = useState(false);
-  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [selectedRespondentId, setSelectedRespondentId] = useState(null);
-  const [responseCountMap, setResponseCountMap] = useState({});
+  const responseCountMap = useMemo(() => {
+    const countMap = {};
+    for (const r of responses) countMap[r.respondent_id] = (countMap[r.respondent_id] || 0) + 1;
+    return countMap;
+  }, [responses]);
 
-  useEffect(() => {
-    base44.auth.me().then(u => setIsSuperAdmin(u?.role === "admin")).catch(() => {});
-  }, []);
-
-  useEffect(() => {
-    loadData();
-  }, [assessment.id]);
+  // Refresh refetches in place rather than blanking the tab to a spinner.
+  const refresh = () => Promise.all([activitiesQuery.refetch(), respondentsQuery.refetch(), responsesQuery.refetch()]);
 
   const [removingRespondent, setRemovingRespondent] = useState(null);
   const [previewRespondent, setPreviewRespondent] = useState(null);
@@ -62,35 +69,17 @@ export default function AssessmentResults({ assessment }) {
   // Clearing one comment updates the row in place rather than refetching the
   // whole results page — nothing else on screen derives from these fields.
   const handleFeedbackCleared = (id, field) => {
-    setRespondents(prev => prev.map(r => (r.id === id ? { ...r, [field]: null } : r)));
+    cache.patchRespondent(assessment.id, id, { [field]: null });
   };
 
   const handleDeleteRespondent = async (id) => {
     setRemovingRespondent(null);
     try {
       await deleteRespondentCascade(id);
-      setRespondents(prev => prev.filter(r => r.id !== id));
+      cache.removeRespondent(assessment.id, id);
     } catch (e) {
       console.error("Failed to delete respondent", e);
     }
-  };
-
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      const { activities: acts, respondents: resps, responses: ress } = await loadResultsData(assessment);
-      setActivities(acts);
-      setRespondents(resps);
-      setResponses(ress);
-      const countMap = {};
-      for (const r of ress) {
-        countMap[r.respondent_id] = (countMap[r.respondent_id] || 0) + 1;
-      }
-      setResponseCountMap(countMap);
-    } catch (e) {
-      console.error("Failed to load results", e);
-    }
-    setLoading(false);
   };
 
   if (loading) {
@@ -187,7 +176,7 @@ export default function AssessmentResults({ assessment }) {
       <RespondentRoster
         respondents={respondents}
         isEmptyFor={r => !responseCountMap[r.id]}
-        onRefresh={loadData}
+        onRefresh={refresh}
         onRemove={setRemovingRespondent}
         canPreview={isSuperAdmin}
         onPreview={setPreviewRespondent}

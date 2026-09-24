@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
+import { useState } from "react";
+import { useAuth } from "@/lib/AuthContext";
 import { FACET_ORDER, computeActivityStats, fmt } from "@/lib/scoring";
 import {
   PERSONAL_AXES,
@@ -12,7 +12,8 @@ import {
   heatClass,
   pct,
 } from "@/lib/personal-scoring";
-import { loadResultsData, deleteRespondentCascade } from "@/lib/respondents";
+import { deleteRespondentCascade } from "@/lib/respondents";
+import { useAssignedActivities, useRespondents, useResponses, useLinkedAssessment, useAdminCache } from "@/lib/admin-queries";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import RespondentRoster from "@/components/RespondentRoster";
 import RespondentPreview from "@/components/RespondentPreview";
@@ -44,74 +45,56 @@ function CategoryBadge({ category }) {
 }
 
 export default function PersonalResults({ assessment }) {
-  const [activities, setActivities] = useState([]);
-  const [respondents, setRespondents] = useState([]);
-  const [responses, setResponses] = useState([]);
-  const [parent, setParent] = useState(null);
-  const [parentResponses, setParentResponses] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
+  // Same gate as the team page's preview: this is one person's own report.
+  const isSuperAdmin = user?.role === "admin";
+  const cache = useAdminCache();
+  const activitiesQuery = useAssignedActivities(assessment);
+  const respondentsQuery = useRespondents(assessment.id);
+  const responsesQuery = useResponses(assessment.id);
+  const activities = activitiesQuery.data;
+  const respondents = respondentsQuery.data;
+  const responses = responsesQuery.data;
+
+  // The parent link is optional, and so is access to it: a facilitator can
+  // be invited to the personal assessment without being invited to the
+  // team one it points at. Failing to load either half drops the
+  // cross-analysis rather than the page.
+  const parentId = assessment.parent_assessment_id || null;
+  const parentQuery = useLinkedAssessment(parentId);
+  const parentResponsesQuery = useResponses(parentId);
+  const parentReadable = !!parentId && !!parentQuery.data && !parentQuery.isError && !parentResponsesQuery.isError;
+  const parent = parentReadable ? parentQuery.data : null;
+  const parentResponses = parentReadable ? parentResponsesQuery.data : [];
+
+  // Only the first visit waits, and it waits for the linked assessment too, so
+  // the "couldn't load the linked team assessment" note never flashes up
+  // before it has had the chance to arrive.
+  const loading = activitiesQuery.isPending || respondentsQuery.isPending || responsesQuery.isPending ||
+    (!!parentId && (parentQuery.isPending || parentResponsesQuery.isPending));
+  const refresh = () => Promise.all([
+    activitiesQuery.refetch(), respondentsQuery.refetch(), responsesQuery.refetch(),
+    ...(parentId ? [parentQuery.refetch(), parentResponsesQuery.refetch()] : []),
+  ]);
+
   const [view, setView] = useState("people");
   const [matrixMode, setMatrixMode] = useState("capability");
   const [selectedFacet, setSelectedFacet] = useState("ALL");
   const [selectedRespondentId, setSelectedRespondentId] = useState(null);
   const [removingRespondent, setRemovingRespondent] = useState(null);
   const [previewRespondent, setPreviewRespondent] = useState(null);
-  // Same gate as the team page's preview: this is one person's own report.
-  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
-
-  useEffect(() => {
-    base44.auth.me().then(u => setIsSuperAdmin(u?.role === "admin")).catch(() => {});
-  }, []);
-
-  useEffect(() => { loadData(); }, [assessment.id, assessment.parent_assessment_id]);
-
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      const { activities: acts, respondents: resps, responses: ress } = await loadResultsData(assessment);
-      setActivities(acts);
-      setRespondents(resps);
-      setResponses(ress);
-
-      // The parent link is optional, and so is access to it: a facilitator can
-      // be invited to the personal assessment without being invited to the
-      // team one it points at. Failing to load it drops the cross-analysis
-      // rather than the page.
-      if (assessment.parent_assessment_id) {
-        try {
-          const [p, pRes] = await Promise.all([
-            base44.entities.Assessment.get(assessment.parent_assessment_id),
-            base44.entities.Response.filter({ assessment_id: assessment.parent_assessment_id }),
-          ]);
-          setParent(p || null);
-          setParentResponses(pRes || []);
-        } catch (e) {
-          console.error("Could not load the linked team assessment", e);
-          setParent(null);
-          setParentResponses([]);
-        }
-      } else {
-        setParent(null);
-        setParentResponses([]);
-      }
-    } catch (e) {
-      console.error("Failed to load personal results", e);
-    }
-    setLoading(false);
-  };
 
   // Clearing one comment updates the row in place rather than refetching the
   // whole results page — nothing else on screen derives from these fields.
   const handleFeedbackCleared = (id, field) => {
-    setRespondents(prev => prev.map(r => (r.id === id ? { ...r, [field]: null } : r)));
+    cache.patchRespondent(assessment.id, id, { [field]: null });
   };
 
   const handleDeleteRespondent = async (id) => {
     setRemovingRespondent(null);
     try {
       await deleteRespondentCascade(id);
-      setRespondents(prev => prev.filter(r => r.id !== id));
-      setResponses(prev => prev.filter(r => r.respondent_id !== id));
+      cache.removeRespondent(assessment.id, id);
     } catch (e) {
       console.error("Failed to delete respondent", e);
     }
@@ -186,7 +169,7 @@ export default function PersonalResults({ assessment }) {
       <RespondentRoster
         respondents={respondents}
         isEmptyFor={r => profiles[r.id].answeredCount === 0}
-        onRefresh={loadData}
+        onRefresh={refresh}
         onRemove={setRemovingRespondent}
         canPreview={isSuperAdmin}
         onPreview={setPreviewRespondent}

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { loadResultsData } from "@/lib/respondents";
+import { useAdminCache } from "@/lib/admin-queries";
 import { loadInstrument, orderQuestions, surveyNumbers } from "@/lib/instruments";
 import { distributionFor, agendaOrder } from "@/lib/instrument-scoring";
 import { Distribution, Legend, splitLabel, agreedOnTheWorst } from "@/components/InstrumentReport";
@@ -183,6 +184,7 @@ function QuestionRow({ number, question, dist, expected, note, draft, saving, on
 }
 
 export default function InstrumentDiscussion({ assessment }) {
+  const cache = useAdminCache();
   const [instrument, setInstrument] = useState(null);
   const [questions, setQuestions] = useState([]);
   const [respondents, setRespondents] = useState([]);
@@ -241,6 +243,8 @@ export default function InstrumentDiscussion({ assessment }) {
             ...patch,
           });
       setNotes(prev => ({ ...prev, [activityId]: saved }));
+      // The Results tab reports these decisions from its own cached copy.
+      cache.forgetNotes(assessment.id);
     } catch (e) {
       console.error("Failed to save discussion note", e);
       setError("That change didn't save. Check your connection and try again.");
