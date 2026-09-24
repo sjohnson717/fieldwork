@@ -57,6 +57,11 @@ const ROUTES = [
   { name: "survey-panel-team-gap", url: "/assess?t=TOKEN-PANEL", expect: "Understand the Market" },
   { name: "respondent-report", url: "/assess?t=TOKEN-RESP-1", review: true, expect: "where you'd focus first" },
   { name: "personal-profile", url: "/assess?t=TOKEN-PERSONAL", review: true, expect: "part one" },
+  // The personal counterparts of survey-panel-team-gap: a personal assessment
+  // made from the panel, carrying the personal instrument's id. The profile's
+  // own sentence rather than "part one", which an empty report would draw too.
+  { name: "survey-panel-personal", url: "/assess?t=TOKEN-PANEL-P", expect: "Understand the Market" },
+  { name: "personal-profile-panel", url: "/assess?t=TOKEN-PANEL-P-DONE", review: true, expect: "Strengths you enjoy using" },
   // Revise mode carries the section strip, which is the widest thing on the
   // survey page at a phone width. One library assessment, one instrument —
   // instrument section names run longer than facet names.
@@ -410,6 +415,30 @@ await flow("a panel-made team gap asks its questions and saves both ratings", as
   });
   return {
     pass: asked && !unselected && row?.importance === "Critical" && row?.execution === "Good",
+    detail: `asked act-1=${asked}, asked unselected act-2=${unselected}, stored ${JSON.stringify(row)}`,
+  };
+});
+
+// The same for a panel-made personal assessment, whose three ratings are
+// experience, skills, and interest. saveResponses picks the fields by type, so
+// this is the path that would drop them if personal were ever read as an
+// instrument with its own list.
+await flow("a panel-made personal assessment asks its questions and saves all three ratings", async (page) => {
+  await page.goto(baseUrl + "/assess?t=TOKEN-PANEL-P", { waitUntil: "networkidle0" });
+  const text = await page.evaluate(() => document.body.innerText);
+  const asked = text.includes("Understand the Market");
+  const unselected = text.includes("Go/No-Go Decision to Pursue Initiative");
+  await clickText(page, "Extensive");
+  await clickText(page, "Excellent");
+  await clickText(page, "Passionate");
+  await clickText(page, "Next");
+  await wait(1000);
+  const row = await page.evaluate(() => {
+    const r = window.__qa.responses.find(x => x.respondent_id === "resp-panel-p" && x.activity_id === "act-1");
+    return r ? { experience: r.experience, skills: r.skills, interest: r.interest } : null;
+  });
+  return {
+    pass: asked && !unselected && row?.experience === "Extensive" && row?.skills === "Excellent" && row?.interest === "Passionate",
     detail: `asked act-1=${asked}, asked unselected act-2=${unselected}, stored ${JSON.stringify(row)}`,
   };
 });
@@ -844,10 +873,11 @@ await flow("client filter narrows the list, merges spellings, and survives openi
   await setClient("Acme");
   await wait(300);
   const acme = await titles();
-  // Northwind is the gap, Chaos, and the panel-made team gap; Acme is personal.
-  const ok = options.length === 3 && options[0].startsWith("All clients · 4")
-    && options.some(o => o === "Northwind Systems · 3") && options.some(o => o === "Acme · 1")
-    && northwind.length === 3 && !northwind.some(t => t.includes("Self-Assessment"))
+  // Northwind is the gap, Chaos, and the two panel-made fixtures; Acme is the
+  // older personal.
+  const ok = options.length === 3 && options[0].startsWith("All clients · 5")
+    && options.some(o => o === "Northwind Systems · 4") && options.some(o => o === "Acme · 1")
+    && northwind.length === 4 && !northwind.some(t => t.includes("Self-Assessment"))
     && !!summaryLine && (kept || "").startsWith("Northwind Systems")
     && acme.length === 1 && acme[0].includes("Product Manager Self-Assessment");
   return {

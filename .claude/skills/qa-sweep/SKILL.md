@@ -57,6 +57,7 @@ actually rendered, so a blank screen cannot pass as clean.
 | registration is single-submit | two respondents from one press — a phantom non-responder on the roster |
 | back then forward re-saves | the RLS refusal that produced "Error saving responses" |
 | a panel-made team gap asks its questions and saves both ratings | a team gap made from the New Assessment panel opening with no questions, or its importance and execution dropped on save |
+| a panel-made personal assessment asks its questions and saves all three ratings | the same for personal: an empty survey, or experience, skills, and interest dropped on save |
 | next is single-submit | duplicate saves from a double tap |
 | finishing completes the respondent | a full set of answers stuck at "started" |
 | revise re-reads and rewrites | a revision that starts blank, or writes a second row |
@@ -174,6 +175,12 @@ not mistaken for a new regression:
   The Assessments page lists four fixtures now, and the client-filter flow
   counts accordingly. `QA_VERBOSE=1` prints each flow's name as it starts, for
   when one hangs.
+- `survey-panel-personal` and `personal-profile-panel` joined the same day
+  with their flow, and open clean at every width: the personal counterpart,
+  carrying the personal instrument's id. No panel-made personal assessment had
+  been answered on the live app when they were added. The profile route
+  asserts "Strengths you enjoy using", which only real answers produce. The
+  client-filter flow counts five fixtures now.
 - `admin-resources` joined on 2026-09-18, with the blog panel open: three
   controls to a row now that a post can be read before it is triaged. Clean at
   768 and 1280. Its one contrast finding is the `text-gray-300` Delete on a

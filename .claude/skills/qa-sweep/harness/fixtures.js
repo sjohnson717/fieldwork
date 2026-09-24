@@ -69,6 +69,32 @@ export const PANEL_RESPONDENT = {
   token: "TOKEN-PANEL", status: "started", completed_date: null, created_date: "2026-09-23T11:00:00.000Z",
 };
 
+// The personal assessment's counterpart: made from the panel, so it carries the
+// personal instrument's id, which asks from the library just as team gap does.
+// The live app had never run one when this was added — both personal
+// assessments on it predated the panel. One respondent partway through, for
+// the survey and its save, and one finished, for the profile report.
+export const PANEL_PERSONAL = {
+  ...PERSONAL,
+  id: "asmt-personal-panel",
+  title: "Product Manager Profile",
+  instrument_id: "inst-personal",
+  activity_ids: ["act-1", "act-3", "act-5"],
+  access_code: "QA444",
+  created_date: "2026-09-24T10:00:00.000Z",
+};
+export const PANEL_PERSONAL_RESPONDENTS = [
+  { id: "resp-panel-p", assessment_id: PANEL_PERSONAL.id, name: "Kit Moreau", title: "Product Manager",
+    token: "TOKEN-PANEL-P", status: "started", completed_date: null, created_date: "2026-09-24T11:00:00.000Z" },
+  { id: "resp-panel-p-done", assessment_id: PANEL_PERSONAL.id, name: "Ana Okoro", title: "Senior Product Manager",
+    token: "TOKEN-PANEL-P-DONE", status: "completed", completed_date: "2026-09-24T12:00:00.000Z", created_date: "2026-09-24T11:30:00.000Z" },
+];
+export const PANEL_PERSONAL_ANSWERS = [
+  { activity_id: "act-1", experience: "Extensive", skills: "Excellent", interest: "Passionate" },
+  { activity_id: "act-3", experience: "Some", skills: "Good", interest: "Limited" },
+  { activity_id: "act-5", experience: "Limited", skills: "Basic", interest: "Moderate" },
+].map(a => ({ ...a, respondent_id: "resp-panel-p-done" }));
+
 // act-1 carries the longest title in the vocabulary on purpose: at 53
 // characters it is what overflowed the printed appendix's owner column and got
 // clipped mid-word, back when that cell was nowrap. The widest real value is
