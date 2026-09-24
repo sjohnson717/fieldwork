@@ -19,4 +19,6 @@ Nothing in this folder is loaded at build time or at run time.
   wrong one — the bridge in `src/components/QuartzBridge.jsx` points at
   `/program/quartz-product-leadership`.
 - `Posts.csv`, `Limericks.csv` — Wix blog exports behind the Resources library.
-- `customer-proof.md`, `stop-selling-at-trade-shows.md` — drafts.
+- `product-success.md` — the Product Success Quiz as imported, before its
+  tagline, description, and consultant summary were rewritten in
+  `content/instruments/product-success.md`.
