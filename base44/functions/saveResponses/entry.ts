@@ -94,7 +94,7 @@ const notFound = () =>
 // getAssignedActivities on the client: library activities, filtered by
 // activity_ids when that list is set, plus any custom activities belonging to
 // this assessment.
-const assignedIds = async (svc, assessment) => {
+const assignedIds = async (svc, assessment, instrument) => {
   const all = await svc.Activity.filter({ active: true }, "sort_order", ALL);
 
   // An instrument asks its own fixed list, every question every time — there is
@@ -102,7 +102,11 @@ const assignedIds = async (svc, assessment) => {
   // library rule below treats an empty activity_ids as "all of them", so an
   // instrument assessment falling through to it would accept an answer to any
   // activity in the library.
-  if (assessment.instrument_id) {
+  //
+  // Only for an instrument that asks its own questions. Team gap and personal
+  // assessments made from the New Assessment panel carry an instrument_id too,
+  // but their questions are the library's.
+  if (asksOwnQuestions(instrument)) {
     const mine = all.filter((a) => (a.instrument_ids || []).includes(assessment.instrument_id));
     return new Set(mine.map((a) => a.id));
   }
@@ -118,6 +122,10 @@ const assignedIds = async (svc, assessment) => {
   return new Set(assigned.map((a) => a.id));
 };
 
+// An instrument with its own fixed question list, as opposed to team gap and
+// personal, which are instruments too but ask from the shared library.
+const asksOwnQuestions = (instrument) => instrument?.question_source === "instrument";
+
 // The option labels an instrument's scales actually offer, for validating
 // `answer`. Read from ScaleOption rather than a list kept here: the options are
 // data, and a copy in this file is a second source of truth that would start
@@ -125,11 +133,8 @@ const assignedIds = async (svc, assessment) => {
 //
 // This endpoint is open — a caller holding a token can reach it directly — so
 // the check is the difference between storing an answer and storing anything.
-const instrumentLabels = async (svc, assessment) => {
-  if (!assessment.instrument_id) return null;
-  const instruments = await svc.Instrument.filter({ id: assessment.instrument_id });
-  const instrument = instruments?.[0];
-  if (!instrument) return new Set();
+const instrumentLabels = async (svc, instrument) => {
+  if (!asksOwnQuestions(instrument)) return null;
   const options = await svc.ScaleOption.filter({}, "sort_order", ALL);
   const scaleIds = new Set(instrument.scale_ids || []);
   return new Set(options.filter((o) => scaleIds.has(o.scale_id)).map((o) => o.label));
@@ -208,11 +213,14 @@ Deno.serve(async (req) => {
       return Response.json({ error: "closed" }, { status: 409 });
     }
 
+    const instrument = assessment.instrument_id
+      ? (await svc.Instrument.filter({ id: assessment.instrument_id }))?.[0] || null
+      : null;
     const [allowed, labels] = await Promise.all([
-      assignedIds(svc, assessment),
-      instrumentLabels(svc, assessment),
+      assignedIds(svc, assessment, instrument),
+      instrumentLabels(svc, instrument),
     ]);
-    const writable = assessment.instrument_id
+    const writable = asksOwnQuestions(instrument)
       ? INSTRUMENT_FIELDS
       : isPersonal
         ? PERSONAL_FIELDS
