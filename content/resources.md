@@ -891,6 +891,7 @@ When customers are confused, more documentation rarely helps. Translate what's t
 id: why-training-doesnt-fix-product-organizations
 published: 2026-07-06
 url: https://www.productgrowthleaders.com/post/why-training-doesn-t-fix-product-organizations
+kept: yes
 
 Training makes knowledgeable people; a shared operating model makes a consistent organization. Why five trained product managers still write five different business cases.
 
@@ -942,6 +943,7 @@ A product manager turned request vending machine, and how discovery calls and wi
 id: simplify-to-amplify-streamline-your-product-process
 published: 2025-11-17
 url: https://www.productgrowthleaders.com/post/simplify-to-amplify-streamline-your-product-process
+kept: yes
 
 Map what your process actually does, phase by phase, then merge the duplicate documents and retire the rituals nobody remembers the reason for.
 
