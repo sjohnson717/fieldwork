@@ -15,7 +15,9 @@
 // window.__qa exposes that state to the driver.
 
 import { FACETS, ACTIVITIES, TEAM_GAP, PERSONAL, RESPONDENTS, ALL_ANSWERS, OWN_ANSWERS, PERSONAL_ANSWERS, DISCUSSION_NOTES, TEAM_TOKEN, BUYER_TOKEN,
-         CHAOS, CHAOS_QUESTIONS, CHAOS_RESPONDENTS, CHAOS_ANSWERS, CHAOS_BUYER_TOKEN, PS_INSTRUMENT, PS_QUESTIONS, PS_BANDS, PS_RESOURCES} from "./fixtures.js";
+         CHAOS, CHAOS_QUESTIONS, CHAOS_RESPONDENTS, CHAOS_ANSWERS, CHAOS_BUYER_TOKEN, PS_INSTRUMENT, PS_QUESTIONS, PS_BANDS, PS_RESOURCES,
+         PANEL_TEAM_GAP, PANEL_RESPONDENT } from "./fixtures.js";
+import { selectAssignedActivities, asksOwnQuestions } from "@/lib/activity-kind";
 
 // Mirrors publicAssessment's own list. The buyer payload used to name the team
 // gap's three fields inline, exactly as the real function did — which is why a
@@ -29,6 +31,7 @@ const state = {
     { ...TEAM_GAP, team_token: TEAM_TOKEN, buyer_token: BUYER_TOKEN, tag_ids: ["tag-1"] },
     { ...PERSONAL, team_token: TEAM_TOKEN + "-P", buyer_token: BUYER_TOKEN + "-P" },
     { ...CHAOS, buyer_token: CHAOS_BUYER_TOKEN },
+    { ...PANEL_TEAM_GAP, team_token: TEAM_TOKEN + "-PANEL", buyer_token: BUYER_TOKEN + "-PANEL" },
   ],
   respondents: RESPONDENTS.map(r => ({ ...r, assessment_id: TEAM_GAP.id })),
   responses: ALL_ANSWERS.map((a, i) => ({ id: `row-${i}`, assessment_id: TEAM_GAP.id, ...a })),
@@ -111,6 +114,7 @@ state.respondents.push(personalRespondent);
 state.responses.push(...PERSONAL_ANSWERS.map((a, i) => ({ id: `pers-${i}`, assessment_id: PERSONAL.id, respondent_id: personalRespondent.id, ...a })));
 
 state.respondents.push(...CHAOS_RESPONDENTS.map(r => ({ ...r })));
+state.respondents.push({ ...PANEL_RESPONDENT });
 state.responses.push({ id: "ps-answer", assessment_id: "asmt-ps-none", respondent_id: "resp-ps-none", activity_id: "ps-1", answer: "Yes" });
 state.instruments.push({ ...PS_INSTRUMENT });
 state.responses.push(...CHAOS_ANSWERS.map((a, i) => ({ id: `chaos-${i}`, assessment_id: CHAOS.id, ...a })));
@@ -393,10 +397,25 @@ export const base44 = {
         const r = state.respondents.find(x => x.token === token);
         if (!r) return notFound();
         if (!Array.isArray(answers)) { const e = new Error("answers must be an array"); e.status = 400; throw e; }
+        // Which activities it accepts and which fields it writes follow the real
+        // function's rules, not whatever the page sends. The stub used to accept
+        // any fixture activity with any field, so it could not have noticed a
+        // save that the real function would quietly have thrown half of away.
+        const a = state.assessments.find(x => x.id === r.assessment_id);
+        const instrument = (state.instruments || []).find(i => i.id === a?.instrument_id) || null;
+        const allowed = new Set(selectAssignedActivities(a, instrument, state.activities.filter(x => x.active !== false)).map(x => x.id));
+        const writable = asksOwnQuestions(instrument)
+          ? ["answer", "answer_text"]
+          : a?.assessment_type === "personal"
+            ? ["experience", "skills", "interest"]
+            : ["importance", "execution", "suggested_owner"];
         let created = 0, updated = 0;
         for (const answer of answers) {
-          const { activity_id, ...fields } = answer;
-          if (!ACTIVITIES.some(a => a.id === activity_id)) continue;
+          const { activity_id } = answer;
+          if (!allowed.has(activity_id)) continue;
+          // Every writable field, null where the page sent nothing: the real
+          // function writes them all, so clearing an answer clears it.
+          const fields = Object.fromEntries(writable.map(f => [f, answer[f] || null]));
           const existing = state.responses.find(row => row.respondent_id === r.id && row.activity_id === activity_id);
           if (existing) { Object.assign(existing, fields); existing.updated = true; updated++; }
           else { state.responses.push({ id: `new-${state.responses.length}`, assessment_id: r.assessment_id, respondent_id: r.id, activity_id, ...fields }); created++; }

@@ -56,6 +56,7 @@ actually rendered, so a blank screen cannot pass as clean.
 | --- | --- |
 | registration is single-submit | two respondents from one press — a phantom non-responder on the roster |
 | back then forward re-saves | the RLS refusal that produced "Error saving responses" |
+| a panel-made team gap asks its questions and saves both ratings | a team gap made from the New Assessment panel opening with no questions, or its importance and execution dropped on save |
 | next is single-submit | duplicate saves from a double tap |
 | finishing completes the respondent | a full set of answers stuck at "started" |
 | revise re-reads and rewrites | a revision that starts blank, or writes a second row |
@@ -162,6 +163,17 @@ not mistaken for a new regression:
 - Three routes joined on 2026-09-10 and 2026-09-11 and open clean at every
   width they run at: `revise-team-gap` and `revise-instrument` (the section
   strip a revision shows) and `admin-instrument-editor` (768 and 1280 only).
+- `survey-panel-team-gap` joined on 2026-09-24 with its flow, and opens clean
+  at every width. It is the first fixture assessment to carry an
+  `instrument_id` for a library instrument, which is what every assessment
+  made from the New Assessment panel looks like; the older fixtures predate the
+  panel, which is how an empty team gap survey went unnoticed for two weeks.
+  The stub's `saveResponses` now applies the real function's rules — the
+  assessment's activities and its type's fields — rather than writing whatever
+  it is sent, so a save the real function would half discard fails here too.
+  The Assessments page lists four fixtures now, and the client-filter flow
+  counts accordingly. `QA_VERBOSE=1` prints each flow's name as it starts, for
+  when one hangs.
 - `admin-resources` joined on 2026-09-18, with the blog panel open: three
   controls to a row now that a post can be read before it is triaged. Clean at
   768 and 1280. Its one contrast finding is the `text-gray-300` Delete on a

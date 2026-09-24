@@ -47,6 +47,28 @@ export const PERSONAL = {
   roles: [],
 };
 
+// A team gap made from the New Assessment panel, which is how every one is
+// made now: it carries the team gap instrument's id as well as its type. The
+// survey used to read any instrument_id as "this instrument asks its own
+// list", find no questions tagged with it, and open empty — and saveResponses
+// would have kept only `answer`, dropping importance and execution. The two
+// assessments above predate the panel and never took that path, which is how
+// it went unnoticed from 9 to 23 September 2026. Three activities selected, so
+// the flow can also tell a selection from the whole library.
+export const PANEL_TEAM_GAP = {
+  ...TEAM_GAP,
+  id: "asmt-gap-panel",
+  title: "Team Roles",
+  instrument_id: "inst-team",
+  activity_ids: ["act-1", "act-3", "act-5"],
+  access_code: "QA333",
+  created_date: "2026-09-23T10:00:00.000Z",
+};
+export const PANEL_RESPONDENT = {
+  id: "resp-panel", assessment_id: PANEL_TEAM_GAP.id, name: "Rae Lindqvist", title: "Product Manager",
+  token: "TOKEN-PANEL", status: "started", completed_date: null, created_date: "2026-09-23T11:00:00.000Z",
+};
+
 // act-1 carries the longest title in the vocabulary on purpose: at 53
 // characters it is what overflowed the printed appendix's owner column and got
 // clipped mid-word, back when that cell was nowrap. The widest real value is

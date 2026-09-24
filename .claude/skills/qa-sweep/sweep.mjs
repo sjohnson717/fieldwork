@@ -51,6 +51,10 @@ const ROUTES = [
   // this route a regression test for where a resumed survey opens — it used to
   // open on page one regardless, and send someone back through finished pages.
   { name: "resume-partial", url: "/assess?t=TOKEN-RESP-4", expect: "DESCRIBE" },
+  // A team gap made from the New Assessment panel, carrying an instrument_id.
+  // Asserting an activity's name, not a heading: the empty survey this guards
+  // against still drew its chrome.
+  { name: "survey-panel-team-gap", url: "/assess?t=TOKEN-PANEL", expect: "Understand the Market" },
   { name: "respondent-report", url: "/assess?t=TOKEN-RESP-1", review: true, expect: "where you'd focus first" },
   { name: "personal-profile", url: "/assess?t=TOKEN-PERSONAL", review: true, expect: "part one" },
   // Revise mode carries the section strip, which is the widest thing on the
@@ -302,6 +306,9 @@ for (const route of ROUTES) {
 
 // ── Part two: the flows that write ───────────────────────────────────────────
 const flow = async (name, fn) => {
+  // Which flow is running, for when one hangs: the report is written only at
+  // the end, so a timeout otherwise says nothing about where it happened.
+  if (process.env.QA_VERBOSE) console.error(`flow: ${name}`);
   const page = await browser.newPage();
   await page.setViewport({ width: 390, height: 900, isMobile: true, hasTouch: true });
   const problems = [];
@@ -381,6 +388,29 @@ await flow("back then forward re-saves without duplicating", async (page) => {
   return {
     pass: state.count === 1 && state.importance === "Not needed" && !errorShown,
     detail: `${state.count} row(s) for ${state.activity}, importance=${state.importance}, ${state.saves} saves, errorShown=${errorShown}`,
+  };
+});
+
+// A panel-made team gap asks its selected library questions and saves both
+// ratings. The survey once came up empty for these, and saveResponses would have
+// kept only `answer`; this is the whole path, page to stored row.
+await flow("a panel-made team gap asks its questions and saves both ratings", async (page) => {
+  await page.goto(baseUrl + "/assess?t=TOKEN-PANEL", { waitUntil: "networkidle0" });
+  const text = await page.evaluate(() => document.body.innerText);
+  const asked = text.includes("Understand the Market");
+  // act-2 shares act-1's page but is not in the selection.
+  const unselected = text.includes("Go/No-Go Decision to Pursue Initiative");
+  await clickText(page, "Critical");
+  await clickText(page, "Good");
+  await clickText(page, "Next");
+  await wait(1000);
+  const row = await page.evaluate(() => {
+    const r = window.__qa.responses.find(x => x.respondent_id === "resp-panel" && x.activity_id === "act-1");
+    return r ? { importance: r.importance, execution: r.execution } : null;
+  });
+  return {
+    pass: asked && !unselected && row?.importance === "Critical" && row?.execution === "Good",
+    detail: `asked act-1=${asked}, asked unselected act-2=${unselected}, stored ${JSON.stringify(row)}`,
   };
 });
 
@@ -814,9 +844,10 @@ await flow("client filter narrows the list, merges spellings, and survives openi
   await setClient("Acme");
   await wait(300);
   const acme = await titles();
-  const ok = options.length === 3 && options[0].startsWith("All clients · 3")
-    && options.some(o => o === "Northwind Systems · 2") && options.some(o => o === "Acme · 1")
-    && northwind.length === 2 && !northwind.some(t => t.includes("Self-Assessment"))
+  // Northwind is the gap, Chaos, and the panel-made team gap; Acme is personal.
+  const ok = options.length === 3 && options[0].startsWith("All clients · 4")
+    && options.some(o => o === "Northwind Systems · 3") && options.some(o => o === "Acme · 1")
+    && northwind.length === 3 && !northwind.some(t => t.includes("Self-Assessment"))
     && !!summaryLine && (kept || "").startsWith("Northwind Systems")
     && acme.length === 1 && acme[0].includes("Product Manager Self-Assessment");
   return {
