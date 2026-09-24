@@ -964,6 +964,31 @@ await flow("the team dashboard withholds resume links where the report is the pe
   };
 });
 
+// A team leader flags library activities for their consultant to swap out of
+// the set. An instrument that asks its own questions has no set to change, and
+// until September 2026 its dashboard offered "Flag for discussion" on each of
+// them, filed under LEARN, the placeholder facet those questions carry.
+await flow("the team dashboard offers activity flags only where the set can change", async (page) => {
+  const flagSection = () => page.evaluate(() => ({
+    heading: document.body.innerText.toLowerCase().includes("activities in this assessment"),
+    buttons: [...document.querySelectorAll("button")].filter(b => b.textContent.trim() === "Flag for discussion").length,
+  }));
+  await page.goto(baseUrl + "/team/" + "TOKEN-TEAM", { waitUntil: "networkidle0" });
+  await wait(500);
+  const teamGap = await flagSection();
+  await page.evaluateOnNewDocument(() => {
+    window.__qaSetup = (s) => { s.assessments.find(a => a.id === "asmt-chaos").team_token = "TOKEN-CHAOS-TEAM"; };
+  });
+  await page.goto(baseUrl + "/team/TOKEN-CHAOS-TEAM", { waitUntil: "networkidle0" });
+  await wait(500);
+  const chaos = await flagSection();
+  const listed = await page.evaluate(() => document.body.innerText.includes("Ada Okonjo"));
+  return {
+    pass: teamGap.heading && teamGap.buttons > 0 && listed && !chaos.heading && chaos.buttons === 0,
+    detail: `team gap ${JSON.stringify(teamGap)}, chaos ${JSON.stringify(chaos)}, chaos roster listed=${listed}`,
+  };
+});
+
 // A personal assessment links to a team gap, and only a team gap: Results
 // crosses the two on importance and execution. The list used to be "anything
 // not personal", and the Chaos fixture carries no assessment_type, which is
