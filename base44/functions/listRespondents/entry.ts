@@ -22,6 +22,10 @@ import { createClientFromRequest } from "npm:@base44/sdk@0.8.39";
 
 const sameOrg = (a, b) => (a || null) === (b || null);
 
+// Explicit, because the platform's own default page size is not the app's to
+// assume, and a newsletter link can bring in more people than it covers.
+const ALL = 5000;
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -34,7 +38,7 @@ Deno.serve(async (req) => {
     }
     if (!user) return Response.json({ error: "Unauthorized" }, { status: 403 });
 
-    const { assessmentId } = await req.json();
+    const { assessmentId, arrivals } = await req.json();
     if (!assessmentId) {
       return Response.json({ error: "assessmentId is required" }, { status: 400 });
     }
@@ -53,9 +57,31 @@ Deno.serve(async (req) => {
 
     if (!allowed) return Response.json({ error: "not_found" }, { status: 404 });
 
+    // Visits to the code link, counted by where they came from. Asked for on
+    // its own, beside the respondent list rather than inside it, so every
+    // caller that only wants names keeps the shape it has. Counts, not rows:
+    // the Results tabs show a funnel, and nothing about one visit is worth
+    // sending to the browser.
+    if (arrivals) {
+      const rows = await base44.asServiceRole.entities.Arrival.filter(
+        { assessment_id: assessmentId }, null, ALL,
+      );
+      const counts = {};
+      for (const r of rows) {
+        const key = `${r.source || ""}\u0000${r.campaign || ""}`;
+        counts[key] = (counts[key] || 0) + 1;
+      }
+      return Response.json({
+        arrivals: Object.entries(counts).map(([key, count]) => {
+          const [source, campaign] = key.split("\u0000");
+          return { source: source || null, campaign: campaign || null, count };
+        }),
+      });
+    }
+
     const respondents = await base44.asServiceRole.entities.Respondent.filter({
       assessment_id: assessmentId,
-    });
+    }, null, ALL);
 
     return Response.json({
       respondents: respondents.map((r) => ({
@@ -65,6 +91,9 @@ Deno.serve(async (req) => {
         status: r.status,
         completed_date: r.completed_date || null,
         created_date: r.created_date,
+        source: r.source || null,
+        medium: r.medium || null,
+        campaign: r.campaign || null,
         // The two closing questions from the end of the survey. Admin-side
         // only, which is the whole reason they come through this function
         // rather than any of publicAssessment's shapes — they are collected to

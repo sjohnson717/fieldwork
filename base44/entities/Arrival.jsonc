@@ -1,0 +1,46 @@
+{
+  "name": "Arrival",
+  "type": "object",
+  "properties": {
+    "assessment_id": {
+      "type": "string"
+    },
+    "source": {
+      "type": "string",
+      "description": "Where the visitor came from: the link's utm_source, else the referring site's host, else empty for a typed code or a link opened from an email app, which sends no referrer."
+    },
+    "medium": {
+      "type": "string",
+      "description": "The link's utm_medium, such as email or social. Empty when the link carried none."
+    },
+    "campaign": {
+      "type": "string",
+      "description": "The link's utm_campaign, such as one newsletter issue. Empty when the link carried none."
+    }
+  },
+  "required": [
+    "assessment_id"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

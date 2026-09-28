@@ -9,6 +9,7 @@ import { ANSWER_FIELDS, rebuildResponses } from "@/lib/responses";
 import { usePrintSafeUrl } from "@/lib/print-safe-url";
 import { HERO_IMAGE, QUARTZ_ICON } from "@/lib/assets";
 import { claimToken, resumeLinkFor } from "@/lib/token-address";
+import { arrivalSource, isNewVisit } from "@/lib/arrival-source";
 import ResumeLink from "@/components/ResumeLink";
 import { FACET_ORDER, IMPORTANCE_LABEL, EXECUTION_LABEL } from "@/lib/scoring";
 import PersonalProfileReport from "@/components/PersonalProfileReport";
@@ -700,7 +701,10 @@ export default function Assessment() {
     if (!submitted.trim()) return retry("Please enter an assessment code.");
     setSaving(true);
     try {
-      const result = await getAssessmentByCode(submitted);
+      // Counted once per tab and code, with where the visitor came from, for
+      // the funnel on the Results tabs. See lib/arrival-source.
+      const key = submitted.trim().toUpperCase();
+      const result = await getAssessmentByCode(submitted, isNewVisit(key) ? arrivalSource() : null);
       const found = result?.assessment;
       if (!found) return retry("Code not found. Please check and try again.");
       if (found.status === "closed") return deadEnd("This assessment is no longer accepting responses.");
@@ -729,7 +733,10 @@ export default function Assessment() {
         name: name.trim(),
         title: title.trim(),
         token,
-        status: "started"
+        status: "started",
+        // The same labels the arrival was counted under, so starts and
+        // completions line up against arrivals by source.
+        ...arrivalSource(),
       });
       setRespondent(r);
       rememberToken(token);

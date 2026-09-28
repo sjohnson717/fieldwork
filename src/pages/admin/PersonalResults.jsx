@@ -167,6 +167,7 @@ export default function PersonalResults({ assessment }) {
     <div className="p-8 space-y-8">
 
       <RespondentRoster
+        assessmentId={assessment.id}
         respondents={respondents}
         isEmptyFor={r => profiles[r.id].answeredCount === 0}
         onRefresh={refresh}

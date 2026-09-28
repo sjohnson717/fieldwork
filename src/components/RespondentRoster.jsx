@@ -1,3 +1,6 @@
+import ArrivalFunnel from "@/components/ArrivalFunnel";
+import { useArrivals } from "@/lib/admin-queries";
+
 // Who has answered, at the top of both results tabs.
 //
 // The shell is shared and the middle columns are not: the team gap tab shows a
@@ -11,6 +14,9 @@
 // would have left the other open — the same shape as the print-safety rule that
 // existed in two places and was forgotten in one.
 export default function RespondentRoster({
+  // For the arrivals funnel, which the roster fetches itself so the three
+  // results tabs need not each wire it.
+  assessmentId,
   respondents,
   // [{ key, label, render(respondent) }] — the type-specific middle columns.
   columns = [],
@@ -29,6 +35,12 @@ export default function RespondentRoster({
 }) {
   const completedCount = respondents.filter(r => r.status === "completed").length;
   const emptyCount = respondents.filter(r => isEmptyFor(r)).length;
+  const arrivalsQuery = useArrivals(assessmentId);
+  const arrivedCount = arrivalsQuery.data.reduce((n, a) => n + a.count, 0);
+  const refresh = () => {
+    onRefresh?.();
+    arrivalsQuery.refetch();
+  };
 
   return (
     <section className="bg-white rounded-xl border border-gray-200 p-6">
@@ -36,16 +48,19 @@ export default function RespondentRoster({
         <div>
           <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Respondents</h3>
           <p className="text-xs text-gray-400 mt-0.5">
+            {arrivedCount > 0 && <>{arrivedCount} arrived · </>}
             {respondents.length} total · {completedCount} completed · {emptyCount} empty
           </p>
         </div>
         <button
-          onClick={onRefresh}
+          onClick={refresh}
           className="text-xs text-gray-400 hover:text-blue-600 transition-colors"
         >
           Refresh
         </button>
       </div>
+
+      <ArrivalFunnel arrivals={arrivalsQuery.data} respondents={respondents} />
 
       {/* The confidentiality rule, stated where the individual data is.
 

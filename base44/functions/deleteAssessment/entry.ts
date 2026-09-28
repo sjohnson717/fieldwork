@@ -61,12 +61,16 @@ Deno.serve(async (req) => {
       }
     };
 
-    const [responses, respondents, notes, flags, customActivities] = await Promise.all([
+    const [responses, respondents, notes, flags, customActivities, arrivals] = await Promise.all([
       stage("reading responses",  () => svc.Response.filter({ assessment_id: assessmentId })),
       stage("reading respondents", () => svc.Respondent.filter({ assessment_id: assessmentId })),
       stage("reading notes",      () => svc.DiscussionNote.filter({ assessment_id: assessmentId })),
       stage("reading flags",      () => svc.TeamLeaderFlag.filter({ assessment_id: assessmentId })),
       stage("reading custom activities", () => svc.Activity.filter({ assessment_id: assessmentId })),
+      // A newsletter link can log thousands of visits, well past the
+      // platform's default page size, and every one left behind would be a
+      // row naming an assessment that no longer exists.
+      stage("reading arrivals",   () => svc.Arrival.filter({ assessment_id: assessmentId }, null, 5000)),
     ]);
 
     // Batched rather than one Promise.all over everything: an assessment with
@@ -94,6 +98,15 @@ Deno.serve(async (req) => {
     // records that the library list hides (it filters on assessment_id) and
     // nothing else ever reads.
     await deleteAll("custom activities", customActivities, svc.Activity);
+    // One call where the SDK offers it: a busy newsletter link logs hundreds
+    // of visits, and ten at a time at a second or more per call could outrun
+    // the function's time limit. The batched path stays for a runtime whose
+    // SDK predates deleteMany.
+    if (arrivals.length && typeof svc.Arrival.deleteMany === "function") {
+      await stage("deleting arrivals", () => svc.Arrival.deleteMany({ assessment_id: assessmentId }));
+    } else {
+      await deleteAll("arrivals", arrivals, svc.Arrival);
+    }
 
     await stage("deleting the assessment", () => svc.Assessment.delete(assessmentId));
 
@@ -104,6 +117,7 @@ Deno.serve(async (req) => {
         notes: notes.length,
         flags: flags.length,
         customActivities: customActivities.length,
+        arrivals: arrivals.length,
       },
     });
   } catch (error) {
