@@ -6,9 +6,9 @@ import { base44 } from '@/api/base44Client';
 //
 // Returns null when the token doesn't resolve, so callers can show their own
 // "link not valid" message. Any other failure throws.
-const resolve = async (mode, token) => {
+const resolve = async (mode, token, extra = {}) => {
   try {
-    const res = await base44.functions.invoke('publicAssessment', { mode, token });
+    const res = await base44.functions.invoke('publicAssessment', { mode, token, ...extra });
     return res?.data ?? null;
   } catch (e) {
     if (e?.response?.status === 404 || e?.status === 404) return null;
@@ -22,6 +22,13 @@ const resolve = async (mode, token) => {
 export const listRespondents = async (assessmentId) => {
   const res = await base44.functions.invoke('listRespondents', { assessmentId });
   return res?.data?.respondents ?? [];
+};
+
+// Visits to an assessment's code link, counted by source and campaign, behind
+// the same access check as the respondent list.
+export const listArrivals = async (assessmentId) => {
+  const res = await base44.functions.invoke('listRespondents', { assessmentId, arrivals: true });
+  return res?.data?.arrivals ?? [];
 };
 
 // A respondent's own answers, written server-side against their token.
@@ -50,7 +57,9 @@ export const saveRespondentAnswers = async (token, answers, { complete = false, 
   return res?.data ?? null;
 };
 
-export const getAssessmentByCode = (code) => resolve('code', code);
+// `arrival` is { source, medium, campaign }, passed only when this lookup is a
+// new visit to count. See base44/functions/publicAssessment.
+export const getAssessmentByCode = (code, arrival) => resolve('code', code, arrival ? { arrival } : {});
 export const getRespondentSession = (token) => resolve('respondent', token);
 export const getTeamLeaderView = (teamToken) => resolve('team', teamToken);
 export const getBuyerReport = (buyerToken) => resolve('buyer', buyerToken);

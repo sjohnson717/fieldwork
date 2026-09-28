@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { getAssignedActivities } from "@/lib/activities";
-import { listRespondents } from "@/lib/public-assessment";
+import { listArrivals, listRespondents } from "@/lib/public-assessment";
 import { loadInstrument } from "@/lib/instruments";
 
 // The admin's reads of one assessment, cached by React Query.
@@ -27,6 +27,7 @@ export const adminKeys = {
   // the assessment's prefix after a write as well.
   activities: (a) => ["assigned-activities", a.id, a.instrument_id || null, (a.activity_ids || []).join(",")],
   respondents: (assessmentId) => ["respondents", assessmentId],
+  arrivals: (assessmentId) => ["arrivals", assessmentId],
   responses: (assessmentId) => ["responses", assessmentId],
   instrument: (a) => ["instrument", a.id, a.instrument_id || null, a.assessment_type || null],
   notes: (assessmentId) => ["discussion-notes", assessmentId],
@@ -60,6 +61,13 @@ export function useAssignedActivities(assessment) {
 // entity's RLS cannot express "only for assessments you may see".
 export function useRespondents(assessmentId) {
   const q = useQuery(listQuery(adminKeys.respondents(assessmentId), () => listRespondents(assessmentId), !!assessmentId));
+  return { ...q, data: q.data || EMPTY };
+}
+
+// Visits to the code link, counted by source. Fetched beside the respondents
+// rather than after them, so the funnel costs no extra wait.
+export function useArrivals(assessmentId) {
+  const q = useQuery(listQuery(adminKeys.arrivals(assessmentId), () => listArrivals(assessmentId), !!assessmentId));
   return { ...q, data: q.data || EMPTY };
 }
 
@@ -121,7 +129,7 @@ export function useAdminCache() {
     // assessment's own custom activities. Wording edits elsewhere are left to
     // the refetch every mount already does.
     forgetAssessment(assessmentId) {
-      for (const prefix of ["assigned-activities", "respondents", "responses", "discussion-notes", "instrument"]) {
+      for (const prefix of ["assigned-activities", "respondents", "arrivals", "responses", "discussion-notes", "instrument"]) {
         qc.removeQueries({ queryKey: [prefix, assessmentId] });
       }
     },

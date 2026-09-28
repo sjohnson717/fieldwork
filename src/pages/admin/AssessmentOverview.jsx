@@ -8,6 +8,7 @@ import TagPicker from "@/components/TagPicker";
 import { displayStatus } from "./assessment-labels";
 import { NAMING_EXAMPLE, NAMING_NOTE, GENERIC_COMPANY } from "@/lib/assessment-naming";
 import { kindOf, PERSONAL, TEAM_GAP } from "@/lib/instrument-kind";
+import { SHARE_CHANNELS, taggedSurveyLink } from "@/lib/arrival-source";
 
 // Two states. An assessment is open from the moment it exists — the access
 // code works immediately — and the only real event in its life is being closed.
@@ -44,6 +45,7 @@ export default function AssessmentOverview({ assessment, instrument, instrumentO
   const [savingCollaborators, setSavingCollaborators] = useState(false);
   const [collaboratorError, setCollaboratorError] = useState("");
   const [copied, setCopied] = useState(false);
+  const [copiedChannel, setCopiedChannel] = useState(null);
   const [copiedLink, setCopiedLink] = useState(null); // 'report' | 'team'
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState(assessment.title);
@@ -154,6 +156,15 @@ export default function AssessmentOverview({ assessment, instrument, instrumentO
     navigator.clipboard.writeText(url);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  // The same link, labelled for where it is being posted, so the Results tabs
+  // can say how many came from each place. Built here because nobody types
+  // utm parameters by hand, and a link nobody tags reads as "No source".
+  const handleCopyTaggedLink = (channel) => {
+    navigator.clipboard.writeText(taggedSurveyLink(window.location.origin, assessment.access_code, channel));
+    setCopiedChannel(channel.key);
+    setTimeout(() => setCopiedChannel(null), 2000);
   };
 
   const handleSaveTitle = async () => {
@@ -445,6 +456,21 @@ export default function AssessmentOverview({ assessment, instrument, instrumentO
             Copy link
           </button>
         </div>
+        <div className="flex items-center gap-2 flex-wrap mt-3">
+          <span className="text-xs text-gray-400">Copy a link for</span>
+          {SHARE_CHANNELS.map((channel) => (
+            <button
+              key={channel.key}
+              onClick={() => handleCopyTaggedLink(channel)}
+              className="text-xs text-gray-500 hover:text-gray-700 font-medium border border-gray-200 px-3 py-2 min-h-[44px] rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              {copiedChannel === channel.key ? "Copied!" : channel.label}
+            </button>
+          ))}
+        </div>
+        <p className="text-xs text-gray-400 mt-2">
+          Each one counts separately on the Results tab, so you can see how many came from each place.
+        </p>
       </section>
 
       {/* Links */}

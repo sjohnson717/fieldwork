@@ -80,6 +80,7 @@ export default function InstrumentResults({ assessment }) {
   return (
     <div className="p-8 space-y-8">
       <RespondentRoster
+        assessmentId={assessment.id}
         respondents={respondents}
         isEmptyFor={r => !answeredCount[r.id]}
         onRefresh={refresh}

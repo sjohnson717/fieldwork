@@ -26,6 +26,18 @@
       "type": "string",
       "format": "date-time"
     },
+    "source": {
+      "type": "string",
+      "description": "Where this person came from, captured when they arrived on the code link: utm_source, else the referring site's host. Same meaning as Arrival.source, so starts and completions line up against arrivals."
+    },
+    "medium": {
+      "type": "string",
+      "description": "The arriving link's utm_medium. See Arrival.medium."
+    },
+    "campaign": {
+      "type": "string",
+      "description": "The arriving link's utm_campaign. See Arrival.campaign."
+    },
     "activity_log": {
       "type": "string"
     },

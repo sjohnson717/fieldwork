@@ -174,6 +174,7 @@ export default function AssessmentResults({ assessment }) {
     <div className="p-8 space-y-8">
 
       <RespondentRoster
+        assessmentId={assessment.id}
         respondents={respondents}
         isEmptyFor={r => !responseCountMap[r.id]}
         onRefresh={refresh}

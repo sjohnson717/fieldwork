@@ -93,6 +93,35 @@ const shapeWithOrg = async (svc, assessment, extraFields = []) => ({
   org_name: await orgNameFor(svc, assessment),
 });
 
+// One visit to the code link, recorded when the code resolves. The survey sends
+// `arrival` only the first time a tab resolves a code, so a reload, or Back to
+// the intro, is not a second visit.
+//
+// A row per visit rather than a counter on Assessment: a newsletter sends its
+// readers in a burst, and a read-add-write counter loses every click that lands
+// inside another's second. Rows cannot collide.
+//
+// Nothing that names anybody. Three short labels from the link, trimmed and
+// capped, because this endpoint is open and should not be a place to park text.
+const MAX_LABEL = 80;
+const label = (v) =>
+  typeof v === "string" ? v.trim().toLowerCase().slice(0, MAX_LABEL) : "";
+
+const recordArrival = async (svc, assessment, arrival) => {
+  if (!arrival || typeof arrival !== "object") return;
+  try {
+    await svc.Arrival.create({
+      assessment_id: assessment.id,
+      source: label(arrival.source),
+      medium: label(arrival.medium),
+      campaign: label(arrival.campaign),
+    });
+  } catch (e) {
+    // A lost count is a smaller failure than a respondent who cannot start.
+    console.error("recordArrival", e);
+  }
+};
+
 const notFound = () =>
   // Deliberately uniform: never reveal whether a token exists but is the wrong
   // kind, or belongs to a closed assessment.
@@ -103,7 +132,7 @@ Deno.serve(async (req) => {
     const base44 = createClientFromRequest(req);
     const svc = base44.asServiceRole.entities;
 
-    const { mode, token } = await req.json();
+    const { mode, token, arrival } = await req.json();
     if (!mode || !token || typeof token !== "string") {
       return Response.json({ error: "mode and token are required" }, { status: 400 });
     }
@@ -116,7 +145,13 @@ Deno.serve(async (req) => {
         const wanted = token.trim().toUpperCase();
         const a = assessments.find((x) => (x.access_code || "").toUpperCase() === wanted);
         if (!a) return notFound();
-        return Response.json({ assessment: await shapeWithOrg(svc, a) });
+        // A closed assessment turns the visitor away, so it is not a visit
+        // anyone can act on.
+        const [shaped] = await Promise.all([
+          shapeWithOrg(svc, a),
+          a.status === "closed" ? null : recordArrival(svc, a, arrival),
+        ]);
+        return Response.json({ assessment: shaped });
       }
 
       // Respondent returning via their personal ?t= link.
