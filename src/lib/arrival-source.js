@@ -97,6 +97,22 @@ export function arrivalSource() {
 }
 
 /**
+ * phone, tablet, or desktop. Touch support separates a phone or tablet from a
+ * laptop, and the screen's shorter side separates the two touch devices, so
+ * turning a phone sideways does not make it a tablet. An iPad reports itself
+ * as a Mac but still has touch points, so it lands on tablet, not desktop.
+ */
+export function deviceKind() {
+  try {
+    const shortSide = Math.min(window.screen.width, window.screen.height);
+    if (navigator.maxTouchPoints > 0) return shortSide < 600 ? "phone" : "tablet";
+    return "desktop";
+  } catch {
+    return "";
+  }
+}
+
+/**
  * True the first time this tab resolves a given code, false after. A reload of
  * the link, or Back to the intro, is the same visit and should not count again.
  * Marks the visit as counted in the same step.

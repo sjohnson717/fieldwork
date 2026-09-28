@@ -1,5 +1,6 @@
 import ArrivalFunnel from "@/components/ArrivalFunnel";
-import { useArrivals } from "@/lib/admin-queries";
+import AfterFinishing from "@/components/AfterFinishing";
+import { useFunnel } from "@/lib/admin-queries";
 
 // Who has answered, at the top of both results tabs.
 //
@@ -35,11 +36,11 @@ export default function RespondentRoster({
 }) {
   const completedCount = respondents.filter(r => r.status === "completed").length;
   const emptyCount = respondents.filter(r => isEmptyFor(r)).length;
-  const arrivalsQuery = useArrivals(assessmentId);
-  const arrivedCount = arrivalsQuery.data.reduce((n, a) => n + a.count, 0);
+  const funnelQuery = useFunnel(assessmentId);
+  const arrivedCount = funnelQuery.data.arrivals.reduce((n, a) => n + a.count, 0);
   const refresh = () => {
     onRefresh?.();
-    arrivalsQuery.refetch();
+    funnelQuery.refetch();
   };
 
   return (
@@ -62,10 +63,11 @@ export default function RespondentRoster({
 
       <ArrivalFunnel
         assessmentId={assessmentId}
-        arrivals={arrivalsQuery.data}
+        arrivals={funnelQuery.data.arrivals}
         respondents={respondents}
-        onChanged={() => arrivalsQuery.refetch()}
+        onChanged={() => funnelQuery.refetch()}
       />
+      <AfterFinishing funnel={funnelQuery.data} respondents={respondents} />
 
       {/* The confidentiality rule, stated where the individual data is.
 

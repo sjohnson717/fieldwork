@@ -1,0 +1,54 @@
+{
+  "name": "RespondentEvent",
+  "type": "object",
+  "properties": {
+    "assessment_id": {
+      "type": "string"
+    },
+    "respondent_id": {
+      "type": "string"
+    },
+    "event": {
+      "type": "string",
+      "enum": [
+        "report_reopened",
+        "printed",
+        "resource_clicked",
+        "quartz_clicked",
+        "chaos_clicked"
+      ],
+      "description": "Something a respondent did with their report. report_reopened: came back to it on their resume link. printed: the Save as PDF button, or the browser's print command where the browser announces it (not iOS). resource_clicked: a reading link. quartz_clicked: the Quartz Product Leadership link on the practice profile. chaos_clicked: the Chaos Assessment link under a team or personal report."
+    },
+    "detail": {
+      "type": "string",
+      "description": "For resource_clicked, the address clicked. Empty otherwise."
+    }
+  },
+  "required": [
+    "assessment_id",
+    "respondent_id",
+    "event"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

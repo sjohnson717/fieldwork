@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { getAssignedActivities } from "@/lib/activities";
-import { listArrivals, listRespondents } from "@/lib/public-assessment";
+import { EMPTY_FUNNEL, listFunnel, listRespondents } from "@/lib/public-assessment";
 import { loadInstrument } from "@/lib/instruments";
 
 // The admin's reads of one assessment, cached by React Query.
@@ -64,11 +64,12 @@ export function useRespondents(assessmentId) {
   return { ...q, data: q.data || EMPTY };
 }
 
-// Visits to the code link, counted by source. Fetched beside the respondents
-// rather than after them, so the funnel costs no extra wait.
-export function useArrivals(assessmentId) {
-  const q = useQuery(listQuery(adminKeys.arrivals(assessmentId), () => listArrivals(assessmentId), !!assessmentId));
-  return { ...q, data: q.data || EMPTY };
+// The funnel's counts: visits by source and device, what people did with
+// their report, and where the unfinished stopped. Fetched beside the
+// respondents rather than after them, so it costs no extra wait.
+export function useFunnel(assessmentId) {
+  const q = useQuery(listQuery(adminKeys.arrivals(assessmentId), () => listFunnel(assessmentId), !!assessmentId));
+  return { ...q, data: q.data || EMPTY_FUNNEL };
 }
 
 export function useResponses(assessmentId) {

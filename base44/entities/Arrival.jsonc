@@ -16,6 +16,10 @@
     "campaign": {
       "type": "string",
       "description": "The link's utm_campaign, such as one newsletter issue. Empty when the link carried none."
+    },
+    "device": {
+      "type": "string",
+      "description": "phone, tablet, or desktop, judged in the browser from touch support and screen size. Empty for visits counted before devices were."
     }
   },
   "required": [

@@ -26,6 +26,85 @@ const sameOrg = (a, b) => (a || null) === (b || null);
 // assume, and a newsletter link can bring in more people than it covers.
 const ALL = 5000;
 
+// Everything the Results tabs' funnel shows that is not a name: visits by
+// source and by device, what people did with their report once they had it,
+// and where the ones who did not finish stopped. Counts only, and computed
+// here so that no row about any one person travels to the browser for it.
+//
+// "What they did" is counted in people, not clicks: recordEvent keeps one row
+// per person per event, and reading links, which can each be clicked once,
+// are folded to one per person here.
+const funnelSummary = async (svc, assessmentId) => {
+  const [arrivalRows, events, respondents] = await Promise.all([
+    svc.Arrival.filter({ assessment_id: assessmentId }, null, ALL),
+    svc.RespondentEvent.filter({ assessment_id: assessmentId }, null, ALL),
+    svc.Respondent.filter({ assessment_id: assessmentId }, null, ALL),
+  ]);
+
+  const counts = {};
+  const arrivalDevices = {};
+  for (const r of arrivalRows) {
+    const key = `${r.source || ""}\u0000${r.campaign || ""}`;
+    counts[key] = (counts[key] || 0) + 1;
+    const d = r.device || "unknown";
+    arrivalDevices[d] = (arrivalDevices[d] || 0) + 1;
+  }
+
+  const living = new Set(respondents.map((r) => r.id));
+  const people = {};
+  for (const e of events) {
+    // A respondent removed before this cascade existed can leave rows behind;
+    // they are nobody now and count as nobody.
+    if (!living.has(e.respondent_id)) continue;
+    (people[e.event] ||= new Set()).add(e.respondent_id);
+  }
+  const afterFinishing = Object.fromEntries(Object.entries(people).map(([k, v]) => [k, v.size]));
+
+  return {
+    arrivals: Object.entries(counts).map(([key, count]) => {
+      const [source, campaign] = key.split("\u0000");
+      return { source: source || null, campaign: campaign || null, count };
+    }),
+    arrivalDevices,
+    afterFinishing,
+    stoppedIn: await stoppedIn(svc, assessmentId, respondents),
+  };
+};
+
+// For each person who started and has not finished, the page their latest
+// answer is on: its section for an instrument that asks its own questions, its
+// facet for one that draws on the library, which is how the survey pages them.
+// Someone with no answer at all stopped on the first page, before saving it.
+const stoppedIn = async (svc, assessmentId, respondents) => {
+  const unfinished = respondents.filter((r) => r.status !== "completed");
+  if (!unfinished.length) return [];
+  const waiting = new Set(unfinished.map((r) => r.id));
+  const rows = await svc.Response.filter({ assessment_id: assessmentId }, null, ALL);
+
+  const latest = new Map();
+  const when = (row) => Date.parse(row.updated_date || row.created_date) || 0;
+  for (const row of rows) {
+    if (!waiting.has(row.respondent_id)) continue;
+    const held = latest.get(row.respondent_id);
+    if (!held || when(row) > when(held)) latest.set(row.respondent_id, row);
+  }
+
+  const activityIds = [...new Set([...latest.values()].map((row) => row.activity_id))];
+  const activities = await Promise.all(activityIds.map((id) => svc.Activity.get(id).catch(() => null)));
+  const pageOf = new Map(activities.filter(Boolean).map((a) => [a.id, a.section || a.facet || null]));
+
+  const tally = {};
+  for (const r of unfinished) {
+    const row = latest.get(r.id);
+    const page = row ? (pageOf.get(row.activity_id) || "Unknown") : null;
+    const key = page ?? "";
+    tally[key] = (tally[key] || 0) + 1;
+  }
+  return Object.entries(tally)
+    .map(([page, count]) => ({ page: page || null, count }))
+    .sort((a, b) => b.count - a.count);
+};
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -63,20 +142,7 @@ Deno.serve(async (req) => {
     // the Results tabs show a funnel, and nothing about one visit is worth
     // sending to the browser.
     if (arrivals) {
-      const rows = await base44.asServiceRole.entities.Arrival.filter(
-        { assessment_id: assessmentId }, null, ALL,
-      );
-      const counts = {};
-      for (const r of rows) {
-        const key = `${r.source || ""}\u0000${r.campaign || ""}`;
-        counts[key] = (counts[key] || 0) + 1;
-      }
-      return Response.json({
-        arrivals: Object.entries(counts).map(([key, count]) => {
-          const [source, campaign] = key.split("\u0000");
-          return { source: source || null, campaign: campaign || null, count };
-        }),
-      });
+      return Response.json(await funnelSummary(base44.asServiceRole.entities, assessmentId));
     }
 
     const respondents = await base44.asServiceRole.entities.Respondent.filter({
@@ -91,6 +157,8 @@ Deno.serve(async (req) => {
         status: r.status,
         completed_date: r.completed_date || null,
         created_date: r.created_date,
+        first_completed_date: r.first_completed_date || null,
+        device: r.device || null,
         source: r.source || null,
         medium: r.medium || null,
         campaign: r.campaign || null,

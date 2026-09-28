@@ -61,7 +61,7 @@ Deno.serve(async (req) => {
       }
     };
 
-    const [responses, respondents, notes, flags, customActivities, arrivals] = await Promise.all([
+    const [responses, respondents, notes, flags, customActivities, arrivals, events] = await Promise.all([
       stage("reading responses",  () => svc.Response.filter({ assessment_id: assessmentId })),
       stage("reading respondents", () => svc.Respondent.filter({ assessment_id: assessmentId })),
       stage("reading notes",      () => svc.DiscussionNote.filter({ assessment_id: assessmentId })),
@@ -71,6 +71,7 @@ Deno.serve(async (req) => {
       // platform's default page size, and every one left behind would be a
       // row naming an assessment that no longer exists.
       stage("reading arrivals",   () => svc.Arrival.filter({ assessment_id: assessmentId }, null, 5000)),
+      stage("reading report events", () => svc.RespondentEvent.filter({ assessment_id: assessmentId }, null, 5000)),
     ]);
 
     // Batched rather than one Promise.all over everything: an assessment with
@@ -107,6 +108,12 @@ Deno.serve(async (req) => {
     } else {
       await deleteAll("arrivals", arrivals, svc.Arrival);
     }
+    // What respondents did with their reports, which names them by id.
+    if (events.length && typeof svc.RespondentEvent.deleteMany === "function") {
+      await stage("deleting report events", () => svc.RespondentEvent.deleteMany({ assessment_id: assessmentId }));
+    } else {
+      await deleteAll("report events", events, svc.RespondentEvent);
+    }
 
     await stage("deleting the assessment", () => svc.Assessment.delete(assessmentId));
 
@@ -118,6 +125,7 @@ Deno.serve(async (req) => {
         flags: flags.length,
         customActivities: customActivities.length,
         arrivals: arrivals.length,
+        reportEvents: events.length,
       },
     });
   } catch (error) {

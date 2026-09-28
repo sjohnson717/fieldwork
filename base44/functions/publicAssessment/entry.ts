@@ -107,6 +107,10 @@ const MAX_LABEL = 80;
 const label = (v) =>
   typeof v === "string" ? v.trim().toLowerCase().slice(0, MAX_LABEL) : "";
 
+// Whitelisted rather than labelled: the browser's judgement of its own screen
+// is one of three words, and anything else is not a device.
+const DEVICES = ["phone", "tablet", "desktop"];
+
 const recordArrival = async (svc, assessment, arrival) => {
   if (!arrival || typeof arrival !== "object") return;
   try {
@@ -115,6 +119,7 @@ const recordArrival = async (svc, assessment, arrival) => {
       source: label(arrival.source),
       medium: label(arrival.medium),
       campaign: label(arrival.campaign),
+      device: DEVICES.includes(arrival.device) ? arrival.device : "",
     });
   } catch (e) {
     // A lost count is a smaller failure than a respondent who cannot start.

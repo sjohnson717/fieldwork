@@ -27,7 +27,8 @@ export async function loadResultsData(assessment) {
 // respondent_id points at nothing — invisible on every screen, and still
 // counted by anything that aggregates by assessment.
 //
-// Then one visit from the same source, made before they started. Most removals
+// Then one visit from the same source, made before they started, and what
+// they did with their report. Most removals
 // are test runs, and a test run left in the arrivals funnel reads as a reader
 // who clicked and walked away. Not fatal when it fails: the person is gone,
 // and a stray visit can still be removed from the funnel table.
@@ -37,7 +38,7 @@ export async function deleteRespondentCascade(respondent, assessmentId) {
   for (const r of responses) await base44.entities.Response.delete(r.id);
   await base44.entities.Respondent.delete(id);
   try {
-    await removeArrival(assessmentId, respondent, respondent.created_date);
+    await removeArrival(assessmentId, respondent, respondent.created_date, id);
   } catch (e) {
     console.error("Failed to remove the respondent's visit", e);
   }
