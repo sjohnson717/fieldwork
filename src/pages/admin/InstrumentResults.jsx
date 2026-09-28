@@ -40,10 +40,11 @@ export default function InstrumentResults({ assessment }) {
   const [removingRespondent, setRemovingRespondent] = useState(null);
   const [previewRespondent, setPreviewRespondent] = useState(null);
 
-  const handleDeleteRespondent = async (id) => {
+  const handleDeleteRespondent = async (respondent) => {
+    const { id } = respondent;
     setRemovingRespondent(null);
     try {
-      await deleteRespondentCascade(id);
+      await deleteRespondentCascade(respondent, assessment.id);
       cache.removeRespondent(assessment.id, id);
     } catch (e) {
       console.error("Failed to delete respondent", e);
@@ -149,7 +150,7 @@ export default function InstrumentResults({ assessment }) {
         title="Remove this respondent?"
         message={`${removingRespondent?.name} and all their answers will be deleted. This cannot be undone.`}
         confirmLabel="Remove"
-        onConfirm={() => handleDeleteRespondent(removingRespondent.id)}
+        onConfirm={() => handleDeleteRespondent(removingRespondent)}
         onCancel={() => setRemovingRespondent(null)}
       />
     </div>

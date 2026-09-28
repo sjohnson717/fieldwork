@@ -31,6 +31,15 @@ export const listArrivals = async (assessmentId) => {
   return res?.data?.arrivals ?? [];
 };
 
+// Removes one visit with this source and campaign, the newest made at or
+// before `before` when given. See base44/functions/removeArrival.
+export const removeArrival = async (assessmentId, { source, campaign }, before) => {
+  const res = await base44.functions.invoke('removeArrival', {
+    assessmentId, source: source || "", campaign: campaign || "", before: before || null,
+  });
+  return res?.data?.removed ?? 0;
+};
+
 // A respondent's own answers, written server-side against their token.
 //
 // Not entity writes from the browser: Response.rls.update permits only admin,

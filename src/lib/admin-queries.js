@@ -118,6 +118,8 @@ export function useAdminCache() {
     removeRespondent(assessmentId, respondentId) {
       qc.setQueryData(adminKeys.responses(assessmentId), (rows) => (rows || []).filter((r) => r.respondent_id !== respondentId));
       qc.setQueryData(adminKeys.respondents(assessmentId), (rows) => (rows || []).filter((r) => r.id !== respondentId));
+      // Their visit went with them, server-side; the funnel refetches to say so.
+      qc.invalidateQueries({ queryKey: adminKeys.arrivals(assessmentId) });
     },
     patchRespondent(assessmentId, respondentId, patch) {
       qc.setQueryData(adminKeys.respondents(assessmentId), (rows) =>

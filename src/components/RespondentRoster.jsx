@@ -60,7 +60,12 @@ export default function RespondentRoster({
         </button>
       </div>
 
-      <ArrivalFunnel arrivals={arrivalsQuery.data} respondents={respondents} />
+      <ArrivalFunnel
+        assessmentId={assessmentId}
+        arrivals={arrivalsQuery.data}
+        respondents={respondents}
+        onChanged={() => arrivalsQuery.refetch()}
+      />
 
       {/* The confidentiality rule, stated where the individual data is.
 
