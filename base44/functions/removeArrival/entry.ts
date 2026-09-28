@@ -14,6 +14,11 @@ import { createClientFromRequest } from "npm:@base44/sdk@0.8.39";
 // before they started, and a respondent from before arrivals were counted
 // then matches nothing rather than taking someone else's.
 //
+// Given `respondentId`, it also removes what that respondent did with their
+// report (RespondentEvent), for the same reason: a removed test run should
+// leave nothing in any count. Those rows are matched on this assessment as
+// well as the respondent, so the access check above covers them.
+//
 // Arrival's own RLS is super-admin only, because the survey writes it as
 // service role and nobody else should write it at all. Removing one is gated
 // here instead, on the same rule as listRespondents: anyone who may see the
@@ -34,7 +39,7 @@ Deno.serve(async (req) => {
     }
     if (!user) return Response.json({ error: "Unauthorized" }, { status: 403 });
 
-    const { assessmentId, source, campaign, before } = await req.json();
+    const { assessmentId, source, campaign, before, respondentId } = await req.json();
     if (!assessmentId) {
       return Response.json({ error: "assessmentId is required" }, { status: 400 });
     }
@@ -50,6 +55,13 @@ Deno.serve(async (req) => {
       (user.role === "org_admin" && sameOrg(assessment.org_id, user.org_id));
     if (!allowed) return Response.json({ error: "not_found" }, { status: 404 });
 
+    let eventsRemoved = 0;
+    if (respondentId) {
+      const events = await svc.RespondentEvent.filter({ assessment_id: assessmentId, respondent_id: respondentId }, null, ALL);
+      await Promise.all(events.map((e) => svc.RespondentEvent.delete(e.id)));
+      eventsRemoved = events.length;
+    }
+
     const rows = await svc.Arrival.filter({ assessment_id: assessmentId }, null, ALL);
     const cutoff = before ? Date.parse(before) : Infinity;
     // The newest match: a test click is usually the latest one, and when it is
@@ -59,9 +71,9 @@ Deno.serve(async (req) => {
       .filter((r) => Date.parse(r.created_date) <= cutoff)
       .sort((a, b) => Date.parse(b.created_date) - Date.parse(a.created_date))[0];
 
-    if (!match) return Response.json({ removed: 0 });
+    if (!match) return Response.json({ removed: 0, eventsRemoved });
     await svc.Arrival.delete(match.id);
-    return Response.json({ removed: 1 });
+    return Response.json({ removed: 1, eventsRemoved });
   } catch (error) {
     console.error("removeArrival", error);
     return Response.json({ error: error?.message || String(error) }, { status: 500 });

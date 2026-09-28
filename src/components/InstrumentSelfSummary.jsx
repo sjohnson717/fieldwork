@@ -6,6 +6,7 @@ import PrintCredit from "@/components/PrintCredit";
 import Commentary from "@/components/Commentary";
 import DimensionProfile from "@/components/DimensionProfile";
 import QuartzBridge from "@/components/QuartzBridge";
+import { track } from "@/lib/respondent-events";
 
 // What one person sees when they finish one of the four imported instruments.
 //
@@ -155,6 +156,7 @@ export default function InstrumentSelfSummary({
                         href={r.url}
                         target="_blank"
                         rel="noreferrer"
+                        onClick={() => track("resource_clicked", r.url)}
                         className="text-blue-600 hover:text-blue-700 print:text-gray-600 print:no-underline"
                       >
                         {r.title}

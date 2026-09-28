@@ -51,3 +51,34 @@ test("builds each channel's link, with the month only on the newsletter", async 
     "https://quartzassessments.com/assess?code=ABCD&utm_source=linkedin&utm_medium=social",
   );
 });
+
+test("lines devices up across the three steps, and keeps the unrecorded apart", async () => {
+  const { deviceRows } = await import("@/lib/arrival-funnel.js");
+  const rows = deviceRows(
+    { phone: 10, desktop: 4, unknown: 2 },
+    [
+      { device: "phone", status: "completed" },
+      { device: "phone", status: "started" },
+      { device: "desktop", status: "completed" },
+      { status: "completed" },
+    ],
+  );
+  assert.deepEqual(rows, [
+    { device: "phone", arrived: 10, started: 2, completed: 1 },
+    { device: "desktop", arrived: 4, started: 1, completed: 1 },
+    { device: "unknown", arrived: 2, started: 1, completed: 1 },
+  ]);
+});
+
+test("times a first pass, not the revisions after it", async () => {
+  const { medianMinutes } = await import("@/lib/arrival-funnel.js");
+  const at = (m) => new Date(Date.UTC(2026, 9, 1, 12, m)).toISOString();
+  const result = medianMinutes([
+    { status: "completed", created_date: at(0), first_completed_date: at(12), completed_date: "2026-10-09T12:00:00Z" },
+    { status: "completed", created_date: at(0), completed_date: at(20) },
+    { status: "completed", created_date: at(0), first_completed_date: at(14) },
+    { status: "started", created_date: at(0) },
+  ]);
+  assert.deepEqual(result, { minutes: 14, count: 3 });
+  assert.equal(medianMinutes([{ status: "started", created_date: at(0) }]), null);
+});

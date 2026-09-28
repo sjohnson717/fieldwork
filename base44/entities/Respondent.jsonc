@@ -38,6 +38,20 @@
       "type": "string",
       "description": "The arriving link's utm_campaign. See Arrival.campaign."
     },
+    "device": {
+      "type": "string",
+      "enum": [
+        "phone",
+        "tablet",
+        "desktop"
+      ],
+      "description": "What they started the survey on, judged from touch support and screen size when they entered their name. See Arrival.device."
+    },
+    "first_completed_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When they first finished. completed_date moves every time a revision is submitted, which would count days of someone coming back to change an answer as time spent answering; this is set once and never moved, for the Results tab's time to complete."
+    },
     "activity_log": {
       "type": "string"
     },

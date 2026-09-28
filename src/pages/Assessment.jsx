@@ -9,7 +9,8 @@ import { ANSWER_FIELDS, rebuildResponses } from "@/lib/responses";
 import { usePrintSafeUrl } from "@/lib/print-safe-url";
 import { HERO_IMAGE, QUARTZ_ICON } from "@/lib/assets";
 import { claimToken, resumeLinkFor } from "@/lib/token-address";
-import { arrivalSource, isNewVisit } from "@/lib/arrival-source";
+import { arrivalSource, deviceKind, isNewVisit } from "@/lib/arrival-source";
+import { setEventToken, track, watchPrint } from "@/lib/respondent-events";
 import ResumeLink from "@/components/ResumeLink";
 import { FACET_ORDER, IMPORTANCE_LABEL, EXECUTION_LABEL } from "@/lib/scoring";
 import PersonalProfileReport from "@/components/PersonalProfileReport";
@@ -522,6 +523,20 @@ export default function Assessment() {
       .catch(() => setResources([]));
   }, [wantsResources, step]);
 
+  // What they do with their report is counted against this token; see
+  // lib/respondent-events. Set from here only, so the admin side's previews of
+  // the same reports count nothing.
+  useEffect(() => {
+    setEventToken(myToken);
+    return () => setEventToken(null);
+  }, [myToken]);
+
+  // The browser's own print command, while their report is on screen.
+  useEffect(() => {
+    if (step !== "done") return;
+    return watchPrint();
+  }, [step]);
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const urlCode = params.get("code");
@@ -532,7 +547,9 @@ export default function Assessment() {
     const urlToken = claimToken("respondent", params.get("t"), "/assess");
 
     if (urlToken) {
-      loadFromToken(urlToken);
+      // Only a link in the address is a return visit. A token recalled from
+      // this tab's storage is a reload of a page they already had open.
+      loadFromToken(urlToken, { fromLink: !!params.get("t") });
     } else if (urlCode) {
       // The code is the only thing the entry card collects, so a link that
       // carries one has nothing left to ask: validate it and go straight to
@@ -579,7 +596,7 @@ export default function Assessment() {
     return inst;
   };
 
-  const loadFromToken = async (t) => {
+  const loadFromToken = async (t, { fromLink = false } = {}) => {
     setStep("loading");
     setMyToken(t);
     try {
@@ -617,6 +634,13 @@ export default function Assessment() {
       // answers, they just can't change them.
       if (r.status === "completed") {
         setReturningCompleted(true);
+        // Came back to a finished report on their own link. Sent with the
+        // token directly, because the effect that hands it to track() has not
+        // run yet on this render.
+        if (fromLink) {
+          setEventToken(t);
+          track("report_reopened");
+        }
         if (r.title) setTitle(r.title);
         const inst = await loadSurveyData(a, session.responses);
         // Straight to the summary for a personal assessment and for the four
@@ -704,7 +728,7 @@ export default function Assessment() {
       // Counted once per tab and code, with where the visitor came from, for
       // the funnel on the Results tabs. See lib/arrival-source.
       const key = submitted.trim().toUpperCase();
-      const result = await getAssessmentByCode(submitted, isNewVisit(key) ? arrivalSource() : null);
+      const result = await getAssessmentByCode(submitted, isNewVisit(key) ? { ...arrivalSource(), device: deviceKind() } : null);
       const found = result?.assessment;
       if (!found) return retry("Code not found. Please check and try again.");
       if (found.status === "closed") return deadEnd("This assessment is no longer accepting responses.");
@@ -737,6 +761,7 @@ export default function Assessment() {
         // The same labels the arrival was counted under, so starts and
         // completions line up against arrivals by source.
         ...arrivalSource(),
+        device: deviceKind() || undefined,
       });
       setRespondent(r);
       rememberToken(token);

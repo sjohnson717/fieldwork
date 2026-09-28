@@ -6,6 +6,7 @@ import ResumeLink from "@/components/ResumeLink";
 import ChaosAssessmentPlug from "@/components/ChaosAssessmentPlug";
 import ActivityAnswerTable from "@/components/ActivityAnswerTable";
 import { QUARTZ_ICON } from "@/lib/assets";
+import { track } from "@/lib/respondent-events";
 
 // What a respondent sees after submitting a team gap assessment: their own
 // summary, then every answer they gave. Lifted out of `Assessment` (the
@@ -170,7 +171,7 @@ export default function TeamGapSelfReport({
                 offers "Save as PDF", and the result is real selectable text
                 instead of a screenshot. */}
             <button
-              onClick={() => window.print()}
+              onClick={() => { track("printed"); window.print(); }}
               className="font-medium px-6 py-2.5 rounded-lg transition-colors text-sm border border-gray-300 hover:border-gray-400 text-gray-600 hover:text-gray-800"
             >
               Save as PDF

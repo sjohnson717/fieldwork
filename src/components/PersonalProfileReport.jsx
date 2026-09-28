@@ -16,6 +16,7 @@ import ChaosAssessmentPlug from "@/components/ChaosAssessmentPlug";
 import ResumeLink from "@/components/ResumeLink";
 import ActivityAnswerTable from "@/components/ActivityAnswerTable";
 import { QUARTZ_ICON } from "@/lib/assets";
+import { track } from "@/lib/respondent-events";
 
 // The person's own report. Advisory first: the interpretation is the document,
 // and the raw answers are an appendix behind it.
@@ -185,6 +186,7 @@ function ResourceItem({ resource: r }) {
           href={r.url}
           target="_blank"
           rel="noopener noreferrer"
+          onClick={() => track("resource_clicked", r.url)}
           className="block text-[11px] text-blue-600 hover:text-blue-800 hover:underline mt-0.5 break-all"
         >
           {r.url}
@@ -332,7 +334,7 @@ export default function PersonalProfileReport({
       <div className="no-print mb-8 space-y-3">
         <div className="flex flex-wrap gap-3">
           <button
-            onClick={() => window.print()}
+            onClick={() => { track("printed"); window.print(); }}
             className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-2.5 rounded-lg transition-colors text-sm"
           >
             Save as PDF to share

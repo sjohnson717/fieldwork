@@ -322,6 +322,9 @@ Deno.serve(async (req) => {
     if (complete === true) {
       respondentPatch.status = "completed";
       respondentPatch.completed_date = new Date().toISOString();
+      // Set once. completed_date moves with every revision; this one is what
+      // the Results tab times a first pass through the survey by.
+      if (!r.first_completed_date) respondentPatch.first_completed_date = respondentPatch.completed_date;
     }
     const patching = Object.keys(respondentPatch).length > 0;
     const earlyPatch = patching && r.status === "completed"

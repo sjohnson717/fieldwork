@@ -24,18 +24,22 @@ export const listRespondents = async (assessmentId) => {
   return res?.data?.respondents ?? [];
 };
 
-// Visits to an assessment's code link, counted by source and campaign, behind
-// the same access check as the respondent list.
-export const listArrivals = async (assessmentId) => {
+// The Results tabs' funnel, behind the same access check as the respondent
+// list: visits by source and by device, what people did with their report,
+// and where the unfinished stopped. Counts only.
+export const EMPTY_FUNNEL = { arrivals: [], arrivalDevices: {}, afterFinishing: {}, stoppedIn: [] };
+export const listFunnel = async (assessmentId) => {
   const res = await base44.functions.invoke('listRespondents', { assessmentId, arrivals: true });
-  return res?.data?.arrivals ?? [];
+  return { ...EMPTY_FUNNEL, ...(res?.data || {}) };
 };
 
 // Removes one visit with this source and campaign, the newest made at or
-// before `before` when given. See base44/functions/removeArrival.
-export const removeArrival = async (assessmentId, { source, campaign }, before) => {
+// before `before` when given, and, given a respondentId, what that respondent
+// did with their report. See base44/functions/removeArrival.
+export const removeArrival = async (assessmentId, { source, campaign }, before, respondentId) => {
   const res = await base44.functions.invoke('removeArrival', {
     assessmentId, source: source || "", campaign: campaign || "", before: before || null,
+    respondentId: respondentId || null,
   });
   return res?.data?.removed ?? 0;
 };

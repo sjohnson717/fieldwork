@@ -63,9 +63,9 @@ export default function ArrivalFunnel({ assessmentId, arrivals, respondents, onC
             <thead>
               <tr className="text-xs text-gray-400 uppercase tracking-wide border-b border-gray-100">
                 <th className="text-left pb-2 font-medium">Source</th>
-                <th className="text-right pb-2 font-medium">Arrived</th>
-                <th className="text-right pb-2 font-medium">Started</th>
-                <th className="text-right pb-2 font-medium">Completed</th>
+                <th className="text-right pb-2 font-medium w-20 sm:w-28">Arrived</th>
+                <th className="text-right pb-2 font-medium w-20 sm:w-28">Started</th>
+                <th className="text-right pb-2 font-medium w-20 sm:w-28">Completed</th>
               </tr>
             </thead>
             <tbody>

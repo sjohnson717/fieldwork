@@ -1,3 +1,5 @@
+import { track } from "@/lib/respondent-events";
+
 // The closing section of the Fractional CPO Practice Profile.
 //
 // Unlike ChaosAssessmentPlug, this one prints. That component is screen-only
@@ -43,6 +45,7 @@ export default function QuartzBridge() {
           href="https://www.productgrowthleaders.com/program/quartz-product-leadership"
           target="_blank"
           rel="noreferrer"
+          onClick={() => track("quartz_clicked")}
           className="text-blue-600 hover:text-blue-700 print:text-gray-600 print:no-underline break-words"
         >
           See how Quartz could support your Fractional CPO practice →
