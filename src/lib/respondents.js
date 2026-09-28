@@ -1,6 +1,6 @@
 import { base44 } from "@/api/base44Client";
 import { getAssignedActivities } from "@/lib/activities";
-import { listRespondents } from "@/lib/public-assessment";
+import { listRespondents, removeArrival } from "@/lib/public-assessment";
 
 // The three reads every results tab opens with, and the delete both of them
 // offer. Shared because they were identical in AssessmentResults and
@@ -26,8 +26,19 @@ export async function loadResultsData(assessment) {
 // Answers first, then the person. The other order leaves rows whose
 // respondent_id points at nothing — invisible on every screen, and still
 // counted by anything that aggregates by assessment.
-export async function deleteRespondentCascade(id) {
+//
+// Then one visit from the same source, made before they started. Most removals
+// are test runs, and a test run left in the arrivals funnel reads as a reader
+// who clicked and walked away. Not fatal when it fails: the person is gone,
+// and a stray visit can still be removed from the funnel table.
+export async function deleteRespondentCascade(respondent, assessmentId) {
+  const { id } = respondent;
   const responses = await base44.entities.Response.filter({ respondent_id: id });
   for (const r of responses) await base44.entities.Response.delete(r.id);
   await base44.entities.Respondent.delete(id);
+  try {
+    await removeArrival(assessmentId, respondent, respondent.created_date);
+  } catch (e) {
+    console.error("Failed to remove the respondent's visit", e);
+  }
 }

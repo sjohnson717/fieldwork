@@ -90,10 +90,11 @@ export default function PersonalResults({ assessment }) {
     cache.patchRespondent(assessment.id, id, { [field]: null });
   };
 
-  const handleDeleteRespondent = async (id) => {
+  const handleDeleteRespondent = async (respondent) => {
+    const { id } = respondent;
     setRemovingRespondent(null);
     try {
-      await deleteRespondentCascade(id);
+      await deleteRespondentCascade(respondent, assessment.id);
       cache.removeRespondent(assessment.id, id);
     } catch (e) {
       console.error("Failed to delete respondent", e);
@@ -541,7 +542,7 @@ export default function PersonalResults({ assessment }) {
         title="Remove this respondent?"
         message={`${removingRespondent?.name || "This respondent"} and all of their responses will be permanently removed. This cannot be undone.`}
         confirmLabel="Remove"
-        onConfirm={() => handleDeleteRespondent(removingRespondent.id)}
+        onConfirm={() => handleDeleteRespondent(removingRespondent)}
         onCancel={() => setRemovingRespondent(null)}
       />
     </div>
