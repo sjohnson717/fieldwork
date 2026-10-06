@@ -161,8 +161,7 @@ export default function InstrumentSelfSummary({
                       >
                         {r.title}
                       </a>
-                      {r.source && <span className="text-gray-400"> · {r.source}</span>}
-                      {r.note && <span className="text-gray-400"> — {r.note}</span>}
+                      {r.note && <span className="text-gray-400"> · {r.note}</span>}
                     </p>
                   ))}
                 </Commentary>
