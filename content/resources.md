@@ -966,3 +966,26 @@ Testimonials and logos aren't customer proof. Proof is evidence that a customer 
 
 **For.**
 - customer-success-stories
+
+## Resource: Trade Shows: Big Investment, Small Return
+id: trade-shows-big-investment-small-return
+published: 2026-10-05
+url: https://www.productgrowthleaders.com/post/stop-selling-at-trade-shows
+
+Trade shows aren't a lead-generation channel. They're the best customer-conversation opportunity you'll get all year — if you stop selling long enough to use it.
+
+**For.**
+- deliver-presentations-demos
+- staff-promotional-events
+- marketing-plan
+
+## Resource: Jevons Paradox and the Wrong Kind of Productivity
+id: jevons-paradox-and-the-wrong-kind-of-productivity
+published: 2026-09-29
+url: https://www.productgrowthleaders.com/post/jevons-paradox-and-the-wrong-kind-of-productivity
+
+AI is making it dramatically cheaper to create requirements, prototypes, code, content, and features. Jevons paradox suggests we probably won’t use that efficiency to produce the same amount with less effort. We’ll use it to produce more. And that’s a problem.
+
+**For.**
+- problem-discovery
+- synthesize-customer-evidence
