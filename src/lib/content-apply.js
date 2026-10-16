@@ -34,6 +34,7 @@
 
 import { ENTITY_FIELDS, slugify, FACETS } from "@/lib/content-format";
 import { sameAddress } from "@/lib/same-address";
+import { safeUrl } from "@/lib/utils";
 
 
 // Where reading points. One line, as before: the articles stay on the site that
@@ -810,6 +811,11 @@ export async function applyResources(base44, plan, { onProgress } = {}) {
   const written = { resources: 0 };
   for (const r of plan.resources) {
     if (r.action === "unchanged") continue;
+    // A resource address becomes a link on the respondent's report, so a file
+    // carrying anything but a web address or site path stops the apply.
+    if (r.patch?.url && !safeUrl(r.patch.url)) {
+      throw new Error(`"${r.patch.title || r.patch.url}" has an address that is not a web link: ${r.patch.url}`);
+    }
     if (r.action === "create") await e.Resource.create(r.patch);
     else await e.Resource.update(r.rowId, r.patch);
     written.resources++;

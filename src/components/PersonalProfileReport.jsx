@@ -17,6 +17,7 @@ import ResumeLink from "@/components/ResumeLink";
 import ActivityAnswerTable from "@/components/ActivityAnswerTable";
 import { QUARTZ_ICON } from "@/lib/assets";
 import { track } from "@/lib/respondent-events";
+import { safeUrl } from "@/lib/utils";
 
 // The person's own report. Advisory first: the interpretation is the document,
 // and the raw answers are an appendix behind it.
@@ -177,13 +178,13 @@ function ResourceItem({ resource: r }) {
         {r.source && <span className="text-xs text-gray-400">{r.source}</span>}
       </div>
       {r.note && <p className="text-xs text-gray-500 mt-1 leading-relaxed">{r.note}</p>}
-      {r.url && (
+      {safeUrl(r.url) && (
         /* A link whose visible text is the address itself. The address has to
            be readable on paper, where a link is just underlined words — but
            showing it as plain text left someone reading on screen retyping an
            article URL by hand. This prints the same and clicks. */
         <a
-          href={r.url}
+          href={safeUrl(r.url)}
           target="_blank"
           rel="noopener noreferrer"
           onClick={() => track("resource_clicked", r.url)}

@@ -5,7 +5,7 @@ import { FACET_ORDER } from "@/lib/scoring";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import BlogFeedPanel from "@/pages/admin/BlogFeedPanel";
 import { scrollToRecord, FOCUS_RING } from "@/lib/focus-record";
-import { functionErrorMessage } from "@/lib/utils";
+import { functionErrorMessage, safeUrl } from "@/lib/utils";
 
 // Learning resources offered on a personal report, against the activities
 // someone was actually advised to develop.
@@ -227,8 +227,18 @@ export default function ResourcesTab({ focus = null }) {
     scrollToRecord("data-resource-id", focus?.resourceIds?.[0]);
   };
 
+  // Respondents click these, so only web addresses and site paths are saved.
+  const badUrl = () => {
+    if (draft.url?.trim() && !safeUrl(draft.url)) {
+      setError("The address has to start with http:// or https://, or be a path on this site.");
+      return true;
+    }
+    setError("");
+    return false;
+  };
+
   const handleAdd = async () => {
-    if (!draft.title.trim()) return;
+    if (!draft.title.trim() || badUrl()) return;
     setSaving(true);
     try {
       const maxOrder = resources.length > 0 ? Math.max(...resources.map(r => r.sort_order ?? 0)) : -1;
@@ -248,7 +258,7 @@ export default function ResourcesTab({ focus = null }) {
   };
 
   const handleSaveEdit = async (id) => {
-    if (!draft.title.trim()) return;
+    if (!draft.title.trim() || badUrl()) return;
     setSaving(true);
     try {
       const updated = await base44.entities.Resource.update(id, { ...draft, title: draft.title.trim() });

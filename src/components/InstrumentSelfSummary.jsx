@@ -7,6 +7,7 @@ import Commentary from "@/components/Commentary";
 import DimensionProfile from "@/components/DimensionProfile";
 import QuartzBridge from "@/components/QuartzBridge";
 import { track } from "@/lib/respondent-events";
+import { safeUrl } from "@/lib/utils";
 
 // What one person sees when they finish one of the four imported instruments.
 //
@@ -153,7 +154,7 @@ export default function InstrumentSelfSummary({
                   {readingFor(q.id).map(r => (
                     <p key={r.id} className="text-sm mt-2">
                       <a
-                        href={r.url}
+                        href={safeUrl(r.url)}
                         target="_blank"
                         rel="noreferrer"
                         onClick={() => track("resource_clicked", r.url)}
