@@ -77,7 +77,17 @@
     "activity_id"
   ],
   "rls": {
-    "create": {},
+    // Create is staff-only too. Respondents never write here directly:
+    // saveResponses upserts as the service role, and the only client-side
+    // create is the admin demo-data page. Anonymous create let anyone seed
+    // junk answers into a live assessment.
+    "create": {
+      "$or": [
+        { "user_condition": { "role": "admin" } },
+        { "user_condition": { "role": "org_admin" } },
+        { "user_condition": { "role": "facilitator" } }
+      ]
+    },
     // Read is staff-only, and matches update and delete below. It was open to
     // the world, which meant a single unauthenticated list returned every
     // answer every respondent had ever given, across every assessment and
@@ -89,11 +99,6 @@
     // receives only their own rows, and a buyer report only the rows for the
     // assessment its token names. Both are grants that come with a credential,
     // rather than a rule that requires none.
-    //
-    // Create stays open because respondents have no accounts at all
-    // (saveResponses writes as the service role, but a client cannot be relied
-    // on to be the only writer here). The plain "user" role is excluded
-    // deliberately: the admin area is closed to it too.
     "read": {
       "$or": [
         {
