@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { getAssignedActivities } from "@/lib/activities";
-import { getTeamLeaderView } from "@/lib/public-assessment";
+import { getTeamLeaderView, saveTeamFlag } from "@/lib/public-assessment";
 import { FACET_ORDER, FACET_SUBTITLES } from "@/lib/scoring";
 import { usePrintSafeUrl } from "@/lib/print-safe-url";
 import { claimToken } from "@/lib/token-address";
@@ -168,9 +168,9 @@ export default function TeamLeaderPage() {
       }
       const found = view.assessment;
       setAssessment(found);
-      const [acts, flagList, instruments] = await Promise.all([
+      const flagList = view.flags || [];
+      const [acts, instruments] = await Promise.all([
         getAssignedActivities(found),
-        base44.entities.TeamLeaderFlag.filter({ assessment_id: found.id }),
         found.instrument_id ? base44.entities.Instrument.filter({ id: found.instrument_id }) : [],
       ]);
       setInstrument(instruments?.[0] || null);
@@ -196,16 +196,7 @@ export default function TeamLeaderPage() {
     setSavingFlagId(activityId);
     setFlagError("");
     try {
-      const existing = flags[activityId];
-      const payload = {
-        assessment_id: assessment.id,
-        activity_id: activityId,
-        flagged,
-        note: note || "",
-      };
-      const saved = existing
-        ? await base44.entities.TeamLeaderFlag.update(existing.id, payload)
-        : await base44.entities.TeamLeaderFlag.create(payload);
+      const saved = await saveTeamFlag(token, { activityId, flagged, note });
       setFlags(prev => ({ ...prev, [activityId]: saved }));
     } catch (e) {
       console.error("Failed to save flag", e);

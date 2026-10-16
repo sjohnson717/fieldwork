@@ -209,9 +209,12 @@ Deno.serve(async (req) => {
       case "team": {
         const a = assessments.find((x) => x.team_token && x.team_token === token);
         if (!a) return notFound();
-        const [respondents, responses] = await Promise.all([
+        const [respondents, responses, flags] = await Promise.all([
           svc.Respondent.filter({ assessment_id: a.id }),
           svc.Response.filter({ assessment_id: a.id }),
+          // The leader's own flags and notes. TeamLeaderFlag is staff-only, so
+          // this is the only way they reach the team page.
+          svc.TeamLeaderFlag.filter({ assessment_id: a.id }),
         ]);
         // Answer counts distinguish "signed in but hasn't answered anything"
         // from "actually working through it". Derived rather than stored, so
@@ -315,6 +318,12 @@ Deno.serve(async (req) => {
             created_date: r.created_date,
           })),
           linked,
+          flags: flags.map((f) => ({
+            id: f.id,
+            activity_id: f.activity_id,
+            flagged: !!f.flagged,
+            note: f.note || "",
+          })),
         });
       }
 

@@ -76,3 +76,13 @@ export const getAssessmentByCode = (code, arrival) => resolve('code', code, arri
 export const getRespondentSession = (token) => resolve('respondent', token);
 export const getTeamLeaderView = (teamToken) => resolve('team', teamToken);
 export const getBuyerReport = (buyerToken) => resolve('buyer', buyerToken);
+
+// A team leader flagging an activity, written server-side against their team
+// token. TeamLeaderFlag is staff-only, so the browser cannot write it. Returns
+// the saved flag. See base44/functions/saveTeamFlag.
+export const saveTeamFlag = async (teamToken, { activityId, flagged, note }) => {
+  const res = await base44.functions.invoke('saveTeamFlag', {
+    token: teamToken, activity_id: activityId, flagged, note: note || "",
+  });
+  return res?.data?.flag ?? null;
+};

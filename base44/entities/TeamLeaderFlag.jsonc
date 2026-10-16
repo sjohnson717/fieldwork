@@ -22,9 +22,31 @@
     "activity_id"
   ],
   "rls": {
-    "create": {},
-    "read": {},
-    "update": {},
+    // Staff-only throughout. The note is a team leader's private reason for
+    // flagging, so it was readable and editable by anyone who asked. The team
+    // page now reads flags through publicAssessment and writes them through
+    // saveTeamFlag, both scoped to the team token presented.
+    "create": {
+      "$or": [
+        { "user_condition": { "role": "admin" } },
+        { "user_condition": { "role": "org_admin" } },
+        { "user_condition": { "role": "facilitator" } }
+      ]
+    },
+    "read": {
+      "$or": [
+        { "user_condition": { "role": "admin" } },
+        { "user_condition": { "role": "org_admin" } },
+        { "user_condition": { "role": "facilitator" } }
+      ]
+    },
+    "update": {
+      "$or": [
+        { "user_condition": { "role": "admin" } },
+        { "user_condition": { "role": "org_admin" } },
+        { "user_condition": { "role": "facilitator" } }
+      ]
+    },
     "delete": {
       "$or": [
         { "user_condition": { "role": "admin" } },
