@@ -27,6 +27,7 @@ export const SHARE_CHANNELS = [
   { key: "linkedin", label: "LinkedIn", medium: "social" },
   { key: "website", label: "Website", medium: "web" },
   { key: "email", label: "Email", medium: "email" },
+  { key: "ebook", label: "Ebook", medium: "content" },
 ];
 
 export function taggedSurveyLink(origin, code, channel, now = new Date()) {
